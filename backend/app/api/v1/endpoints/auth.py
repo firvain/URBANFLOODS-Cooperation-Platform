@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import secrets
 import uuid
+from datetime import UTC, datetime
 from functools import cache
 from typing import Any
 
@@ -18,12 +19,19 @@ from fastapi import APIRouter, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.schemas.auth import (
+    AccountExport,
     ChangeEmailRequest,
     ChangePasswordRequest,
     ConfirmEmailRequest,
+    DeleteAccountRequest,
+    ExportAuditEntry,
+    ExportContent,
+    ExportSession,
+    ExportUser,
     ForgotPasswordRequest,
     LoginRequest,
     MessageResponse,
+    NotificationPreferences,
     RegisterRequest,
     RegisterResponse,
     ResendVerificationRequest,
@@ -47,7 +55,7 @@ from app.crud import audit as crud_audit
 from app.crud import session as crud_session
 from app.crud import token as crud_token
 from app.crud import user as crud_user
-from app.db.enums import TokenPurpose
+from app.db.enums import TokenPurpose, UserRole
 from app.db.models import User
 from app.services.email import send_email
 from app.services.turnstile import TurnstileError, verify_turnstile
@@ -239,7 +247,7 @@ async def resend_verification(
     return RESENT_RESPONSE
 
 
-# TODO(1g): rate limit 10/15min
+# Rate limited by app.core.rate_limit.ROUTE_LIMITS (auth.login: 10 per 15 min per IP).
 @router.post("/login", response_model=UserMe, responses=_error_responses(401, 403, 422))
 async def login(
     body: LoginRequest,
@@ -405,7 +413,7 @@ async def _check_current_password(
     )
 
 
-# TODO(1g): rate limit
+# Rate limited by app.core.rate_limit.ROUTE_LIMITS (auth.password_forgot: 3/hour per IP).
 @router.post(
     "/password/forgot",
     response_model=MessageResponse,
@@ -633,3 +641,112 @@ async def confirm_email_change(body: ConfirmEmailRequest, db: DbTx) -> UserMe:
         metadata={"verified": newly_verified},
     )
     return UserMe.model_validate(user)
+
+
+# --- notification preferences -----------------------------------------------------------------
+
+
+@router.get(
+    "/me/notifications", response_model=NotificationPreferences, responses=_error_responses(401)
+)
+async def read_my_notifications(user: AuthUser, db: DbTx) -> NotificationPreferences:
+    """The signed-in user's email notification preferences."""
+    preferences = await crud_user.get_notification_preferences(db, user=user)
+    return NotificationPreferences.model_validate(preferences)
+
+
+@router.put(
+    "/me/notifications",
+    response_model=NotificationPreferences,
+    responses=_error_responses(401, 422),
+)
+async def replace_my_notifications(
+    body: NotificationPreferences, user: AuthUser, db: DbTx
+) -> NotificationPreferences:
+    """Replace the notification preferences (every field required)."""
+    preferences, changed = await crud_user.update_notification_preferences(
+        db, user=user, values=body.model_dump()
+    )
+    if changed:
+        await crud_audit.log_action(
+            db,
+            actor_id=user.id,
+            action="auth.notifications_updated",
+            target_type="user",
+            target_id=user.id,
+            metadata={"fields": changed},
+        )
+    return NotificationPreferences.model_validate(preferences)
+
+
+# --- GDPR: data export and account deletion ---------------------------------------------------
+
+EXPORT_FORMAT_VERSION = 1
+
+
+@router.get(
+    "/me/export",
+    response_model=AccountExport,
+    responses={
+        **_error_responses(401),
+        200: {"description": "The account data as a JSON file download (Content-Disposition)."},
+    },
+)
+async def export_my_data(response: Response, user: AuthUser, db: DbTx) -> AccountExport:
+    """Everything stored about the signed-in user, as a JSON download (GDPR access and
+    portability). Never includes the password hash or any token."""
+    data = await crud_user.export_user_data(db, user=user)
+    now = datetime.now(UTC)
+    preferences = data.user.notification_preferences
+    export = AccountExport(
+        exported_at=now,
+        format_version=EXPORT_FORMAT_VERSION,
+        licence_note=settings.CONTENT_LICENSE_URL,
+        user=ExportUser.model_validate(data.user),
+        notification_preferences=(
+            NotificationPreferences.model_validate(preferences) if preferences else None
+        ),
+        sessions=[ExportSession.model_validate(session) for session in data.sessions],
+        audit_log=[ExportAuditEntry.model_validate(entry) for entry in data.audit_entries],
+        # Placeholders until posts (M2) and the forum (M3) exist.
+        content=ExportContent(),
+    )
+    await crud_audit.log_action(
+        db, actor_id=user.id, action="auth.data_exported", target_type="user", target_id=user.id
+    )
+    filename = f"urbanfloods-account-{user.id}-{now:%Y%m%d}.json"
+    response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+    response.headers["Cache-Control"] = "no-store"
+    return export
+
+
+@router.delete(
+    "/me",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=_error_responses(400, 401, 409, 422),
+)
+async def delete_me(
+    body: DeleteAccountRequest, response: Response, user: AuthUser, db: DbTx
+) -> None:
+    """Delete the account (current password required): personal data is erased and the account
+    disabled; published content stays, attributed to "Deleted user". Every session ends and the
+    cookie is cleared. The last superadmin cannot delete their account."""
+    await _check_current_password(
+        db, user=user, password=body.current_password, failed_action="auth.delete_failed"
+    )
+    if user.role == UserRole.SUPERADMIN and await crud_user.count_superadmins(db) <= 1:
+        raise AppError(
+            409, "admin.last_superadmin", "The last superadmin cannot delete their account."
+        )
+    # Audit first, while the row still describes the account it is about.
+    await crud_audit.log_action(
+        db,
+        actor_id=user.id,
+        action="auth.account_deleted",
+        target_type="user",
+        target_id=user.id,
+        metadata={"role": user.role},
+    )
+    await crud_user.anonymise_user(db, user=user)
+    _clear_session_cookie(response)

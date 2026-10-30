@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -15,8 +16,9 @@ from sqlalchemy.orm import joinedload
 from app.core.exceptions import AppError, validation_error
 from app.core.security import hash_password, password_needs_rehash, validate_password_policy
 from app.crud import session as crud_session
-from app.db.enums import UserRole
-from app.db.models import NotificationPreference, Organisation, User
+from app.crud import token as crud_token
+from app.db.enums import TokenPurpose, UserRole
+from app.db.models import AuditLog, NotificationPreference, Organisation, Session, User
 
 EMAIL_UNIQUE_CONSTRAINT = "uq_users_email"
 # Fields a user may change on their own profile (``PATCH /auth/me``).
@@ -259,3 +261,129 @@ async def count_superadmins(db: AsyncSession) -> int:
         User.role == UserRole.SUPERADMIN, User.is_active.is_(True), User.deleted_at.is_(None)
     )
     return (await db.execute(stmt)).scalar_one()
+
+
+# --- notification preferences -----------------------------------------------------------------
+
+NOTIFICATION_FIELDS = frozenset(
+    {
+        "reply_to_my_thread",
+        "comment_on_my_post",
+        "reply_to_my_reply",
+        "admin_digest",
+        "digest_frequency",
+    }
+)
+
+
+async def get_notification_preferences(db: AsyncSession, *, user: User) -> NotificationPreference:
+    """The user's notification preferences. A missing row (not expected: it is created with the
+    user) is created with the defaults."""
+    preferences = await db.get(NotificationPreference, user.id)
+    if preferences is None:
+        preferences = NotificationPreference(user_id=user.id)
+        db.add(preferences)
+        await db.flush()
+        await db.refresh(preferences)
+    return preferences
+
+
+async def update_notification_preferences(
+    db: AsyncSession, *, user: User, values: Mapping[str, Any]
+) -> tuple[NotificationPreference, list[str]]:
+    """Replace the user's preferences with ``values`` (every field). Returns the row and the
+    sorted names of the fields whose value actually changed."""
+    if set(values) != NOTIFICATION_FIELDS:
+        raise ValueError(f"expected exactly the fields {sorted(NOTIFICATION_FIELDS)}")
+    preferences = await get_notification_preferences(db, user=user)
+    changed = sorted(name for name, value in values.items() if getattr(preferences, name) != value)
+    for name in changed:
+        setattr(preferences, name, values[name])
+    if changed:
+        await db.flush()
+    return preferences, changed
+
+
+# --- GDPR: export and anonymisation -----------------------------------------------------------
+
+DELETED_DISPLAY_NAME = "Deleted user"
+
+
+def deleted_email(user_id: int) -> str:
+    """The placeholder address of an anonymised account. ``.invalid`` is reserved (RFC 2606), so
+    it can never receive mail, and it frees the real address for a new registration."""
+    return f"deleted-{user_id}@invalid"
+
+
+@dataclass(frozen=True, slots=True)
+class UserDataExport:
+    """Everything stored about one user, for ``GET /auth/me/export``."""
+
+    user: User
+    sessions: list[Session]
+    audit_entries: list[AuditLog]
+
+
+async def export_user_data(db: AsyncSession, *, user: User) -> UserDataExport:
+    """The user (``organisation`` and ``notification_preferences`` loaded), every session of
+    theirs (revoked and expired too), oldest first, and every audit row they made or that is
+    about them, oldest first.
+
+    Content (posts, threads, replies, comments) joins the export when it exists (M2/M3).
+    """
+    loaded = await get_user_by_id(db, user_id=user.id)
+    assert loaded is not None
+    sessions_stmt = (
+        select(Session).where(Session.user_id == user.id).order_by(Session.created_at, Session.id)
+    )
+    audit_stmt = (
+        select(AuditLog)
+        .where(
+            or_(
+                AuditLog.actor_id == user.id,
+                and_(AuditLog.target_type == "user", AuditLog.target_id == user.id),
+            )
+        )
+        .order_by(AuditLog.created_at, AuditLog.id)
+    )
+    return UserDataExport(
+        user=loaded,
+        sessions=list((await db.scalars(sessions_stmt)).all()),
+        audit_entries=list((await db.scalars(audit_stmt)).all()),
+    )
+
+
+async def anonymise_user(db: AsyncSession, *, user: User, now: datetime | None = None) -> int:
+    """Erase the user's personal data and disable the account (GDPR erasure; the row stays so
+    content and audit rows keep a valid reference, shown as "Deleted user").
+
+    Clears every identifying field, frees the email address, blanks the password hash (no
+    password verifies against it), demotes to ``member`` and soft-deletes. Revokes every
+    session, invalidates every unused email token and deletes the notification preferences.
+    Returns the number of sessions revoked. Authorisation and auditing are the caller's job.
+    """
+    now = now or datetime.now(UTC)
+    # Load the relationship (async: no lazy loading) so the orphan is deleted on flush.
+    await db.refresh(user, attribute_names=["notification_preferences"])
+    user.notification_preferences = None
+
+    user.email = deleted_email(user.id)
+    user.display_name = DELETED_DISPLAY_NAME
+    user.password_hash = ""
+    user.organisation_id = None
+    user.organisation_other = None
+    user.country = None
+    user.bio = None
+    user.avatar_attachment_id = None
+    user.is_active = False
+    user.is_verified = False
+    user.role = UserRole.MEMBER
+    user.trusted_at = None
+    user.deleted_at = now
+    await db.flush()
+
+    revoked = await crud_session.revoke_all_sessions_for_user(db, user_id=user.id, now=now)
+    await crud_token.invalidate_email_tokens(
+        db, user_id=user.id, purposes=tuple(TokenPurpose), now=now
+    )
+    return revoked

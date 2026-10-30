@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 import uuid
 from datetime import datetime
-from typing import Annotated, Literal, Self, get_args
+from typing import Annotated, Any, Literal, Self, get_args
 
 from pydantic import (
     AfterValidator,
@@ -26,7 +26,7 @@ from pydantic import (
 from pydantic_core import PydanticCustomError
 
 from app.core.security import PASSWORD_MAX_LENGTH
-from app.db.enums import OrganisationType, UserRole
+from app.db.enums import DigestFrequency, OrganisationType, UserRole
 
 # The 9 interface locales (same as the KNOWBASE frontend).
 Locale = Literal["en", "el", "sq", "mk", "sr", "bs", "sl", "hr", "it"]
@@ -230,3 +230,98 @@ class ChangeEmailRequest(BaseModel):
 
 class ConfirmEmailRequest(BaseModel):
     token: LinkToken
+
+
+# --- notification preferences, GDPR export and account deletion -------------------------------
+
+
+class NotificationPreferences(BaseModel):
+    """``GET /me/notifications`` response and ``PUT`` body (full replace: every field
+    required)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    reply_to_my_thread: bool
+    comment_on_my_post: bool
+    reply_to_my_reply: bool
+    admin_digest: bool
+    digest_frequency: DigestFrequency
+
+
+class DeleteAccountRequest(BaseModel):
+    current_password: PasswordField
+
+
+class ExportOrganisation(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    short_name: str
+
+
+class ExportUser(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: str
+    display_name: str
+    organisation: ExportOrganisation | None
+    organisation_other: str | None
+    country: str | None
+    locale: str
+    bio: str | None
+    role: UserRole
+    is_verified: bool
+    trusted_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
+    last_login_at: datetime | None
+
+
+class ExportSession(BaseModel):
+    """Every session of the account, including revoked and expired ones (never the token)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    created_at: datetime
+    last_seen_at: datetime
+    expires_at: datetime
+    user_agent: str | None
+    revoked_at: datetime | None
+
+
+class ExportAuditEntry(BaseModel):
+    """An audit row by or about the account. The actor is left out on purpose (it may be an
+    admin)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    action: str
+    target_type: str | None
+    target_id: int | None
+    metadata: dict[str, Any] = Field(validation_alias="metadata_")
+    created_at: datetime
+
+
+class ExportContent(BaseModel):
+    """The user's own content. Empty until posts (M2) and the forum (M3) exist."""
+
+    posts: list[dict[str, Any]] = Field(default_factory=list)
+    threads: list[dict[str, Any]] = Field(default_factory=list)
+    replies: list[dict[str, Any]] = Field(default_factory=list)
+    comments: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class AccountExport(BaseModel):
+    """``GET /me/export``: everything stored about the signed-in user (GDPR art. 15/20)."""
+
+    exported_at: datetime
+    format_version: int
+    licence_note: str
+    user: ExportUser
+    notification_preferences: NotificationPreferences | None
+    sessions: list[ExportSession]
+    audit_log: list[ExportAuditEntry]
+    content: ExportContent

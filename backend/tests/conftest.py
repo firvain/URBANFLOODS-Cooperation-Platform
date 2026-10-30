@@ -39,6 +39,10 @@ os.environ.update(
     }
 )
 
+# Sent by the SPA on every request (``services/api.ts``); the CSRF middleware requires it on
+# cookie-authenticated unsafe requests. Test clients send it by default, like the frontend.
+CLIENT_DEFAULT_HEADERS = {"X-Requested-With": "XMLHttpRequest"}
+
 # Used only when no database is available; nothing listens on port 1.
 _UNREACHABLE_DATABASE_URL = "postgresql+asyncpg://nobody:nothing@127.0.0.1:1/none"
 
@@ -126,7 +130,9 @@ async def client() -> AsyncIterator[httpx.AsyncClient]:
 
     async with LifespanManager(app) as manager:
         transport = httpx.ASGITransport(app=manager.app)
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://test", headers=CLIENT_DEFAULT_HEADERS
+        ) as ac:
             yield ac
 
 
@@ -141,7 +147,9 @@ async def other_client(client: httpx.AsyncClient) -> AsyncIterator[httpx.AsyncCl
     from app.main import app
 
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
+    async with httpx.AsyncClient(
+        transport=transport, base_url="http://test", headers=CLIENT_DEFAULT_HEADERS
+    ) as ac:
         yield ac
 
 
@@ -245,3 +253,41 @@ def _restore_structlog_config() -> Iterator[None]:
     saved = structlog.get_config()
     yield
     structlog.configure(**saved)
+
+
+@pytest.fixture
+async def cleanup_user_ids(database_url: str) -> AsyncIterator[set[int]]:
+    """Ids of users the test commits whose email changes under it, deleted afterwards.
+
+    An anonymised (``DELETE /auth/me``) account's email becomes ``deleted-<id>@invalid``, so
+    ``cleanup_users`` (which matches by email) no longer finds it. Only rows that are still
+    anonymised (``email LIKE 'deleted-%@invalid'``) are removed, together with the audit rows by
+    or about them; anything else stays for ``cleanup_users``.
+    """
+    from sqlalchemy import delete, or_, select
+
+    from app.db.models import AuditLog, User
+    from app.db.session import AsyncSessionLocal
+
+    ids: set[int] = set()
+    yield ids
+    if not ids:
+        return
+    async with AsyncSessionLocal() as session, session.begin():
+        deleted = list(
+            (
+                await session.scalars(
+                    select(User.id).where(User.id.in_(ids), User.email.like("deleted-%@invalid"))
+                )
+            ).all()
+        )
+        if deleted:
+            await session.execute(
+                delete(AuditLog).where(
+                    or_(
+                        AuditLog.actor_id.in_(deleted),
+                        (AuditLog.target_type == "user") & AuditLog.target_id.in_(deleted),
+                    )
+                )
+            )
+            await session.execute(delete(User).where(User.id.in_(deleted)))
