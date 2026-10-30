@@ -4,9 +4,11 @@ import i18n, { SUPPORTED_LOCALES, resolveInitialLocale, setLocale } from '@/i18n
 import en from '@/i18n/locales/en.json'
 import el from '@/i18n/locales/el.json'
 
-type Messages = { [key: string]: string | Messages }
+/** Message trees may hold arrays (e.g. `about.summary.paragraphs`); they flatten to `.0`, `.1`, … */
+type MessageValue = string | Messages | MessageValue[]
+type Messages = { [key: string]: MessageValue }
 
-function flatten(messages: Messages, prefix = ''): Record<string, string> {
+function flatten(messages: Messages | MessageValue[], prefix = ''): Record<string, string> {
   return Object.entries(messages).reduce<Record<string, string>>((acc, [key, value]) => {
     const path = prefix ? `${prefix}.${key}` : key
     if (typeof value === 'string') acc[path] = value

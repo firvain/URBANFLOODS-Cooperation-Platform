@@ -9,7 +9,12 @@ import { useToast } from '@nuxt/ui/composables'
 
 import i18n from '@/i18n'
 import { setApiHooks } from '@/services/api'
-import { authService, type RegisterPayload, type UserMe } from '@/services/auth'
+import {
+  authService,
+  type RegisterPayload,
+  type UpdateMePayload,
+  type UserMe,
+} from '@/services/auth'
 
 export type AuthStatus = 'unknown' | 'anonymous' | 'authenticated'
 
@@ -100,6 +105,15 @@ export const useAuthStore = defineStore('auth', () => {
     return setUser(await authService.resetPassword(token, password))
   }
 
+  /** Save profile changes and keep the store's user in sync with the server's answer. */
+  async function updateProfile(changes: UpdateMePayload): Promise<UserMe> {
+    return setUser(await authService.updateMe(changes))
+  }
+
+  function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    return authService.changePassword(currentPassword, newPassword)
+  }
+
   // Toasts need the app's injection context (Pinia provides it when installed in an app).
   const toast = hasInjectionContext() ? useToast() : null
   setApiHooks({
@@ -130,6 +144,8 @@ export const useAuthStore = defineStore('auth', () => {
     resendVerification,
     forgotPassword,
     resetPassword,
+    updateProfile,
+    changePassword,
     clear,
   }
 })

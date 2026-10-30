@@ -1,33 +1,32 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { FormError, FormSubmitEvent } from '@nuxt/ui'
 
 import PasswordField from './PasswordField.vue'
 import TurnstileWidget from './TurnstileWidget.vue'
+import OrganisationPicker from '@/components/common/OrganisationPicker.vue'
 import { useApiErrors } from '@/composables/useApiErrors'
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, PROJECT_COUNTRIES } from '@/constants/auth'
+import { OTHER_COUNTRY, useCountries } from '@/composables/useCountries'
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/constants/auth'
 import { SUPPORTED_LOCALES, isSupportedLocale, type LocaleCode } from '@/i18n'
 import { ApiError } from '@/services/api'
 import type { RegisterPayload } from '@/services/auth'
-import { listOrganisations, type Organisation } from '@/services/organisations'
+import type { OrganisationChoice } from '@/services/organisations'
 import { useAuthStore } from '@/stores/auth'
 
 const emit = defineEmits<{ registered: [email: string] }>()
 
-/** Sentinel option value: "my organisation / country is not in the list". */
-const OTHER = 'other'
-
 const { t, locale } = useI18n()
 const auth = useAuthStore()
 const { errorMessage, fieldMessage, fieldErrors } = useApiErrors()
+const { countryItems: buildCountryItems } = useCountries()
 
 const state = reactive({
   email: '',
   password: '',
   display_name: '',
-  organisation: undefined as number | typeof OTHER | undefined,
-  organisation_other: '',
+  organisation: { organisation_id: null, organisation_other: null } as OrganisationChoice,
   country: undefined as string | undefined,
   locale: (isSupportedLocale(locale.value) ? locale.value : 'en') as LocaleCode,
   accept_terms: false,
@@ -37,47 +36,25 @@ type State = typeof state
 const turnstileToken = ref<string | null>(null)
 const pending = ref(false)
 const formError = ref('')
-/** Server-side errors per form field; cleared as soon as the user edits that field. */
-const serverErrors = reactive<Partial<Record<keyof State, string>>>({})
+/**
+ * Server-side errors per backend field name (the organisation picker's fields are
+ * `organisation_id` / `organisation_other`); cleared as soon as the user edits that field.
+ */
+const serverErrors = reactive<Record<string, string>>({})
 
-const organisations = ref<Organisation[]>([])
-onMounted(async () => {
-  try {
-    organisations.value = (await listOrganisations()).items
-  } catch {
-    // The picker still offers "Other…"; the field is optional.
-  }
-})
-
-const organisationItems = computed(() => [
-  ...organisations.value.map((o) => ({ label: `${o.short_name} – ${o.name}`, value: o.id })),
-  { label: t('auth.fields.organisationOtherOption'), value: OTHER },
-])
-
-const countryItems = computed(() => {
-  let names: Intl.DisplayNames | null = null
-  try {
-    names = new Intl.DisplayNames([locale.value, 'en'], { type: 'region' })
-  } catch {
-    // Very old browsers: show the ISO codes.
-  }
-  const countries = PROJECT_COUNTRIES.map((code) => ({
-    label: names?.of(code) ?? code,
-    value: code,
-  }))
-  countries.sort((a, b) => a.label.localeCompare(b.label, locale.value))
-  return [...countries, { label: t('auth.fields.countryOther'), value: OTHER }]
-})
+const countryItems = computed(() => buildCountryItems())
 
 const localeItems = SUPPORTED_LOCALES.map((l) => ({ label: l.nativeName, value: l.code }))
-
-const showOrganisationOther = computed(() => state.organisation === OTHER)
 
 watch(
   () => ({ ...state }),
   (next, prev) => {
     for (const key of Object.keys(next) as (keyof State)[]) {
-      if (next[key] !== prev[key]) delete serverErrors[key]
+      if (next[key] === prev[key]) continue
+      if (key === 'organisation') {
+        delete serverErrors.organisation_id
+        delete serverErrors.organisation_other
+      } else delete serverErrors[key]
     }
   },
 )
@@ -93,14 +70,16 @@ function validate(s: Partial<State>): FormError[] {
   else if (s.password.length > PASSWORD_MAX_LENGTH)
     errors.push({ name: 'password', message: fieldMessage('auth.password_too_long') })
   if (!s.display_name?.trim()) required('display_name')
-  if (s.organisation === OTHER && !s.organisation_other?.trim()) required('organisation_other')
+  if (
+    s.organisation &&
+    s.organisation.organisation_other !== null &&
+    !s.organisation.organisation_other.trim()
+  )
+    errors.push({ name: 'organisation_other', message: fieldMessage('required') })
   if (s.accept_terms !== true)
     errors.push({ name: 'accept_terms', message: fieldMessage('must_accept') })
   return errors
 }
-
-/** Backend field names → form field names. */
-const FIELD_ALIASES: Record<string, keyof State> = { organisation_id: 'organisation' }
 
 async function onSubmit(event: FormSubmitEvent<State>) {
   const data = event.data
@@ -108,9 +87,9 @@ async function onSubmit(event: FormSubmitEvent<State>) {
     email: data.email.trim(),
     password: data.password,
     display_name: data.display_name.trim(),
-    organisation_id: typeof data.organisation === 'number' ? data.organisation : null,
-    organisation_other: data.organisation === OTHER ? data.organisation_other.trim() : null,
-    country: data.country && data.country !== OTHER ? data.country : null,
+    organisation_id: data.organisation.organisation_id,
+    organisation_other: data.organisation.organisation_other?.trim() || null,
+    country: data.country && data.country !== OTHER_COUNTRY ? data.country : null,
     locale: data.locale,
     accept_terms: true,
     turnstile_token: turnstileToken.value,
@@ -125,7 +104,7 @@ async function onSubmit(event: FormSubmitEvent<State>) {
     const fields = fieldErrors(e)
     if (e instanceof ApiError && e.code === 'auth.email_taken') fields.email = errorMessage(e)
     for (const [field, message] of Object.entries(fields)) {
-      serverErrors[FIELD_ALIASES[field] ?? (field as keyof State)] = message
+      serverErrors[field] = message
     }
     formError.value = Object.keys(fields).length
       ? t('errors.api.validation.failed')
@@ -178,35 +157,11 @@ async function onSubmit(event: FormSubmitEvent<State>) {
       <UInput v-model="state.display_name" autocomplete="nickname" maxlength="120" class="w-full" />
     </UFormField>
 
-    <UFormField
-      :label="t('auth.fields.organisation')"
-      name="organisation"
-      :error="serverErrors.organisation"
-    >
-      <USelectMenu
-        v-model="state.organisation"
-        :items="organisationItems"
-        value-key="value"
-        :placeholder="t('auth.fields.organisationPlaceholder')"
-        class="w-full"
-      />
-    </UFormField>
-
-    <UFormField
-      v-if="showOrganisationOther"
-      :label="t('auth.fields.organisationOther')"
-      name="organisation_other"
-      required
-      :error="serverErrors.organisation_other"
-    >
-      <UInput
-        v-model="state.organisation_other"
-        name="organisation_other"
-        autocomplete="organization"
-        maxlength="200"
-        class="w-full"
-      />
-    </UFormField>
+    <OrganisationPicker
+      v-model="state.organisation"
+      :organisation-error="serverErrors.organisation_id"
+      :other-error="serverErrors.organisation_other"
+    />
 
     <div class="grid gap-5 sm:grid-cols-2">
       <UFormField :label="t('auth.fields.country')" name="country" :error="serverErrors.country">
