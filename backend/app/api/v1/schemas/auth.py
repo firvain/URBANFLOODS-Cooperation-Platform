@@ -25,6 +25,7 @@ from pydantic import (
 )
 from pydantic_core import PydanticCustomError
 
+from app.api.v1.schemas.expertise import ExpertiseTagOut
 from app.core.security import PASSWORD_MAX_LENGTH
 from app.db.enums import DigestFrequency, OrganisationType, UserRole
 
@@ -37,6 +38,8 @@ _COUNTRY_RE = re.compile(r"^[A-Z]{2}$")
 
 DisplayName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
 TurnstileToken = Annotated[str | None, Field(default=None, max_length=2048)]
+# Most expertise tags a profile may carry.
+MAX_EXPERTISE = 8
 LOGIN_PASSWORD_MAX_LENGTH = PASSWORD_MAX_LENGTH
 
 
@@ -152,6 +155,9 @@ class UserMe(BaseModel):
     is_verified: bool
     trusted_at: datetime | None
     created_at: datetime
+    expertise: list[ExpertiseTagOut]
+    show_email: bool
+    show_in_directory: bool
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -166,15 +172,19 @@ class LoginRequest(BaseModel):
 
 class UpdateMeRequest(OrganisationFieldsMixin):
     """Partial profile update. Only fields present in the body are applied (``model_fields_set``
-    / ``exclude_unset``); an explicit ``null`` clears a nullable field. ``display_name`` and
-    ``locale`` cannot be cleared."""
+    / ``exclude_unset``); an explicit ``null`` clears a nullable field. ``display_name``,
+    ``locale``, the visibility flags and ``expertise_ids`` cannot be ``null``; ``expertise_ids``
+    replaces the whole set (``[]`` clears it)."""
 
     display_name: DisplayName | None = None
     country: Country = None
     locale: Locale | None = None
     bio: Bio = None
+    expertise_ids: Annotated[list[int], Field(max_length=MAX_EXPERTISE)] | None = None
+    show_email: bool | None = None
+    show_in_directory: bool | None = None
 
-    @field_validator("display_name", "locale")
+    @field_validator("display_name", "locale", "expertise_ids", "show_email", "show_in_directory")
     @classmethod
     def _not_null(cls, value: object) -> object:
         # Field validators run only for values present in the body, never for the defaults.
@@ -277,6 +287,9 @@ class ExportUser(BaseModel):
     created_at: datetime
     updated_at: datetime
     last_login_at: datetime | None
+    expertise: list[ExpertiseTagOut]
+    show_email: bool
+    show_in_directory: bool
 
 
 class ExportSession(BaseModel):

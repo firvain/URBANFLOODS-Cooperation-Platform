@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1.endpoints import admin, auth, health, organisations
+from app.api.v1.endpoints import admin, auth, expertise, health, members, organisations
 from app.core.config import settings
 from app.core.csrf import CSRFMiddleware
 from app.core.exceptions import register_exception_handlers
@@ -63,6 +63,10 @@ def create_app() -> FastAPI:
         prefix=f"{settings.API_V1_PREFIX}/organisations",
         tags=["organisations"],
     )
+    app.include_router(
+        expertise.router, prefix=f"{settings.API_V1_PREFIX}/expertise", tags=["expertise"]
+    )
+    app.include_router(members.router, prefix=f"{settings.API_V1_PREFIX}/members", tags=["members"])
     app.include_router(admin.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["admin"])
 
     return app

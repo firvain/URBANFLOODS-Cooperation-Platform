@@ -14,6 +14,7 @@ from typing import Any
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    Column,
     DateTime,
     ForeignKey,
     Identity,
@@ -21,6 +22,7 @@ from sqlalchemy import (
     Integer,
     MetaData,
     String,
+    Table,
     Text,
     func,
     text,
@@ -74,6 +76,27 @@ class Organisation(TimestampMixin, Base):
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
 
 
+class ExpertiseTag(Base):
+    """Controlled vocabulary of expertise areas (seeded by migration 0003; English labels)."""
+
+    __tablename__ = "expertise_tags"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    slug: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    label: Mapped[str] = mapped_column(Text, nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+
+
+user_expertise = Table(
+    "user_expertise",
+    Base.metadata,
+    Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("tag_id", ForeignKey("expertise_tags.id", ondelete="CASCADE"), primary_key=True),
+    Index("ix_user_expertise_tag_id", "tag_id"),
+)
+
+
 class User(TimestampMixin, SoftDeleteMixin, Base):
     __tablename__ = "users"
     __table_args__ = (Index("ix_users_active", "id", postgresql_where=text("is_active")),)
@@ -100,8 +123,17 @@ class User(TimestampMixin, SoftDeleteMixin, Base):
         DateTime(timezone=True), nullable=True, index=True
     )
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    show_email: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    show_in_directory: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("true")
+    )
 
     organisation: Mapped[Organisation | None] = relationship()
+    expertise: Mapped[list[ExpertiseTag]] = relationship(
+        secondary=user_expertise,
+        order_by=[ExpertiseTag.sort_order, ExpertiseTag.id],
+        passive_deletes=True,
+    )
     notification_preferences: Mapped[NotificationPreference | None] = relationship(
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )

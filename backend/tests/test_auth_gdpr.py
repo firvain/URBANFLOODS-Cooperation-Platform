@@ -218,6 +218,9 @@ async def test_export_contents(client, db_session, cleanup_users, cleanup_user_i
         "created_at",
         "updated_at",
         "last_login_at",
+        "expertise",
+        "show_email",
+        "show_in_directory",
     }
     assert exported_user["id"] == user.id
     assert exported_user["email"] == user.email

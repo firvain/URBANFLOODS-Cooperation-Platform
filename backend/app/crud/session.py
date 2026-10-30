@@ -55,7 +55,8 @@ async def get_active_session_by_raw_token(
     db: AsyncSession, *, raw_token: str, now: datetime | None = None
 ) -> Session | None:
     """The unrevoked, unexpired session for a raw token, with ``.user`` and the user's
-    ``organisation`` and ``notification_preferences`` eagerly loaded (one query).
+    ``organisation``, ``notification_preferences`` and ``expertise`` eagerly loaded, all in one
+    query (``GET /auth/me`` is a single SELECT; the expertise join adds at most 8 rows).
 
     The user's own state (``is_active``, ``deleted_at``, ``is_verified``) is checked by the
     auth dependencies, not here.
@@ -66,10 +67,11 @@ async def get_active_session_by_raw_token(
         .options(
             user.joinedload(User.organisation),
             user.joinedload(User.notification_preferences),
+            user.joinedload(User.expertise),
         )
         .where(Session.token_hash == hash_token(raw_token), *_is_active(_now(now)))
     )
-    return (await db.execute(stmt)).scalar_one_or_none()
+    return (await db.execute(stmt)).unique().scalar_one_or_none()
 
 
 async def touch_session(db: AsyncSession, *, session: Session, now: datetime | None = None) -> bool:

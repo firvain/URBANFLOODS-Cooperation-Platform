@@ -11,10 +11,11 @@ from typing import Any
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.exceptions import AppError, validation_error
 from app.core.security import hash_password, password_needs_rehash, validate_password_policy
+from app.crud import expertise as crud_expertise
 from app.crud import session as crud_session
 from app.crud import token as crud_token
 from app.db.enums import TokenPurpose, UserRole
@@ -23,7 +24,17 @@ from app.db.models import AuditLog, NotificationPreference, Organisation, Sessio
 EMAIL_UNIQUE_CONSTRAINT = "uq_users_email"
 # Fields a user may change on their own profile (``PATCH /auth/me``).
 PROFILE_FIELDS = frozenset(
-    {"display_name", "organisation_id", "organisation_other", "country", "locale", "bio"}
+    {
+        "display_name",
+        "organisation_id",
+        "organisation_other",
+        "country",
+        "locale",
+        "bio",
+        "show_email",
+        "show_in_directory",
+        "expertise_ids",
+    }
 )
 
 
@@ -33,10 +44,15 @@ async def get_user_by_email(db: AsyncSession, *, email: str) -> User | None:
 
 
 async def get_user_by_id(db: AsyncSession, *, user_id: int) -> User | None:
-    """The user with ``organisation`` and ``notification_preferences`` eagerly loaded."""
+    """The user with ``organisation``, ``notification_preferences`` and ``expertise`` eagerly
+    loaded."""
     stmt = (
         select(User)
-        .options(joinedload(User.organisation), joinedload(User.notification_preferences))
+        .options(
+            joinedload(User.organisation),
+            joinedload(User.notification_preferences),
+            selectinload(User.expertise),
+        )
         .where(User.id == user_id)
         .execution_options(populate_existing=True)
     )
@@ -117,6 +133,10 @@ async def update_profile(db: AsyncSession, *, user: User, changes: Mapping[str, 
     Setting ``organisation_id`` clears ``organisation_other`` and vice versa. Raises ``AppError``
     422 (``fields.organisation_id = "not_found"``) for an unknown organisation. Callers reload the
     user (``get_user_by_id``) to see the new ``organisation`` relationship.
+
+    ``expertise_ids`` replaces the user's expertise as a set (``user.expertise`` must be loaded);
+    it is reported as ``expertise``. Raises ``AppError`` 422 (``fields.expertise_ids =
+    "not_found"``) if any id is unknown or inactive.
     """
     unknown = set(changes) - PROFILE_FIELDS
     if unknown:
@@ -128,10 +148,19 @@ async def update_profile(db: AsyncSession, *, user: User, changes: Mapping[str, 
         values["organisation_other"] = None
     if values.get("organisation_other") is not None:
         values["organisation_id"] = None
+    tags = None
+    if "expertise_ids" in values:
+        wanted = set(values.pop("expertise_ids"))
+        tags = await crud_expertise.get_active_tags(db, tag_ids=wanted)
+        if len(tags) != len(wanted):
+            raise validation_error({"expertise_ids": "not_found"})
 
     changed = sorted(name for name, value in values.items() if getattr(user, name) != value)
     for name in changed:
         setattr(user, name, values[name])
+    if tags is not None and {tag.id for tag in tags} != {tag.id for tag in user.expertise}:
+        user.expertise = tags
+        changed = sorted([*changed, "expertise"])
     if changed:
         await db.flush()
     return changed
@@ -184,7 +213,8 @@ async def list_users(
     skip: int = 0,
     limit: int = 50,
 ) -> tuple[int, list[User]]:
-    """``(total, users)`` for the admin list, newest first, with ``organisation`` loaded.
+    """``(total, users)`` for the admin list, newest first, with ``organisation`` and
+    ``expertise`` loaded.
     Includes soft-deleted users. ``q`` is a case-insensitive substring of email or display
     name."""
     conditions = []
@@ -211,7 +241,7 @@ async def list_users(
     total = (await db.execute(total_stmt)).scalar_one()
     stmt = (
         select(User)
-        .options(joinedload(User.organisation))
+        .options(joinedload(User.organisation), selectinload(User.expertise))
         .where(*conditions)
         .order_by(User.created_at.desc(), User.id.desc())
         .offset(skip)
@@ -325,9 +355,9 @@ class UserDataExport:
 
 
 async def export_user_data(db: AsyncSession, *, user: User) -> UserDataExport:
-    """The user (``organisation`` and ``notification_preferences`` loaded), every session of
-    theirs (revoked and expired too), oldest first, and every audit row they made or that is
-    about them, oldest first.
+    """The user (``organisation``, ``notification_preferences`` and ``expertise`` loaded), every
+    session of theirs (revoked and expired too), oldest first, and every audit row they made or
+    that is about them, oldest first.
 
     Content (posts, threads, replies, comments) joins the export when it exists (M2/M3).
     """
@@ -359,13 +389,16 @@ async def anonymise_user(db: AsyncSession, *, user: User, now: datetime | None =
 
     Clears every identifying field, frees the email address, blanks the password hash (no
     password verifies against it), demotes to ``member`` and soft-deletes. Revokes every
-    session, invalidates every unused email token and deletes the notification preferences.
+    session, invalidates every unused email token, deletes the notification preferences and
+    the expertise, and hides the account from the members directory.
     Returns the number of sessions revoked. Authorisation and auditing are the caller's job.
     """
     now = now or datetime.now(UTC)
-    # Load the relationship (async: no lazy loading) so the orphan is deleted on flush.
-    await db.refresh(user, attribute_names=["notification_preferences"])
+    # Load the relationships (async: no lazy loading) so the orphan and the junction rows are
+    # deleted on flush.
+    await db.refresh(user, attribute_names=["notification_preferences", "expertise"])
     user.notification_preferences = None
+    user.expertise = []
 
     user.email = deleted_email(user.id)
     user.display_name = DELETED_DISPLAY_NAME
@@ -379,6 +412,8 @@ async def anonymise_user(db: AsyncSession, *, user: User, now: datetime | None =
     user.is_verified = False
     user.role = UserRole.MEMBER
     user.trusted_at = None
+    user.show_email = False
+    user.show_in_directory = False
     user.deleted_at = now
     await db.flush()
 
