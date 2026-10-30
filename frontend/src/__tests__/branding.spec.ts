@@ -89,11 +89,14 @@ describe('light mode only', () => {
 })
 
 describe('no dark: variants in our own components', () => {
-  const sources = import.meta.glob<string>(['../components/**/*.vue', '../views/**/*.vue', '../App.vue'], {
-    query: '?raw',
-    import: 'default',
-    eager: true,
-  })
+  const sources = import.meta.glob<string>(
+    ['../components/**/*.vue', '../views/**/*.vue', '../App.vue'],
+    {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    },
+  )
 
   it('finds the components and views to check', () => {
     expect(Object.keys(sources).length).toBeGreaterThan(10)
