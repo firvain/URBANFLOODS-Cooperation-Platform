@@ -54,18 +54,13 @@ describe('PartnersView', () => {
     expect(query.get('limit')).toBe('100')
   })
 
-  it('has a focusable h1, the accent bar, the counts line and the stacked project logo', async () => {
+  it('has a focusable h1, the accent bar, no counts line, and the stacked project logo', async () => {
     mockApi({ [LIST]: reply(200, PARTNERS_RESPONSE) })
     const wrapper = await mountPartners()
     const h1 = wrapper.find('h1')
     expect(h1.text()).toBe(t('partners.title'))
     expect(h1.attributes('tabindex')).toBe('-1')
-    expect(wrapper.text()).toContain(
-      t('partners.counts', { projectPartners: 11, associatedPartners: 11, countries: 8 }),
-    )
-    expect(wrapper.text()).toContain(
-      '11 project partners and 11 associated partners from 8 countries',
-    )
+    expect(wrapper.text()).not.toContain('from 8 countries')
     const logo = wrapper.find('img[src*="interreg-urbanfloods-stacked"]')
     expect(logo.exists()).toBe(true)
     expect(logo.attributes('alt')).toBe(t('app.logoAlt'))

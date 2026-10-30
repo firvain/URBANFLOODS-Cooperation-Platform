@@ -11,8 +11,7 @@ import { useOrganisationsStore } from '@/stores/organisations'
 /** The partnership in the KNOWBASE About-page style (docs/about-partners-style.md). */
 const { t } = useI18n()
 const store = useOrganisationsStore()
-const { leadPartner, projectPartners, associatedPartners, partnerCountryCount, partnersLoaded } =
-  storeToRefs(store)
+const { leadPartner, projectPartners, associatedPartners, partnersLoaded } = storeToRefs(store)
 
 const loading = ref(false)
 const failed = ref(false)
@@ -31,14 +30,6 @@ async function load(force = false) {
 
 onMounted(() => load())
 
-/** The lead partner counts as a project partner. */
-const counts = computed(() =>
-  t('partners.counts', {
-    projectPartners: projectPartners.value.length + (leadPartner.value ? 1 : 0),
-    associatedPartners: associatedPartners.value.length,
-    countries: partnerCountryCount.value,
-  }),
-)
 const isEmpty = computed(
   () => !leadPartner.value && !projectPartners.value.length && !associatedPartners.value.length,
 )
@@ -52,7 +43,6 @@ const isEmpty = computed(
           {{ t('partners.title') }}
         </h1>
         <div class="h-1 w-20 rounded bg-secondary-500" />
-        <p v-if="partnersLoaded && !isEmpty" class="mt-4 text-base text-gray-600">{{ counts }}</p>
       </div>
 
       <UCard class="mt-8">

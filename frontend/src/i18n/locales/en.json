@@ -42,7 +42,6 @@
   },
   "partners": {
     "title": "Partners",
-    "counts": "{projectPartners} project partners and {associatedPartners} associated partners from {countries} countries",
     "partnershipTitle": "Partnership",
     "leadPartner": "Lead partner",
     "leadBadge": "LEAD",
