@@ -22,7 +22,7 @@ offers a blog, a discussion forum, a members directory and access to the URBANFL
 knowledge base of flood-management measures, policies and legislation in the Adriatic-Ionian
 region. The Platform is provided free of charge in the public interest.
 
-Contact: urbanfloods@gmail.com **[CHECK: use an institutional address, e.g. a @uowm.gr mailbox]**.
+Contact: Prof. Malamati Louta, Scientific Coordinator, louta@uowm.gr.
 
 ## 2. Acceptance of these terms
 
@@ -190,8 +190,8 @@ of their country of residence.
 ## 17. Contact
 
 University of Western Macedonia, URBANFLOODS project, Active Urban Planning Zone (ZEP) I, 50100
-Kozani, Greece. Email: urbanfloods@gmail.com **[CHECK]**. Data protection: **[CHECK: UOWM DPO
-contact]**.
+Kozani, Greece. Email: louta@uowm.gr (Prof. Malamati Louta, Scientific Coordinator). Requests about
+personal data (access, rectification, erasure, objection) go to the same address.
 
 ---
 
@@ -215,7 +215,7 @@ contact]**.
   report-based auto-hide; CC BY 4.0 for contributions (plan decision 2026-10-30); anonymising
   deletion that keeps content; no sensitive personal data (application form commitment); no
   analytics cookies, so no cookie banner.
-- **Open items:** institutional contact email and DPO; age threshold (15 per Greek Law 4624/2019
+- **Open items:** age threshold (15 per Greek Law 4624/2019
   vs 16); KNOWBASE data licence; whether UOWM wants arbitration or courts; Greek-language version
   (the UI is in 9 languages; the terms can stay English-only with a note, as the programme's own
   pages are).
