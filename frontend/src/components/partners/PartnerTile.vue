@@ -2,6 +2,7 @@
 import PartnerCountry from './PartnerCountry.vue'
 import PartnerLogo from './PartnerLogo.vue'
 import PartnerWebsite from './PartnerWebsite.vue'
+import { partnerLogoUrl } from '@/constants/partnerLogos'
 import type { Organisation } from '@/services/organisations'
 
 /** One project or associated partner in the KNOWBASE About-page tile style. */
@@ -14,7 +15,7 @@ defineProps<{ organisation: Organisation }>()
     :data-short-name="organisation.short_name"
     class="flex items-center gap-3 rounded border border-secondary-200 bg-secondary-50 px-2.5 py-2"
   >
-    <div class="w-24 shrink-0">
+    <div v-if="partnerLogoUrl(organisation.short_name)" class="w-24 shrink-0">
       <PartnerLogo :short-name="organisation.short_name" :name="organisation.name" />
     </div>
     <div class="min-w-0 flex-1">
