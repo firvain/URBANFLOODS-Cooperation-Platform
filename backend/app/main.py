@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1.endpoints import auth, health
+from app.api.v1.endpoints import admin, auth, health, organisations
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import REQUEST_ID_HEADER, RequestIdMiddleware, configure_logging
@@ -49,6 +49,12 @@ def create_app() -> FastAPI:
     # Probes are mounted without the API prefix.
     app.include_router(health.router, tags=["health"])
     app.include_router(auth.router, prefix=f"{settings.API_V1_PREFIX}/auth", tags=["auth"])
+    app.include_router(
+        organisations.router,
+        prefix=f"{settings.API_V1_PREFIX}/organisations",
+        tags=["organisations"],
+    )
+    app.include_router(admin.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["admin"])
 
     return app
 

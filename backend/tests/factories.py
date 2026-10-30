@@ -14,8 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.security import hash_password
-from app.db.enums import UserRole
-from app.db.models import NotificationPreference, User
+from app.db.enums import OrganisationType, UserRole
+from app.db.models import NotificationPreference, Organisation, User
 
 if TYPE_CHECKING:
     import httpx
@@ -89,3 +89,30 @@ async def login_as(
     assert response.status_code == 200, response.text
     assert settings.SESSION_COOKIE_NAME in client.cookies
     return response
+
+
+async def create_organisation(
+    db: AsyncSession,
+    *,
+    name: str | None = None,
+    short_name: str = "TST",
+    country: str = "GR",
+    type: OrganisationType = OrganisationType.OTHER,
+    is_partner: bool = False,
+    sort_order: int = 0,
+    website: str | None = None,
+) -> Organisation:
+    """Insert a (non-partner by default) organisation and flush. Register committed ones with
+    the ``cleanup_organisations`` fixture."""
+    organisation = Organisation(
+        name=name or f"Test Organisation {uuid.uuid4().hex[:12]}",
+        short_name=short_name,
+        country=country,
+        type=type,
+        is_partner=is_partner,
+        sort_order=sort_order,
+        website=website,
+    )
+    db.add(organisation)
+    await db.flush()
+    return organisation

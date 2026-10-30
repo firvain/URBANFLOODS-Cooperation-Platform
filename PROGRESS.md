@@ -55,13 +55,13 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 1c | `services/email.py` + templates + outbox fixture + Mailpit; `services/turnstile.py` | done | 2360b6e | 40 pytest | `*_url` context values must be site-relative paths; en templates: verify_email, reset_password, change_email, welcome; el: verify_email |
 | 1d | register / verify-email / resend endpoints | done | 83761bd | 41 pytest (167 total) | uniform error body `detail.{code,message,fields}`; `DbTx` commits before response; verified live against Mailpit |
 | 1e | login / logout / me / sessions + `core/deps.py` | done | 520b765 | 70 pytest (237 total) | code-review medium: 9 findings fixed (pool starvation, re-login revokes old session, `AppError(keep_changes)` mechanism, eager-load chain, touch gated 5 min); rate limit deferred to 1g |
-| 1f | password forgot/reset + change password/email | in progress | | | |
+| 1f | password forgot/reset + change password/email | done | | 47 pytest | reset/change cancel pending CHANGE_EMAIL tokens; email confirm cancels VERIFY/RESET tokens (takeover defence) |
 | 1g | CSRF + rate-limit middleware | todo | | | |
-| 1h | admin users + organisations endpoints + `cli create-superadmin` | in progress | | | organisations API feeds the Partners page |
+| 1h | admin users + organisations endpoints + `cli create-superadmin` | done | | 116 pytest (400 total) | last-superadmin guard; superadmin-only for superadmin changes; `python -m app.cli create-superadmin` |
 | 1i | GDPR export + anonymising delete | todo | | | |
 | 1j | FE auth store/service/views + guards | done | bf59061 | 70 vitest (101 total) | login/register/verify/forgot/reset views, UserMenu, UnverifiedBanner, open-redirect guard, 401/429 API hooks; hand-typed auth types until `gen:types` |
-| 1j-b | FE branding: light mode only, official logos + favicon from the project site, footer disclaimer | done | | 60 vitest (161 total) | `ui({ colorMode: false })`; footer: 4 columns + green accent + statement + disclaimer + LinkedIn; flex page shell; About page facts; logo-size interpretation in docs/branding.md |
-| 1k | FE AccountView + PartnersView (KNOWBASE About-page style, see docs/about-partners-style.md) + About facts | todo | | | user: Partners page must look like knowbase.urbanfloods.app/about |
+| 1j-b | FE branding: light mode only, official logos + favicon from the project site, footer disclaimer | done | 634c2e4 | 60 vitest (161 total) | `ui({ colorMode: false })`; footer: 4 columns + green accent + statement + disclaimer + LinkedIn; flex page shell; About page facts; logo-size interpretation in docs/branding.md |
+| 1k | FE AccountView + PartnersView (KNOWBASE About-page style, see docs/about-partners-style.md) + About facts | in progress | | | user: Partners page must look like knowbase.urbanfloods.app/about |
 | 1m | Expertise tags (seeded vocabulary) + user_expertise + show_email/show_in_directory + members directory API (`/members/`, filters) | todo | | | from 3rd-meeting commitments (matchmaking) |
 | 1n | FE Collaboration Network page: members directory + suggested collaborators widget; DSS nav link + home card (`VITE_DSS_URL`) | todo | | | DSS URL: https://urbanfloods.finki.ukim.mk/ |
 | 1l | Playwright `auth.spec.ts` | todo | | | |
@@ -143,7 +143,8 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - 1b done (126 tests total). 1d (backend registration endpoints) and 1j (frontend auth) started in parallel.
 - 1d done. Dev stack is up locally (localhost:5173 / :8000/docs / :8025). 1e started; 1j still running.
 - 1j done. 3rd-meeting presentation reviewed → DSS link-out, matchmaking (1m/1n), events on posts added to plan (6b5962a).
-- **Next:** 1j-b branding (light mode only, official logos, programme visibility guidelines in docs/); review/commit 1e; then 1f.
+- 1e, 1j-b (branding, footer redesign, illustrated logo in footer), 1f, 1h done. Partner logos collected from SharePoint into frontend/public/partners. 1k in progress.
+- **Next:** review/commit 1k; then 1g (CSRF + rate limit), 1i (GDPR export/delete), 1l (Playwright auth e2e), 1m/1n (expertise + members directory + DSS link).
 
 ## 4. Open questions / decisions pending
 - None blocking. Turnstile site key and Gmail app password are needed before M1 can be tested

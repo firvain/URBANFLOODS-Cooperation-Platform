@@ -205,6 +205,33 @@ async def cleanup_users(database_url: str) -> AsyncIterator[set[str]]:
             await session.execute(delete(User).where(User.id.in_(ids)))
 
 
+@pytest.fixture
+async def cleanup_organisations(database_url: str) -> AsyncIterator[set[str]]:
+    """Names of organisations the test commits (directly or through the API); deleted
+    afterwards together with the audit rows about them. Users pointing at them get
+    ``organisation_id = NULL`` (``ON DELETE SET NULL``)."""
+    from sqlalchemy import delete, select
+
+    from app.db.models import AuditLog, Organisation
+    from app.db.session import AsyncSessionLocal
+
+    names: set[str] = set()
+    yield names
+    if not names:
+        return
+    async with AsyncSessionLocal() as session, session.begin():
+        ids = list(
+            (await session.scalars(select(Organisation.id).where(Organisation.name.in_(names))))
+        )
+        if ids:
+            await session.execute(
+                delete(AuditLog).where(
+                    (AuditLog.target_type == "organisation") & AuditLog.target_id.in_(ids)
+                )
+            )
+            await session.execute(delete(Organisation).where(Organisation.id.in_(ids)))
+
+
 @pytest.fixture(autouse=True)
 def _restore_structlog_config() -> Iterator[None]:
     """Leave structlog configured as the test found it.
