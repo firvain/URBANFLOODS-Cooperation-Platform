@@ -1,0 +1,115 @@
+"""Shared test fixtures.
+
+Database: one Postgres for the whole session. If ``TEST_DATABASE_URL`` is set it is used as-is
+(e.g. ``docker-compose.test.yml`` on port 5434); otherwise a ``postgres:16-alpine`` container is
+started with testcontainers. If neither is available, DB-backed tests are skipped with a reason.
+
+The database is resolved in ``pytest_configure`` because the app builds its settings and its
+async engine at import time, and test modules import ``app`` during collection.
+"""
+
+from __future__ import annotations
+
+import os
+from collections.abc import AsyncIterator
+from typing import TYPE_CHECKING
+
+import pytest
+
+if TYPE_CHECKING:
+    import httpx
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+# Test environment, set before anything under ``app`` is imported.
+os.environ.update(
+    {
+        "ENV": "test",
+        "ENABLE_DOCS": "true",
+        "EMAIL_ENABLED": "false",
+        "TURNSTILE_ENABLED": "false",
+        "RATE_LIMIT_ENABLED": "false",
+        "ENABLE_SCHEDULER": "false",
+        "SECRET_KEY": "test-secret",
+        "ALLOWED_ORIGINS": "http://localhost:5173",
+        "LOG_JSON": "false",
+        "LOG_LEVEL": "WARNING",
+    }
+)
+
+# Used only when no database is available; nothing listens on port 1.
+_UNREACHABLE_DATABASE_URL = "postgresql+asyncpg://nobody:nothing@127.0.0.1:1/none"
+
+_postgres_container = None
+_database_url: str | None = None
+_database_unavailable_reason: str | None = None
+
+
+def _to_asyncpg_url(url: str) -> str:
+    for prefix in ("postgresql+psycopg2://", "postgresql+psycopg://", "postgres://"):
+        if url.startswith(prefix):
+            return "postgresql+asyncpg://" + url[len(prefix) :]
+    if url.startswith("postgresql://"):
+        return "postgresql+asyncpg://" + url[len("postgresql://") :]
+    return url
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    global _postgres_container, _database_url, _database_unavailable_reason
+
+    explicit = os.environ.get("TEST_DATABASE_URL")
+    if explicit:
+        _database_url = _to_asyncpg_url(explicit)
+    else:
+        try:
+            from testcontainers.community.postgres import PostgresContainer
+
+            container = PostgresContainer("postgres:16-alpine", driver="asyncpg")
+            container.start()
+        except Exception as exc:  # Docker not running, image pull failed, ...
+            _database_unavailable_reason = (
+                f"No test database: TEST_DATABASE_URL is unset and testcontainers could not "
+                f"start postgres:16-alpine ({type(exc).__name__}: {exc})"
+            )
+        else:
+            _postgres_container = container
+            _database_url = container.get_connection_url()
+
+    os.environ["DATABASE_URL"] = _database_url or _UNREACHABLE_DATABASE_URL
+
+
+def pytest_unconfigure(config: pytest.Config) -> None:
+    if _postgres_container is not None:
+        _postgres_container.stop()
+
+
+@pytest.fixture(scope="session")
+def database_url() -> str:
+    """URL of the test database; skips the requesting test if there is none."""
+    if _database_url is None:
+        pytest.skip(_database_unavailable_reason or "No test database available")
+    return _database_url
+
+
+@pytest.fixture
+async def client() -> AsyncIterator[httpx.AsyncClient]:
+    import httpx
+    from asgi_lifespan import LifespanManager
+
+    # Imported lazily so DATABASE_URL is already set (see pytest_configure).
+    from app.main import app
+
+    async with LifespanManager(app) as manager:
+        transport = httpx.ASGITransport(app=manager.app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
+            yield ac
+
+
+@pytest.fixture
+async def db_session(database_url: str) -> AsyncIterator[AsyncSession]:
+    from app.db.session import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.rollback()

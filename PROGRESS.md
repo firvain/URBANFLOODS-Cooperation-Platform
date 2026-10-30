@@ -36,15 +36,15 @@ email change, per-type notification prefs, JSON-LD. Core first, always.
 
 ## 2. Milestone board
 
-Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `main`.
+Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `main` (filled in by the following commit, since a commit cannot know its own hash).
 
 ### M0 — Scaffold, Docker, CI
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
-| 0a | git init, .gitignore, README, CLAUDE.md, docs/PLAN.md, PROGRESS.md, GitHub repo, first push | done | (this commit) | — | AF markdown kept out of the public repo (.gitignore) |
-| 0b | Backend skeleton: pyproject, Dockerfile, config, logging, session, main.py, `/health` + test, conftest | todo | | | |
+| 0a | git init, .gitignore, README, CLAUDE.md, docs/PLAN.md, PROGRESS.md, GitHub repo, first push | done | bf847e2 | — | AF markdown kept out of the public repo (.gitignore) |
+| 0b | Backend skeleton: pyproject, Dockerfile, config, logging, session, main.py, `/health` + test, conftest | done | | 10 pytest | testcontainers Postgres; skips DB tests without Docker; sqlalchemy[asyncio] needed for 2.1 |
 | 0c | Alembic async init + `0001_extensions` + migration test | todo | | | |
-| 0d | Frontend skeleton: Vite + Nuxt UI + router + i18n (9 locales) + layout + HomeView + api.ts + vitest smoke | todo | | | |
+| 0d | Frontend skeleton: Vite + Nuxt UI + router + i18n (9 locales) + layout + HomeView + api.ts + vitest smoke | in progress | | | running in parallel with 0b |
 | 0e | Dev compose + compose.test + GitHub Actions CI | todo | | | |
 
 ### M1 — Auth + email
@@ -129,8 +129,10 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - Agreed stack, integration approach (backend proxy of KNOWBASE API), posting model, licence,
   attachments, hostname, email, repo visibility. Plan written and approved → `docs/PLAN.md`.
 - Working method fixed: TDD, Opus 5.5 implements, Fable reviews, one increment per commit.
-- Started 0a.
-- **Next:** finish 0a (GitHub repo + first push), then 0b backend skeleton with `/health` test.
+- 0a done (bf847e2). 0b done: backend skeleton, 10 tests green against testcontainers Postgres.
+  `docs/partners.md` extracted from the AF (22 organisations + homepages) for 1a.
+- User: "use as many agents as needed" → 0d (frontend) runs in parallel with 0b.
+- **Next:** review and commit 0d when its agent reports; then 0c (Alembic) and 0e (compose + CI).
 
 ## 4. Open questions / decisions pending
 - None blocking. Turnstile site key and Gmail app password are needed before M1 can be tested

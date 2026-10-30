@@ -1,0 +1,33 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Tests and tooling caches
+tests/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Environment files (secrets)
+.env
+.env.*
+
+# Runtime data
+uploads/
+*.log
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Docker
+Dockerfile
+.dockerignore
