@@ -72,7 +72,7 @@ const isEmpty = computed(
             <span class="sr-only">{{ t('partners.loading') }}</span>
             <USkeleton class="h-6 w-48" />
             <USkeleton class="h-28 w-full" />
-            <div class="grid grid-cols-1 gap-2 md:grid-cols-2">
+            <div class="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
               <USkeleton v-for="n in 6" :key="n" class="h-24 w-full" />
             </div>
           </div>
@@ -119,7 +119,7 @@ const isEmpty = computed(
               <h3 class="mb-3 text-lg font-semibold text-secondary-600">
                 {{ t('partners.projectPartners') }}
               </h3>
-              <ul data-testid="project-partners" class="grid grid-cols-1 gap-2 md:grid-cols-2">
+              <ul data-testid="project-partners" class="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
                 <PartnerTile v-for="o in projectPartners" :key="o.id" :organisation="o" />
               </ul>
             </div>
@@ -128,7 +128,7 @@ const isEmpty = computed(
               <h3 class="mb-3 text-lg font-semibold text-secondary-600">
                 {{ t('partners.associatedPartners') }}
               </h3>
-              <ul data-testid="associated-partners" class="grid grid-cols-1 gap-2 md:grid-cols-2">
+              <ul data-testid="associated-partners" class="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
                 <PartnerTile v-for="o in associatedPartners" :key="o.id" :organisation="o" />
               </ul>
             </div>

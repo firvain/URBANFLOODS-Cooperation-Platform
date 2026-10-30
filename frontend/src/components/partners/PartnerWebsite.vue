@@ -16,7 +16,7 @@ const host = computed(() => {
 </script>
 
 <template>
-  <ExternalLink :href="href" trailing-icon="i-lucide-external-link" class="text-sm break-all">
+  <ExternalLink :href="href" trailing-icon="i-lucide-external-link" class="text-xs break-all">
     {{ host }}
   </ExternalLink>
 </template>
