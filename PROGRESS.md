@@ -61,10 +61,10 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 1i | GDPR export + anonymising delete | todo | | | |
 | 1j | FE auth store/service/views + guards | done | bf59061 | 70 vitest (101 total) | login/register/verify/forgot/reset views, UserMenu, UnverifiedBanner, open-redirect guard, 401/429 API hooks; hand-typed auth types until `gen:types` |
 | 1j-b | FE branding: light mode only, official logos + favicon from the project site, footer disclaimer | done | 634c2e4 | 60 vitest (161 total) | `ui({ colorMode: false })`; footer: 4 columns + green accent + statement + disclaimer + LinkedIn; flex page shell; About page facts; logo-size interpretation in docs/branding.md |
-| 1k | FE AccountView + PartnersView (KNOWBASE About-page style, see docs/about-partners-style.md) + About facts | done | | 41 vitest (202 total) | partner logos + flags, no short-name badges (user), Macerata coat of arms recoloured navy; Account tabs profile/password/sessions |
+| 1k | FE AccountView + PartnersView (KNOWBASE About-page style, see docs/about-partners-style.md) + About facts | done | d8a235e | 41 vitest (202 total) | partner logos + flags, no short-name badges (user), Macerata coat of arms recoloured navy; Account tabs profile/password/sessions |
 | 1m | Expertise tags (seeded vocabulary) + user_expertise + show_email/show_in_directory + members directory API (`/members/`, filters) | todo | | | from 3rd-meeting commitments (matchmaking) |
 | 1n | FE Collaboration Network page: members directory + suggested collaborators widget; DSS nav link + home card (`VITE_DSS_URL`) | todo | | | DSS URL: https://urbanfloods.finki.ukim.mk/ |
-| 1l | Playwright `auth.spec.ts` | todo | | | |
+| 1l | Playwright `auth.spec.ts` | done | | 8 e2e | register→Mailpit→verify→account→password change→logout→login→partners; forgot/reset; a11y spec opt-in (`E2E_A11Y=1`): contrast issues on /partners, /about, /register for M5 |
 
 ### M2 — Blog + KNOWBASE proxy
 | Inc | Scope | Status | Commit | Tests | Notes |

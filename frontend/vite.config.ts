@@ -1,7 +1,7 @@
-/// <reference types="vitest/config" />
 import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
+import { configDefaults } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import ui from '@nuxt/ui/vite'
@@ -39,6 +39,8 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     setupFiles: ['./src/__tests__/setup.ts'],
     include: ['src/**/*.spec.ts'],
+    // Playwright specs (e2e/) run with `npm run e2e`, never under vitest.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
     css: false,
     server: {
       deps: {
