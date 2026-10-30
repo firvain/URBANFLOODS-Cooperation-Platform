@@ -140,14 +140,16 @@ describe('footer branding', () => {
     expect(last.classList.contains('text-xs')).toBe(true)
   })
 
-  // Decision C: the minimum is measured on the Interreg logotype + EU emblem (~54% of the
-  // stacked image), so 448 px renders it at ~240 px and 560 px at ~300 px.
-  it('renders the stacked project logo at the literal minimum where the layout allows', async () => {
+  // The footer carries the project's own illustrated logo (user decision 2026-10-30); the
+  // official Interreg lock-up is in the header on every page, which satisfies the visibility rule.
+  it('renders the illustrated URBANFLOODS project logo', async () => {
     await mountApp()
-    const img = footer().querySelector<HTMLImageElement>('img[src*="interreg-urbanfloods-stacked"]')
+    expect(footer().querySelector('img[src*="interreg-urbanfloods-stacked"]')).toBeNull()
+    const img = footer().querySelector<HTMLImageElement>('img[src*="urbanfloods-wordmark"]')
     expect(img).not.toBeNull()
-    expect(img!.getAttribute('alt')).toBe(LOGO_ALT)
-    for (const cls of ['w-[448px]', 'lg:w-[560px]', 'max-w-full', 'h-auto']) {
+    expect(img!.getAttribute('alt')).toBe(t('app.projectLogoAlt'))
+    expect(t('app.projectLogoAlt')).toBe('URBANFLOODS project logo')
+    for (const cls of ['w-[180px]', 'lg:w-[220px]', 'h-auto']) {
       expect(img!.classList.contains(cls), cls).toBe(true)
     }
   })

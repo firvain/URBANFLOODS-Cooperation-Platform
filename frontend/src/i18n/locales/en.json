@@ -4,7 +4,8 @@
     "skipToContent": "Skip to main content",
     "language": "Language",
     "mainNavigation": "Main navigation",
-    "logoAlt": "Interreg IPA ADRION, co-funded by the European Union: URBANFLOODS"
+    "logoAlt": "Interreg IPA ADRION, co-funded by the European Union: URBANFLOODS",
+    "projectLogoAlt": "URBANFLOODS project logo"
   },
   "a11y": {
     "opensInNewTab": "(opens in a new tab)"

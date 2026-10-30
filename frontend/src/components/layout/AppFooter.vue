@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 
-import logoStacked from '@/assets/logos/interreg-urbanfloods-stacked.png'
+import logoProject from '@/assets/logos/urbanfloods-wordmark.svg'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 import { EXTERNAL_LINKS } from '@/constants/links'
 import { NAV_ITEMS } from '@/constants/navigation'
@@ -41,19 +41,16 @@ const projectLinks = [
   >
     <template #top>
       <UContainer class="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-12">
-        <div class="sm:col-span-2 md:col-span-12 xl:col-span-6">
+        <div class="sm:col-span-2 md:col-span-12 lg:col-span-4">
           <img
-            :src="logoStacked"
-            :alt="t('app.logoAlt')"
-            width="1599"
-            height="833"
-            class="block h-auto w-[448px] min-w-[240px] max-w-full lg:w-[560px]"
+            :src="logoProject"
+            :alt="t('app.projectLogoAlt')"
+            class="block h-auto w-[180px] lg:w-[220px]"
           />
-          <!-- The image's own bottom margin already exceeds the logo's clear space. -->
-          <p class="max-w-md text-sm text-muted">{{ t('footer.statement') }}</p>
+          <p class="mt-6 max-w-md text-sm text-muted">{{ t('footer.statement') }}</p>
         </div>
 
-        <div class="md:col-span-4 xl:col-span-2">
+        <div class="md:col-span-4 lg:col-span-3">
           <h2 :class="HEADING_CLASS">{{ t('footer.columns.platform') }}</h2>
           <ul class="mt-4 space-y-3">
             <li v-for="item in NAV_ITEMS" :key="item.name">
@@ -62,7 +59,7 @@ const projectLinks = [
           </ul>
         </div>
 
-        <div class="md:col-span-4 xl:col-span-2">
+        <div class="md:col-span-4 lg:col-span-3">
           <h2 :class="HEADING_CLASS">{{ t('footer.columns.project') }}</h2>
           <ul class="mt-4 space-y-3">
             <li v-for="link in projectLinks" :key="link.key">
@@ -73,7 +70,7 @@ const projectLinks = [
           </ul>
         </div>
 
-        <div class="md:col-span-4 xl:col-span-2">
+        <div class="md:col-span-4 lg:col-span-2">
           <h2 :class="HEADING_CLASS">{{ t('footer.columns.follow') }}</h2>
           <ul class="mt-4 space-y-3">
             <li>

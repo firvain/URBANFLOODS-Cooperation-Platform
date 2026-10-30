@@ -13,10 +13,12 @@ the sibling KNOWBASE app. Non-compliance can have financial consequences for the
   stretched or reordered. The acronym is never typeset by us; the logo is always the supplied image.
 - Two official layouts: **stacked** (acronym under a thin line) and **horizontal** (acronym to the
   right of a vertical line) for small spaces. Files in `frontend/src/assets/logos/`:
-  - `interreg-urbanfloods-stacked.png` (from the project website) — footer, About page, emails.
-  - `interreg-urbanfloods-horizontal.png` (as used by KNOWBASE) — header.
-  - `urbanfloods-wordmark.svg` — never used alone where the project logo is required; only as a
-    decorative element on pages that already show the full logo.
+  - `interreg-urbanfloods-stacked.png` (from the project website) — About page, Partners page, emails.
+  - `interreg-urbanfloods-horizontal.png` (as used by KNOWBASE) — header (every page).
+  - `urbanfloods-wordmark.svg` — the project's own illustrated logo (city and floods with
+    "Urban FLOODS"). Used in the **footer** (user decision 2026-10-30) and as a decorative element.
+    It never replaces the official lock-up where that is required; the header lock-up on every
+    page satisfies the visibility rule, and the co-funding statement stays in the footer.
 - **Ideal use: on a white background.** On a coloured background or photo it must sit inside a
   white rectangle. (This is one reason the app is light mode only.)
 - **Minimum width on screen**: 300 px on laptop/desktop, 240 px on tablet/smartphone, measured on
