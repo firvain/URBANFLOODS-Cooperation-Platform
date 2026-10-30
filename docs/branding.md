@@ -16,7 +16,9 @@ the sibling KNOWBASE app. Non-compliance can have financial consequences for the
   - `interreg-urbanfloods-stacked.png` (from the project website) — About page, Partners page, emails.
   - `interreg-urbanfloods-horizontal.png` (as used by KNOWBASE) — header (every page).
   - `urbanfloods-wordmark.svg` — the project's own illustrated logo (city and floods with
-    "Urban FLOODS"). Used in the **footer** (user decision 2026-10-30) and as a decorative element.
+    "Urban FLOODS"). Used in the **footer** exactly as the KNOWBASE does it: a 48 px-tall mark
+    beside the co-funding statement on the light primary→secondary gradient band (user decisions
+    2026-10-30/31), and as a decorative element.
     It never replaces the official lock-up where that is required; the header lock-up on every
     page satisfies the visibility rule, and the co-funding statement stays in the footer.
 - **Ideal use: on a white background.** On a coloured background or photo it must sit inside a
@@ -44,7 +46,7 @@ the sibling KNOWBASE app. Non-compliance can have financial consequences for the
 | §1.7 minimum width 300/240 px | header 384/240 px whole image; About/Partners 560/448 px (≥ 300/240 measured) | OK under the programme's own practice; literal reading impossible in a header |
 | §1.8 clear space ≥ ½ emblem height | header padding 12–18 px vs emblem ≈ 14–20 px | OK |
 | §1.10 other logos not taller than the EU emblem | partner logos ≤ 48 px vs emblem ≈ 55 px on the Partners page | OK |
-| §1.10 design-element logo may be larger if EU involvement stays visible | illustrated project logo in the footer (220 × 268 px) vs the header lock-up on every page | OK as a design element; the official lock-up is in the header of every page |
+| §1.10 design-element logo may be larger if EU involvement stays visible | illustrated project logo in the footer at 48 px tall (smaller than the header lock-up's 67 px) | OK; same usage as the KNOWBASE footer |
 | §2.2 website content: description, logo, EU support, link | About page | OK (facts from the KNOWBASE About page) |
 | §2.3 statement on Interreg support | footer, every page | OK |
 | §2.4 disclaimer wording | footer bottom, every page | OK (exact recommended wording, UOWM named) |

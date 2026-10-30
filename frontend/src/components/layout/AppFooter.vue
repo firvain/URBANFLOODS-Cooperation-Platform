@@ -30,9 +30,9 @@ const projectLinks = [
 <template>
   <UFooter
     :ui="{
-      root: 'relative bg-white border-t border-default before:absolute before:inset-x-0 before:-top-[5px] before:h-1 before:bg-secondary-500',
+      root: 'bg-gradient-to-r from-primary-50 to-secondary-50 border-t-2 border-secondary-300',
       top: 'py-12 lg:py-16',
-      container: 'border-t border-default py-6 lg:py-6',
+      container: 'border-t border-secondary-200 py-6 lg:py-6',
       left: 'mt-0 justify-start',
       center: 'hidden',
       right: 'hidden',
@@ -41,13 +41,14 @@ const projectLinks = [
   >
     <template #top>
       <UContainer class="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-12">
-        <div class="sm:col-span-2 md:col-span-12 lg:col-span-4">
+        <div class="flex items-center gap-4 sm:col-span-2 md:col-span-12 lg:col-span-4">
+          <!-- Same size and placement as the KNOWBASE footer: a small mark beside the statement. -->
           <img
             :src="logoProject"
             :alt="t('app.projectLogoAlt')"
-            class="block h-auto w-[112px] lg:w-[128px]"
+            class="block h-12 w-auto shrink-0"
           />
-          <p class="mt-6 max-w-md text-sm text-muted">{{ t('footer.statement') }}</p>
+          <p class="max-w-md text-sm font-semibold text-primary-700">{{ t('footer.statement') }}</p>
         </div>
 
         <div class="md:col-span-4 lg:col-span-3">

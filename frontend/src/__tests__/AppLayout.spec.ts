@@ -149,7 +149,7 @@ describe('footer branding', () => {
     expect(img).not.toBeNull()
     expect(img!.getAttribute('alt')).toBe(t('app.projectLogoAlt'))
     expect(t('app.projectLogoAlt')).toBe('URBANFLOODS project logo')
-    for (const cls of ['w-[112px]', 'lg:w-[128px]', 'h-auto']) {
+    for (const cls of ['h-12', 'w-auto', 'shrink-0']) {
       expect(img!.classList.contains(cls), cls).toBe(true)
     }
   })
@@ -162,9 +162,11 @@ describe('footer branding', () => {
       t('footer.columns.project'),
       t('footer.columns.follow'),
     ])
-    expect([t('footer.columns.platform'), t('footer.columns.project'), t('footer.columns.follow')]).toEqual(
-      ['Platform', 'Project', 'Follow'],
-    )
+    expect([
+      t('footer.columns.platform'),
+      t('footer.columns.project'),
+      t('footer.columns.follow'),
+    ]).toEqual(['Platform', 'Project', 'Follow'])
   })
 
   it('links internally to the existing pages in the Platform column', async () => {
@@ -240,7 +242,13 @@ describe('footer branding', () => {
   it('is white with a top border and the green accent line', async () => {
     await mountApp()
     const classes = footer().classList
-    for (const cls of ['bg-white', 'border-t', 'border-default', 'before:bg-secondary-500', 'before:h-1']) {
+    for (const cls of [
+      'bg-gradient-to-r',
+      'from-primary-50',
+      'to-secondary-50',
+      'border-t-2',
+      'border-secondary-300',
+    ]) {
       expect(classes.contains(cls), cls).toBe(true)
     }
   })
