@@ -26,11 +26,29 @@ the sibling KNOWBASE app. Non-compliance can have financial consequences for the
   2026-10-30 (same as the KNOWBASE app):
   - Footer and About page: the **stacked** logo rendered at 560 px (lg) / 448 px (below lg) image
     width, which gives ≥ 300 / ≥ 240 px on the measured part. Literal compliance.
-  - Header: the **horizontal** logo at 300 px (lg) / 240 px (below lg) image width. Measured
-    literally this is ≈ 94 / 75 px, because the measured part is only ~31 % of the horizontal
+  - Header: the **horizontal** logo at 384 px (lg) / 240 px (below lg) image width. Measured
+    literally this is ≈ 120 / 75 px, because the measured part is only ~31 % of the horizontal
     image; a literally compliant header logo would be ~960 px wide, which no header can carry.
-    The full logo is nonetheless on every page at compliant size in the footer. Confirm with the
-    JS (Joint Secretariat) if in doubt (guidelines §1.10 invites this).
+    Precedent: the programme's own project website (urbanfloods.interreg-ipa-adrion.eu) renders
+    the stacked logo at 385 × 200 px on desktop (≈ 208 px measured), i.e. the programme itself
+    applies the minimum to the whole image. Our desktop header matches that 385 px whole-image
+    width; mobile uses the 240 px smartphone minimum. Confirm with the JS if in doubt.
+
+## Compliance check (2026-10-30, after the footer change)
+
+| Rule | Where | Status |
+|---|---|---|
+| §1.1 logo as one invariable unit, supplied image only | header, About, Partners, emails | OK |
+| §1.4 on white background | all (light mode only) | OK |
+| §1.6 no distortion/recolour/cropping/rotation | all | OK (images used as supplied, `h-auto`) |
+| §1.7 minimum width 300/240 px | header 384/240 px whole image; About/Partners 560/448 px (≥ 300/240 measured) | OK under the programme's own practice; literal reading impossible in a header |
+| §1.8 clear space ≥ ½ emblem height | header padding 12–18 px vs emblem ≈ 14–20 px | OK |
+| §1.10 other logos not taller than the EU emblem | partner logos ≤ 48 px vs emblem ≈ 55 px on the Partners page | OK |
+| §1.10 design-element logo may be larger if EU involvement stays visible | illustrated project logo in the footer (220 × 268 px) vs the header lock-up on every page | OK as a design element; the official lock-up is in the header of every page |
+| §2.2 website content: description, logo, EU support, link | About page | OK (facts from the KNOWBASE About page) |
+| §2.3 statement on Interreg support | footer, every page | OK |
+| §2.4 disclaimer wording | footer bottom, every page | OK (exact recommended wording, UOWM named) |
+| §1.9 social media | not applicable to the web app | — |
 - **Clear space**: at least half the EU emblem height on every side; nothing else inside it.
 - **Other logos on the same page** (partner logos on `/partners`, `/about`): none may be taller than
   the EU flag emblem inside the project logo on that page. Render partner logos in a uniform row

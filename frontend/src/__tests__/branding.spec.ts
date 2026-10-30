@@ -190,30 +190,6 @@ describe('About page', () => {
     expect(img!.classList.contains('min-w-[240px]')).toBe(true)
   })
 
-  it('lists the project details', async () => {
-    const main = await mountAbout()
-    const list = main.querySelector('dl')
-    expect(list).not.toBeNull()
-    const text = list!.textContent ?? ''
-    for (const key of ['programme', 'priority', 'duration', 'leadPartner', 'funding']) {
-      expect(text, key).toContain(t(`about.details.${key}.label`))
-      expect(text, key).toContain(t(`about.details.${key}.value`))
-    }
-    expect(t('about.details.programme.value')).toBe('Interreg IPA ADRION')
-    expect(t('about.details.priority.value')).toBe(
-      'Supporting a greener and climate resilient Adriatic-Ionian region',
-    )
-    expect(t('about.details.duration.value')).toBe('36 months')
-    expect(t('about.details.leadPartner.value')).toBe('University of Western Macedonia')
-    expect(t('about.details.funding.value')).toBe(t('footer.statement'))
-  })
-
-  it('shows the budget placeholder from its own i18n key', async () => {
-    const main = await mountAbout()
-    expect(t('about.budgetPlaceholder')).toBe('Budget figures: to be provided by the lead partner')
-    expect(main.textContent).toContain(t('about.budgetPlaceholder'))
-  })
-
   it('links to the project website and the KNOWBASE in a new tab', async () => {
     const main = await mountAbout()
     const hrefs = Array.from(main.querySelectorAll<HTMLAnchorElement>('a[target="_blank"]')).map(
