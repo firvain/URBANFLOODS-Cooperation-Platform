@@ -112,7 +112,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 5b | export endpoints, Atom, sitemap | todo | | | extended |
 | 5c | FE SearchView + header search + `usePageHead` | todo | | | core |
 | 5d | accessibility pass + axe in Playwright | todo | | | core |
-| 5e | static pages + consent text | todo | | | core |
+| 5e | static pages + consent text | todo | | | core; Terms of Use v1 drafted in docs/legal/ (2026-10-31) |
 | 5f | translation pass (8 locales) | todo | | | extended |
 | 5g | docs incl. `report-D5.1.1-outline.md`, admin handbook, moderation guide | todo | | | core |
 
@@ -149,5 +149,6 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - **Next:** 1m (expertise tags + members directory API) and 1n (Collaboration Network page + DSS link), then M2 starting with 2a.
 
 ## 4. Open questions / decisions pending
+- Terms of Use draft v1 in `docs/legal/terms-of-use.md` needs UOWM legal/DPO review: institutional contact email, DPO, age threshold (15/16), KNOWBASE data licence, jurisdiction. Privacy Policy draft still to write (5e).
 - None blocking. Turnstile site key and Gmail app password are needed before M1 can be tested
   end-to-end against real services (dev uses Mailpit and `TURNSTILE_ENABLED=false`).
