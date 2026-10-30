@@ -8,8 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.endpoints import admin, auth, health, organisations
 from app.core.config import settings
+from app.core.csrf import CSRFMiddleware
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import REQUEST_ID_HEADER, RequestIdMiddleware, configure_logging
+from app.core.rate_limit import RateLimitMiddleware
 from app.db import session as db_session
 from app.services import turnstile
 
@@ -33,6 +35,13 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # Each add_middleware wraps the previous ones, so the order on a request is:
+    # RequestId -> CORS -> RateLimit -> CSRF -> routes. Rate limiting and CSRF sit inside CORS so
+    # the browser can read their 429/403 bodies; CSRF rejections still count against the limits.
+    app.add_middleware(CSRFMiddleware)
+    app.add_middleware(RateLimitMiddleware)
+    # allow_headers "*" mirrors the preflight's requested headers, which covers the
+    # X-Requested-With header the CSRF middleware requires.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.ALLOWED_ORIGINS,
