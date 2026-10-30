@@ -13,6 +13,12 @@
     "partners": "Partner",
     "about": "Informazioni",
     "login": "Accedi",
-    "register": "Registrati"
+    "register": "Registrati",
+    "account": "Account"
+  },
+  "auth": {
+    "login": "Accedi",
+    "register": "Registrati",
+    "logout": "Esci"
   }
 }

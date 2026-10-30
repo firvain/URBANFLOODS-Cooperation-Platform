@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 
 import { NAV_ITEMS } from '@/constants/navigation'
 import LocaleSwitcher from './LocaleSwitcher.vue'
+import UserMenu from './UserMenu.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -39,6 +40,7 @@ function isActive(to: string): boolean {
     </nav>
 
     <template #right>
+      <UserMenu class="hidden lg:flex" />
       <LocaleSwitcher />
     </template>
 
@@ -56,6 +58,8 @@ function isActive(to: string): boolean {
           </UButton>
         </li>
       </ul>
+      <USeparator class="my-4" />
+      <UserMenu mobile />
     </template>
   </UHeader>
 </template>

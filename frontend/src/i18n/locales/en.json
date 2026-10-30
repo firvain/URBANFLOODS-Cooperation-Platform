@@ -13,7 +13,8 @@
     "partners": "Partners",
     "about": "About",
     "login": "Log in",
-    "register": "Register"
+    "register": "Register",
+    "account": "Account"
   },
   "home": {
     "title": "Cooperation Platform",
@@ -47,6 +48,117 @@
   "errors": {
     "notFound": "Page not found",
     "notFoundDescription": "The page you are looking for does not exist or has been moved.",
-    "backHome": "Back to the home page"
+    "backHome": "Back to the home page",
+    "generic": "Something went wrong. Please try again.",
+    "tooManyRequests": "Too many requests. Please wait a moment and try again.",
+    "api": {
+      "auth": {
+        "invalid_credentials": "Incorrect email or password.",
+        "account_disabled": "This account has been disabled. Contact the platform administrators if you think this is a mistake.",
+        "email_taken": "An account with this email address already exists.",
+        "token_invalid": "This link is invalid or has expired.",
+        "captcha_failed": "The anti-spam check failed. Please try again."
+      },
+      "validation": {
+        "failed": "Please correct the highlighted fields."
+      }
+    },
+    "fields": {
+      "required": "This field is required.",
+      "invalid": "This value is not valid.",
+      "value_error": "This value is not valid.",
+      "must_accept": "You must accept the terms of use and the privacy policy to continue.",
+      "password_mismatch": "The passwords do not match.",
+      "auth": {
+        "password_too_short": "Use at least {min} characters.",
+        "password_too_long": "Use at most {max} characters.",
+        "password_too_common": "This password is too common. Choose a less predictable one.",
+        "email_taken": "An account with this email address already exists."
+      }
+    }
+  },
+  "auth": {
+    "login": "Log in",
+    "register": "Register",
+    "logout": "Log out",
+    "loggedOut": "You have been logged out.",
+    "resent": "If the address belongs to an account that still needs verification, a new link is on its way.",
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "passwordHint": "At least {min} characters. A long phrase is easier to remember than a complex word.",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "displayName": "Display name",
+      "displayNameHint": "Shown next to your posts and replies.",
+      "organisation": "Organisation",
+      "organisationPlaceholder": "Select your organisation (optional)",
+      "organisationOtherOption": "Other…",
+      "organisationOther": "Organisation name",
+      "country": "Country",
+      "countryPlaceholder": "Select your country (optional)",
+      "countryOther": "Other",
+      "locale": "Preferred language",
+      "localeHint": "Used for the emails we send you.",
+      "acceptTerms": "I accept the {terms} and the {privacy}.",
+      "terms": "terms of use",
+      "privacy": "privacy policy",
+      "optional": "Optional"
+    },
+    "loginPage": {
+      "intro": "Log in to write posts, take part in the forum and report content.",
+      "submit": "Log in",
+      "noAccount": "No account yet?",
+      "forgot": "Forgot your password?"
+    },
+    "registerPage": {
+      "title": "Create an account",
+      "intro": "Registration is free. Reading the platform does not need an account; posting does.",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?"
+    },
+    "registerSuccess": {
+      "title": "Check your email",
+      "body": "We sent a verification link to {email}. Open it to activate your account. The link is valid for 48 hours.",
+      "noEmail": "No email? Check your spam folder or send it again.",
+      "resend": "Send the link again"
+    },
+    "verify": {
+      "title": "Verify your email",
+      "verifying": "Verifying your email address…",
+      "success": "Your email address is verified and you are logged in. Welcome!",
+      "redirecting": "Taking you to the home page…",
+      "continue": "Go to the home page",
+      "failed": "We could not verify your email address",
+      "resendIntro": "Enter your email address and we will send you a new link.",
+      "resend": "Send a new link"
+    },
+    "forgot": {
+      "title": "Forgot your password",
+      "intro": "Enter the email address of your account and we will send you a link to choose a new password.",
+      "submit": "Send reset link",
+      "sent": "If an account exists for that address, we have sent a link to reset the password. The link is valid for one hour.",
+      "backToLogin": "Back to log in"
+    },
+    "reset": {
+      "title": "Choose a new password",
+      "intro": "Choosing a new password logs you out on all other devices.",
+      "submit": "Save new password",
+      "success": "Your password has been changed and you are logged in.",
+      "requestNew": "Request a new link"
+    },
+    "unverified": {
+      "title": "Please verify your email address",
+      "description": "We sent a link to {email}. Until you open it you can read everything but cannot post, reply or report.",
+      "resend": "Resend verification email"
+    },
+    "menu": {
+      "signedInAs": "Signed in as {name}"
+    }
+  },
+  "account": {
+    "intro": "Profile, password, notification and data settings are coming in the next update."
   }
 }

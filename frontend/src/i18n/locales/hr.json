@@ -13,6 +13,12 @@
     "partners": "Partneri",
     "about": "O projektu",
     "login": "Prijava",
-    "register": "Registracija"
+    "register": "Registracija",
+    "account": "Račun"
+  },
+  "auth": {
+    "login": "Prijava",
+    "register": "Registracija",
+    "logout": "Odjava"
   }
 }

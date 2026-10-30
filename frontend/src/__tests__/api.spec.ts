@@ -79,3 +79,81 @@ describe('api requests', () => {
     expect(error).toMatchObject({ status: 422, code: undefined })
   })
 })
+
+describe('ApiError details', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_API_BASE_URL', '')
+  })
+
+  it('exposes detail.message and detail.fields', async () => {
+    const { api, ApiError } = await loadApi()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse(
+          {
+            detail: {
+              code: 'validation.failed',
+              message: 'Validation failed',
+              fields: { password: 'auth.password_too_common', accept_terms: 'must_accept' },
+            },
+          },
+          422,
+        ),
+      ),
+    )
+
+    const error = await api('/api/v1/auth/register', { method: 'POST' }).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({
+      status: 422,
+      code: 'validation.failed',
+      message: 'Validation failed',
+      fields: { password: 'auth.password_too_common', accept_terms: 'must_accept' },
+    })
+  })
+
+  it('leaves fields undefined when detail has none', async () => {
+    const { api } = await loadApi()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse({ detail: { code: 'auth.email_taken' } }, 409)),
+    )
+    const error = await api('/api/v1/auth/register', { method: 'POST' }).catch((e: unknown) => e)
+    expect((error as { fields?: unknown }).fields).toBeUndefined()
+  })
+})
+
+describe('api hooks', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_API_BASE_URL', '')
+  })
+
+  it.each([
+    ['GET', '/api/v1/posts/', 1],
+    ['GET', '/api/v1/auth/me', 0],
+    ['POST', '/api/v1/auth/login', 0],
+  ])('401 from %s %s calls onUnauthorized %i time(s)', async (method, path, times) => {
+    const { api, setApiHooks } = await loadApi()
+    const onUnauthorized = vi.fn()
+    setApiHooks({ onUnauthorized })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse({ detail: { code: 'auth.not_authenticated' } }, 401)),
+    )
+    await api(path, { method }).catch(() => undefined)
+    expect(onUnauthorized).toHaveBeenCalledTimes(times)
+  })
+
+  it('429 calls onRateLimited', async () => {
+    const { api, setApiHooks } = await loadApi()
+    const onRateLimited = vi.fn()
+    setApiHooks({ onRateLimited })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse({ detail: { code: 'rate_limited' } }, 429)),
+    )
+    await api('/api/v1/auth/login', { method: 'POST' }).catch(() => undefined)
+    expect(onRateLimited).toHaveBeenCalledTimes(1)
+  })
+})

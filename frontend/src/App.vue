@@ -2,6 +2,7 @@
 import AppFooter from '@/components/layout/AppFooter.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import SkipLink from '@/components/layout/SkipLink.vue'
+import UnverifiedBanner from '@/components/auth/UnverifiedBanner.vue'
 import { useFocusOnRouteChange } from '@/composables/useFocusOnRouteChange'
 
 const { announcement } = useFocusOnRouteChange()
@@ -12,6 +13,7 @@ const { announcement } = useFocusOnRouteChange()
     <SkipLink />
     <AppHeader />
     <main id="main" class="min-h-[calc(100vh-var(--ui-header-height))]">
+      <UnverifiedBanner />
       <RouterView />
     </main>
     <AppFooter />

@@ -13,6 +13,12 @@
     "partners": "Partnerët",
     "about": "Rreth nesh",
     "login": "Hyr",
-    "register": "Regjistrohu"
+    "register": "Regjistrohu",
+    "account": "Llogaria"
+  },
+  "auth": {
+    "login": "Hyr",
+    "register": "Regjistrohu",
+    "logout": "Dil"
   }
 }

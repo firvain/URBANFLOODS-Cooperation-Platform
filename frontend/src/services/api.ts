@@ -5,8 +5,10 @@
  * - Sends the session cookie (`credentials: 'include'`).
  * - Sends `X-Requested-With: XMLHttpRequest`, which the backend CSRF middleware requires on
  *   unsafe methods.
- * - Turns error responses into `ApiError` carrying the backend error code (`detail.code`),
- *   which views translate through vue-i18n.
+ * - Turns error responses into `ApiError` carrying the backend error envelope
+ *   (`detail.code`, `detail.message`, `detail.fields`); views translate the codes via vue-i18n.
+ * - Reports 401 (lost session) and 429 (rate limited) through `setApiHooks`, which the auth store
+ *   registers, so this module never imports a store.
  */
 import { ofetch, type FetchResponse } from 'ofetch'
 
@@ -17,23 +19,63 @@ export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? DEV_API
 export class ApiError extends Error {
   readonly status: number
   readonly code?: string
+  /** Per-field error codes from `detail.fields` (422 validation errors), e.g. `{password: "auth.password_too_common"}`. */
+  readonly fields?: Record<string, string>
 
-  constructor(status: number, code?: string, message?: string) {
+  constructor(status: number, code?: string, message?: string, fields?: Record<string, string>) {
     super(message ?? code ?? `HTTP ${status}`)
     this.name = 'ApiError'
     this.status = status
     this.code = code
+    this.fields = fields
   }
 }
 
-function errorCode(response: FetchResponse<unknown>): string | undefined {
+type ErrorDetail = { code?: string; message?: string; fields?: Record<string, string> }
+
+/** The backend error envelope is `{"detail": {code, message, fields?}}`; anything else yields `{}`. */
+function errorDetail(response: FetchResponse<unknown>): ErrorDetail {
   const data = response._data as { detail?: unknown } | undefined
   const detail = data?.detail
-  if (detail && typeof detail === 'object' && 'code' in detail) {
-    const code = (detail as { code: unknown }).code
-    if (typeof code === 'string') return code
+  if (!detail || typeof detail !== 'object' || Array.isArray(detail)) return {}
+  const { code, message, fields } = detail as Record<string, unknown>
+  const result: ErrorDetail = {}
+  if (typeof code === 'string') result.code = code
+  if (typeof message === 'string') result.message = message
+  if (fields && typeof fields === 'object' && !Array.isArray(fields)) {
+    result.fields = Object.fromEntries(
+      Object.entries(fields as Record<string, unknown>).filter(
+        (entry): entry is [string, string] => typeof entry[1] === 'string',
+      ),
+    )
   }
-  return undefined
+  return result
+}
+
+/**
+ * Callbacks the rest of the app registers (the auth store does, in its setup), so this module
+ * never imports a store: no import cycle, and tests can install their own.
+ */
+export interface ApiHooks {
+  /** A request other than `/auth/me` or `/auth/login` got 401: the session expired or was revoked. */
+  onUnauthorized?: () => void
+  /** The backend rate limiter answered 429. */
+  onRateLimited?: () => void
+}
+
+const hooks: ApiHooks = {}
+
+export function setApiHooks(next: ApiHooks): void {
+  Object.assign(hooks, next)
+}
+
+/** 401 from these is an answer ("not logged in" / "wrong password"), not a lost session. */
+const UNAUTHORIZED_EXEMPT = ['/auth/me', '/auth/login']
+
+function requestPath(request: RequestInfo | URL): string {
+  const url =
+    typeof request === 'string' ? request : request instanceof URL ? request.href : request.url
+  return new URL(url, 'http://placeholder.invalid').pathname.replace(/\/+$/, '')
 }
 
 export const api = ofetch.create({
@@ -41,9 +83,14 @@ export const api = ofetch.create({
   credentials: 'include',
   headers: { 'X-Requested-With': 'XMLHttpRequest' },
 
-  onResponseError({ response }) {
-    // TODO(M1): on 401 clear the auth store (session expired or revoked).
-    // TODO(M1): on 429 show a "too many requests" toast via useToast().
-    throw new ApiError(response.status, errorCode(response), response.statusText || undefined)
+  onResponseError({ request, response }) {
+    if (response.status === 401) {
+      const path = requestPath(request)
+      if (!UNAUTHORIZED_EXEMPT.some((suffix) => path.endsWith(suffix))) hooks.onUnauthorized?.()
+    } else if (response.status === 429) {
+      hooks.onRateLimited?.()
+    }
+    const { code, message, fields } = errorDetail(response)
+    throw new ApiError(response.status, code, message ?? (response.statusText || undefined), fields)
   },
 })
