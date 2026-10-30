@@ -6,16 +6,19 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1.endpoints import health
+from app.api.v1.endpoints import auth, health
 from app.core.config import settings
+from app.core.exceptions import register_exception_handlers
 from app.core.logging import REQUEST_ID_HEADER, RequestIdMiddleware, configure_logging
 from app.db import session as db_session
+from app.services import turnstile
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging(settings)
     yield
+    await turnstile.aclose_client()
     await db_session.engine.dispose()
 
 
@@ -41,8 +44,11 @@ def create_app() -> FastAPI:
     # Added last, so it is outermost: every response, including CORS preflights, gets an id.
     app.add_middleware(RequestIdMiddleware)
 
+    register_exception_handlers(app)
+
     # Probes are mounted without the API prefix.
     app.include_router(health.router, tags=["health"])
+    app.include_router(auth.router, prefix=f"{settings.API_V1_PREFIX}/auth", tags=["auth"])
 
     return app
 

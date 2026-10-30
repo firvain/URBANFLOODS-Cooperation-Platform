@@ -28,7 +28,7 @@ conventions as KNOWBASE · backend proxies KNOWBASE API with cache · open sign-
 verification · roles member/admin/superadmin · "trusted after first approval" posting model, with
 optional `AUTO_APPROVE_AFTER_DAYS` safety valve · reports auto-hide · soft delete ·
 cooperation.urbanfloods.app · Gmail SMTP · one language per post · CC BY 4.0 · images only ·
-seeded organisations table (22 PPs/APs) + `/partners` page · admin-only "Resources" category ·
+seeded organisations table (22 PPs/APs) + `/partners` page · admin-only "Resources" category · **light mode only** · official logos/favicon from urbanfloods.interreg-ipa-adrion.eu ·
 admin stats CSV export · public read, registration to participate · public repo on GitHub.
 
 **Scope line:** Core = M0–M4, 5a, 5c–5e, 5g, M6. Extended = 5b, 5f, tag merge, sessions UI,
@@ -51,15 +51,16 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
 | 1a | Models Organisation (seeded 22 PPs/APs) / User / Session / EmailToken / NotificationPreference / AuditLog + migration | done | a178ddd | 25 pytest (9 new) | naming convention on metadata; enums owned by migrations; `avatar_attachment_id` FK deferred to 2a |
-| 1b | `core/security.py` argon2 + session tokens + cookie helpers | done | | 61 pytest | + crud/session (revoke scoped by user), crud/token (atomic consume), crud/audit (strips secret-like keys) |
+| 1b | `core/security.py` argon2 + session tokens + cookie helpers | done | 8654679 | 61 pytest | + crud/session (revoke scoped by user), crud/token (atomic consume), crud/audit (strips secret-like keys) |
 | 1c | `services/email.py` + templates + outbox fixture + Mailpit; `services/turnstile.py` | done | 2360b6e | 40 pytest | `*_url` context values must be site-relative paths; en templates: verify_email, reset_password, change_email, welcome; el: verify_email |
-| 1d | register / verify-email / resend endpoints | in progress | | | |
-| 1e | login / logout / me / sessions + `core/deps.py` | todo | | | |
+| 1d | register / verify-email / resend endpoints | done | | 41 pytest (167 total) | uniform error body `detail.{code,message,fields}`; `DbTx` commits before response; verified live against Mailpit |
+| 1e | login / logout / me / sessions + `core/deps.py` | in progress | | | |
 | 1f | password forgot/reset + change password/email | todo | | | |
 | 1g | CSRF + rate-limit middleware | todo | | | |
 | 1h | admin users + organisations endpoints + `cli create-superadmin` | todo | | | |
 | 1i | GDPR export + anonymising delete | todo | | | |
 | 1j | FE auth store/service/views + guards | in progress | | | built against the auth API contract; runs in parallel with 1d |
+| 1j-b | FE branding: light mode only, official logos + favicon from the project site, footer disclaimer | todo | | | user request 2026-10-30; after 1j lands |
 | 1k | FE AccountView + LocaleSwitcher + PartnersView | todo | | | |
 | 1l | Playwright `auth.spec.ts` | todo | | | |
 
@@ -138,7 +139,8 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - 0e done: M0 complete. Dependencies for 1b/1c committed ahead (1b13bd9). 1b and 1c running in parallel.
 - 1c done (email service, 16 templates, Turnstile). Note for 1d: pass `verify_url='/verify-email?token=...'` style paths; `aclose_client()` for Turnstile still needs wiring into the lifespan.
 - 1b done (126 tests total). 1d (backend registration endpoints) and 1j (frontend auth) started in parallel.
-- **Next:** review/commit 1d and 1j; then 1e (login/logout/me/sessions + deps).
+- 1d done. Dev stack is up locally (localhost:5173 / :8000/docs / :8025). 1e started; 1j still running.
+- **Next:** review/commit 1j, then 1j-b branding (light mode, logos); review/commit 1e; then 1f.
 
 ## 4. Open questions / decisions pending
 - None blocking. Turnstile site key and Gmail app password are needed before M1 can be tested

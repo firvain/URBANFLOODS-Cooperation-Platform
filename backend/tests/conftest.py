@@ -14,7 +14,7 @@ fixture below), before any test runs. ``db_session`` rolls back after every test
 from __future__ import annotations
 
 import os
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from typing import TYPE_CHECKING
 
 import pytest
@@ -157,3 +157,49 @@ async def outbox() -> AsyncIterator[list]:
     finally:
         backend.messages.clear()
         reset_backend()
+
+
+@pytest.fixture
+async def cleanup_users(database_url: str) -> AsyncIterator[set[str]]:
+    """Emails of users the test commits (directly or through the API); deleted afterwards.
+
+    ``db_session`` rollback cannot undo rows the app committed, so endpoint tests add every
+    address they create here. Sessions, email tokens and notification preferences go with the
+    user (``ON DELETE CASCADE``); audit rows about or by the user are deleted explicitly.
+    """
+    from sqlalchemy import delete, or_, select
+
+    from app.db.models import AuditLog, User
+    from app.db.session import AsyncSessionLocal
+
+    emails: set[str] = set()
+    yield emails
+    if not emails:
+        return
+    async with AsyncSessionLocal() as session, session.begin():
+        ids = list((await session.scalars(select(User.id).where(User.email.in_(emails)))).all())
+        if ids:
+            await session.execute(
+                delete(AuditLog).where(
+                    or_(
+                        AuditLog.actor_id.in_(ids),
+                        (AuditLog.target_type == "user") & AuditLog.target_id.in_(ids),
+                    )
+                )
+            )
+            await session.execute(delete(User).where(User.id.in_(ids)))
+
+
+@pytest.fixture(autouse=True)
+def _restore_structlog_config() -> Iterator[None]:
+    """Leave structlog configured as the test found it.
+
+    The app lifespan (``client`` fixture) calls ``configure_logging``, which installs a
+    level-filtering wrapper (WARNING in tests); without this, any later test using
+    ``structlog.testing.capture_logs`` for INFO events would depend on test order.
+    """
+    import structlog
+
+    saved = structlog.get_config()
+    yield
+    structlog.configure(**saved)
