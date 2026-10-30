@@ -149,6 +149,6 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - **Next:** 1m (expertise tags + members directory API) and 1n (Collaboration Network page + DSS link), then M2 starting with 2a.
 
 ## 4. Open questions / decisions pending
-- Terms of Use draft v1 in `docs/legal/terms-of-use.md` needs UOWM legal review: age threshold (15/16), KNOWBASE data licence, jurisdiction. Contact for everything (incl. data requests): louta@uowm.gr (user, 2026-10-31). Privacy Policy draft still to write (5e).
+- Terms of Use draft v1 in `docs/legal/terms-of-use.md` needs UOWM legal review: age threshold (15/16), KNOWBASE data licence, jurisdiction. Contact for everything (incl. data requests): louta@uowm.gr (user, 2026-10-31). Privacy Policy draft v1 in `docs/legal/privacy-policy.md` (2026-10-31): review DPO naming, audit-log retention per subsidy contract, hosting description, Cloudflare/Google DPAs, age threshold.
 - None blocking. Turnstile site key and Gmail app password are needed before M1 can be tested
   end-to-end against real services (dev uses Mailpit and `TURNSTILE_ENABLED=false`).
