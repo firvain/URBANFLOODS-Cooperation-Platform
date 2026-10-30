@@ -1,7 +1,7 @@
 # Development image only: Vite dev server with HMR. Used by docker-compose.yml, where the source
 # is bind-mounted over /app and node_modules stays in an anonymous volume seeded from this image.
 # The production image (nginx serving the built SPA) is Dockerfile.prod (M6).
-FROM node:22-alpine
+FROM node:25-alpine
 
 WORKDIR /app
 RUN chown node:node /app
