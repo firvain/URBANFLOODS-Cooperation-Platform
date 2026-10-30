@@ -32,7 +32,12 @@ def error_body(code: str, message: str, fields: dict[str, str] | None = None) ->
 
 
 class AppError(Exception):
-    """An error with a client-facing code. Raise it from endpoints or crud."""
+    """An error with a client-facing code. Raise it from endpoints or crud.
+
+    ``keep_changes=True`` makes ``get_db_tx`` commit the request transaction instead of rolling
+    it back, for errors that must leave a trace (a failed-login audit row, the revocation of a
+    disabled user's session).
+    """
 
     def __init__(
         self,
@@ -40,11 +45,14 @@ class AppError(Exception):
         code: str,
         message: str | None = None,
         fields: dict[str, str] | None = None,
+        *,
+        keep_changes: bool = False,
     ) -> None:
         self.status_code = status_code
         self.code = code
         self.message = message or code
         self.fields = fields
+        self.keep_changes = keep_changes
         super().__init__(code)
 
 

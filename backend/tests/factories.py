@@ -8,15 +8,20 @@ which uses its own sessions, can see the rows; register committed users with the
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.security import hash_password
 from app.db.enums import UserRole
 from app.db.models import NotificationPreference, User
 
+if TYPE_CHECKING:
+    import httpx
+
 DEFAULT_PASSWORD = "correct-horse-battery-staple"
+LOGIN_PATH = f"{settings.API_V1_PREFIX}/auth/login"
 
 
 def unique_email(prefix: str = "user") -> str:
@@ -54,3 +59,33 @@ async def create_user(
 async def create_verified_user(db: AsyncSession, **kwargs: Any) -> User:
     """A user whose email address is already verified."""
     return await create_user(db, is_verified=True, **kwargs)
+
+
+async def create_admin(db: AsyncSession, **kwargs: Any) -> User:
+    """A verified ``admin``."""
+    return await create_verified_user(db, role=UserRole.ADMIN, **kwargs)
+
+
+async def create_superadmin(db: AsyncSession, **kwargs: Any) -> User:
+    """A verified ``superadmin``."""
+    return await create_verified_user(db, role=UserRole.SUPERADMIN, **kwargs)
+
+
+async def login_as(
+    client: httpx.AsyncClient,
+    user: User,
+    *,
+    password: str = DEFAULT_PASSWORD,
+    user_agent: str | None = None,
+) -> httpx.Response:
+    """Log ``user`` in through ``POST /auth/login``; the session cookie stays on ``client``.
+
+    The user must be committed first (the app uses its own database sessions).
+    """
+    headers = {"User-Agent": user_agent} if user_agent else None
+    response = await client.post(
+        LOGIN_PATH, json={"email": user.email, "password": password}, headers=headers
+    )
+    assert response.status_code == 200, response.text
+    assert settings.SESSION_COOKIE_NAME in client.cookies
+    return response

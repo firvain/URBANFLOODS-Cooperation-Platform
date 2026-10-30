@@ -131,6 +131,21 @@ async def client() -> AsyncIterator[httpx.AsyncClient]:
 
 
 @pytest.fixture
+async def other_client(client: httpx.AsyncClient) -> AsyncIterator[httpx.AsyncClient]:
+    """A second client (own cookie jar) on the same running app: a second "device".
+
+    Depends on ``client`` so the app's lifespan is already running.
+    """
+    import httpx
+
+    from app.main import app
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+
+
+@pytest.fixture
 async def db_session(database_url: str) -> AsyncIterator[AsyncSession]:
     from app.db.session import AsyncSessionLocal
 

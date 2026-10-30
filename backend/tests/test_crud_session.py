@@ -14,6 +14,7 @@ from sqlalchemy import func, select
 from app.core.config import settings
 from app.core.security import hash_token
 from app.crud.session import (
+    TOUCH_INTERVAL,
     create_session,
     delete_expired_sessions,
     get_active_session_by_raw_token,
@@ -248,3 +249,44 @@ async def test_delete_expired_sessions_custom_window(db_session):
 
     assert await delete_expired_sessions(db_session, now=now) == 0
     assert await delete_expired_sessions(db_session, now=now, older_than_days=1) == 1
+
+
+async def test_touch_within_interval_does_not_write(db_session):
+    user = await _make_user(db_session)
+    session, _ = await create_session(db_session, user_id=user.id, user_agent=None, now=T0)
+
+    wrote = await touch_session(db_session, session=session, now=T0 + timedelta(minutes=4))
+    await db_session.refresh(session)
+
+    assert wrote is False
+    assert session.last_seen_at == T0
+    assert session.expires_at == T0 + TTL
+
+
+async def test_touch_after_interval_writes(db_session):
+    user = await _make_user(db_session)
+    session, _ = await create_session(db_session, user_id=user.id, user_agent=None, now=T0)
+
+    later = T0 + TOUCH_INTERVAL + timedelta(seconds=1)
+    wrote = await touch_session(db_session, session=session, now=later)
+    await db_session.refresh(session)
+
+    assert wrote is True
+    assert session.last_seen_at == later
+
+
+async def test_get_active_session_loads_user_organisation_and_preferences(db_session):
+    from app.db.models import NotificationPreference
+
+    user = await _make_user(db_session, email="session-eager@example.org")
+    user.notification_preferences = NotificationPreference()
+    await db_session.flush()
+    _, raw = await create_session(db_session, user_id=user.id, user_agent=None)
+    db_session.expunge_all()
+
+    session = await get_active_session_by_raw_token(db_session, raw_token=raw)
+
+    assert "user" in session.__dict__
+    assert "organisation" in session.user.__dict__
+    assert "notification_preferences" in session.user.__dict__
+    assert session.user.notification_preferences is not None

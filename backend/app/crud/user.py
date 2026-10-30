@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+from collections.abc import Mapping
+from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -11,10 +13,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from app.core.exceptions import AppError, validation_error
-from app.core.security import hash_password, validate_password_policy
+from app.core.security import hash_password, password_needs_rehash, validate_password_policy
 from app.db.models import NotificationPreference, Organisation, User
 
 EMAIL_UNIQUE_CONSTRAINT = "uq_users_email"
+# Fields a user may change on their own profile (``PATCH /auth/me``).
+PROFILE_FIELDS = frozenset(
+    {"display_name", "organisation_id", "organisation_other", "country", "locale", "bio"}
+)
 
 
 async def get_user_by_email(db: AsyncSession, *, email: str) -> User | None:
@@ -87,3 +93,41 @@ async def mark_verified(db: AsyncSession, *, user: User, now: datetime | None = 
     is no ``verified_at`` column (the audit log records when)."""
     user.is_verified = True
     await db.flush()
+
+
+async def record_login(
+    db: AsyncSession, *, user: User, password: str, now: datetime | None = None
+) -> None:
+    """Bookkeeping after a successful password check: set ``last_login_at`` and, if the stored
+    hash uses outdated argon2 parameters, replace it with a fresh one for ``password``."""
+    if password_needs_rehash(user.password_hash):
+        user.password_hash = await asyncio.to_thread(hash_password, password)
+    user.last_login_at = now or datetime.now(UTC)
+    await db.flush()
+
+
+async def update_profile(db: AsyncSession, *, user: User, changes: Mapping[str, Any]) -> list[str]:
+    """Apply profile ``changes`` (only the keys present; ``None`` clears). Returns the sorted
+    names of the fields whose value actually changed.
+
+    Setting ``organisation_id`` clears ``organisation_other`` and vice versa. Raises ``AppError``
+    422 (``fields.organisation_id = "not_found"``) for an unknown organisation. Callers reload the
+    user (``get_user_by_id``) to see the new ``organisation`` relationship.
+    """
+    unknown = set(changes) - PROFILE_FIELDS
+    if unknown:
+        raise ValueError(f"not profile fields: {sorted(unknown)}")
+    values = dict(changes)
+    if values.get("organisation_id") is not None:
+        if await db.get(Organisation, values["organisation_id"]) is None:
+            raise validation_error({"organisation_id": "not_found"})
+        values["organisation_other"] = None
+    if values.get("organisation_other") is not None:
+        values["organisation_id"] = None
+
+    changed = sorted(name for name, value in values.items() if getattr(user, name) != value)
+    for name in changed:
+        setattr(user, name, values[name])
+    if changed:
+        await db.flush()
+    return changed

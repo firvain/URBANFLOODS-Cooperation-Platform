@@ -1,7 +1,8 @@
 """Opaque server-side sessions.
 
-The client holds the raw token (cookie); only its SHA-256 hash is stored. Expiry slides forward
-on activity, at most once per day to limit writes. Never commits; the caller does.
+The client holds the raw token (cookie); only its SHA-256 hash is stored. Activity is recorded at
+most every ``TOUCH_INTERVAL`` and the expiry slides forward at most once per day, to limit
+writes. Never commits; the caller does.
 """
 
 from __future__ import annotations
@@ -14,11 +15,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from app.core.security import generate_token, hash_token, session_expiry
-from app.db.models import Session
+from app.db.models import Session, User
 
 USER_AGENT_MAX_LENGTH = 255
 # Sliding expiry is pushed forward only when it would move by more than this.
 SLIDE_THRESHOLD = timedelta(days=1)
+# ``last_seen_at`` is written only when it is older than this (no UPDATE on every request).
+TOUCH_INTERVAL = timedelta(minutes=5)
 
 
 def _now(now: datetime | None) -> datetime:
@@ -51,32 +54,41 @@ async def create_session(
 async def get_active_session_by_raw_token(
     db: AsyncSession, *, raw_token: str, now: datetime | None = None
 ) -> Session | None:
-    """The unrevoked, unexpired session for a raw token, with ``.user`` eagerly loaded.
+    """The unrevoked, unexpired session for a raw token, with ``.user`` and the user's
+    ``organisation`` and ``notification_preferences`` eagerly loaded (one query).
 
     The user's own state (``is_active``, ``deleted_at``, ``is_verified``) is checked by the
     auth dependencies, not here.
     """
+    user = joinedload(Session.user)
     stmt = (
         select(Session)
-        .options(joinedload(Session.user))
+        .options(
+            user.joinedload(User.organisation),
+            user.joinedload(User.notification_preferences),
+        )
         .where(Session.token_hash == hash_token(raw_token), *_is_active(_now(now)))
     )
     return (await db.execute(stmt)).scalar_one_or_none()
 
 
-async def touch_session(db: AsyncSession, *, session: Session, now: datetime | None = None) -> None:
-    """Record activity and slide the expiry.
+async def touch_session(db: AsyncSession, *, session: Session, now: datetime | None = None) -> bool:
+    """Record activity and slide the expiry. Returns True if anything was written.
 
-    ``last_seen_at`` is always set. ``expires_at`` is moved to ``session_expiry(now)`` only when
+    Nothing is written while ``last_seen_at`` is at most ``TOUCH_INTERVAL`` old. Otherwise
+    ``last_seen_at`` is set, and ``expires_at`` is moved to ``session_expiry(now)`` only when
     that would extend it by more than a day, i.e. the expiry is refreshed at most once a day
     however often the session is used.
     """
     now = _now(now)
+    if now - session.last_seen_at <= TOUCH_INTERVAL:
+        return False
     session.last_seen_at = now
     new_expiry = session_expiry(now)
     if new_expiry - session.expires_at > SLIDE_THRESHOLD:
         session.expires_at = new_expiry
     await db.flush()
+    return True
 
 
 async def revoke_session(
