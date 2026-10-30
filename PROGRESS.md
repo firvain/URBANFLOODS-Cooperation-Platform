@@ -51,15 +51,15 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
 | 1a | Models Organisation (seeded 22 PPs/APs) / User / Session / EmailToken / NotificationPreference / AuditLog + migration | done | a178ddd | 25 pytest (9 new) | naming convention on metadata; enums owned by migrations; `avatar_attachment_id` FK deferred to 2a |
-| 1b | `core/security.py` argon2 + session tokens + cookie helpers | in progress | | | + crud/session, crud/token, crud/audit |
-| 1c | `services/email.py` + templates + outbox fixture + Mailpit; `services/turnstile.py` | done | | 40 pytest | `*_url` context values must be site-relative paths; en templates: verify_email, reset_password, change_email, welcome; el: verify_email |
-| 1d | register / verify-email / resend endpoints | todo | | | |
+| 1b | `core/security.py` argon2 + session tokens + cookie helpers | done | | 61 pytest | + crud/session (revoke scoped by user), crud/token (atomic consume), crud/audit (strips secret-like keys) |
+| 1c | `services/email.py` + templates + outbox fixture + Mailpit; `services/turnstile.py` | done | 2360b6e | 40 pytest | `*_url` context values must be site-relative paths; en templates: verify_email, reset_password, change_email, welcome; el: verify_email |
+| 1d | register / verify-email / resend endpoints | in progress | | | |
 | 1e | login / logout / me / sessions + `core/deps.py` | todo | | | |
 | 1f | password forgot/reset + change password/email | todo | | | |
 | 1g | CSRF + rate-limit middleware | todo | | | |
 | 1h | admin users + organisations endpoints + `cli create-superadmin` | todo | | | |
 | 1i | GDPR export + anonymising delete | todo | | | |
-| 1j | FE auth store/service/views + guards | todo | | | |
+| 1j | FE auth store/service/views + guards | in progress | | | built against the auth API contract; runs in parallel with 1d |
 | 1k | FE AccountView + LocaleSwitcher + PartnersView | todo | | | |
 | 1l | Playwright `auth.spec.ts` | todo | | | |
 
@@ -137,7 +137,8 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - 1a done: 6 auth tables + 4 enums, migration 0002 seeds the 22 organisations, autogenerate clean. 0e in progress.
 - 0e done: M0 complete. Dependencies for 1b/1c committed ahead (1b13bd9). 1b and 1c running in parallel.
 - 1c done (email service, 16 templates, Turnstile). Note for 1d: pass `verify_url='/verify-email?token=...'` style paths; `aclose_client()` for Turnstile still needs wiring into the lifespan.
-- **Next:** review/commit 1b; then 1d (register/verify/resend endpoints).
+- 1b done (126 tests total). 1d (backend registration endpoints) and 1j (frontend auth) started in parallel.
+- **Next:** review/commit 1d and 1j; then 1e (login/logout/me/sessions + deps).
 
 ## 4. Open questions / decisions pending
 - None blocking. Turnstile site key and Gmail app password are needed before M1 can be tested
