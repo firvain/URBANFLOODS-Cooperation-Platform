@@ -1,6 +1,6 @@
 # URBANFLOODS Cooperation Platform
 
-A registration-based knowledge-sharing hub with a blog and a forum for stakeholders in urban flood
+A registration-based knowledge-sharing hub with a blog and a forum for stakeholders in flood
 management across the Adriatic-Ionian region. Built on top of the
 [URBANFLOODS KNOWBASE](https://knowbase.urbanfloods.app) (consumed read-only through its public API).
 

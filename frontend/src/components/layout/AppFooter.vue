@@ -45,7 +45,7 @@ const projectLinks = [
           <img
             :src="logoProject"
             :alt="t('app.projectLogoAlt')"
-            class="block h-auto w-[180px] lg:w-[220px]"
+            class="block h-auto w-[112px] lg:w-[128px]"
           />
           <p class="mt-6 max-w-md text-sm text-muted">{{ t('footer.statement') }}</p>
         </div>

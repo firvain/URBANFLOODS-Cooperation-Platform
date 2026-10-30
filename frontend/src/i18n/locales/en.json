@@ -32,7 +32,7 @@
       },
       "forum": {
         "title": "Forum",
-        "description": "Ask questions and discuss urban flood management with peers."
+        "description": "Ask questions and discuss flood management with peers."
       },
       "knowbase": {
         "title": "KNOWBASE",
@@ -41,35 +41,84 @@
     }
   },
   "partners": {
-    "intro": "The organisations of the URBANFLOODS partnership will be listed here."
+    "title": "Partners",
+    "counts": "{projectPartners} project partners and {associatedPartners} associated partners from {countries} countries",
+    "partnershipTitle": "Partnership",
+    "leadPartner": "Lead partner",
+    "leadBadge": "LEAD",
+    "projectPartners": "Project partners",
+    "associatedPartners": "Associated partners",
+    "logoAlt": "{name} logo",
+    "shortName": "Short name",
+    "loading": "Loading the partners…",
+    "loadError": "The partner list could not be loaded.",
+    "retry": "Try again",
+    "empty": "No partners are listed yet."
   },
   "about": {
     "title": "About URBANFLOODS",
     "description": "The URBANFLOODS Cooperation Platform is a registration-based knowledge-sharing hub with a blog and a forum for stakeholders in urban flood management across the Adriatic-Ionian region. It builds on the URBANFLOODS KNOWBASE and is deliverable D.5.1.1 of the Interreg IPA ADRION project URBANFLOODS (IPA-ADRION00374).",
-    "details": {
-      "title": "Project details",
-      "programme": {
-        "label": "Programme",
-        "value": "Interreg IPA ADRION"
-      },
-      "priority": {
-        "label": "Priority",
-        "value": "Supporting a greener and climate resilient Adriatic-Ionian region"
-      },
-      "duration": {
-        "label": "Duration",
-        "value": "36 months"
-      },
-      "leadPartner": {
-        "label": "Lead partner",
-        "value": "University of Western Macedonia"
-      },
-      "funding": {
-        "label": "EU funding",
-        "value": "@:footer.statement"
-      }
+    "informationTitle": "Information",
+    "facts": {
+      "acronym": "Project acronym",
+      "fullTitle": "Project full title",
+      "programme": "Programme",
+      "priority": "Programme priority",
+      "call": "Call",
+      "specificObjective": "Specific objective",
+      "dates": "Start – end date",
+      "totalBudget": "Total budget",
+      "interregFunds": "Interreg funds"
     },
-    "budgetPlaceholder": "Budget figures: to be provided by the lead partner",
+    "values": {
+      "acronym": "URBANFLOODS",
+      "fullTitle": "Promoting Urban Resilience Through an Integrated Advanced Decision Support System for Flood Control",
+      "programme": "Interreg IPA ADRION 2021–2027",
+      "priority": "2. Supporting a greener and climate resilient Adriatic-Ionian region",
+      "call": "IPA ADRION 1st Call for Proposals",
+      "specificObjective": "SO2.1. Promoting climate change adaptation and disaster risk prevention, resilience taking into account eco-system based approaches",
+      "dates": "01/09/2024 – 31/08/2027",
+      "totalBudget": "EUR 1.747.583,17",
+      "interregFunds": "EUR 1.485.445,68"
+    },
+    "priorityIconAlt": "Interreg IPA ADRION Priority 2 icon",
+    "partnersTitle": "Partners",
+    "leadPartner": {
+      "name": "University of Western Macedonia",
+      "address": "Active Urban Planning Zone (ZEP) I, 50100 Kozani, Greece",
+      "coordinatorName": "Prof. Malamati Louta",
+      "coordinatorRole": "Scientific coordinator",
+      "emailLabel": "Email {name}"
+    },
+    "summary": {
+      "title": "Project summary",
+      "paragraphs": [
+        "The Adriatic-Ionian region, with its unique geographical and climatic conditions, has been increasingly prone to severe flood events due to a combination of climate and land-use changes. These events have led to significant geomorphic adjustments of river channels and, historically, have caused substantial damage to life, property, agriculture, and tourist infrastructure. In addition, the Mediterranean and in particular the Adriatic – Ionian region is characterized as a climate crisis hotspot.",
+        "The URBANFLOODS project recognizes that effective flood management requires a comprehensive understanding at local and regional levels to devise suitable prevention and mitigation strategies. The project is committed to enhancing urban resilience and preparedness by collaboratively developing an advanced, integrated Decision Support System - DSS -, aiming to propose short-, medium-, and long-term actions/measures/policy recommendations to local stakeholders for effective flood control. The project underscores the importance of raising awareness about climate change adaptation strategies, thereby fostering a proactive approach towards climate resilience.",
+        "The project's overall objective is the joint development of innovative solutions for flood management based on a sophisticated information system and the implementation of pilot actions to reduce flood risks. URBANFLOODS particularly targets rivers and streams that intersect urban areas, as they often pose significant flood risks to urban communities, a situation that is being exacerbated by rapid urbanization and changing climate patterns.",
+        "The joint innovative solutions will be fine-tuned taking into account the requirements/constraints and local characteristics in several pilot sites in Adriatic – Ionian area, the interchange of experiences, and practical training derived from the project's pilot initiatives. This ensures their applicability and efficacy in a variety of contexts and conditions."
+      ],
+      "outputsIntro": "The project's specific outputs include:",
+      "outputs": [
+        {
+          "title": "Joint Development of solutions",
+          "text": "and in particular an advanced, data driven DSS that offers holistic solutions for flood management, including early warning systems and a knowledge base of transnational short-/medium-/long-term actions/measures/policy recommendations. They will be used to strengthen civil protection mechanisms by enhancing the related plans."
+        },
+        {
+          "title": "Joint implementation of pilot actions",
+          "text": "in multiple pilot sites for a shared and coordinated use of data, modelling and designing early warning systems to reduce climate change risks, testing and validating the DSS in multiple sites in Adriatic – Ionian region and enhancing stakeholder engagement in flood management by raising awareness, promoting DSS acceptance, and fostering innovation through user-friendly shared and coordinated access across all pilot sites."
+        },
+        {
+          "title": "Joint development and implementation of integrated transnational Strategies and Action Plans",
+          "text": "to coordinate measures of flood management by prioritizing nature-based solutions. These action plans can serve as a reference for other regions facing similar challenges."
+        },
+        {
+          "title": "Strengthening the cooperation among organizations across borders",
+          "text": "as in URBANFLOODS 11 partners from 8 different countries and 11 associated partners will cooperate to achieve the project's objectives."
+        }
+      ],
+      "closing": "The project's main results include jointly developed innovative solutions as well as harmonized joint transnational strategy and action plans reflecting the territorial needs for efficient and effective flood management taken up and/or considered and evaluated by organizations, while the sustainability of the solutions jointly developed will be promoted, with all partners being committed to the successful project completion and willing to continue active cooperation after the completion of the project. Moreover, the project will foster augmentation of consciousness regarding climate change adaptation strategies, thereby encouraging a proactive attitude toward climate resilience."
+    },
     "links": {
       "title": "Learn more",
       "project": "URBANFLOODS project website",
@@ -121,7 +170,8 @@
         "password_too_short": "Use at least {min} characters.",
         "password_too_long": "Use at most {max} characters.",
         "password_too_common": "This password is too common. Choose a less predictable one.",
-        "email_taken": "An account with this email address already exists."
+        "email_taken": "An account with this email address already exists.",
+        "password_same": "The new password must be different from the current one."
       }
     }
   },
@@ -207,6 +257,41 @@
     }
   },
   "account": {
-    "intro": "Profile, password, notification and data settings are coming in the next update."
+    "intro": "Manage your profile, your password and the devices where you are signed in.",
+    "tabs": {
+      "profile": "Profile",
+      "password": "Password",
+      "sessions": "Sessions"
+    },
+    "profile": {
+      "bio": "About you",
+      "bioHint": "Optional. A few words about your work and interests.",
+      "bioCount": "{count}/{max}",
+      "submit": "Save profile",
+      "saved": "Your profile has been saved.",
+      "noChanges": "There are no changes to save."
+    },
+    "password": {
+      "intro": "Changing your password signs you out on all other devices.",
+      "current": "Current password",
+      "submit": "Change password",
+      "changed": "Password changed",
+      "wrongCurrent": "The current password is incorrect."
+    },
+    "sessions": {
+      "intro": "The devices where you are signed in. Sign out any you do not recognise.",
+      "current": "This device",
+      "device": "{browser} on {os}",
+      "unknownDevice": "Unknown device",
+      "signedIn": "Signed in: {date}",
+      "lastSeen": "Last active: {date}",
+      "expires": "Expires: {date}",
+      "signOut": "Sign out this device",
+      "signedOut": "The device has been signed out.",
+      "loading": "Loading your sessions…",
+      "loadError": "Your sessions could not be loaded.",
+      "retry": "Try again",
+      "empty": "No active sessions."
+    }
   }
 }

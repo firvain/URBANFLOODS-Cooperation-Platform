@@ -149,7 +149,7 @@ describe('footer branding', () => {
     expect(img).not.toBeNull()
     expect(img!.getAttribute('alt')).toBe(t('app.projectLogoAlt'))
     expect(t('app.projectLogoAlt')).toBe('URBANFLOODS project logo')
-    for (const cls of ['w-[180px]', 'lg:w-[220px]', 'h-auto']) {
+    for (const cls of ['w-[112px]', 'lg:w-[128px]', 'h-auto']) {
       expect(img!.classList.contains(cls), cls).toBe(true)
     }
   })
