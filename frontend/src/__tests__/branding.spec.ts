@@ -172,14 +172,13 @@ describe('About page', () => {
     return main!
   }
 
-  it('has a single focusable h1 and the project description', async () => {
+  it('has a single focusable h1 and no platform blurb (the page is about the project)', async () => {
     const main = await mountAbout()
     const headings = main.querySelectorAll('h1')
     expect(headings).toHaveLength(1)
     expect(headings[0]!.getAttribute('tabindex')).toBe('-1')
     expect(headings[0]!.textContent?.trim()).toBe(t('about.title'))
-    expect(main.textContent).toContain(t('about.description'))
-    expect(t('about.description')).toContain('knowledge-sharing hub')
+    expect(main.textContent).not.toContain('knowledge-sharing hub')
   })
 
   it('shows the stacked project logo', async () => {

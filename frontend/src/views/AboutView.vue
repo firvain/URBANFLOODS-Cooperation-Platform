@@ -46,7 +46,6 @@ const outputs = computed(() =>
           {{ t('about.title') }}
         </h1>
         <div class="h-1 w-20 rounded bg-secondary-500" />
-        <p class="mt-6 text-lg text-gray-700">{{ t('about.description') }}</p>
       </div>
 
       <UCard class="mt-8">
