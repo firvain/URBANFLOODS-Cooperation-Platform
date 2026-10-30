@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (ruff + pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Python 3.11 matches the Docker image (local dev may use a newer interpreter).
+      UV_PYTHON: "3.11"
+    steps:
+      - uses: actions/checkout@v7
+
+      # setup-uv no longer publishes floating major tags; Dependabot keeps this pin current.
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install Python 3.11
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --all-extras --frozen
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Format check
+        run: uv run ruff format --check .
+
+      # TEST_DATABASE_URL points at the service container, so conftest never reaches for
+      # testcontainers (DOCKER_HOST is deliberately left unset).
+      - name: Test
+        env:
+          TEST_DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/test
+        run: uv run pytest -q --cov=app --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+  frontend:
+    name: Frontend (lint, types, vitest, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint:check
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build-only
+
+  docker:
+    name: Docker images build
+    needs: [backend, frontend]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build backend image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          tags: urbanfloods-cooperation-backend:ci
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      # Dev image only for now. frontend/Dockerfile.prod (nginx + built SPA) arrives in M6;
+      # add a build step for it here then.
+      - name: Build frontend dev image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile.dev
+          push: false
+          tags: urbanfloods-cooperation-frontend:ci-dev
+          cache-from: type=gha,scope=frontend-dev
+          cache-to: type=gha,scope=frontend-dev,mode=max

@@ -1,0 +1,28 @@
+# Throwaway Postgres for the backend test suite (data lives in tmpfs and is gone on `down`).
+#
+#   docker compose -f docker-compose.test.yml up -d --wait
+#   cd backend && TEST_DATABASE_URL=postgresql+asyncpg://test:test@localhost:5434/test uv run pytest
+#   docker compose -f docker-compose.test.yml down -v
+#
+# `test` is the image's superuser, so it has CREATEDB (the migration tests create scratch
+# databases). Without TEST_DATABASE_URL, pytest starts its own container via testcontainers.
+
+name: urbanfloods-cooperation-test
+
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: urbanfloods-cooperation-db-test
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test
+    ports:
+      - "5434:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
