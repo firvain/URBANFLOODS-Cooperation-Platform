@@ -119,7 +119,10 @@ const isEmpty = computed(
               <h3 class="mb-3 text-lg font-semibold text-secondary-600">
                 {{ t('partners.projectPartners') }}
               </h3>
-              <ul data-testid="project-partners" class="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+              <ul
+                data-testid="project-partners"
+                class="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3"
+              >
                 <PartnerTile v-for="o in projectPartners" :key="o.id" :organisation="o" />
               </ul>
             </div>
@@ -128,7 +131,10 @@ const isEmpty = computed(
               <h3 class="mb-3 text-lg font-semibold text-secondary-600">
                 {{ t('partners.associatedPartners') }}
               </h3>
-              <ul data-testid="associated-partners" class="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+              <ul
+                data-testid="associated-partners"
+                class="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3"
+              >
                 <PartnerTile v-for="o in associatedPartners" :key="o.id" :organisation="o" />
               </ul>
             </div>
