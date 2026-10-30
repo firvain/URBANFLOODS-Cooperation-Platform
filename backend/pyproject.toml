@@ -11,6 +11,7 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.36",
     "asyncpg>=0.30",
     "structlog>=24.4",
+    "alembic>=1.14",
 ]
 
 [project.optional-dependencies]
@@ -37,6 +38,10 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
+
+[tool.ruff.lint.isort]
+# The local alembic/ migrations directory would otherwise make ruff treat `alembic` as first-party.
+known-third-party = ["alembic"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

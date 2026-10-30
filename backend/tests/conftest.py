@@ -6,6 +6,9 @@ started with testcontainers. If neither is available, DB-backed tests are skippe
 
 The database is resolved in ``pytest_configure`` because the app builds its settings and its
 async engine at import time, and test modules import ``app`` during collection.
+
+Schema: when a database is available it is migrated to Alembic head once per session (autouse
+fixture below), before any test runs. ``db_session`` rolls back after every test.
 """
 
 from __future__ import annotations
@@ -88,6 +91,29 @@ def database_url() -> str:
     if _database_url is None:
         pytest.skip(_database_unavailable_reason or "No test database available")
     return _database_url
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def _migrate_test_database() -> None:
+    """Upgrade the session database to head once. No-op when there is no database.
+
+    Runs inside pytest-asyncio's session event loop, so Alembic gets a connection through
+    ``run_sync`` (``env.py`` then skips its own ``asyncio.run``).
+    """
+    if _database_url is None:
+        return
+
+    from sqlalchemy.ext.asyncio import create_async_engine
+    from sqlalchemy.pool import NullPool
+
+    from app.db.migrations import upgrade_head
+
+    engine = create_async_engine(_database_url, poolclass=NullPool)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(upgrade_head)
+    finally:
+        await engine.dispose()
 
 
 @pytest.fixture
