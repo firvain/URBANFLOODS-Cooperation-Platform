@@ -20,5 +20,8 @@
     "login": "Accedi",
     "register": "Registrati",
     "logout": "Esci"
+  },
+  "footer": {
+    "statement": "Il progetto è cofinanziato dall'Unione europea attraverso il programma Interreg IPA ADRION."
   }
 }

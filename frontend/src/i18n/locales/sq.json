@@ -20,5 +20,8 @@
     "login": "Hyr",
     "register": "Regjistrohu",
     "logout": "Dil"
+  },
+  "footer": {
+    "statement": "Projekti bashkëfinancohet nga Bashkimi Evropian përmes programit Interreg IPA ADRION."
   }
 }

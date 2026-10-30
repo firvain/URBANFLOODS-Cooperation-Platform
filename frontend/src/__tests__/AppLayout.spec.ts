@@ -1,29 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import { createMemoryHistory } from 'vue-router'
-import { createPinia } from 'pinia'
-import { createHead } from '@unhead/vue/client'
-import ui from '@nuxt/ui/vue-plugin'
+import { flushPromises } from '@vue/test-utils'
 
-import App from '@/App.vue'
 import i18n, { SUPPORTED_LOCALES, setLocale } from '@/i18n'
-import { createAppRouter } from '@/router'
+import { EXTERNAL_LINKS } from '@/constants/links'
+import { mountApp, unmountAll } from './helpers/mount'
 
 const t = i18n.global.t
 
-let wrapper: VueWrapper | undefined
-
-async function mountApp(path = '/') {
-  const router = createAppRouter(createMemoryHistory())
-  wrapper = mount(App, {
-    attachTo: document.body,
-    global: { plugins: [createPinia(), router, i18n, createHead(), ui] },
-  })
-  await router.push(path)
-  await router.isReady()
-  await flushPromises()
-  return { wrapper, router }
-}
+/** Required alt text of the project logo (docs/branding.md). */
+const LOGO_ALT = 'Interreg IPA ADRION, co-funded by the European Union: URBANFLOODS'
 
 beforeEach(() => {
   setLocale('en')
@@ -31,9 +16,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  wrapper?.unmount()
-  wrapper = undefined
-  document.body.innerHTML = ''
+  unmountAll()
 })
 
 describe('App layout', () => {
@@ -60,6 +43,204 @@ describe('App layout', () => {
   it('shows the EU co-funding disclaimer in the footer', async () => {
     await mountApp()
     expect(document.querySelector('footer')?.textContent).toContain(t('footer.disclaimer'))
+  })
+})
+
+describe('header branding', () => {
+  function headerLogo() {
+    const img = Array.from(document.querySelectorAll<HTMLImageElement>('header img')).find(
+      (el) => el.getAttribute('alt') === LOGO_ALT,
+    )
+    expect(img, 'header logo with the required alt').toBeDefined()
+    return img!
+  }
+
+  it('replaces the text title with the horizontal project logo linked to /', async () => {
+    await mountApp('/about')
+    const img = headerLogo()
+    expect(img.getAttribute('src')).toMatch(/interreg-urbanfloods-horizontal/)
+    const link = img.closest('a')
+    expect(link?.getAttribute('href')).toBe('/')
+    // UHeader puts `aria-label` on the link; it must name the logo, not "Nuxt UI".
+    expect(link?.getAttribute('aria-label')).toBe(LOGO_ALT)
+    expect(document.querySelector('header')?.textContent).not.toContain('Cooperation Platform')
+  })
+
+  // Minimum on-screen width (docs/branding.md): 240 px below lg, 300 px from lg, never shrunk.
+  // Enforced with fixed Tailwind widths + matching min-widths + max-w-none on the <img>.
+  it('declares the minimum logo width: 240 px, 300 px from lg, never shrinking', async () => {
+    await mountApp()
+    const classes = headerLogo().classList
+    for (const cls of [
+      'w-[240px]',
+      'min-w-[240px]',
+      'lg:w-[300px]',
+      'lg:min-w-[300px]',
+      'max-w-none',
+      'shrink-0',
+    ]) {
+      expect(classes.contains(cls), cls).toBe(true)
+    }
+  })
+
+  it('keeps clear space around the logo and a white header background', async () => {
+    await mountApp()
+    const link = headerLogo().closest('a')!
+    expect(link.classList.contains('py-3')).toBe(true)
+    expect(link.classList.contains('pe-4')).toBe(true)
+    expect(document.querySelector('header')?.classList.contains('bg-white')).toBe(true)
+  })
+})
+
+describe('page shell', () => {
+  it('stacks header, main and footer in a full-height flex column', async () => {
+    await mountApp()
+    const main = document.querySelector('main#main')!
+    const shell = main.parentElement!
+    for (const cls of ['flex', 'min-h-screen', 'flex-col']) {
+      expect(shell.classList.contains(cls), cls).toBe(true)
+    }
+    expect(main.classList.contains('flex-1')).toBe(true)
+    expect(main.className).not.toContain('min-h-[calc')
+    expect(document.querySelector('header')?.parentElement).toBe(shell)
+    expect(document.querySelector('footer')?.parentElement).toBe(shell)
+  })
+})
+
+describe('footer branding', () => {
+  function footer() {
+    const el = document.querySelector('footer')
+    expect(el).not.toBeNull()
+    return el!
+  }
+
+  /** The link list under the column heading with the given i18n key. */
+  function column(key: string) {
+    const heading = Array.from(footer().querySelectorAll('h2')).find(
+      (h) => h.textContent?.trim() === t(`footer.columns.${key}`),
+    )
+    expect(heading, `column ${key}`).toBeDefined()
+    return heading!.parentElement!
+  }
+
+  it('shows the statement and, as the last text, the exact disclaimer in small print', async () => {
+    await mountApp()
+    expect(t('footer.statement')).toBe(
+      'The project is co-funded by the European Union through the Interreg IPA ADRION programme.',
+    )
+    expect(t('footer.disclaimer')).toBe(
+      'This website has been produced with the financial assistance of the European Union. The content of the website is the sole responsibility of the University of Western Macedonia and can under no circumstances be regarded as reflecting the position of the European Union and/or IPA ADRION programme authorities.',
+    )
+    const paragraphs = Array.from(footer().querySelectorAll('p'))
+    const statement = paragraphs.find((p) => p.textContent?.trim() === t('footer.statement'))
+    expect(statement).toBeDefined()
+    expect(statement!.classList.contains('text-sm')).toBe(true)
+    const last = paragraphs.at(-1)!
+    expect(last.textContent?.trim()).toBe(t('footer.disclaimer'))
+    expect(last.classList.contains('text-xs')).toBe(true)
+  })
+
+  // Decision C: the minimum is measured on the Interreg logotype + EU emblem (~54% of the
+  // stacked image), so 448 px renders it at ~240 px and 560 px at ~300 px.
+  it('renders the stacked project logo at the literal minimum where the layout allows', async () => {
+    await mountApp()
+    const img = footer().querySelector<HTMLImageElement>('img[src*="interreg-urbanfloods-stacked"]')
+    expect(img).not.toBeNull()
+    expect(img!.getAttribute('alt')).toBe(LOGO_ALT)
+    for (const cls of ['w-[448px]', 'lg:w-[560px]', 'max-w-full', 'h-auto']) {
+      expect(img!.classList.contains(cls), cls).toBe(true)
+    }
+  })
+
+  it('has Platform, Project and Follow column headings', async () => {
+    await mountApp()
+    const headings = Array.from(footer().querySelectorAll('h2')).map((h) => h.textContent?.trim())
+    expect(headings).toEqual([
+      t('footer.columns.platform'),
+      t('footer.columns.project'),
+      t('footer.columns.follow'),
+    ])
+    expect([t('footer.columns.platform'), t('footer.columns.project'), t('footer.columns.follow')]).toEqual(
+      ['Platform', 'Project', 'Follow'],
+    )
+  })
+
+  it('links internally to the existing pages in the Platform column', async () => {
+    await mountApp('/about')
+    const links = Array.from(column('platform').querySelectorAll('a'))
+    expect(links.map((a) => a.getAttribute('href'))).toEqual(['/', '/partners', '/about'])
+    expect(links.map((a) => a.textContent?.trim())).toEqual([
+      t('nav.home'),
+      t('nav.partners'),
+      t('nav.about'),
+    ])
+    for (const link of links) expect(link.getAttribute('target')).toBeNull()
+  })
+
+  it('links to the project sites and LinkedIn in a new tab, announced', async () => {
+    await mountApp()
+    expect(EXTERNAL_LINKS).toEqual({
+      programme: 'https://www.interreg-ipa-adrion.eu',
+      project: 'https://urbanfloods.interreg-ipa-adrion.eu',
+      knowbase: 'https://knowbase.urbanfloods.app',
+      linkedin: 'https://www.linkedin.com/company/urbanfloods/',
+    })
+    const hrefs = (key: string) =>
+      Array.from(column(key).querySelectorAll('a')).map((a) => a.getAttribute('href'))
+    expect(hrefs('project')).toEqual([
+      EXTERNAL_LINKS.project,
+      EXTERNAL_LINKS.programme,
+      EXTERNAL_LINKS.knowbase,
+    ])
+    expect(hrefs('follow')).toEqual([EXTERNAL_LINKS.linkedin])
+
+    const links = Array.from(footer().querySelectorAll<HTMLAnchorElement>('a[target="_blank"]'))
+    expect(links).toHaveLength(4)
+    for (const link of links) {
+      const rel = link.getAttribute('rel') ?? ''
+      expect(rel).toContain('noopener')
+      expect(rel).toContain('noreferrer')
+      expect(link.querySelector('.sr-only')?.textContent?.trim()).toBe(t('a11y.opensInNewTab'))
+      expect(link.querySelector('[data-icon="i-lucide-arrow-up-right"]'), link.href).not.toBeNull()
+    }
+    expect(links[0]!.textContent).toContain(t('footer.links.project'))
+    expect(links[1]!.textContent).toContain(t('footer.links.programme'))
+    expect(links[2]!.textContent).toContain(t('footer.links.knowbase'))
+    expect(t('footer.links.linkedin')).toBe('URBANFLOODS on LinkedIn')
+    expect(links[3]!.textContent).toContain(t('footer.links.linkedin'))
+    expect(links[3]!.querySelector('[data-icon="i-lucide-linkedin"]')).not.toBeNull()
+  })
+
+  it('styles column links muted, underlined only on hover/focus', async () => {
+    await mountApp()
+    const links = footer().querySelectorAll('h2 + ul a')
+    expect(links).toHaveLength(7)
+    for (const link of links) {
+      const classes = link.classList
+      expect(classes.contains('text-sm')).toBe(true)
+      expect(classes.contains('text-muted')).toBe(true)
+      expect(classes.contains('hover:text-highlighted')).toBe(true)
+      expect(classes.contains('underline')).toBe(false)
+      expect(classes.contains('hover:underline')).toBe(true)
+      expect(classes.contains('focus-visible:underline')).toBe(true)
+    }
+  })
+
+  it('shows the copyright line with the current year in small print', async () => {
+    await mountApp()
+    const copyright = Array.from(footer().querySelectorAll('p')).find(
+      (p) => p.textContent?.trim() === t('footer.copyright', { year: new Date().getFullYear() }),
+    )
+    expect(copyright).toBeDefined()
+    expect(copyright!.classList.contains('text-xs')).toBe(true)
+  })
+
+  it('is white with a top border and the green accent line', async () => {
+    await mountApp()
+    const classes = footer().classList
+    for (const cls of ['bg-white', 'border-t', 'border-default', 'before:bg-secondary-500', 'before:h-1']) {
+      expect(classes.contains(cls), cls).toBe(true)
+    }
   })
 })
 

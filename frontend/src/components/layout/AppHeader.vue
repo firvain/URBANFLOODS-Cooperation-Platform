@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
+import logoHorizontal from '@/assets/logos/interreg-urbanfloods-horizontal.png'
 import { NAV_ITEMS } from '@/constants/navigation'
 import LocaleSwitcher from './LocaleSwitcher.vue'
 import UserMenu from './UserMenu.vue'
@@ -18,12 +19,28 @@ function isActive(to: string): boolean {
 </script>
 
 <template>
-  <UHeader to="/" :ui="{ root: 'border-b border-default' }">
+  <!--
+    Project logo (docs/branding.md): the official horizontal image, on white, never narrower than
+    240 px (300 px from lg). Fixed widths + matching min-widths + max-w-none keep it from
+    shrinking; the navigation collapses into the menu instead. py-3/pe-4 plus the header height
+    (main.css) keep clear space of at least half the EU emblem height around it.
+  -->
+  <UHeader
+    to="/"
+    :title="t('app.logoAlt')"
+    :ui="{
+      root: 'bg-white backdrop-blur-none border-b border-default',
+      title: 'items-center py-3 pe-4',
+    }"
+  >
     <template #title>
-      <span class="font-bold leading-tight">
-        <span class="text-primary-600 dark:text-primary-300">URBANFLOODS</span>
-        <span class="text-highlighted"> Cooperation Platform</span>
-      </span>
+      <img
+        :src="logoHorizontal"
+        :alt="t('app.logoAlt')"
+        width="1481"
+        height="258"
+        class="block h-auto w-[240px] min-w-[240px] max-w-none shrink-0 lg:w-[300px] lg:min-w-[300px]"
+      />
     </template>
 
     <nav :aria-label="t('app.mainNavigation')" class="hidden items-center gap-1 lg:flex">
@@ -41,7 +58,10 @@ function isActive(to: string): boolean {
 
     <template #right>
       <UserMenu class="hidden lg:flex" />
-      <LocaleSwitcher />
+      <!-- Below sm the logo needs the room; the language switcher moves into the menu. -->
+      <div class="hidden sm:block">
+        <LocaleSwitcher />
+      </div>
     </template>
 
     <template #body>
@@ -60,6 +80,9 @@ function isActive(to: string): boolean {
       </ul>
       <USeparator class="my-4" />
       <UserMenu mobile />
+      <div class="mt-4 sm:hidden">
+        <LocaleSwitcher class="w-full" />
+      </div>
     </template>
   </UHeader>
 </template>

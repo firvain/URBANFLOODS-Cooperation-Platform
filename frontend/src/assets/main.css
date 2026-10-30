@@ -33,6 +33,21 @@
   --color-secondary-950: #222b0d;
 }
 
+/*
+ * Light mode only (docs/branding.md). Header height leaves clear space around the project logo
+ * (>= half the EU emblem height): 240 px wide logo is ~42 px tall below lg, 300 px is ~52 px.
+ */
+:root {
+  color-scheme: light;
+  --ui-header-height: 4.5rem;
+}
+
+@media (min-width: 64rem) {
+  :root {
+    --ui-header-height: 5.5rem;
+  }
+}
+
 /* Visible keyboard focus ring, usable as a class and applied to native controls by default. */
 @utility focus-ring {
   outline: 3px solid var(--color-secondary-500);
@@ -40,6 +55,11 @@
 }
 
 @layer base {
+  html,
+  body {
+    background-color: #ffffff;
+  }
+
   :where(
     a,
     button,

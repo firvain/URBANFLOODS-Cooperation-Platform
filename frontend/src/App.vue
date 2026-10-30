@@ -11,12 +11,15 @@ const { announcement } = useFocusOnRouteChange()
 <template>
   <UApp>
     <SkipLink />
-    <AppHeader />
-    <main id="main" class="min-h-[calc(100vh-var(--ui-header-height))]">
-      <UnverifiedBanner />
-      <RouterView />
-    </main>
-    <AppFooter />
+    <!-- Footer at the bottom of the viewport on short pages, after the content on long ones. -->
+    <div class="flex min-h-screen flex-col">
+      <AppHeader />
+      <main id="main" class="flex-1">
+        <UnverifiedBanner />
+        <RouterView />
+      </main>
+      <AppFooter />
+    </div>
     <div aria-live="polite" aria-atomic="true" class="sr-only">{{ announcement }}</div>
   </UApp>
 </template>

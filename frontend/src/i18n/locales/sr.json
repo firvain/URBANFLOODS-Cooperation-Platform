@@ -20,5 +20,8 @@
     "login": "Пријава",
     "register": "Регистрација",
     "logout": "Одјава"
+  },
+  "footer": {
+    "statement": "Пројекат суфинансира Европска унија кроз програм Interreg IPA ADRION."
   }
 }

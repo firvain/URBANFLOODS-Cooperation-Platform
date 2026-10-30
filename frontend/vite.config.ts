@@ -16,6 +16,11 @@ export default defineConfig(({ mode }) => ({
       // Bundle the Lucide icons we use (and Nuxt UI's defaults) into the build, so the browser
       // never fetches icons from the third-party Iconify API.
       icon: { clientBundle: { scan: true } },
+      // Light mode only (docs/branding.md: the project logo must sit on white). `false` drops Nuxt
+      // UI's color-mode plugin (`useDark()` from @vueuse/core), so nothing ever adds the `dark`
+      // class to <html> or reads/writes `vueuse-color-scheme`, and the color-mode components
+      // (UColorModeButton, …) are not registered.
+      colorMode: false,
       ui: {
         colors: {
           primary: 'primary',

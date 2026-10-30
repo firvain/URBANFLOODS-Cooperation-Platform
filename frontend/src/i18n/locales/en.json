@@ -3,7 +3,11 @@
     "title": "URBANFLOODS Cooperation Platform",
     "skipToContent": "Skip to main content",
     "language": "Language",
-    "mainNavigation": "Main navigation"
+    "mainNavigation": "Main navigation",
+    "logoAlt": "Interreg IPA ADRION, co-funded by the European Union: URBANFLOODS"
+  },
+  "a11y": {
+    "opensInNewTab": "(opens in a new tab)"
   },
   "nav": {
     "home": "Home",
@@ -39,10 +43,53 @@
     "intro": "The organisations of the URBANFLOODS partnership will be listed here."
   },
   "about": {
-    "intro": "Information about the Cooperation Platform and the URBANFLOODS project will be published here."
+    "title": "About URBANFLOODS",
+    "description": "The URBANFLOODS Cooperation Platform is a registration-based knowledge-sharing hub with a blog and a forum for stakeholders in urban flood management across the Adriatic-Ionian region. It builds on the URBANFLOODS KNOWBASE and is deliverable D.5.1.1 of the Interreg IPA ADRION project URBANFLOODS (IPA-ADRION00374).",
+    "details": {
+      "title": "Project details",
+      "programme": {
+        "label": "Programme",
+        "value": "Interreg IPA ADRION"
+      },
+      "priority": {
+        "label": "Priority",
+        "value": "Supporting a greener and climate resilient Adriatic-Ionian region"
+      },
+      "duration": {
+        "label": "Duration",
+        "value": "36 months"
+      },
+      "leadPartner": {
+        "label": "Lead partner",
+        "value": "University of Western Macedonia"
+      },
+      "funding": {
+        "label": "EU funding",
+        "value": "@:footer.statement"
+      }
+    },
+    "budgetPlaceholder": "Budget figures: to be provided by the lead partner",
+    "links": {
+      "title": "Learn more",
+      "project": "URBANFLOODS project website",
+      "knowbase": "URBANFLOODS KNOWBASE"
+    },
+    "partnersLink": "See the project partners"
   },
   "footer": {
-    "disclaimer": "The project is co-funded by the European Union through the Interreg IPA ADRION programme. The content of the website is the sole responsibility of the University of Western Macedonia and can under no circumstances be regarded as reflecting the position of the European Union and/or IPA ADRION programme authorities.",
+    "statement": "The project is co-funded by the European Union through the Interreg IPA ADRION programme.",
+    "disclaimer": "This website has been produced with the financial assistance of the European Union. The content of the website is the sole responsibility of the University of Western Macedonia and can under no circumstances be regarded as reflecting the position of the European Union and/or IPA ADRION programme authorities.",
+    "columns": {
+      "platform": "Platform",
+      "project": "Project",
+      "follow": "Follow"
+    },
+    "links": {
+      "programme": "Interreg IPA ADRION programme",
+      "project": "URBANFLOODS project website",
+      "knowbase": "URBANFLOODS KNOWBASE",
+      "linkedin": "URBANFLOODS on LinkedIn"
+    },
     "copyright": "© {year} URBANFLOODS"
   },
   "errors": {

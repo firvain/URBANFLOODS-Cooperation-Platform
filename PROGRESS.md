@@ -54,13 +54,13 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 1b | `core/security.py` argon2 + session tokens + cookie helpers | done | 8654679 | 61 pytest | + crud/session (revoke scoped by user), crud/token (atomic consume), crud/audit (strips secret-like keys) |
 | 1c | `services/email.py` + templates + outbox fixture + Mailpit; `services/turnstile.py` | done | 2360b6e | 40 pytest | `*_url` context values must be site-relative paths; en templates: verify_email, reset_password, change_email, welcome; el: verify_email |
 | 1d | register / verify-email / resend endpoints | done | 83761bd | 41 pytest (167 total) | uniform error body `detail.{code,message,fields}`; `DbTx` commits before response; verified live against Mailpit |
-| 1e | login / logout / me / sessions + `core/deps.py` | done | | 70 pytest (237 total) | code-review medium: 9 findings fixed (pool starvation, re-login revokes old session, `AppError(keep_changes)` mechanism, eager-load chain, touch gated 5 min); rate limit deferred to 1g |
+| 1e | login / logout / me / sessions + `core/deps.py` | done | 520b765 | 70 pytest (237 total) | code-review medium: 9 findings fixed (pool starvation, re-login revokes old session, `AppError(keep_changes)` mechanism, eager-load chain, touch gated 5 min); rate limit deferred to 1g |
 | 1f | password forgot/reset + change password/email | in progress | | | |
 | 1g | CSRF + rate-limit middleware | todo | | | |
 | 1h | admin users + organisations endpoints + `cli create-superadmin` | in progress | | | organisations API feeds the Partners page |
 | 1i | GDPR export + anonymising delete | todo | | | |
 | 1j | FE auth store/service/views + guards | done | bf59061 | 70 vitest (101 total) | login/register/verify/forgot/reset views, UserMenu, UnverifiedBanner, open-redirect guard, 401/429 API hooks; hand-typed auth types until `gen:types` |
-| 1j-b | FE branding: light mode only, official logos + favicon from the project site, footer disclaimer | in progress | | | + LinkedIn link, footer redesign (4 columns, green accent), flex page shell; logo-size interpretation in docs/branding.md |
+| 1j-b | FE branding: light mode only, official logos + favicon from the project site, footer disclaimer | done | | 60 vitest (161 total) | `ui({ colorMode: false })`; footer: 4 columns + green accent + statement + disclaimer + LinkedIn; flex page shell; About page facts; logo-size interpretation in docs/branding.md |
 | 1k | FE AccountView + PartnersView (KNOWBASE About-page style, see docs/about-partners-style.md) + About facts | todo | | | user: Partners page must look like knowbase.urbanfloods.app/about |
 | 1m | Expertise tags (seeded vocabulary) + user_expertise + show_email/show_in_directory + members directory API (`/members/`, filters) | todo | | | from 3rd-meeting commitments (matchmaking) |
 | 1n | FE Collaboration Network page: members directory + suggested collaborators widget; DSS nav link + home card (`VITE_DSS_URL`) | todo | | | DSS URL: https://urbanfloods.finki.ukim.mk/ |
