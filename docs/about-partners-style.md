@@ -56,6 +56,17 @@ KNOWBASE About page may be reused verbatim (same project, same lead partner).
 - Data comes from `GET /api/v1/organisations/` (increment 1h), partners first (`is_partner`),
   LP/PP before AP, by `sort_order`. The LP is the row with `short_name == 'UOWM'`
   (type `PP`, sort_order 1).
-- Logos: the project logo only (centred at the top of the card). No partner logos yet; if they are
-  added later, none may exceed the EU emblem height on the page (docs/branding.md).
+- Logos: the project logo centred at the top of the card, **plus the partner logos** supplied by the
+  LP (SharePoint URBANFLOODS29 → General/Partner Logos, collected 2026-10-30) in
+  `frontend/public/partners/<slug>.png|svg`, slug = lower-cased short_name with spaces/underscores
+  as `-` (`uowm`, `heis`, `dcms`, `mc` (svg), `rda-backa`, `deyak`, `hydrowateral`, `rda-porin`,
+  `fcse-ukim`, `svimed`, `ckm`). A tile shows the logo in a fixed-height box (`h-16`,
+  `object-contain`, white background, light border) above the name; a missing file falls back to
+  the text-only tile. The 11 associated partners have no logo files yet (text tiles).
+  Rule from docs/branding.md: no partner logo may be taller than the EU emblem inside the project
+  logo on the same page. The project logo on this page is the stacked 560 px version, whose EU
+  emblem is ≈ 55 px tall at lg; partner logo boxes are therefore capped at `h-12` (48 px) on lg and
+  `h-10` below. Hydrowater Albania's file has a dark background baked in: render it as supplied.
+  Macerata uses the municipality's official coat of arms (SVG from comune.macerata.it) because the
+  SharePoint copy is PDF-only.
 - Counts line under the h1: "11 project partners and 11 associated partners from 8 countries".
