@@ -1,0 +1,13 @@
+Hello {{ display_name }},
+
+You asked to change the email address of your account on the {{ app_name }} to:
+
+{{ new_email }}
+
+To confirm the change, open this link (it is valid for 24 hours):
+
+{{ frontend_url }}{{ confirm_url }}
+
+If you did not request this, ignore this email. Your email address will not change.
+
+{% include "en/_footer.txt.j2" %}

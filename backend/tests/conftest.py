@@ -139,3 +139,21 @@ async def db_session(database_url: str) -> AsyncIterator[AsyncSession]:
             yield session
         finally:
             await session.rollback()
+
+
+@pytest.fixture
+async def outbox() -> AsyncIterator[list]:
+    """The in-memory email outbox (``list[OutgoingEmail]``), empty at the start of each test.
+
+    Needs no database. In the test env ``get_backend()`` is always an ``OutboxBackend``.
+    """
+    from app.services.email import OutboxBackend, get_backend, reset_backend
+
+    reset_backend()
+    backend = get_backend()
+    assert isinstance(backend, OutboxBackend)
+    try:
+        yield backend.messages
+    finally:
+        backend.messages.clear()
+        reset_backend()

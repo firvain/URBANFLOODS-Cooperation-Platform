@@ -1,0 +1,12 @@
+{% extends "el/_layout.html.j2" %}
+{% block title %}Επιβεβαίωση διεύθυνσης email{% endblock %}
+{% block content %}
+<h1 style="font-size:22px; margin:0 0 16px;">Επιβεβαίωση διεύθυνσης email</h1>
+<p>Γεια σας {{ display_name }},</p>
+<p>Σας ευχαριστούμε για την εγγραφή σας στην {{ app_name }}. Επιβεβαιώστε τη διεύθυνση email σας. Ο σύνδεσμος ισχύει για 48 ώρες.</p>
+<p><a href="{{ frontend_url }}{{ verify_url }}" style="color:#0b4f8a; font-weight:bold;">Επιβεβαίωση του email μου στην {{ app_name }}</a></p>
+<p style="font-size:14px;">Αν ο σύνδεσμος δεν λειτουργεί, αντιγράψτε αυτή τη διεύθυνση στον φυλλομετρητή σας:<br>{{ frontend_url }}{{ verify_url }}</p>
+{% endblock %}
+{% block notice %}
+<p style="margin:0 0 8px;">Λάβατε αυτό το μήνυμα επειδή δημιουργήθηκε λογαριασμός με αυτή τη διεύθυνση. Αν δεν ήσασταν εσείς, αγνοήστε αυτό το μήνυμα.</p>
+{% endblock %}

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="{{ locale }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{% endblock %}</title>
+</head>
+<body style="margin:0; padding:24px 16px; background:#ffffff; color:#1a1a1a; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:1.5;">
+<main style="max-width:600px; margin:0 auto;">
+<p style="margin:0 0 24px; font-weight:bold; color:#0b4f8a;">{{ app_name }}</p>
+{% block content %}{% endblock %}
+</main>
+<footer style="max-width:600px; margin:32px auto 0; padding-top:16px; border-top:1px solid #cccccc; font-size:14px; color:#4a4a4a;">
+{% block notice %}{% endblock %}
+<p style="margin:0 0 8px;">{{ app_name }}: <a href="{{ frontend_url }}/" style="color:#0b4f8a;">μετάβαση στην πλατφόρμα ({{ frontend_url }})</a></p>
+<p style="margin:0;">Το έργο URBANFLOODS συγχρηματοδοτείται από την Ευρωπαϊκή Ένωση (Interreg IPA ADRION). &copy; {{ year }} URBANFLOODS.</p>
+</footer>
+</body>
+</html>

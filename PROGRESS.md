@@ -45,14 +45,14 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 0b | Backend skeleton: pyproject, Dockerfile, config, logging, session, main.py, `/health` + test, conftest | done | f7ada1c | 10 pytest | testcontainers Postgres; skips DB tests without Docker; sqlalchemy[asyncio] needed for 2.1 |
 | 0c | Alembic async init + `0001_extensions` + migration test | done | 034e3d5 | 16 pytest (6 new) | connection-sharing recipe for in-loop migrations; container entrypoint runs `alembic upgrade head`; new revisions need `--rev-id 000N` |
 | 0d | Frontend skeleton: Vite + Nuxt UI + router + i18n (9 locales) + layout + HomeView + api.ts + vitest smoke | done | a453987 | 31 vitest | Vite 8, vue-router 5, pinia 4, Nuxt UI 4.12, happy-dom; icons bundled locally; flag-icons not imported globally (628 kB) |
-| 0e | Dev compose + compose.test + GitHub Actions CI | done | | stack verified e2e; actionlint clean | `docker compose up --build`; test DB on 5434; CI backend on py3.11 + frontend + docker build |
+| 0e | Dev compose + compose.test + GitHub Actions CI | done | 8fe7b93 | stack verified e2e; actionlint clean | `docker compose up --build`; test DB on 5434; CI backend on py3.11 + frontend + docker build |
 
 ### M1 — Auth + email
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
 | 1a | Models Organisation (seeded 22 PPs/APs) / User / Session / EmailToken / NotificationPreference / AuditLog + migration | done | a178ddd | 25 pytest (9 new) | naming convention on metadata; enums owned by migrations; `avatar_attachment_id` FK deferred to 2a |
 | 1b | `core/security.py` argon2 + session tokens + cookie helpers | in progress | | | + crud/session, crud/token, crud/audit |
-| 1c | `services/email.py` + templates + outbox fixture + Mailpit; `services/turnstile.py` | in progress | | | |
+| 1c | `services/email.py` + templates + outbox fixture + Mailpit; `services/turnstile.py` | done | | 40 pytest | `*_url` context values must be site-relative paths; en templates: verify_email, reset_password, change_email, welcome; el: verify_email |
 | 1d | register / verify-email / resend endpoints | todo | | | |
 | 1e | login / logout / me / sessions + `core/deps.py` | todo | | | |
 | 1f | password forgot/reset + change password/email | todo | | | |
@@ -136,7 +136,8 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - 0d done: frontend skeleton, 31 vitest green, lint/type-check/build clean. 1a started in parallel.
 - 1a done: 6 auth tables + 4 enums, migration 0002 seeds the 22 organisations, autogenerate clean. 0e in progress.
 - 0e done: M0 complete. Dependencies for 1b/1c committed ahead (1b13bd9). 1b and 1c running in parallel.
-- **Next:** review/commit 1b and 1c; then 1d (register/verify/resend endpoints) which depends on both.
+- 1c done (email service, 16 templates, Turnstile). Note for 1d: pass `verify_url='/verify-email?token=...'` style paths; `aclose_client()` for Turnstile still needs wiring into the lifespan.
+- **Next:** review/commit 1b; then 1d (register/verify/resend endpoints).
 
 ## 4. Open questions / decisions pending
 - None blocking. Turnstile site key and Gmail app password are needed before M1 can be tested

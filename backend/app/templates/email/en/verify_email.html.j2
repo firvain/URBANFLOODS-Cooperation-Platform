@@ -1,0 +1,12 @@
+{% extends "en/_layout.html.j2" %}
+{% block title %}Verify your email address{% endblock %}
+{% block content %}
+<h1 style="font-size:22px; margin:0 0 16px;">Verify your email address</h1>
+<p>Hello {{ display_name }},</p>
+<p>Thank you for registering on the {{ app_name }}. Please confirm your email address. The link is valid for 48 hours.</p>
+<p><a href="{{ frontend_url }}{{ verify_url }}" style="color:#0b4f8a; font-weight:bold;">Verify my email address on the {{ app_name }}</a></p>
+<p style="font-size:14px;">If the link does not work, copy this address into your browser:<br>{{ frontend_url }}{{ verify_url }}</p>
+{% endblock %}
+{% block notice %}
+<p style="margin:0 0 8px;">You received this because an account was created with this address; if it wasn't you, ignore this email.</p>
+{% endblock %}

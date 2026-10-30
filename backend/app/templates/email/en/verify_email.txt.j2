@@ -1,0 +1,11 @@
+Hello {{ display_name }},
+
+Thank you for registering on the {{ app_name }}.
+
+Please confirm your email address by opening this link (it is valid for 48 hours):
+
+{{ frontend_url }}{{ verify_url }}
+
+You received this because an account was created with this address; if it wasn't you, ignore this email.
+
+{% include "en/_footer.txt.j2" %}
