@@ -3,7 +3,7 @@
 {% block content %}
 <h1 style="font-size:22px; margin:0 0 16px;">Confirm your new email address</h1>
 <p>Hello {{ display_name }},</p>
-<p>You asked to change the email address of your account on the {{ app_name }} to <strong>{{ new_email }}</strong>. The link is valid for 24 hours.</p>
+<p>You asked to change the email address of your account on the {{ app_name }} from <strong>{{ old_email }}</strong> to <strong>{{ new_email }}</strong>. The link is valid for 24 hours.</p>
 <p><a href="{{ frontend_url }}{{ confirm_url }}" style="color:#0b4f8a; font-weight:bold;">Confirm my new email address on the {{ app_name }}</a></p>
 <p style="font-size:14px;">If the link does not work, copy this address into your browser:<br>{{ frontend_url }}{{ confirm_url }}</p>
 {% endblock %}

@@ -1,7 +1,8 @@
-"""Registration, email verification, login/logout, the signed-in user's profile and sessions.
+"""Registration, email verification, login/logout, the signed-in user's profile and sessions,
+password reset and change, email change.
 
-Failed logins raise ``AppError(..., keep_changes=True)`` so the request transaction still commits
-the ``auth.login_failed`` audit row.
+Failed logins (and wrong current passwords) raise ``AppError(..., keep_changes=True)`` so the
+request transaction still commits the ``auth.*_failed`` audit row.
 """
 
 from __future__ import annotations
@@ -17,11 +18,16 @@ from fastapi import APIRouter, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.schemas.auth import (
+    ChangeEmailRequest,
+    ChangePasswordRequest,
+    ConfirmEmailRequest,
+    ForgotPasswordRequest,
     LoginRequest,
     MessageResponse,
     RegisterRequest,
     RegisterResponse,
     ResendVerificationRequest,
+    ResetPasswordRequest,
     SessionInfo,
     SessionList,
     UpdateMeRequest,
@@ -50,6 +56,14 @@ TERMS_VERSION = "v1"
 RESENT_RESPONSE = MessageResponse(
     code="auth.verification_resent",
     message="If an account exists for this address, a new verification email has been sent.",
+)
+RESET_SENT_RESPONSE = MessageResponse(
+    code="auth.password_reset_sent",
+    message="If an account exists for this address, a password reset email has been sent.",
+)
+EMAIL_CHANGE_SENT_RESPONSE = MessageResponse(
+    code="auth.email_change_sent",
+    message="A confirmation link has been sent to the new address.",
 )
 
 router = APIRouter()
@@ -90,11 +104,16 @@ async def _check_turnstile(token: str | None, request: Request) -> None:
         raise AppError(400, exc.code, "The bot check failed. Please try again.") from None
 
 
-async def _send_quietly(*, user: User, template: str, context: dict[str, Any]) -> bool:
-    """Send an email; on failure log and return False instead of failing the request (the
-    account change must still commit; the user can ask for the email again)."""
+async def _send_quietly(
+    *, user: User, template: str, context: dict[str, Any], to: str | None = None
+) -> bool:
+    """Send an email (to ``user.email`` unless ``to`` is given, in the user's locale); on failure
+    log and return False instead of failing the request (the account change must still commit;
+    the user can ask for the email again)."""
     try:
-        await send_email(to=user.email, template=template, locale=user.locale, context=context)
+        await send_email(
+            to=to or user.email, template=template, locale=user.locale, context=context
+        )
     except Exception as exc:
         log.warning(
             "auth.email_not_sent", template=template, user_id=user.id, error=type(exc).__name__
@@ -361,3 +380,256 @@ async def revoke_my_session(
         target_id=user.id,
         metadata={"session_id": str(session_id), "current": is_current},
     )
+
+
+# --- password reset and change ----------------------------------------------------------------
+
+
+def _is_disabled(user: User | None) -> bool:
+    return user is None or not user.is_active or user.deleted_at is not None
+
+
+async def _check_current_password(
+    db: AsyncSession, *, user: User, password: str, failed_action: str
+) -> None:
+    """400 ``auth.invalid_credentials`` (keeping a ``failed_action`` audit row) unless
+    ``password`` is the user's current password."""
+    # argon2 is deliberately slow; keep it off the event loop.
+    if await asyncio.to_thread(verify_password, password, user.password_hash):
+        return
+    await crud_audit.log_action(
+        db, actor_id=user.id, action=failed_action, target_type="user", target_id=user.id
+    )
+    raise AppError(
+        400, "auth.invalid_credentials", "The current password is incorrect.", keep_changes=True
+    )
+
+
+# TODO(1g): rate limit
+@router.post(
+    "/password/forgot",
+    response_model=MessageResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    responses=_error_responses(400, 422),
+)
+async def forgot_password(
+    body: ForgotPasswordRequest, request: Request, db: DbTx
+) -> MessageResponse:
+    """Email a password reset link. Always 202, whether or not the address is registered.
+
+    Unverified users may reset too: using the link proves they own the address.
+    """
+    await _check_turnstile(body.turnstile_token, request)
+    user = await crud_user.get_user_by_email(db, email=body.email)
+    if not _is_disabled(user):
+        assert user is not None
+        _, raw = await crud_token.create_email_token(
+            db, user_id=user.id, purpose=TokenPurpose.RESET_PASSWORD
+        )
+        await _send_quietly(
+            user=user,
+            template="reset_password",
+            context={
+                "display_name": user.display_name,
+                "reset_url": f"/reset-password?token={raw}",
+            },
+        )
+        await crud_audit.log_action(
+            db,
+            actor_id=user.id,
+            action="auth.password_reset_requested",
+            target_type="user",
+            target_id=user.id,
+        )
+    return RESET_SENT_RESPONSE
+
+
+@router.post("/password/reset", response_model=UserMe, responses=_error_responses(400, 403, 422))
+async def reset_password(
+    body: ResetPasswordRequest, request: Request, response: Response, db: DbTx
+) -> UserMe:
+    """Consume a reset token, set the new password, sign out every session and sign this browser
+    in. Also marks the address verified and cancels pending email changes.
+
+    Any failure rolls back, so the link stays usable (e.g. after a weak-password 422).
+    """
+    token = await crud_token.consume_email_token(
+        db, raw_token=body.token, purpose=TokenPurpose.RESET_PASSWORD
+    )
+    if token is None:
+        raise AppError(400, "auth.token_invalid", "This link is invalid or has expired.")
+
+    user = await crud_user.get_user_by_id(db, user_id=token.user_id)
+    if _is_disabled(user):
+        raise AppError(403, "auth.account_disabled", "This account is disabled.")
+    assert user is not None
+    try:
+        await crud_user.set_password(db, user=user, password=body.password)
+    except PasswordPolicyError as exc:
+        raise validation_error({"password": exc.code}) from None
+
+    revoked = await crud_session.revoke_all_sessions_for_user(db, user_id=user.id)
+    # Whoever had a session may have started an email change; it must not outlive the reset.
+    await crud_token.invalidate_email_tokens(
+        db, user_id=user.id, purposes=(TokenPurpose.CHANGE_EMAIL,)
+    )
+    newly_verified = not user.is_verified
+    if newly_verified:
+        await crud_user.mark_verified(db, user=user)
+
+    _, raw_session = await crud_session.create_session(
+        db, user_id=user.id, user_agent=request.headers.get("user-agent")
+    )
+    _set_session_cookie(response, raw_session)
+    await crud_audit.log_action(
+        db,
+        actor_id=user.id,
+        action="auth.password_reset",
+        target_type="user",
+        target_id=user.id,
+        metadata={"sessions_revoked": revoked, "verified": newly_verified},
+    )
+    return UserMe.model_validate(user)
+
+
+@router.post(
+    "/me/password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=_error_responses(400, 401, 422),
+)
+async def change_password(
+    body: ChangePasswordRequest, request: Request, user: AuthUser, db: DbTx
+) -> None:
+    """Change the password (current one required). Other sessions are signed out; this one
+    stays. Pending email changes are cancelled."""
+    await _check_current_password(
+        db, user=user, password=body.current_password, failed_action="auth.password_change_failed"
+    )
+    if body.new_password == body.current_password:
+        raise validation_error({"new_password": "auth.password_same"})
+    try:
+        await crud_user.set_password(db, user=user, password=body.new_password)
+    except PasswordPolicyError as exc:
+        raise validation_error({"new_password": exc.code}) from None
+
+    revoked = await crud_session.revoke_all_sessions_for_user(
+        db, user_id=user.id, except_session_id=request.state.session.id
+    )
+    await crud_token.invalidate_email_tokens(
+        db, user_id=user.id, purposes=(TokenPurpose.CHANGE_EMAIL,)
+    )
+    await crud_audit.log_action(
+        db,
+        actor_id=user.id,
+        action="auth.password_changed",
+        target_type="user",
+        target_id=user.id,
+        metadata={"sessions_revoked": revoked},
+    )
+
+
+# --- email change -----------------------------------------------------------------------------
+
+
+@router.post(
+    "/me/email",
+    response_model=MessageResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    responses=_error_responses(400, 401, 422),
+)
+async def request_email_change(
+    body: ChangeEmailRequest, user: AuthUser, db: DbTx
+) -> MessageResponse:
+    """Email a confirmation link to the new address (current password required). The address
+    changes only when the link is used.
+
+    An address that belongs to another account gets the same 202 but no email, so the endpoint
+    cannot be used to find out who is registered.
+    """
+    await _check_current_password(
+        db, user=user, password=body.current_password, failed_action="auth.email_change_failed"
+    )
+    existing = await crud_user.get_user_by_email(db, email=body.new_email)
+    if body.new_email.casefold() == user.email.casefold() or (
+        existing is not None and existing.id == user.id
+    ):
+        raise validation_error({"new_email": "auth.email_same"})
+
+    if existing is not None:
+        await crud_audit.log_action(
+            db,
+            actor_id=user.id,
+            action="auth.email_change_blocked",
+            target_type="user",
+            target_id=user.id,
+        )
+        return EMAIL_CHANGE_SENT_RESPONSE
+
+    _, raw = await crud_token.create_email_token(
+        db, user_id=user.id, purpose=TokenPurpose.CHANGE_EMAIL, new_email=body.new_email
+    )
+    await _send_quietly(
+        user=user,
+        to=body.new_email,
+        template="change_email",
+        context={
+            "display_name": user.display_name,
+            "old_email": user.email,
+            "new_email": body.new_email,
+            "confirm_url": f"/confirm-email?token={raw}",
+        },
+    )
+    await crud_audit.log_action(
+        db,
+        actor_id=user.id,
+        action="auth.email_change_requested",
+        target_type="user",
+        target_id=user.id,
+    )
+    return EMAIL_CHANGE_SENT_RESPONSE
+
+
+@router.post(
+    "/email/confirm", response_model=UserMe, responses=_error_responses(400, 403, 409, 422)
+)
+async def confirm_email_change(body: ConfirmEmailRequest, db: DbTx) -> UserMe:
+    """Consume a change-email token and switch the account to the new address. No sign-in
+    needed (the link may be opened anywhere); sessions are kept.
+
+    Links already sent to the old address (verification, password reset) stop working. Using the
+    link proves ownership of the new address, so the account counts as verified.
+    """
+    token = await crud_token.consume_email_token(
+        db, raw_token=body.token, purpose=TokenPurpose.CHANGE_EMAIL
+    )
+    if token is None or token.new_email is None:
+        raise AppError(400, "auth.token_invalid", "This link is invalid or has expired.")
+
+    user = await crud_user.get_user_by_id(db, user_id=token.user_id)
+    if _is_disabled(user):
+        raise AppError(403, "auth.account_disabled", "This account is disabled.")
+    assert user is not None
+    existing = await crud_user.get_user_by_email(db, email=token.new_email)
+    if existing is not None and existing.id != user.id:
+        raise AppError(
+            409, "auth.email_taken", "An account with this email address already exists."
+        )
+    await crud_user.set_email(db, user=user, email=token.new_email)
+    await crud_token.invalidate_email_tokens(
+        db,
+        user_id=user.id,
+        purposes=(TokenPurpose.VERIFY_EMAIL, TokenPurpose.RESET_PASSWORD),
+    )
+    newly_verified = not user.is_verified
+    if newly_verified:
+        await crud_user.mark_verified(db, user=user)
+    await crud_audit.log_action(
+        db,
+        actor_id=user.id,
+        action="auth.email_changed",
+        target_type="user",
+        target_id=user.id,
+        metadata={"verified": newly_verified},
+    )
+    return UserMe.model_validate(user)

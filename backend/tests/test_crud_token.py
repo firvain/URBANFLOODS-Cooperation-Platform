@@ -219,3 +219,42 @@ async def test_delete_used_tokens_after_window(db_session):
         select(func.count()).select_from(EmailToken).where(EmailToken.user_id == user.id)
     )
     assert count == 0
+
+
+async def test_invalidate_email_tokens_only_named_purposes_and_unused(db_session):
+    from app.crud.token import invalidate_email_tokens
+
+    user = await _make_user(db_session)
+    other = await _make_user(db_session, email="token-other@example.org")
+    used, _ = await create_email_token(
+        db_session, user_id=user.id, purpose=TokenPurpose.RESET_PASSWORD, now=T0
+    )
+    reset, _ = await create_email_token(
+        db_session, user_id=user.id, purpose=TokenPurpose.RESET_PASSWORD, now=T0
+    )
+    change, _ = await create_email_token(
+        db_session, user_id=user.id, purpose=TokenPurpose.CHANGE_EMAIL, new_email="n@example.org"
+    )
+    verify, _ = await create_email_token(
+        db_session, user_id=user.id, purpose=TokenPurpose.VERIFY_EMAIL
+    )
+    others, _ = await create_email_token(
+        db_session, user_id=other.id, purpose=TokenPurpose.RESET_PASSWORD
+    )
+    later = T0 + timedelta(minutes=5)
+
+    count = await invalidate_email_tokens(
+        db_session,
+        user_id=user.id,
+        purposes=(TokenPurpose.RESET_PASSWORD, TokenPurpose.VERIFY_EMAIL),
+        now=later,
+    )
+
+    assert count == 2
+    for token in (used, reset, change, verify, others):
+        await db_session.refresh(token)
+    assert used.used_at == T0  # invalidated earlier by the second create; untouched
+    assert reset.used_at == later
+    assert verify.used_at == later
+    assert change.used_at is None
+    assert others.used_at is None

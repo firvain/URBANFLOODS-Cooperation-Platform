@@ -78,10 +78,16 @@ def test_render_change_email_and_welcome_en() -> None:
     subject, text, html = render_email(
         "change_email",
         "en",
-        {"display_name": "Maria", "confirm_url": confirm_path, "new_email": "new@example.org"},
+        {
+            "display_name": "Maria",
+            "confirm_url": confirm_path,
+            "new_email": "new@example.org",
+            "old_email": "old@example.org",
+        },
     )
     assert confirm_url in text and f'<a href="{confirm_url}"' in html
     assert "new@example.org" in text
+    assert "old@example.org" in text and "old@example.org" in html
 
     login_url = settings.FRONTEND_URL + "/login"
     subject, text, html = render_email("welcome", "en", {"display_name": "Maria"})

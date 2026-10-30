@@ -7,6 +7,7 @@ concurrent requests. Never commits; the caller does.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import delete, or_, update
@@ -76,6 +77,28 @@ async def consume_email_token(
         .execution_options(populate_existing=True)
     )
     return (await db.execute(stmt)).scalar_one_or_none()
+
+
+async def invalidate_email_tokens(
+    db: AsyncSession,
+    *,
+    user_id: int,
+    purposes: Iterable[TokenPurpose],
+    now: datetime | None = None,
+) -> int:
+    """Mark every unused token of the user with one of ``purposes`` as used (``used_at = now``),
+    so links already sent stop working. Returns how many were invalidated."""
+    stmt = (
+        update(EmailToken)
+        .where(
+            EmailToken.user_id == user_id,
+            EmailToken.purpose.in_(list(purposes)),
+            EmailToken.used_at.is_(None),
+        )
+        .values(used_at=_now(now))
+        .returning(EmailToken.id)
+    )
+    return len((await db.execute(stmt)).all())
 
 
 async def delete_expired_tokens(

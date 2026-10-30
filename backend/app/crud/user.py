@@ -7,13 +7,15 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from app.core.exceptions import AppError, validation_error
 from app.core.security import hash_password, password_needs_rehash, validate_password_policy
+from app.crud import session as crud_session
+from app.db.enums import UserRole
 from app.db.models import NotificationPreference, Organisation, User
 
 EMAIL_UNIQUE_CONSTRAINT = "uq_users_email"
@@ -131,3 +133,129 @@ async def update_profile(db: AsyncSession, *, user: User, changes: Mapping[str, 
     if changed:
         await db.flush()
     return changed
+
+
+async def set_password(db: AsyncSession, *, user: User, password: str) -> None:
+    """Validate ``password`` against the policy, then store its argon2id hash.
+
+    Raises ``PasswordPolicyError`` (nothing changed) for a weak password. Session revocation and
+    token invalidation are the caller's decision.
+    """
+    validate_password_policy(password)
+    # argon2 is deliberately slow; keep it off the event loop.
+    user.password_hash = await asyncio.to_thread(hash_password, password)
+    await db.flush()
+
+
+async def set_email(db: AsyncSession, *, user: User, email: str) -> None:
+    """Change the user's address. Raises ``AppError`` 409 ``auth.email_taken`` if the address
+    (any case; ``users.email`` is CITEXT unique) belongs to another account."""
+    try:
+        # A savepoint keeps the outer transaction usable if the update fails.
+        async with db.begin_nested():
+            user.email = email
+            await db.flush()
+    except IntegrityError as exc:
+        if EMAIL_UNIQUE_CONSTRAINT in str(exc.orig):
+            raise AppError(
+                409, "auth.email_taken", "An account with this email address already exists."
+            ) from None
+        raise
+
+
+# --- admin ------------------------------------------------------------------------------------
+
+
+def _escape_like(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+async def list_users(
+    db: AsyncSession,
+    *,
+    q: str | None = None,
+    role: UserRole | None = None,
+    trusted: bool | None = None,
+    verified: bool | None = None,
+    active: bool | None = None,
+    organisation_id: int | None = None,
+    skip: int = 0,
+    limit: int = 50,
+) -> tuple[int, list[User]]:
+    """``(total, users)`` for the admin list, newest first, with ``organisation`` loaded.
+    Includes soft-deleted users. ``q`` is a case-insensitive substring of email or display
+    name."""
+    conditions = []
+    if q:
+        pattern = f"%{_escape_like(q)}%"
+        conditions.append(
+            or_(
+                User.email.ilike(pattern, escape="\\"),
+                User.display_name.ilike(pattern, escape="\\"),
+            )
+        )
+    if role is not None:
+        conditions.append(User.role == role)
+    if trusted is not None:
+        conditions.append(User.trusted_at.is_not(None) if trusted else User.trusted_at.is_(None))
+    if verified is not None:
+        conditions.append(User.is_verified.is_(verified))
+    if active is not None:
+        conditions.append(User.is_active.is_(active))
+    if organisation_id is not None:
+        conditions.append(User.organisation_id == organisation_id)
+
+    total_stmt = select(func.count()).select_from(select(User.id).where(*conditions).subquery())
+    total = (await db.execute(total_stmt)).scalar_one()
+    stmt = (
+        select(User)
+        .options(joinedload(User.organisation))
+        .where(*conditions)
+        .order_by(User.created_at.desc(), User.id.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    return total, list((await db.scalars(stmt)).all())
+
+
+async def set_role(db: AsyncSession, *, user: User, role: UserRole) -> bool:
+    """Set the user's role. Returns True if it changed. Authorisation is the caller's job."""
+    if user.role == role:
+        return False
+    user.role = role
+    await db.flush()
+    return True
+
+
+async def set_active(
+    db: AsyncSession, *, user: User, active: bool, now: datetime | None = None
+) -> bool:
+    """Activate or deactivate (ban) the user. Deactivating also revokes every session. Returns
+    True if the flag changed."""
+    if user.is_active == active:
+        return False
+    user.is_active = active
+    await db.flush()
+    if not active:
+        await crud_session.revoke_all_sessions_for_user(db, user_id=user.id, now=now)
+    return True
+
+
+async def set_trusted(
+    db: AsyncSession, *, user: User, trusted: bool, now: datetime | None = None
+) -> bool:
+    """Set (keeping an existing timestamp) or clear ``trusted_at``. Returns True if it
+    changed."""
+    if (user.trusted_at is not None) == trusted:
+        return False
+    user.trusted_at = (now or datetime.now(UTC)) if trusted else None
+    await db.flush()
+    return True
+
+
+async def count_superadmins(db: AsyncSession) -> int:
+    """Active, not-deleted superadmins."""
+    stmt = select(func.count()).where(
+        User.role == UserRole.SUPERADMIN, User.is_active.is_(True), User.deleted_at.is_(None)
+    )
+    return (await db.execute(stmt)).scalar_one()

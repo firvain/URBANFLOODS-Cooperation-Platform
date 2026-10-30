@@ -197,3 +197,36 @@ class SessionInfo(BaseModel):
 class SessionList(BaseModel):
     total: int
     items: list[SessionInfo]
+
+
+# --- password and email changes ---------------------------------------------------------------
+
+# The token from an emailed link (raw tokens are 43 characters).
+LinkToken = Annotated[str, Field(min_length=1, max_length=512)]
+PasswordField = Annotated[str, Field(min_length=1, max_length=PASSWORD_MAX_LENGTH)]
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+    turnstile_token: TurnstileToken = None
+
+
+class ResetPasswordRequest(BaseModel):
+    token: LinkToken
+    # Only presence is checked here (as at registration); the policy runs in crud so the client
+    # gets a specific code in ``fields.password``.
+    password: Annotated[str, Field(min_length=1)]
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: PasswordField
+    new_password: PasswordField
+
+
+class ChangeEmailRequest(BaseModel):
+    new_email: EmailStr
+    current_password: PasswordField
+
+
+class ConfirmEmailRequest(BaseModel):
+    token: LinkToken
