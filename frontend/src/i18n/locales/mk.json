@@ -1,0 +1,18 @@
+{
+  "app": {
+    "title": "Платформа за соработка URBANFLOODS",
+    "skipToContent": "Прескокни до главната содржина",
+    "language": "Јазик",
+    "mainNavigation": "Главна навигација"
+  },
+  "nav": {
+    "home": "Почетна",
+    "blog": "Блог",
+    "forum": "Форум",
+    "knowbase": "KNOWBASE",
+    "partners": "Партнери",
+    "about": "За нас",
+    "login": "Најава",
+    "register": "Регистрација"
+  }
+}

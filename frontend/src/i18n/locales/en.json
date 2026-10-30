@@ -1,0 +1,52 @@
+{
+  "app": {
+    "title": "URBANFLOODS Cooperation Platform",
+    "skipToContent": "Skip to main content",
+    "language": "Language",
+    "mainNavigation": "Main navigation"
+  },
+  "nav": {
+    "home": "Home",
+    "blog": "Blog",
+    "forum": "Forum",
+    "knowbase": "KNOWBASE",
+    "partners": "Partners",
+    "about": "About",
+    "login": "Log in",
+    "register": "Register"
+  },
+  "home": {
+    "title": "Cooperation Platform",
+    "intro": "A meeting place for flood-management stakeholders across the Adriatic-Ionian region: share experience in the blog, discuss in the forum, and build on the measures and documents of the URBANFLOODS KNOWBASE.",
+    "comingSoon": "Coming soon",
+    "cards": {
+      "blog": {
+        "title": "Blog",
+        "description": "Articles, case studies and good practices from partners and members."
+      },
+      "forum": {
+        "title": "Forum",
+        "description": "Ask questions and discuss urban flood management with peers."
+      },
+      "knowbase": {
+        "title": "KNOWBASE",
+        "description": "Browse legislation, policies and flood-protection measures."
+      }
+    }
+  },
+  "partners": {
+    "intro": "The organisations of the URBANFLOODS partnership will be listed here."
+  },
+  "about": {
+    "intro": "Information about the Cooperation Platform and the URBANFLOODS project will be published here."
+  },
+  "footer": {
+    "disclaimer": "The project is co-funded by the European Union through the Interreg IPA ADRION programme. The content of the website is the sole responsibility of the University of Western Macedonia and can under no circumstances be regarded as reflecting the position of the European Union and/or IPA ADRION programme authorities.",
+    "copyright": "© {year} URBANFLOODS"
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "notFoundDescription": "The page you are looking for does not exist or has been moved.",
+    "backHome": "Back to the home page"
+  }
+}

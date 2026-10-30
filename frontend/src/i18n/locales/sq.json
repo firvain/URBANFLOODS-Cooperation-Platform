@@ -1,0 +1,18 @@
+{
+  "app": {
+    "title": "Platforma e Bashkëpunimit URBANFLOODS",
+    "skipToContent": "Kalo te përmbajtja kryesore",
+    "language": "Gjuha",
+    "mainNavigation": "Navigimi kryesor"
+  },
+  "nav": {
+    "home": "Kreu",
+    "blog": "Blogu",
+    "forum": "Forumi",
+    "knowbase": "KNOWBASE",
+    "partners": "Partnerët",
+    "about": "Rreth nesh",
+    "login": "Hyr",
+    "register": "Regjistrohu"
+  }
+}

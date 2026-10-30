@@ -1,0 +1,18 @@
+{
+  "app": {
+    "title": "Πλατφόρμα Συνεργασίας URBANFLOODS",
+    "skipToContent": "Μετάβαση στο κύριο περιεχόμενο",
+    "language": "Γλώσσα",
+    "mainNavigation": "Κύρια πλοήγηση"
+  },
+  "nav": {
+    "home": "Αρχική",
+    "blog": "Ιστολόγιο",
+    "forum": "Φόρουμ",
+    "knowbase": "KNOWBASE",
+    "partners": "Εταίροι",
+    "about": "Σχετικά",
+    "login": "Σύνδεση",
+    "register": "Εγγραφή"
+  }
+}

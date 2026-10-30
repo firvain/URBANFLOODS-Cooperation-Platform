@@ -1,0 +1,66 @@
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+@theme {
+  --font-sans: 'Noto Sans', system-ui, sans-serif;
+}
+
+@theme static {
+  /* PRIMARY (#11395c) */
+  --color-primary-50: #eef5fa;
+  --color-primary-100: #d9e6f3;
+  --color-primary-200: #b3cde6;
+  --color-primary-300: #8ab1d5;
+  --color-primary-400: #5b8fbe;
+  --color-primary-500: #11395c; /* base: R=17 G=57 B=92 */
+  --color-primary-600: #0e3150;
+  --color-primary-700: #0b2942;
+  --color-primary-800: #092033;
+  --color-primary-900: #061726;
+  --color-primary-950: #040f19;
+
+  /* SECONDARY (#97c137): backgrounds only, too light for text on white (contrast). */
+  --color-secondary-50: #f5faec;
+  --color-secondary-100: #e9f5d1;
+  --color-secondary-200: #d4eba3;
+  --color-secondary-300: #bddf73;
+  --color-secondary-400: #a8d44e;
+  --color-secondary-500: #97c137; /* base: R=151 G=193 B=55 */
+  --color-secondary-600: #7ea02d;
+  --color-secondary-700: #667f25;
+  --color-secondary-800: #4d5e1c;
+  --color-secondary-900: #354415;
+  --color-secondary-950: #222b0d;
+}
+
+/* Visible keyboard focus ring, usable as a class and applied to native controls by default. */
+@utility focus-ring {
+  outline: 3px solid var(--color-secondary-500);
+  outline-offset: 2px;
+}
+
+@layer base {
+  :where(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [tabindex]:not([tabindex='-1'])
+  ):focus-visible {
+    outline: 3px solid var(--color-secondary-500);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

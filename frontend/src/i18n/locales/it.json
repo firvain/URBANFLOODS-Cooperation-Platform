@@ -1,0 +1,18 @@
+{
+  "app": {
+    "title": "Piattaforma di cooperazione URBANFLOODS",
+    "skipToContent": "Vai al contenuto principale",
+    "language": "Lingua",
+    "mainNavigation": "Navigazione principale"
+  },
+  "nav": {
+    "home": "Home",
+    "blog": "Blog",
+    "forum": "Forum",
+    "knowbase": "KNOWBASE",
+    "partners": "Partner",
+    "about": "Informazioni",
+    "login": "Accedi",
+    "register": "Registrati"
+  }
+}

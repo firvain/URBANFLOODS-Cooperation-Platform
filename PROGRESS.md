@@ -43,14 +43,14 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 |---|---|---|---|---|---|
 | 0a | git init, .gitignore, README, CLAUDE.md, docs/PLAN.md, PROGRESS.md, GitHub repo, first push | done | bf847e2 | — | AF markdown kept out of the public repo (.gitignore) |
 | 0b | Backend skeleton: pyproject, Dockerfile, config, logging, session, main.py, `/health` + test, conftest | done | f7ada1c | 10 pytest | testcontainers Postgres; skips DB tests without Docker; sqlalchemy[asyncio] needed for 2.1 |
-| 0c | Alembic async init + `0001_extensions` + migration test | done | | 16 pytest (6 new) | connection-sharing recipe for in-loop migrations; container entrypoint runs `alembic upgrade head`; new revisions need `--rev-id 000N` |
-| 0d | Frontend skeleton: Vite + Nuxt UI + router + i18n (9 locales) + layout + HomeView + api.ts + vitest smoke | in progress | | | running in parallel with 0b |
+| 0c | Alembic async init + `0001_extensions` + migration test | done | 034e3d5 | 16 pytest (6 new) | connection-sharing recipe for in-loop migrations; container entrypoint runs `alembic upgrade head`; new revisions need `--rev-id 000N` |
+| 0d | Frontend skeleton: Vite + Nuxt UI + router + i18n (9 locales) + layout + HomeView + api.ts + vitest smoke | done | | 31 vitest | Vite 8, vue-router 5, pinia 4, Nuxt UI 4.12, happy-dom; icons bundled locally; flag-icons not imported globally (628 kB) |
 | 0e | Dev compose + compose.test + GitHub Actions CI | todo | | | |
 
 ### M1 — Auth + email
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
-| 1a | Models Organisation (seeded 22 PPs/APs) / User / Session / EmailToken / NotificationPreference / AuditLog + migration | todo | | | partner list from AF section B |
+| 1a | Models Organisation (seeded 22 PPs/APs) / User / Session / EmailToken / NotificationPreference / AuditLog + migration | in progress | | | partner list from docs/partners.md |
 | 1b | `core/security.py` argon2 + session tokens + cookie helpers | todo | | | |
 | 1c | `services/email.py` + templates + outbox fixture + Mailpit; `services/turnstile.py` | todo | | | |
 | 1d | register / verify-email / resend endpoints | todo | | | |
@@ -133,7 +133,8 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
   `docs/partners.md` extracted from the AF (22 organisations + homepages) for 1a.
 - User: "use as many agents as needed" → 0d (frontend) runs in parallel with 0b.
 - 0c done: Alembic async, `0001_extensions` (pg_trgm, citext), test DB migrated to head per session, Docker entrypoint migrates then execs.
-- **Next:** review and commit 0d when its agent reports; then 0e (compose + CI).
+- 0d done: frontend skeleton, 31 vitest green, lint/type-check/build clean. 1a started in parallel.
+- **Next:** 0e (dev compose, test compose, CI); review and commit 1a when its agent reports.
 
 ## 4. Open questions / decisions pending
 - None blocking. Turnstile site key and Gmail app password are needed before M1 can be tested

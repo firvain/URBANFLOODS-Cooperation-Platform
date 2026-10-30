@@ -1,0 +1,57 @@
+{
+  "name": "cooperation-frontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "run-p type-check \"build-only {@}\" --",
+    "build-only": "vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --build",
+    "lint": "eslint . --fix --cache",
+    "lint:check": "eslint . --cache",
+    "format": "prettier --write src/",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "gen:types": "openapi-typescript http://localhost:8000/api/v1/openapi.json -o src/types/api-schema.ts"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^4.12.0",
+    "@unhead/vue": "^3.4.3",
+    "flag-icons": "^7.6.0",
+    "ofetch": "^1.5.1",
+    "pinia": "^4.1.0",
+    "tailwindcss": "^4.3.3",
+    "vue": "^3.5.44",
+    "vue-i18n": "^11.4.16",
+    "vue-router": "^5.4.0"
+  },
+  "devDependencies": {
+    "@iconify-json/lucide": "^1.2.149",
+    "@tsconfig/node22": "^22.0.6",
+    "@types/node": "^22.20.5",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vitest/coverage-v8": "^5.0.5",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "@vue/eslint-config-typescript": "^14.9.0",
+    "@vue/test-utils": "^2.5.1",
+    "@vue/tsconfig": "^0.9.1",
+    "eslint": "^10.14.0",
+    "eslint-plugin-vue": "^10.12.0",
+    "eslint-plugin-vuejs-accessibility": "^2.6.3",
+    "happy-dom": "^21.0.4",
+    "jiti": "^2.7.0",
+    "npm-run-all2": "^8.0.4",
+    "openapi-typescript": "^7.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.5",
+    "vite-plugin-vue-devtools": "^8.2.1",
+    "vitest": "^5.0.5",
+    "vue-tsc": "^3.3.14"
+  }
+}
