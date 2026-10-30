@@ -39,3 +39,6 @@ backups/
 # Source document (kept out of the public repo; see docs/PLAN.md for the extracted requirements)
 IPA-ADRION00374_V4.0.md
 IPA-ADRION00374_V4.0_images/
+
+# Playwright MCP screenshots/snapshots
+.playwright-mcp/
