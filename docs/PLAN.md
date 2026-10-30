@@ -29,6 +29,9 @@ The KNOWBASE (`~/URBANFLOODS-Knowbase`, live at knowbase.urbanfloods.app on serv
 | Access model | Public read of everything published (FAIR). Registration required to post, reply, comment, report. The D.5.1.1 report states this reading of "access upon registration" explicitly. |
 | Scope line | **Core** (required for D.5.1.1): M0–M4, 5a, 5c–5e, 5g, M6. **Extended** (if time remains): 5b feeds/sitemap/CSV, 5f full translations, tag merge, sessions UI, email change, per-type notification prefs, JSON-LD. Core first, always. |
 | Ports on server | frontend 127.0.0.1:3002, backend 127.0.0.1:8002, Postgres NOT published. Taken: 3001/8001/5433 (KNOWBASE), 9443 (Portainer), 3000/8000 referenced by old app. |
+| 3rd-meeting commitments | See `docs/requirements-3rd-project-meeting.md`. Decisions 2026-10-30: **DSS** = nav link + home card to the DSS web app (no API yet; `DSS_URL` env); **matchmaking** = expertise tags on profiles, members directory under Collaboration Network filterable by expertise/country/organisation, suggested collaborators on home, contact via opt-in "show my email"; **events** = optional `event_at`/`event_url` on posts, Events category + upcoming widget. WCAG 2.1 AA stated explicitly; JSON-LD promoted to core; XML export added; RCO87 (organisations cooperating) reported in admin stats export. |
+| Theme | **Light mode only** (user decision 2026-10-30). No dark mode, no system-preference switching; Nuxt UI colour mode forced to light. |
+| Branding | Official logos and favicon from https://urbanfloods.interreg-ipa-adrion.eu (Interreg IPA ADRION + URBANFLOODS lock-up, Interreg programme logo) stored under `frontend/src/assets/logos/` and `frontend/public/`; EU co-funding disclaimer in the footer as on the project site. Same brand palette as KNOWBASE (#11395c / #97c137). |
 
 ## Architecture
 
@@ -70,13 +73,14 @@ Enums: `user_role(member|admin|superadmin)`, `content_status(pending|published|h
 | Table | Key columns |
 |---|---|
 | `organisations` | id, name, short_name, country CHAR(2), type (PP/AP/other), website, is_partner BOOL, sort_order. Seeded from AF partner list (section B) in migration `0002`. |
-| `users` | email CITEXT unique, password_hash, display_name, organisation_id FK NULL, organisation_other TEXT NULL, country CHAR(2), locale, bio, avatar_attachment_id, role, is_verified, is_active (false=banned), trusted_at, last_login_at, deleted_at |
+| `users` | email CITEXT unique, password_hash, display_name, organisation_id FK NULL, organisation_other TEXT NULL, country CHAR(2), locale, bio, avatar_attachment_id, role, is_verified, is_active (false=banned), trusted_at, last_login_at, deleted_at, **show_email BOOL default false, show_in_directory BOOL default true** |
+| `expertise_tags` / `user_expertise` | seeded controlled vocabulary (hydrology, civil protection, urban planning, NBS, GIS, policy, water utilities, …) + junction; free-text additions by admins only |
 | `sessions` | id UUID, user_id, token_hash unique, expires_at, last_seen_at, user_agent, revoked_at |
 | `email_tokens` | user_id, purpose, token_hash unique, new_email, expires_at (verify 48h / reset 1h / change 24h), used_at |
 | `notification_preferences` | user_id PK, reply_to_my_thread, comment_on_my_post, reply_to_my_reply, admin_digest, digest_frequency |
 | `categories` | kind, slug, name, name_i18n JSONB, description, sort_order, is_archived, admin_only BOOL; unique (kind, slug) |
 | `tags` / `post_tags` / `thread_tags` | slug unique, name (trigram idx), usage_count; junction `Table` objects |
-| `posts` | author_id, category_id, title(200), slug unique, excerpt(500), body_html, body_text, cover_attachment_id, locale, status, hidden_reason, report_count, comment_count, published_at, approved_by, approved_at, deleted_at, `fts` generated (title A, body B, simple title) — GIN fts, trigram title, idx (status, published_at desc) |
+| `posts` | author_id, category_id, title(200), slug unique, excerpt(500), body_html, body_text, cover_attachment_id, locale, **event_at timestamptz NULL, event_url TEXT NULL**, status, hidden_reason, report_count, comment_count, published_at, approved_by, approved_at, deleted_at, `fts` generated (title A, body B, simple title) — GIN fts, trigram title, idx (status, published_at desc) |
 | `threads` | as posts minus excerpt/cover/comment_count; + is_pinned, is_locked, reply_count, last_activity_at |
 | `replies` | thread_id, author_id, parent_reply_id (one level, enforced by app check + DB trigger), ContentMixin, fts(body) |
 | `comments` | post_id, author_id, ContentMixin |

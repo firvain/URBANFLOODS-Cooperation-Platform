@@ -62,12 +62,14 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 1j | FE auth store/service/views + guards | in progress | | | built against the auth API contract; runs in parallel with 1d |
 | 1j-b | FE branding: light mode only, official logos + favicon from the project site, footer disclaimer | todo | | | user request 2026-10-30; after 1j lands |
 | 1k | FE AccountView + LocaleSwitcher + PartnersView | todo | | | |
+| 1m | Expertise tags (seeded vocabulary) + user_expertise + show_email/show_in_directory + members directory API (`/members/`, filters) | todo | | | from 3rd-meeting commitments (matchmaking) |
+| 1n | FE Collaboration Network page: members directory + suggested collaborators widget; DSS nav link + home card (`VITE_DSS_URL`) | todo | | | |
 | 1l | Playwright `auth.spec.ts` | todo | | | |
 
 ### M2 — Blog + KNOWBASE proxy
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
-| 2a | Models Category/Tag/Post/Attachment/KnowbaseLink + migration (FTS, trigram) | todo | | | |
+| 2a | Models Category/Tag/Post/Attachment/KnowbaseLink + migration (FTS, trigram) | todo | | | + `event_at`/`event_url` on posts (Events) |
 | 2b | `services/sanitize.py` (nh3) + `services/slugs.py` | todo | | | |
 | 2c | `services/knowbase.py` proxy + cache + `/knowbase/*` endpoints | todo | | | |
 | 2d | categories + tags endpoints | todo | | | |
