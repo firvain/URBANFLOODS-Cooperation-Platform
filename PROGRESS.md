@@ -63,7 +63,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 1j-b | FE branding: light mode only, official logos + favicon from the project site, footer disclaimer | done | 634c2e4 | 60 vitest (161 total) | `ui({ colorMode: false })`; footer: 4 columns + green accent + statement + disclaimer + LinkedIn; flex page shell; About page facts; logo-size interpretation in docs/branding.md |
 | 1k | FE AccountView + PartnersView (KNOWBASE About-page style, see docs/about-partners-style.md) + About facts | done | d8a235e | 41 vitest (202 total) | partner logos + flags, no short-name badges (user), Macerata coat of arms recoloured navy; Account tabs profile/password/sessions |
 | 1m | Expertise tags (seeded vocabulary) + user_expertise + show_email/show_in_directory + members directory API (`/members/`, filters) | todo | | | from 3rd-meeting commitments (matchmaking) |
-| 1n | FE Collaboration Network page: members directory + suggested collaborators widget; DSS nav link + home card (`VITE_DSS_URL`) | todo | | | DSS URL: https://urbanfloods.finki.ukim.mk/ |
+| 1n | FE Collaboration Network page: members directory + suggested collaborators widget; DSS nav link + home card (`VITE_DSS_URL`) | done | | 35 vitest (246 total) | /network, /u/:id, suggested on Home for verified users, expertise picker + visibility switches in Account; nav Home·Partners·Network·Unified DSS·About |
 | 1l | Playwright `auth.spec.ts` | done | d0971d3 | 8 e2e | register→Mailpit→verify→account→password change→logout→login→partners; forgot/reset; a11y spec opt-in (`E2E_A11Y=1`): contrast issues on /partners, /about, /register for M5 |
 
 ### M2 — Blog + KNOWBASE proxy
@@ -146,7 +146,8 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - 1e, 1j-b (branding, footer redesign, illustrated logo in footer), 1f, 1h done. Partner logos collected from SharePoint into frontend/public/partners. 1k in progress.
 - 1k done: Partners (live from /organisations/), About (real facts), Account (profile/password/sessions). Footer: illustrated logo (small); header 384 px; 'flood management' wording rule.
 - 1g, 1i, 1l done → **M1 core complete** (473 backend tests, 211 vitest, 8 e2e). Footer restyled like the KNOWBASE footer; Partners page compact; About = project only.
-- **Next:** 1m (expertise tags + members directory API) and 1n (Collaboration Network page + DSS link), then M2 starting with 2a.
+- 1m, 1n done → **M1 fully complete** incl. 3rd-meeting additions. Terms of Use + Privacy Policy drafts in docs/legal. M2 deps committed (068adb3).
+- **Next:** M2 in parallel: 2a (blog models + migration 0004), 2b (sanitize + slugs), 2c (KNOWBASE proxy); frontend 5e-a (legal pages /terms, /privacy from docs/legal markdown).
 
 ## 4. Open questions / decisions pending
 - Terms of Use draft v1 in `docs/legal/terms-of-use.md` needs UOWM legal review: age threshold (15/16), KNOWBASE data licence, jurisdiction. Contact for everything (incl. data requests): louta@uowm.gr (user, 2026-10-31). Privacy Policy draft v1 in `docs/legal/privacy-policy.md` (2026-10-31): review DPO naming, audit-log retention per subsidy contract, hosting description, Cloudflare/Google DPAs, age threshold.

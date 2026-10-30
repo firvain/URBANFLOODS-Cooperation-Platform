@@ -17,6 +17,8 @@ describe('routes', () => {
     ['/', 'home'],
     ['/partners', 'partners'],
     ['/about', 'about'],
+    ['/network', 'network'],
+    ['/u/5', 'profile'],
     ['/this/does/not/exist', 'not-found'],
   ])('%s resolves to %s with an i18n meta.title', (path, name) => {
     const resolved = router.resolve(path)
@@ -25,6 +27,14 @@ describe('routes', () => {
     expect(typeof title).toBe('string')
     expect(i18n.global.te(title as string, 'en')).toBe(true)
   })
+})
+
+it('the network route is titled nav.network and the profile route takes an id', () => {
+  const router = createAppRouter(createMemoryHistory())
+  expect(router.resolve('/network').meta.title).toBe('nav.network')
+  const profile = router.resolve('/u/42')
+  expect(profile.params.id).toBe('42')
+  expect(profile.meta.auth).toBeUndefined()
 })
 
 describe('navigation', () => {

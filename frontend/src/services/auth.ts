@@ -1,9 +1,10 @@
 /** Auth endpoints (`/api/v1/auth/*`). The session itself is the HttpOnly `uf_session` cookie. */
 import { api } from './api'
+import type { ExpertiseTag } from './expertise'
 import type { OrganisationSummary } from './organisations'
 
 // TODO(gen:types): replace with components['schemas'][...] once generated (`npm run gen:types`).
-// Hand-written only because the backend contract is being built concurrently (increment 1j).
+// Hand-written only because the backend contract is being built concurrently (increments 1j, 1n).
 export type UserRole = 'member' | 'admin' | 'superadmin'
 
 export interface UserMe {
@@ -15,6 +16,12 @@ export interface UserMe {
   country: string | null
   locale: string
   bio: string | null
+  /** Expertise areas (Collaboration Network matchmaking). */
+  expertise: ExpertiseTag[]
+  /** Opt-in: other members see the email address in the directory and on the profile. */
+  show_email: boolean
+  /** Whether the member appears in the Collaboration Network directory. */
+  show_in_directory: boolean
   role: UserRole
   is_verified: boolean
   is_trusted: boolean
@@ -49,6 +56,10 @@ export interface UpdateMePayload {
   country?: string | null
   locale?: string
   bio?: string | null
+  /** Replaces the whole set (at most 8). */
+  expertise_ids?: number[]
+  show_email?: boolean
+  show_in_directory?: boolean
 }
 
 /** One of the user's active sessions (`GET /auth/me/sessions`). */

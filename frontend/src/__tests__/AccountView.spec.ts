@@ -12,7 +12,9 @@ import {
   replyError,
   type Handler,
 } from './helpers/api'
+import { EXPERTISE, EXPERTISE_RESPONSE } from './helpers/members'
 import { mountWithApp, unmountAll } from './helpers/mount'
+import { clickOption, controlFor, openSelect, option } from './helpers/select'
 
 const t = i18n.global.t
 const ME = 'GET /api/v1/auth/me'
@@ -40,6 +42,7 @@ function routes(extra: Record<string, Handler> = {}) {
   return {
     [ME]: reply(200, USER),
     'GET /api/v1/organisations/': reply(200, ORGANISATIONS),
+    'GET /api/v1/expertise/': reply(200, EXPERTISE_RESPONSE),
     ...extra,
   }
 }
@@ -147,6 +150,96 @@ describe('AccountView', () => {
       mockApi(routes())
       const { wrapper } = await mountAccount()
       expect(wrapper.find('textarea').attributes('maxlength')).toBe('2000')
+    })
+
+    describe('expertise and network visibility', () => {
+      const EXPERT = {
+        ...USER,
+        expertise: [EXPERTISE[0]!],
+        show_email: false,
+        show_in_directory: true,
+      }
+
+      function switchFor(wrapper: VueWrapper, label: string) {
+        const el = controlFor(wrapper, label)
+        expect(el.getAttribute('role')).toBe('switch')
+        return el
+      }
+
+      it('shows the current expertise and both switches', async () => {
+        mockApi(routes({ [ME]: reply(200, EXPERT) }))
+        const { wrapper } = await mountAccount()
+        expect(t('account.profile.showEmail')).toBe('Show my email address to other members')
+        expect(t('account.profile.showInDirectory')).toBe('List me in the Collaboration Network')
+        expect(controlFor(wrapper, t('account.profile.expertise')).textContent).toContain(
+          'Hydrology',
+        )
+        expect(
+          switchFor(wrapper, t('account.profile.showEmail')).getAttribute('aria-checked'),
+        ).toBe('false')
+        expect(
+          switchFor(wrapper, t('account.profile.showInDirectory')).getAttribute('aria-checked'),
+        ).toBe('true')
+      })
+
+      it('sends expertise_ids when the expertise changes', async () => {
+        const fetchMock = mockApi(
+          routes({
+            [ME]: reply(200, EXPERT),
+            [PATCH_ME]: reply(200, { ...EXPERT, expertise: [EXPERTISE[0]!, EXPERTISE[4]!] }),
+          }),
+        )
+        const { wrapper, auth } = await mountAccount()
+        await openSelect(wrapper, t('account.profile.expertise'))
+        await clickOption('GIS and remote sensing')
+        await submit(wrapper)
+        const calls = callsTo(fetchMock, PATCH_ME)
+        expect(calls).toHaveLength(1)
+        expect(calls[0]!.body).toEqual({ expertise_ids: [1, 5] })
+        expect(auth.user?.expertise.map((e) => e.id)).toEqual([1, 5])
+      })
+
+      it('sends the visibility flags when the switches change', async () => {
+        const fetchMock = mockApi(
+          routes({
+            [ME]: reply(200, EXPERT),
+            [PATCH_ME]: reply(200, { ...EXPERT, show_email: true, show_in_directory: false }),
+          }),
+        )
+        const { wrapper } = await mountAccount()
+        switchFor(wrapper, t('account.profile.showEmail')).click()
+        switchFor(wrapper, t('account.profile.showInDirectory')).click()
+        await flushPromises()
+        await submit(wrapper)
+        const calls = callsTo(fetchMock, PATCH_ME)
+        expect(calls).toHaveLength(1)
+        expect(calls[0]!.body).toEqual({ show_email: true, show_in_directory: false })
+      })
+
+      it('sends nothing when a switch is toggled back', async () => {
+        const fetchMock = mockApi(routes({ [ME]: reply(200, EXPERT) }))
+        const { wrapper } = await mountAccount()
+        const toggle = switchFor(wrapper, t('account.profile.showEmail'))
+        toggle.click()
+        await flushPromises()
+        toggle.click()
+        await flushPromises()
+        await submit(wrapper)
+        expect(callsTo(fetchMock, PATCH_ME)).toHaveLength(0)
+        expect(wrapper.find('[aria-live="polite"]').text()).toContain(
+          t('account.profile.noChanges'),
+        )
+      })
+
+      it('allows at most 8 expertise areas', async () => {
+        const full = { ...EXPERT, expertise: EXPERTISE.slice(0, 8) }
+        mockApi(routes({ [ME]: reply(200, full) }))
+        const { wrapper } = await mountAccount()
+        expect(wrapper.text()).toContain(t('account.profile.expertiseHint', { max: 8 }))
+        await openSelect(wrapper, t('account.profile.expertise'))
+        expect(option('Climate adaptation').getAttribute('data-disabled')).not.toBeNull()
+        expect(option('Hydrology').getAttribute('data-disabled')).toBeNull()
+      })
     })
   })
 

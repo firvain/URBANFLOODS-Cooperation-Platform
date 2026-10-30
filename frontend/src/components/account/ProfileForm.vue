@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, reactive, ref, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToast } from '@nuxt/ui/composables'
+import { storeToRefs } from 'pinia'
 import type { FormError, FormSubmitEvent } from '@nuxt/ui'
 
 import OrganisationPicker from '@/components/common/OrganisationPicker.vue'
@@ -11,15 +12,22 @@ import { SUPPORTED_LOCALES, isSupportedLocale, type LocaleCode } from '@/i18n'
 import type { UpdateMePayload, UserMe } from '@/services/auth'
 import type { OrganisationChoice } from '@/services/organisations'
 import { useAuthStore } from '@/stores/auth'
+import { useExpertiseStore } from '@/stores/expertise'
 
 /** Mirrors the backend `Bio` constraint. */
 const BIO_MAX_LENGTH = 2000
+/** Mirrors the backend limit on `expertise_ids`. */
+const EXPERTISE_MAX = 8
 
 const { t } = useI18n()
 const toast = useToast()
 const auth = useAuthStore()
 const { errorMessage, fieldMessage, fieldErrors } = useApiErrors()
 const { countryItems: buildCountryItems } = useCountries()
+const expertiseStore = useExpertiseStore()
+const { tags: expertiseTags } = storeToRefs(expertiseStore)
+
+const sortedIds = (ids: number[]) => [...ids].sort((a, b) => a - b)
 
 function stateFrom(user: UserMe) {
   return {
@@ -31,6 +39,9 @@ function stateFrom(user: UserMe) {
     country: (user.country ?? undefined) as string | undefined,
     locale: (isSupportedLocale(user.locale) ? user.locale : 'en') as LocaleCode,
     bio: user.bio ?? '',
+    expertise_ids: user.expertise.map((tag) => tag.id),
+    show_email: user.show_email,
+    show_in_directory: user.show_in_directory,
   }
 }
 type State = ReturnType<typeof stateFrom>
@@ -46,6 +57,24 @@ const form = useTemplateRef<{ clear: () => void }>('form')
 
 const countryItems = computed(() => buildCountryItems(auth.user?.country))
 const localeItems = SUPPORTED_LOCALES.map((l) => ({ label: l.nativeName, value: l.code }))
+
+/** The vocabulary, plus the user's own tags so their labels show before (or without) it. */
+const expertiseItems = computed(() => {
+  const tags = new Map(expertiseTags.value.map((tag) => [tag.id, tag]))
+  for (const tag of auth.user?.expertise ?? []) if (!tags.has(tag.id)) tags.set(tag.id, tag)
+  const full = state.expertise_ids.length >= EXPERTISE_MAX
+  return [...tags.values()].map((tag) => ({
+    label: tag.label,
+    value: tag.id,
+    // At the limit, only the chosen areas stay selectable (to remove them).
+    disabled: full && !state.expertise_ids.includes(tag.id),
+  }))
+})
+
+onMounted(() => {
+  // Without the vocabulary the select still shows (and can remove) the current areas.
+  expertiseStore.fetch().catch(() => {})
+})
 
 watch(
   () => ({ ...state }),
@@ -68,6 +97,11 @@ function validate(s: Partial<State>): FormError[] {
   const other = s.organisation?.organisation_other
   if (other !== null && other !== undefined && !other.trim())
     errors.push({ name: 'organisation_other', message: fieldMessage('required') })
+  if ((s.expertise_ids?.length ?? 0) > EXPERTISE_MAX)
+    errors.push({
+      name: 'expertise_ids',
+      message: t('account.profile.expertiseMax', { max: EXPERTISE_MAX }),
+    })
   return errors
 }
 
@@ -92,6 +126,13 @@ function changedFields(data: State, user: UserMe): UpdateMePayload {
   if (data.locale !== user.locale) changes.locale = data.locale
   const bio = data.bio.trim() || null
   if (bio !== user.bio) changes.bio = bio
+
+  const expertiseIds = sortedIds(data.expertise_ids)
+  const currentIds = sortedIds(user.expertise.map((tag) => tag.id))
+  if (expertiseIds.join() !== currentIds.join()) changes.expertise_ids = expertiseIds
+  if (data.show_email !== user.show_email) changes.show_email = data.show_email
+  if (data.show_in_directory !== user.show_in_directory)
+    changes.show_in_directory = data.show_in_directory
   return changes
 }
 
@@ -201,6 +242,40 @@ async function onSubmit(event: FormSubmitEvent<State>) {
         class="w-full"
       />
     </UFormField>
+
+    <UFormField
+      :label="t('account.profile.expertise')"
+      name="expertise_ids"
+      :help="t('account.profile.expertiseHint', { max: EXPERTISE_MAX })"
+      :error="serverErrors.expertise_ids"
+    >
+      <USelectMenu
+        v-model="state.expertise_ids"
+        multiple
+        :items="expertiseItems"
+        value-key="value"
+        :placeholder="t('account.profile.expertisePlaceholder')"
+        class="w-full"
+      />
+    </UFormField>
+
+    <fieldset class="space-y-4 rounded border border-default p-4">
+      <legend class="px-1 text-sm font-semibold text-highlighted">
+        {{ t('account.profile.networkTitle') }}
+      </legend>
+      <USwitch
+        v-model="state.show_in_directory"
+        name="show_in_directory"
+        :label="t('account.profile.showInDirectory')"
+        :description="t('account.profile.showInDirectoryHint')"
+      />
+      <USwitch
+        v-model="state.show_email"
+        name="show_email"
+        :label="t('account.profile.showEmail')"
+        :description="t('account.profile.showEmailHint')"
+      />
+    </fieldset>
 
     <div class="flex flex-wrap items-center gap-4">
       <UButton type="submit" :loading="pending" icon="i-lucide-save">

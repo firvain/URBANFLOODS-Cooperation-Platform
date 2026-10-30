@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 
 import i18n, { SUPPORTED_LOCALES, setLocale } from '@/i18n'
@@ -172,10 +172,16 @@ describe('footer branding', () => {
   it('links internally to the existing pages in the Platform column', async () => {
     await mountApp('/about')
     const links = Array.from(column('platform').querySelectorAll('a'))
-    expect(links.map((a) => a.getAttribute('href'))).toEqual(['/', '/partners', '/about'])
+    expect(links.map((a) => a.getAttribute('href'))).toEqual([
+      '/',
+      '/partners',
+      '/network',
+      '/about',
+    ])
     expect(links.map((a) => a.textContent?.trim())).toEqual([
       t('nav.home'),
       t('nav.partners'),
+      t('nav.network'),
       t('nav.about'),
     ])
     for (const link of links) expect(link.getAttribute('target')).toBeNull()
@@ -218,7 +224,7 @@ describe('footer branding', () => {
   it('styles column links muted, underlined only on hover/focus', async () => {
     await mountApp()
     const links = footer().querySelectorAll('h2 + ul a')
-    expect(links).toHaveLength(7)
+    expect(links).toHaveLength(8)
     for (const link of links) {
       const classes = link.classList
       expect(classes.contains('text-sm')).toBe(true)
@@ -315,5 +321,70 @@ describe('focus management', () => {
 
     const live = document.querySelector('[aria-live="polite"]')
     expect(live?.textContent).toContain(t('nav.about'))
+  })
+})
+
+describe('main navigation and the Unified DSS', () => {
+  const DSS = 'https://urbanfloods.finki.ukim.mk/'
+
+  function navLinks() {
+    const nav = document.querySelector('header nav[aria-label]')
+    expect(nav).not.toBeNull()
+    return Array.from(nav!.querySelectorAll('a'))
+  }
+  const label = (a: Element) => a.textContent?.replace(t('a11y.opensInNewTab'), '').trim()
+
+  it('orders the items Home, Partners, Network, Unified DSS, About', async () => {
+    vi.stubEnv('VITE_DSS_URL', DSS)
+    await mountApp()
+    expect(t('nav.network')).toBe('Network')
+    expect(t('nav.dss')).toBe('Unified DSS')
+    expect(navLinks().map(label)).toEqual([
+      t('nav.home'),
+      t('nav.partners'),
+      t('nav.network'),
+      t('nav.dss'),
+      t('nav.about'),
+    ])
+    expect(navLinks()[2]!.getAttribute('href')).toBe('/network')
+  })
+
+  it('links the DSS in a new tab, announced, with the URL from VITE_DSS_URL', async () => {
+    vi.stubEnv('VITE_DSS_URL', DSS)
+    await mountApp()
+    const dss = navLinks().find((a) => label(a) === t('nav.dss'))!
+    expect(dss.getAttribute('href')).toBe(DSS)
+    expect(dss.getAttribute('target')).toBe('_blank')
+    expect(dss.getAttribute('rel')).toContain('noopener')
+    expect(dss.querySelector('.sr-only')?.textContent?.trim()).toBe(t('a11y.opensInNewTab'))
+    // Internal items stay in the same tab.
+    for (const a of navLinks().filter((l) => l !== dss)) expect(a.getAttribute('target')).toBeNull()
+  })
+
+  it('hides the DSS item when VITE_DSS_URL is empty', async () => {
+    vi.stubEnv('VITE_DSS_URL', '')
+    await mountApp()
+    expect(navLinks().map(label)).toEqual([
+      t('nav.home'),
+      t('nav.partners'),
+      t('nav.network'),
+      t('nav.about'),
+    ])
+    expect(document.querySelector('[data-testid="dss-card"]')).toBeNull()
+  })
+
+  it('shows the Unified DSS card on the home page with an external button', async () => {
+    vi.stubEnv('VITE_DSS_URL', DSS)
+    await mountApp('/')
+    const card = document.querySelector('[data-testid="dss-card"]')
+    expect(card).not.toBeNull()
+    expect(card!.querySelector('h2')?.textContent).toContain(t('home.dss.title'))
+    const button = card!.querySelector<HTMLAnchorElement>(`a[href="${DSS}"]`)
+    expect(button).not.toBeNull()
+    expect(button!.textContent).toContain(t('home.dss.open'))
+    expect(t('home.dss.open')).toBe('Open the DSS')
+    expect(button!.getAttribute('target')).toBe('_blank')
+    expect(button!.getAttribute('rel')).toContain('noopener')
+    expect(button!.querySelector('.sr-only')?.textContent?.trim()).toBe(t('a11y.opensInNewTab'))
   })
 })

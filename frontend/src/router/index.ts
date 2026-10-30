@@ -40,6 +40,18 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.partners' },
   },
   {
+    path: '/network',
+    name: 'network',
+    component: () => import('@/views/NetworkView.vue'),
+    meta: { title: 'nav.network' },
+  },
+  {
+    path: '/u/:id',
+    name: 'profile',
+    component: () => import('@/views/ProfileView.vue'),
+    meta: { title: 'profile.title' },
+  },
+  {
     path: '/about',
     name: 'about',
     component: () => import('@/views/AboutView.vue'),

@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
+
+import SuggestedCollaborators from '@/components/network/SuggestedCollaborators.vue'
+import { dssUrl } from '@/constants/links'
+import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
+const { isVerified } = storeToRefs(useAuthStore())
+
+/** The Unified DSS web app; the card is hidden when it is not configured. */
+const dss = dssUrl()
 
 // Placeholders until the blog (M2), forum (M3) and KNOWBASE browser (M2) routes exist.
 const sections = [
@@ -34,5 +43,29 @@ const sections = [
         </UCard>
       </li>
     </ul>
+
+    <UCard v-if="dss" data-testid="dss-card" class="mt-6">
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 class="flex items-center gap-2 text-lg font-semibold text-highlighted">
+            <UIcon name="i-lucide-map" class="size-5 text-primary" aria-hidden="true" />
+            {{ t('home.dss.title') }}
+          </h2>
+          <p class="mt-2 max-w-3xl text-muted">{{ t('home.dss.description') }}</p>
+        </div>
+        <UButton
+          :to="dss"
+          target="_blank"
+          rel="noopener noreferrer"
+          trailing-icon="i-lucide-arrow-up-right"
+          class="shrink-0 self-start md:self-center"
+        >
+          {{ t('home.dss.open') }}
+          <span class="sr-only">{{ ` ${t('a11y.opensInNewTab')}` }}</span>
+        </UButton>
+      </div>
+    </UCard>
+
+    <SuggestedCollaborators v-if="isVerified" class="mt-12" />
   </UContainer>
 </template>

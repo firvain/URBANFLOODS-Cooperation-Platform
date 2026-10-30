@@ -4,17 +4,46 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 import logoHorizontal from '@/assets/logos/interreg-urbanfloods-horizontal.png'
-import { NAV_ITEMS } from '@/constants/navigation'
+import { dssUrl } from '@/constants/links'
+import { DSS_NAV_ITEM, NAV_ITEMS } from '@/constants/navigation'
 import LocaleSwitcher from './LocaleSwitcher.vue'
 import UserMenu from './UserMenu.vue'
 
 const { t } = useI18n()
 const route = useRoute()
 
-const navItems = computed(() => NAV_ITEMS.map((item) => ({ ...item, label: t(item.labelKey) })))
+interface NavLink {
+  name: string
+  label: string
+  to: string
+  /** Another site: opens in a new tab, announced to screen readers. */
+  external: boolean
+}
 
-function isActive(to: string): boolean {
-  return to === '/' ? route.path === '/' : route.path.startsWith(to)
+const dss = dssUrl()
+
+/** Internal pages, with the Unified DSS (when configured) after its anchor item. */
+const navItems = computed<NavLink[]>(() =>
+  NAV_ITEMS.flatMap((item) => {
+    const link: NavLink = { name: item.name, label: t(item.labelKey), to: item.to, external: false }
+    if (item.name !== DSS_NAV_ITEM.after || !dss) return [link]
+    return [
+      link,
+      { name: DSS_NAV_ITEM.name, label: t(DSS_NAV_ITEM.labelKey), to: dss, external: true },
+    ]
+  }),
+)
+
+function isActive(item: NavLink): boolean {
+  if (item.external) return false
+  return item.to === '/' ? route.path === '/' : route.path.startsWith(item.to)
+}
+
+/** Link attributes: external items open in a new tab without `window.opener` or a referrer. */
+function linkAttrs(item: NavLink) {
+  return item.external
+    ? { target: '_blank', rel: 'noopener noreferrer', trailingIcon: 'i-lucide-arrow-up-right' }
+    : {}
 }
 </script>
 
@@ -48,11 +77,13 @@ function isActive(to: string): boolean {
         v-for="item in navItems"
         :key="item.name"
         :to="item.to"
-        :variant="isActive(item.to) ? 'soft' : 'ghost'"
-        :color="isActive(item.to) ? 'primary' : 'neutral'"
+        v-bind="linkAttrs(item)"
+        :variant="isActive(item) ? 'soft' : 'ghost'"
+        :color="isActive(item) ? 'primary' : 'neutral'"
         size="sm"
       >
         {{ item.label }}
+        <span v-if="item.external" class="sr-only">{{ ` ${t('a11y.opensInNewTab')}` }}</span>
       </UButton>
     </nav>
 
@@ -69,12 +100,14 @@ function isActive(to: string): boolean {
         <li v-for="item in navItems" :key="item.name">
           <UButton
             :to="item.to"
-            :variant="isActive(item.to) ? 'soft' : 'ghost'"
-            :color="isActive(item.to) ? 'primary' : 'neutral'"
+            v-bind="linkAttrs(item)"
+            :variant="isActive(item) ? 'soft' : 'ghost'"
+            :color="isActive(item) ? 'primary' : 'neutral'"
             block
             class="justify-start"
           >
             {{ item.label }}
+            <span v-if="item.external" class="sr-only">{{ ` ${t('a11y.opensInNewTab')}` }}</span>
           </UButton>
         </li>
       </ul>

@@ -16,6 +16,8 @@
     "forum": "Forum",
     "knowbase": "KNOWBASE",
     "partners": "Partners",
+    "network": "Network",
+    "dss": "Unified DSS",
     "about": "About",
     "login": "Log in",
     "register": "Register",
@@ -38,6 +40,11 @@
         "title": "KNOWBASE",
         "description": "Browse legislation, policies and flood-protection measures."
       }
+    },
+    "dss": {
+      "title": "Unified DSS",
+      "description": "The integrated Decision Support System developed by the URBANFLOODS partners for flood management, with a map view of the pilot sites.",
+      "open": "Open the DSS"
     }
   },
   "partners": {
@@ -53,6 +60,57 @@
     "loadError": "The partner list could not be loaded.",
     "retry": "Try again",
     "empty": "No partners are listed yet."
+  },
+  "network": {
+    "title": "Collaboration Network",
+    "intro": "Find people working on flood management across the Adriatic-Ionian region by expertise, country or organisation.",
+    "filters": {
+      "title": "Filter members",
+      "search": "Search",
+      "searchPlaceholder": "Name, organisation or bio",
+      "expertise": "Expertise",
+      "expertisePlaceholder": "Any expertise",
+      "country": "Country",
+      "allCountries": "All countries",
+      "organisation": "Organisation",
+      "allOrganisations": "All organisations"
+    },
+    "count": "No members | {count} member | {count} members",
+    "loading": "Loading the members…",
+    "loadError": "The member list could not be loaded.",
+    "retry": "Try again",
+    "empty": "No members match these filters.",
+    "emptyAll": "No members are listed yet.",
+    "clearFilters": "Clear filters",
+    "pagination": "Member list pages",
+    "card": {
+      "email": "Email",
+      "expertise": "Expertise",
+      "moreExpertise": "+{count}",
+      "moreExpertiseLabel": "{count} more: {labels}"
+    },
+    "suggested": {
+      "title": "Suggested collaborators",
+      "intro": "Members who work on the same topics as you.",
+      "shared": "shares {count} expertise area | shares {count} expertise areas",
+      "seeAll": "See all members in the Collaboration Network",
+      "empty": "No suggestions yet. Add your expertise areas to your profile to find members with similar interests.",
+      "editProfile": "Edit your profile",
+      "loadError": "Suggestions could not be loaded."
+    }
+  },
+  "profile": {
+    "title": "Member profile",
+    "organisation": "Organisation",
+    "country": "Country",
+    "bio": "About",
+    "expertise": "Expertise",
+    "email": "Email",
+    "memberSince": "Member since {date}",
+    "loading": "Loading the profile…",
+    "loadError": "This profile could not be loaded.",
+    "retry": "Try again",
+    "backToNetwork": "Back to the Collaboration Network"
   },
   "about": {
     "title": "About URBANFLOODS",
@@ -265,6 +323,15 @@
       "bio": "About you",
       "bioHint": "Optional. A few words about your work and interests.",
       "bioCount": "{count}/{max}",
+      "expertise": "Expertise areas",
+      "expertiseHint": "Up to {max}. Used to suggest collaborators and to filter the Collaboration Network.",
+      "expertisePlaceholder": "Select your expertise areas",
+      "expertiseMax": "Choose at most {max} expertise areas.",
+      "networkTitle": "Collaboration Network",
+      "showEmail": "Show my email address to other members",
+      "showEmailHint": "Shown on your profile and member card so others can contact you directly.",
+      "showInDirectory": "List me in the Collaboration Network",
+      "showInDirectoryHint": "Others can find you by expertise, country and organisation, and you can be suggested as a collaborator.",
       "submit": "Save profile",
       "saved": "Your profile has been saved.",
       "noChanges": "There are no changes to save."
