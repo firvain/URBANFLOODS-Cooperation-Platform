@@ -63,15 +63,16 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 1j-b | FE branding: light mode only, official logos + favicon from the project site, footer disclaimer | done | 634c2e4 | 60 vitest (161 total) | `ui({ colorMode: false })`; footer: 4 columns + green accent + statement + disclaimer + LinkedIn; flex page shell; About page facts; logo-size interpretation in docs/branding.md |
 | 1k | FE AccountView + PartnersView (KNOWBASE About-page style, see docs/about-partners-style.md) + About facts | done | d8a235e | 41 vitest (202 total) | partner logos + flags, no short-name badges (user), Macerata coat of arms recoloured navy; Account tabs profile/password/sessions |
 | 1m | Expertise tags (seeded vocabulary) + user_expertise + show_email/show_in_directory + members directory API (`/members/`, filters) | todo | | | from 3rd-meeting commitments (matchmaking) |
-| 1n | FE Collaboration Network page: members directory + suggested collaborators widget; DSS nav link + home card (`VITE_DSS_URL`) | done | | 35 vitest (246 total) | /network, /u/:id, suggested on Home for verified users, expertise picker + visibility switches in Account; nav Home·Partners·Network·Unified DSS·About |
+| 1n | FE Collaboration Network page: members directory + suggested collaborators widget; DSS nav link + home card (`VITE_DSS_URL`) | done | b68461e | 35 vitest (246 total) | /network, /u/:id, suggested on Home for verified users, expertise picker + visibility switches in Account; nav Home·Partners·Network·Unified DSS·About |
 | 1l | Playwright `auth.spec.ts` | done | d0971d3 | 8 e2e | register→Mailpit→verify→account→password change→logout→login→partners; forgot/reset; a11y spec opt-in (`E2E_A11Y=1`): contrast issues on /partners, /about, /register for M5 |
 
 ### M2 — Blog + KNOWBASE proxy
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
-| 2a | Models Category/Tag/Post/Attachment/KnowbaseLink + migration (FTS, trigram) | todo | | | + `event_at`/`event_url` on posts (Events) |
-| 2b | `services/sanitize.py` (nh3) + `services/slugs.py` | todo | | | |
-| 2c | `services/knowbase.py` proxy + cache + `/knowbase/*` endpoints | todo | | | |
+| 1o | Expertise asked at registration (backend: `expertise_ids` on register; FE: optional picker on the form, 'complete your profile' nudge after verification and on empty Network cards) | in progress | | | user 2026-10-31 |
+| 2a | Models Category/Tag/Post/Attachment/KnowbaseLink + migration (FTS, trigram) | in progress | | | + `event_at`/`event_url` on posts (Events) |
+| 2b | `services/sanitize.py` (nh3) + `services/slugs.py` | in progress | | | |
+| 2c | `services/knowbase.py` proxy + cache + `/knowbase/*` endpoints | in progress | | | |
 | 2d | categories + tags endpoints | todo | | | |
 | 2e | posts endpoints (visibility, trust→status, knowbase_links) | todo | | | |
 | 2f | `services/images.py` + uploads + static mount | todo | | | |
@@ -112,7 +113,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 5b | export endpoints, Atom, sitemap | todo | | | extended |
 | 5c | FE SearchView + header search + `usePageHead` | todo | | | core |
 | 5d | accessibility pass + axe in Playwright | todo | | | core |
-| 5e | static pages + consent text | todo | | | core; Terms of Use v1 drafted in docs/legal/ (2026-10-31) |
+| 5e | static pages + consent text | in progress | | | core; 5e-a legal pages (/terms, /privacy from docs/legal markdown) running 2026-10-31 |
 | 5f | translation pass (8 locales) | todo | | | extended |
 | 5g | docs incl. `report-D5.1.1-outline.md`, admin handbook, moderation guide | todo | | | core |
 
