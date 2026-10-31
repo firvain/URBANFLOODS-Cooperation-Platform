@@ -37,6 +37,7 @@ Work Package 5, Activity 5.1. Lead partner: University of Western Macedonia (UOW
 | [Admin handbook](docs/admin-handbook.md) | admins and operators: accounts, stats export, GDPR, CLI, maintenance |
 | [FAIR data](docs/fair-data.md) | identifiers, formats, licence, metadata |
 | [Testing](docs/testing.md) | pytest, vitest, Playwright, CI |
+| [Deployment](docs/deployment.md) | operators: production runbook (server, nginx, TLS, backups, updates) |
 | [D.5.1.1 report outline](docs/report-D5.1.1-outline.md) | structure of the deliverable report |
 | [Legal texts](docs/legal/) | terms of use, privacy policy, accessibility statement, open data (drafts) |
 

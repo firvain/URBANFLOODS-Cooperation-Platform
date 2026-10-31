@@ -5,8 +5,7 @@ the content catalogue, and the operator who has shell access to the server. It c
 account actions, categories, tags, organisations and expertise areas, the dashboard and the
 reporting export, the KNOWBASE cache, GDPR requests, email problems, logs, the command-line tools
 and the scheduled maintenance. Day-to-day content moderation is in the
-[moderation guide](moderation-guide.md); deployment will be in `docs/deployment.md` (increment M6,
-not written yet).
+[moderation guide](moderation-guide.md); deployment in [docs/deployment.md](deployment.md).
 
 Last updated: 2026-10-31
 
@@ -27,8 +26,8 @@ On a fresh installation, create the first superadmin from the server shell (see
 [section 11](#11-command-line-tools)):
 
 ```bash
-docker compose exec backend python -m app.cli create-superadmin \
-  --email someone@example.org --display-name "Platform Admin"
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec backend \
+  python -m app.cli create-superadmin --email someone@example.org --display-name "Platform Admin"
 ```
 
 The password is prompted for. Running it for an existing address makes that account a verified,
@@ -260,8 +259,9 @@ operations.
 
 ## 11. Command-line tools
 
-Run inside the backend container (`docker compose exec backend …`) or from `backend/` with
-`uv run …` and the production `DATABASE_URL`:
+Run inside the backend container (in production
+`docker compose --env-file .env.prod -f docker-compose.prod.yml exec backend …`, in dev
+`docker compose exec backend …`) or from `backend/` with `uv run …` and the right `DATABASE_URL`:
 
 | Command | Does |
 |---|---|

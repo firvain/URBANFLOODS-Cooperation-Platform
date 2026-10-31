@@ -503,23 +503,25 @@ only with explicit permission for each step. The KNOWBASE is never touched.
 - [ ] `.env.prod` (chmod 600, never committed): `ENV=prod`, strong `SECRET_KEY`, `DATABASE_URL` /
   `POSTGRES_PASSWORD`, `ALLOWED_ORIGINS=https://cooperation.urbanfloods.app`,
   `FRONTEND_URL=https://cooperation.urbanfloods.app`, `COOKIE_SECURE=true`, `EMAIL_ENABLED=true`,
-  `SMTP_HOST=smtp-relay.brevo.com`, `SMTP_PORT=587`, `SMTP_USER`, `SMTP_PASSWORD` = new Brevo key
-  **`cooperation-platform-prod`**, `SMTP_FROM=noreply@cooperation.urbanfloods.app`, `SMTP_REPLY_TO`,
+  `SMTP_HOST=smtp-relay.brevo.com`, `SMTP_PORT=587`, `SMTP_USER`, `SMTP_PASSWORD` = the existing Brevo key
+  **`cooperation-platform`** (decision 2026-10-31), `SMTP_FROM=noreply@cooperation.urbanfloods.app`, `SMTP_REPLY_TO`,
   `CONTACT_EMAIL`, `TURNSTILE_ENABLED=true` + `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` (+ build var
   `VITE_TURNSTILE_SITE_KEY`), `TRUST_PROXY_HEADERS=true`, `ENABLE_SCHEDULER=true` (single worker),
   `ENABLE_DOCS` (decided), `LOG_JSON=true`, `AUTO_APPROVE_AFTER_DAYS` (agreed), `REPORT_AUTO_HIDE_THRESHOLD`,
   `VITE_API_BASE_URL=""`, `VITE_DSS_URL`.
 - [ ] Turnstile site created for `cooperation.urbanfloods.app` in Cloudflare.
-- [ ] Brevo: domain still authenticated (DKIM, DMARC), prod key created, dev key not reused.
+- [ ] Brevo: domain still authenticated (DKIM, DMARC); the existing key is reused by decision (2026-10-31).
 - [ ] `scripts/backup.sh`: pg_dump + uploads archive, 14-day retention, user crontab, **one test
   restore done**.
 - [ ] `deploy.sh` reviewed; migrations run in the backend entrypoint.
 
 **Host (6b; the owner runs the sudo steps)**
 
-- [ ] `docker/nginx-host-config.template`: routes `/api/`, `/static/`, `/feeds/`, `/sitemap.xml` and
-  `/robots.txt` to the backend; security headers and CSP (`challenges.cloudflare.com`, KNOWBASE
-  images); `client_max_body_size 6m`. `frontend/public/robots.txt` removed so the backend's is served.
+- [ ] `docker/nginx-host-config.template`: proxies everything to `127.0.0.1:3002` (the frontend
+  container's nginx routes `/api/`, `/static/`, `/feeds/`, `/sitemap.xml`, `/robots.txt`, `/docs` to the
+  backend and sets the security headers and the CSP for `challenges.cloudflare.com` and KNOWBASE
+  images); HSTS after certbot; `client_max_body_size 6m`. `frontend/public/robots.txt` removed so the
+  backend's is served.
 - [ ] `docs/deployment.md` written, with the owner's steps: nginx site symlink,
   `certbot --nginx -d cooperation.urbanfloods.app` (the Cloudflare record may need DNS-only
   briefly), `nginx -t && systemctl reload nginx`.

@@ -1,0 +1,71 @@
+# Host nginx site for cooperation.urbanfloods.app (URBANFLOODS Cooperation Platform).
+#
+# Target path on the server: /etc/nginx/sites-available/cooperation.urbanfloods.app
+# Runbook: docs/deployment.md, step 4. The owner runs these steps (sudo needed):
+#
+#   cd ~/URBANFLOODS-Cooperation-Platform
+#   sudo cp docker/nginx-host-config.template /etc/nginx/sites-available/cooperation.urbanfloods.app
+#   sudo ln -s /etc/nginx/sites-available/cooperation.urbanfloods.app /etc/nginx/sites-enabled/
+#   sudo nginx -t
+#   sudo systemctl reload nginx
+#   sudo certbot --nginx -d cooperation.urbanfloods.app
+#   sudo nginx -t && sudo systemctl reload nginx
+#
+# As shipped, this is a plain HTTP (listen 80) server, so `nginx -t` passes before any
+# certificate exists. `certbot --nginx` then adds `listen 443 ssl`, the ssl_certificate /
+# ssl_certificate_key / options-ssl-nginx.conf / ssl_dhparam lines and a separate
+# HTTP -> HTTPS redirect server, exactly as it did for the KNOWBASE site. After certbot,
+# uncomment the Strict-Transport-Security line below (HSTS must only be sent over HTTPS),
+# run `sudo nginx -t` and reload.
+#
+# Only TLS and HSTS live here. The frontend container (127.0.0.1:3002) serves the SPA, proxies
+# /api/, /static/, /feeds/, /sitemap.xml, /robots.txt and /health to the backend, and sets
+# X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy and the CSP.
+# Do not add those headers here: they would be sent twice.
+#
+# Never edit /etc/nginx/sites-available/knowbase.urbanfloods.app or anything else belonging
+# to the KNOWBASE.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name cooperation.urbanfloods.app;
+
+    # Image uploads are limited to 5 MiB by the backend; leave room for the multipart overhead.
+    client_max_body_size 6m;
+
+    access_log /var/log/nginx/cooperation.urbanfloods.app.access.log;
+    error_log  /var/log/nginx/cooperation.urbanfloods.app.error.log;
+
+    # Added by certbot (shown here for reference; leave commented, certbot writes its own):
+    # listen 443 ssl http2;
+    # ssl_certificate /etc/letsencrypt/live/cooperation.urbanfloods.app/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/cooperation.urbanfloods.app/privkey.pem;
+    # include /etc/letsencrypt/options-ssl-nginx.conf;
+    # ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # Uncomment once certbot has enabled TLS:
+    # add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # No dotfiles (.env, .git, ...) are ever served. Certbot's HTTP-01 challenge path
+    # (/.well-known/acme-challenge/) is excluded and handled by certbot's temporary config.
+    location ~ /\.(?!well-known/) {
+        deny all;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3002;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # CF-Connecting-IP from Cloudflare is passed through unchanged (nginx forwards request
+        # headers by default); the backend trusts it because TRUST_PROXY_HEADERS=true.
+
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
