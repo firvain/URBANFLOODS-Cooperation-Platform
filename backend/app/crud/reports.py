@@ -11,7 +11,8 @@ never deadlock each other; concurrent reports on one item are counted one after 
 
 Audit rows: ``report.create`` (``{content_type, content_id, reason}``, never the free-text
 details), ``report.resolve`` and ``report.dismiss`` (``{content_type, content_id}``), all with
-``target_type="report"``.
+``target_type="report"``. A report closed because its reporter deleted their account is a
+system ``report.dismiss`` (no actor, ``reason: "reporter_deleted"`` in the metadata).
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -275,3 +276,63 @@ async def dismiss_report(
         action="report.dismiss",
         now=now,
     )
+
+
+REPORTER_DELETED = "reporter_deleted"
+
+
+async def dismiss_reports_of_deleted_reporter(
+    db: AsyncSession, *, reporter_id: int, now: datetime | None = None
+) -> tuple[int, int]:
+    """Dismiss every open report by ``reporter_id`` (an account being anonymised) as a system
+    action (no resolver) and recount the reported content, so a reporter who no longer exists
+    stops counting towards ``report_count``. Content stays in its status (an auto-hidden item
+    stays hidden: an admin decides). The report rows are kept, still pointing at the reporter.
+
+    Locks the content rows first (in a fixed order), then the reports, as ``_close`` does.
+    Returns ``(reports_closed, content_recounted)``; content that no longer exists is not
+    recounted.
+    """
+    now = now or datetime.now(UTC)
+    keys = (
+        await db.execute(
+            select(Report.content_type, Report.content_id)
+            .where(Report.reporter_id == reporter_id, Report.status == ReportStatus.OPEN)
+            .distinct()
+            .order_by(Report.content_type, Report.content_id)
+        )
+    ).all()
+    if not keys:
+        return 0, 0
+    contents = []
+    for content_type, content_id in keys:
+        content = await moderation.get_content(
+            db, content_type=content_type, content_id=content_id, for_update=True
+        )
+        if content is not None:
+            contents.append(content)
+
+    closed = (
+        await db.execute(
+            update(Report)
+            .where(Report.reporter_id == reporter_id, Report.status == ReportStatus.OPEN)
+            .values(status=ReportStatus.DISMISSED, resolved_by=None, resolved_at=now)
+            .returning(Report.id, Report.content_type, Report.content_id)
+        )
+    ).all()
+    for content in contents:
+        await _recount(db, content=content)
+    for report_id, content_type, content_id in sorted(closed):
+        await log_action(
+            db,
+            actor_id=None,
+            action="report.dismiss",
+            target_type="report",
+            target_id=report_id,
+            metadata={
+                "content_type": content_type.value,
+                "content_id": content_id,
+                "reason": REPORTER_DELETED,
+            },
+        )
+    return len(closed), len(contents)

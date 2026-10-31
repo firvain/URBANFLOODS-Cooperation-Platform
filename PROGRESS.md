@@ -128,7 +128,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 5m | admin digest send-now endpoint + dashboard button | done | | 7 pytest (1628), 3 vitest (1055) | `POST /admin/digest/send` → `{recipients, items, sent}` (forced run in the request transaction; `sent: false` when every email failed), audit `admin.digest_sent`; dashboard section with confirm dialog; admin keys English only by convention; handbook §7/§9 |
 | 5n | admin pages for organisations and expertise tags | todo | | | same pattern as categories |
 | 5o | resubmit after rejection; reason shown to the author and in the email | todo | | | `moderation_note`, `POST /{type}/{id}/resubmit` |
-| 5p | report_count recounted when a reporter is anonymised | todo | | | reports dismissed as `reporter_deleted` |
+| 5p | report_count recounted when a reporter is anonymised | done | | 4 pytest (1636) | `crud/reports.dismiss_reports_of_deleted_reporter` (content locked first, reports dismissed without resolver, recount, system audit `report.dismiss` with `reason: reporter_deleted`); `anonymise_user` returns `AnonymiseResult`; counts in the `auth.account_deleted` audit row |
 
 ### M6 — Production deployment (only on explicit request)
 | Inc | Scope | Status | Commit | Tests | Notes |

@@ -856,7 +856,12 @@ async def test_delete_audit_counts_attachments_deleted(
 
     row = await _deletion_audit(db, user.id)
     assert row.actor_id == user.id
-    assert row.metadata_ == {"role": "member", "attachments_deleted": 2}
+    assert row.metadata_ == {
+        "role": "member",
+        "attachments_deleted": 2,
+        "reports_closed": 0,
+        "content_recounted": 0,
+    }
 
 
 async def test_delete_without_uploads_audits_zero(
@@ -869,7 +874,12 @@ async def test_delete_without_uploads_audits_zero(
     assert (await _delete_me(client)).status_code == 204
 
     row = await _deletion_audit(db_session, user.id)
-    assert row.metadata_ == {"role": "member", "attachments_deleted": 0}
+    assert row.metadata_ == {
+        "role": "member",
+        "attachments_deleted": 0,
+        "reports_closed": 0,
+        "content_recounted": 0,
+    }
 
 
 # --- crud -------------------------------------------------------------------------------------

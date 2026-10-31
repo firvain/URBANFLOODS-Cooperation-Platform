@@ -793,7 +793,7 @@ async def delete_me(
         )
     role = user.role
     # Anonymise first: it clears the avatar link, so an own-upload avatar counts as unused below.
-    await crud_user.anonymise_user(db, user=user)
+    result = await crud_user.anonymise_user(db, user=user)
     removed = await crud_attachment.delete_unreferenced_uploads(db, user_id=user.id)
     await crud_audit.log_action(
         db,
@@ -801,7 +801,12 @@ async def delete_me(
         action="auth.account_deleted",
         target_type="user",
         target_id=user.id,
-        metadata={"role": role, "attachments_deleted": len(removed)},
+        metadata={
+            "role": role,
+            "attachments_deleted": len(removed),
+            "reports_closed": result.reports_closed,
+            "content_recounted": result.content_recounted,
+        },
     )
     # Files go only after the response, so after the commit (as in endpoints/uploads.py).
     paths = [path for pair in removed for path in pair if path]

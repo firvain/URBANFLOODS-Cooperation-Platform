@@ -23,20 +23,34 @@ from app.crud import audit as crud_audit
 from app.crud import user as crud_user
 from app.crud.session import create_session, revoke_session
 from app.crud.token import create_email_token
-from app.db.enums import TokenPurpose, UserRole
+from app.db.enums import (
+    CategoryKind,
+    ContentStatus,
+    HiddenReason,
+    ReportStatus,
+    TokenPurpose,
+    UserRole,
+)
 from app.db.models import (
     Attachment,
     AuditLog,
     EmailToken,
     NotificationPreference,
     Organisation,
+    Post,
+    Report,
     Session,
+    Thread,
     User,
 )
 from tests.factories import (
     DEFAULT_PASSWORD,
     create_admin,
+    create_category,
+    create_post,
+    create_report,
     create_superadmin,
+    create_thread,
     create_user,
     create_verified_user,
     login_as,
@@ -528,6 +542,121 @@ async def test_delete_superadmin_when_another_exists(
     stored = await _reload_user(db_session, user.id)
     assert stored.role == UserRole.MEMBER
     assert stored.deleted_at is not None
+
+
+# --- anonymise: the deleted user's open reports ----------------------------------------------
+
+
+async def _fresh(db, model, obj_id: int):
+    return await db.get(model, obj_id, populate_existing=True)
+
+
+async def test_anonymise_closes_open_reports_and_recounts(db_session):
+    """Increment 5p: a deleted reporter no longer counts towards ``report_count``."""
+    blog = await create_category(db_session)
+    forum = await create_category(db_session, kind=CategoryKind.FORUM)
+    gone = await create_verified_user(db_session)
+    other = await create_verified_user(db_session)
+    admin = await create_admin(db_session)
+    alone = await create_post(db_session, category_id=blog.id, report_count=1)
+    shared = await create_thread(db_session, category_id=forum.id, report_count=2)
+    hidden = await create_post(
+        db_session,
+        category_id=blog.id,
+        status=ContentStatus.HIDDEN,
+        hidden_reason=HiddenReason.AUTO_REPORTS,
+        report_count=2,
+    )
+    old = await create_post(db_session, category_id=blog.id)
+    r_alone = await create_report(db_session, reporter_id=gone.id, content_id=alone.id)
+    r_shared = await create_report(
+        db_session, reporter_id=gone.id, content_type="thread", content_id=shared.id
+    )
+    r_shared_other = await create_report(
+        db_session, reporter_id=other.id, content_type="thread", content_id=shared.id
+    )
+    r_hidden = await create_report(db_session, reporter_id=gone.id, content_id=hidden.id)
+    r_hidden_other = await create_report(db_session, reporter_id=other.id, content_id=hidden.id)
+    resolved_at = datetime(2026, 9, 1, tzinfo=UTC)
+    r_closed = await create_report(
+        db_session,
+        reporter_id=gone.id,
+        content_id=old.id,
+        status=ReportStatus.RESOLVED,
+        resolved_by=admin.id,
+        resolved_at=resolved_at,
+    )
+
+    result = await crud_user.anonymise_user(db_session, user=gone)
+
+    assert result.reports_closed == 3
+    assert result.content_recounted == 3
+    assert (await _fresh(db_session, Post, alone.id)).report_count == 0
+    assert (await _fresh(db_session, Thread, shared.id)).report_count == 1
+    still_hidden = await _fresh(db_session, Post, hidden.id)
+    assert still_hidden.status == ContentStatus.HIDDEN
+    assert still_hidden.hidden_reason == HiddenReason.AUTO_REPORTS
+    assert still_hidden.report_count == 1
+
+    for report in (r_alone, r_shared, r_hidden):
+        stored = await _fresh(db_session, Report, report.id)
+        assert stored.status == ReportStatus.DISMISSED
+        assert stored.resolved_by is None
+        assert stored.resolved_at is not None
+        assert stored.reporter_id == gone.id
+        [row] = list(
+            (
+                await db_session.scalars(
+                    select(AuditLog).where(
+                        AuditLog.target_type == "report", AuditLog.target_id == report.id
+                    )
+                )
+            ).all()
+        )
+        assert row.action == "report.dismiss"
+        assert row.actor_id is None
+        assert row.metadata_ == {
+            "content_type": report.content_type.value,
+            "content_id": report.content_id,
+            "reason": "reporter_deleted",
+        }
+    for report in (r_shared_other, r_hidden_other):
+        assert (await _fresh(db_session, Report, report.id)).status == ReportStatus.OPEN
+    closed = await _fresh(db_session, Report, r_closed.id)
+    assert closed.status == ReportStatus.RESOLVED
+    assert closed.resolved_by == admin.id
+    assert closed.resolved_at == resolved_at
+
+
+async def test_anonymise_without_reports(db_session):
+    user = await create_verified_user(db_session)
+
+    result = await crud_user.anonymise_user(db_session, user=user)
+
+    assert (result.reports_closed, result.content_recounted) == (0, 0)
+
+
+async def test_anonymise_closes_reports_on_vanished_content(db_session):
+    """A report on content that no longer exists is closed; nothing to recount."""
+    user = await create_verified_user(db_session)
+    report = await create_report(
+        db_session, reporter_id=user.id, content_type="thread", content_id=2**31 - 7
+    )
+
+    result = await crud_user.anonymise_user(db_session, user=user)
+
+    assert (result.reports_closed, result.content_recounted) == (1, 0)
+    assert (await _fresh(db_session, Report, report.id)).status == ReportStatus.DISMISSED
+
+
+async def test_anonymise_returns_revoked_sessions(db_session):
+    user = await create_verified_user(db_session)
+    await create_session(db_session, user_id=user.id, user_agent=None)
+    await create_session(db_session, user_id=user.id, user_agent=None)
+
+    result = await crud_user.anonymise_user(db_session, user=user)
+
+    assert result.sessions_revoked == 2
 
 
 # --- notification preferences -----------------------------------------------------------------

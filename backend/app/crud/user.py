@@ -6,7 +6,7 @@ import asyncio
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, NamedTuple
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
@@ -500,15 +500,28 @@ async def export_user_data(db: AsyncSession, *, user: User) -> UserDataExport:
     )
 
 
-async def anonymise_user(db: AsyncSession, *, user: User, now: datetime | None = None) -> int:
+class AnonymiseResult(NamedTuple):
+    """What :func:`anonymise_user` changed besides the user row."""
+
+    sessions_revoked: int
+    reports_closed: int
+    content_recounted: int
+
+
+async def anonymise_user(
+    db: AsyncSession, *, user: User, now: datetime | None = None
+) -> AnonymiseResult:
     """Erase the user's personal data and disable the account (GDPR erasure; the row stays so
     content and audit rows keep a valid reference, shown as "Deleted user").
 
     Clears every identifying field, frees the email address, blanks the password hash (no
     password verifies against it), demotes to ``member`` and soft-deletes. Revokes every
     session, invalidates every unused email token, deletes the notification preferences and
-    the expertise, and hides the account from the members directory.
-    Returns the number of sessions revoked. Authorisation and auditing are the caller's job.
+    the expertise, and hides the account from the members directory. Dismisses the user's open
+    reports (a system action, audited as ``report.dismiss`` with ``reason: reporter_deleted``)
+    and recounts the reported content, so a deleted reporter no longer counts towards
+    ``report_count``. Returns the sessions revoked, reports closed and content recounted.
+    Authorisation and auditing the account deletion are the caller's job.
     """
     now = now or datetime.now(UTC)
     # Load the relationships (async: no lazy loading) so the orphan and the junction rows are
@@ -538,4 +551,12 @@ async def anonymise_user(db: AsyncSession, *, user: User, now: datetime | None =
     await crud_token.invalidate_email_tokens(
         db, user_id=user.id, purposes=tuple(TokenPurpose), now=now
     )
-    return revoked
+    # Imported here: crud.reports -> crud.moderation -> crud.user is circular at load time.
+    from app.crud import reports as crud_reports
+
+    closed, recounted = await crud_reports.dismiss_reports_of_deleted_reporter(
+        db, reporter_id=user.id, now=now
+    )
+    return AnonymiseResult(
+        sessions_revoked=revoked, reports_closed=closed, content_recounted=recounted
+    )
