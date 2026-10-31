@@ -794,3 +794,193 @@ async def test_get_content_for_update_locks_row(db_session):
     assert loaded is not None
     assert loaded.author.id == author.id
     assert any("FOR UPDATE OF posts" in sql for sql in statements), statements
+
+
+# --- 5o: rejection note and resubmission ------------------------------------------------------
+
+
+async def _rejected(db, content_type: ContentType = ContentType.POST, *, reason="Too vague"):
+    """A post/thread rejected by an admin with ``reason``; returns ``(author, content)``."""
+    admin = await create_admin(db)
+    author = await create_verified_user(db)
+    content = await _make(db, content_type, P, author_id=author.id)
+    await moderation.reject(db, content=content, actor=admin, reason=reason, now=NOW)
+    return author, content
+
+
+def test_note_max_length_matches_the_reason_schema():
+    from app.api.v1.schemas.moderation import REASON_MAX_LENGTH
+
+    assert moderation.NOTE_MAX_LENGTH == REASON_MAX_LENGTH
+
+
+@pytest.mark.parametrize("table", ["posts", "threads"])
+async def test_moderation_note_column_on_posts_and_threads(db_session, table):
+    from sqlalchemy import text
+
+    row = (
+        await db_session.execute(
+            text(
+                "SELECT data_type, is_nullable FROM information_schema.columns "
+                "WHERE table_name = :table AND column_name = 'moderation_note'"
+            ),
+            {"table": table},
+        )
+    ).one()
+    assert row.data_type == "text"
+    assert row.is_nullable == "YES"
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+async def test_reject_stores_the_reason_as_note(db_session, content_type):
+    _, content = await _rejected(db_session, content_type, reason="Please add sources.")
+
+    await db_session.refresh(content)
+    assert content.moderation_note == "Please add sources."
+
+
+async def test_reject_note_is_plain_text_trimmed_and_capped(db_session):
+    reason = "  Line one\r\nLine two\x00\x07 " + "x" * 600
+    _, post = await _rejected(db_session, reason=reason)
+
+    assert post.moderation_note is not None
+    assert post.moderation_note.startswith("Line one\nLine two")
+    assert "\x00" not in post.moderation_note
+    assert "\x07" not in post.moderation_note
+    assert "\r" not in post.moderation_note
+    assert len(post.moderation_note) == moderation.NOTE_MAX_LENGTH
+
+
+@pytest.mark.parametrize("reason", [None, "", "   "])
+async def test_reject_without_reason_stores_no_note(db_session, reason):
+    _, post = await _rejected(db_session, reason=reason)
+
+    assert post.moderation_note is None
+
+
+async def test_approve_clears_the_note(db_session):
+    admin = await create_admin(db_session)
+    author, post = await _rejected(db_session)
+    await moderation.resubmit(db_session, content=post, actor=author, now=NOW)
+
+    await moderation.approve(db_session, content=post, actor=admin, now=NOW)
+
+    assert post.status == PUB
+    assert post.moderation_note is None
+
+
+async def test_unhide_rejected_clears_the_note(db_session):
+    admin = await create_admin(db_session)
+    _, post = await _rejected(db_session)
+
+    await moderation.unhide(db_session, content=post, actor=admin, now=NOW)
+
+    assert post.moderation_note is None
+
+
+async def test_auto_approve_clears_the_note(db_session, monkeypatch):
+    monkeypatch.setattr(settings, "AUTO_APPROVE_AFTER_DAYS", 2)
+    author, thread = await _rejected(db_session, ContentType.THREAD)
+    thread.created_at = NOW - timedelta(days=3)
+    await moderation.resubmit(db_session, content=thread, actor=author, now=NOW)
+
+    await moderation.auto_approve_stale(db_session, now=NOW)
+
+    assert thread.status == PUB
+    assert thread.moderation_note is None
+
+
+async def test_hide_with_reason_does_not_store_a_note(db_session):
+    admin = await create_admin(db_session)
+    post = await _make(db_session, ContentType.POST, PUB)
+
+    await moderation.hide(db_session, content=post, actor=admin, reason="Spam links", now=NOW)
+
+    assert post.moderation_note is None
+    (row,) = await _audits(
+        db_session, action="moderation.hide", target_type="post", target_id=post.id
+    )
+    assert row.metadata_["reason"] == "Spam links"
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+async def test_resubmit_rejected_goes_back_to_pending(db_session, content_type):
+    author, content = await _rejected(db_session, content_type, reason="Add a map.")
+
+    result = await moderation.resubmit(db_session, content=content, actor=author, now=NOW)
+
+    assert result is content
+    assert content.status == P
+    assert content.hidden_reason is None
+    assert content.moderation_note == "Add a map."
+    assert content.published_at is None
+    assert author.trusted_at is None
+    (row,) = await _audits(
+        db_session,
+        action="moderation.resubmit",
+        target_type=content_type.value,
+        target_id=content.id,
+    )
+    assert row.actor_id == author.id
+    assert row.metadata_ == {"from": "hidden", "to": "pending"}
+    assert (
+        await _audits(db_session, action="user.trusted", target_type="user", target_id=author.id)
+        == []
+    )
+
+
+@pytest.mark.parametrize("start", [P, PUB, D])
+async def test_resubmit_needs_a_rejected_item(db_session, start):
+    author = await create_verified_user(db_session)
+    post = await _make(db_session, ContentType.POST, start, author_id=author.id)
+
+    with pytest.raises(AppError) as exc:
+        await moderation.resubmit(db_session, content=post, actor=author, now=NOW)
+
+    _assert_invalid(exc)
+    assert post.status == start
+
+
+@pytest.mark.parametrize("hidden_reason", [HiddenReason.ADMIN, HiddenReason.AUTO_REPORTS])
+async def test_resubmit_hidden_by_admin_or_reports_is_invalid(db_session, hidden_reason):
+    author = await create_verified_user(db_session)
+    thread = await _make(db_session, ContentType.THREAD, H, author_id=author.id)
+    thread.hidden_reason = hidden_reason
+
+    with pytest.raises(AppError) as exc:
+        await moderation.resubmit(db_session, content=thread, actor=author, now=NOW)
+
+    _assert_invalid(exc)
+    assert thread.status == H
+
+
+@pytest.mark.parametrize("content_type", [ContentType.REPLY, ContentType.COMMENT])
+async def test_resubmit_reply_or_comment_is_invalid(db_session, content_type):
+    author = await create_verified_user(db_session)
+    content = await _make(db_session, content_type, H, author_id=author.id)
+    content.hidden_reason = HiddenReason.REJECTED
+
+    with pytest.raises(AppError) as exc:
+        await moderation.resubmit(db_session, content=content, actor=author, now=NOW)
+
+    _assert_invalid(exc)
+
+
+async def test_resubmit_twice_is_invalid(db_session):
+    author, post = await _rejected(db_session)
+    await moderation.resubmit(db_session, content=post, actor=author, now=NOW)
+
+    with pytest.raises(AppError) as exc:
+        await moderation.resubmit(db_session, content=post, actor=author, now=NOW)
+
+    _assert_invalid(exc)
+
+
+async def test_reject_after_resubmit_replaces_the_note(db_session):
+    admin = await create_admin(db_session)
+    author, post = await _rejected(db_session, reason="First note")
+    await moderation.resubmit(db_session, content=post, actor=author, now=NOW)
+
+    await moderation.reject(db_session, content=post, actor=admin, reason="Second note", now=NOW)
+
+    assert post.moderation_note == "Second note"

@@ -8,6 +8,7 @@ from typing import Annotated, Any, Literal
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
 
 from app.db.enums import ContentStatus, ContentType, HiddenReason
+from app.services.sanitize import plain_text
 
 REASON_MAX_LENGTH = 500
 EXCERPT_LENGTH = 200
@@ -15,7 +16,8 @@ EXCERPT_LENGTH = 200
 Reason = Annotated[
     str | None,
     StringConstraints(strip_whitespace=True, max_length=REASON_MAX_LENGTH),
-    AfterValidator(lambda value: value or None),  # blank: no reason
+    # Plain text: control characters (a NUL would break the audit row) dropped; blank: none.
+    AfterValidator(lambda value: plain_text(value, REASON_MAX_LENGTH)),
 ]
 
 
@@ -46,6 +48,8 @@ class QueueItem(BaseModel):
     author: QueueAuthor | None
     category: QueueCategory
     created_at: datetime
+    # Rejected once and sent for approval again by its author (it still has the admin's note).
+    resubmitted: bool
 
 
 class ModerationQueue(BaseModel):
@@ -57,7 +61,8 @@ class ModerationQueue(BaseModel):
 
 
 class ModerationReason(BaseModel):
-    """Optional body of ``reject`` and ``hide``; the reason goes into the audit row only."""
+    """Optional body of ``reject`` and ``hide``. The reason goes into the audit row; a rejection's
+    reason is also stored on the item as its ``moderation_note``, which the author sees."""
 
     reason: Reason = None
 

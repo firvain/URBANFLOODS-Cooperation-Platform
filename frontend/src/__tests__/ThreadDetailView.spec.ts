@@ -118,6 +118,41 @@ describe('ThreadDetailView', () => {
     expect(callsTo(fetchMock, LIST_REPLIES)).toHaveLength(0)
   })
 
+  it('lets the author of a rejected thread read the note and resubmit it', async () => {
+    const fetchMock = mockApi(
+      routes(
+        { status: 'hidden', hidden_reason: 'rejected', published_at: null, moderation_note: 'Too vague' },
+        makeUser({ id: 11 }),
+        {
+          'POST /api/v1/moderation/thread/42/resubmit': reply(200, {
+            content_type: 'thread',
+            id: 42,
+            status: 'pending',
+            hidden_reason: null,
+            published_at: null,
+            deleted_at: null,
+            author_trusted: false,
+          }),
+        },
+      ),
+    )
+    // The whole app, for the toast.
+    const { wrapper } = await mountApp(`/forum/t/${SLUG}`)
+    const hint = () => wrapper.find('[data-testid="status-hint"]')
+    expect(hint().find('[data-testid="moderation-note"]').text()).toContain('Too vague')
+    expect(wrapper.find(`a[href="/forum/t/${SLUG}/edit"]`).exists()).toBe(true)
+
+    await hint().find('[data-testid="resubmit"]').trigger('click')
+    await flushPromises()
+
+    expect(callsTo(fetchMock, 'POST /api/v1/moderation/thread/42/resubmit')).toHaveLength(1)
+    expect(hint().text()).toContain(t('thread.statusHint.pending'))
+    expect(hint().find('[data-testid="resubmit"]').exists()).toBe(false)
+    await vi.waitFor(() =>
+      expect(document.body.textContent).toContain(t('status.banner.resubmitted')),
+    )
+  })
+
   it('offers report buttons on the thread and on replies by others, not on own replies', async () => {
     const replies = {
       total: 2,

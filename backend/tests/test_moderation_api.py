@@ -250,6 +250,7 @@ async def test_queue_item_shape(client, env):
             "slug": thread.category.slug,
         },
         "created_at": item["created_at"],
+        "resubmitted": False,
     }
     assert datetime.fromisoformat(item["created_at"]) == OLD
 
@@ -601,3 +602,167 @@ async def test_log_pagination(client, env):
 
     assert page["total"] == 3
     assert [i["action"] for i in page["items"]] == ["moderation.unhide"]
+
+
+# --- 5o: rejection note and resubmission ------------------------------------------------------
+
+
+async def _rejected_by_admin(client, env, content_type=ContentType.POST, *, reason="Add sources."):
+    """A post/thread by a fresh verified author, rejected through the API by a fresh admin (the
+    client is left signed in as that admin). Returns ``(author, content)``."""
+    author = await _user(env)
+    content = await _make(env, content_type, P, author_id=author.id)
+    await _signed_in(client, env)
+    response = await client.post(
+        _action_url(content_type, content.id, "reject"), json={"reason": reason}
+    )
+    assert response.status_code == 200, response.text
+    return author, content
+
+
+def _detail_url(content_type: ContentType, slug: str) -> str:
+    return f"{API}/posts/{slug}" if content_type == ContentType.POST else f"{API}/threads/{slug}"
+
+
+async def test_resubmit_requires_login(client, env):
+    post = await _make(env, ContentType.POST, H, hidden_reason=HiddenReason.REJECTED)
+    _assert_error(
+        await client.post(_action_url("post", post.id, "resubmit")),
+        401,
+        "auth.not_authenticated",
+    )
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+async def test_reject_stores_note_shown_to_the_author(client, env, content_type):
+    author, content = await _rejected_by_admin(client, env, content_type, reason="Add a map.")
+    await login_as(client, author)
+
+    detail = (await client.get(_detail_url(content_type, content.slug))).json()
+
+    assert detail["status"] == "hidden"
+    assert detail["hidden_reason"] == "rejected"
+    assert detail["moderation_note"] == "Add a map."
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+async def test_author_resubmits_rejected_item(client, env, content_type):
+    author, content = await _rejected_by_admin(client, env, content_type, reason="Add a map.")
+    await login_as(client, author)
+
+    response = await client.post(_action_url(content_type, content.id, "resubmit"))
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "pending"
+    assert body["hidden_reason"] is None
+    assert body["published_at"] is None
+    assert body["author_trusted"] is False
+    await env.db.refresh(content)
+    assert content.status == P
+    assert content.moderation_note == "Add a map."
+    (row,) = await _audits(
+        env.db, target_type=content_type.value, target_id=content.id, action="moderation.resubmit"
+    )
+    assert row.actor_id == author.id
+    assert row.metadata_ == {"from": "hidden", "to": "pending"}
+    detail = (await client.get(_detail_url(content_type, content.slug))).json()
+    assert detail["status"] == "pending"
+    assert detail["moderation_note"] == "Add a map."
+
+
+async def test_resubmit_twice_is_409(client, env):
+    author, post = await _rejected_by_admin(client, env)
+    await login_as(client, author)
+    assert (await client.post(_action_url("post", post.id, "resubmit"))).status_code == 200
+
+    _assert_error(
+        await client.post(_action_url("post", post.id, "resubmit")),
+        409,
+        "moderation.invalid_transition",
+    )
+
+
+async def test_resubmit_published_own_item_is_409(client, env):
+    author = await _signed_in(client, env, factory=create_verified_user)
+    post = await _make(env, ContentType.POST, PUB, author_id=author.id)
+
+    _assert_error(
+        await client.post(_action_url("post", post.id, "resubmit")),
+        409,
+        "moderation.invalid_transition",
+    )
+
+
+async def test_resubmit_by_another_member_is_404(client, env):
+    _, post = await _rejected_by_admin(client, env)
+    await _signed_in(client, env, factory=create_verified_user)
+
+    _assert_error(
+        await client.post(_action_url("post", post.id, "resubmit")),
+        404,
+        "moderation.content_not_found",
+    )
+    await env.db.refresh(post)
+    assert post.status == H
+
+
+@pytest.mark.parametrize("factory", [create_admin, create_superadmin])
+async def test_resubmit_by_admin_on_someone_elses_item_is_403(client, env, factory):
+    _, thread = await _rejected_by_admin(client, env, ContentType.THREAD)
+    await _signed_in(client, env, factory=factory)
+
+    _assert_error(
+        await client.post(_action_url("thread", thread.id, "resubmit")), 403, "auth.forbidden"
+    )
+    await env.db.refresh(thread)
+    assert thread.status == H
+
+
+async def test_resubmit_unknown_content_is_404(client, env):
+    await _signed_in(client, env, factory=create_verified_user)
+    _assert_error(
+        await client.post(_action_url("post", 2**31 - 1, "resubmit")),
+        404,
+        "moderation.content_not_found",
+    )
+
+
+async def test_resubmit_unverified_member_is_403(client, env):
+    from tests.factories import create_user
+
+    author = await _signed_in(client, env, factory=create_user)
+    post = await _make(
+        env, ContentType.POST, H, author_id=author.id, hidden_reason=HiddenReason.REJECTED
+    )
+
+    response = await client.post(_action_url("post", post.id, "resubmit"))
+
+    assert response.status_code == 403, response.text
+    await env.db.refresh(post)
+    assert post.status == H
+
+
+async def test_queue_flags_resubmitted_items(client, env):
+    author, post = await _rejected_by_admin(client, env)
+    post.created_at = OLD
+    await env.db.commit()
+    fresh = await _make(env, ContentType.THREAD, P, created_at=OLD)
+    await login_as(client, author)
+    assert (await client.post(_action_url("post", post.id, "resubmit"))).status_code == 200
+    await _signed_in(client, env)
+
+    items = (await client.get(QUEUE, params={"limit": 200})).json()["items"]
+
+    flags = {(i["content_type"], i["id"]): i["resubmitted"] for i in items}
+    assert flags[("post", post.id)] is True
+    assert flags[("thread", fresh.id)] is False
+
+
+async def test_published_detail_has_no_note(client, env):
+    admin_author = await _user(env)
+    post = await _make(env, ContentType.POST, PUB, author_id=admin_author.id)
+
+    detail = (await client.get(_detail_url(ContentType.POST, post.slug))).json()
+
+    assert detail["moderation_note"] is None

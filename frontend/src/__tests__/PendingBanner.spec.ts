@@ -51,6 +51,64 @@ describe('PendingBanner', () => {
     expect(mail?.textContent?.trim()).toBe(EMAIL)
   })
 
+  it('shows the author the admin note on a rejected post as text, with a Resubmit button', async () => {
+    const { wrapper } = await mountBanner({
+      status: 'hidden',
+      hiddenReason: 'rejected',
+      moderationNote: '<b>Add</b> sources',
+    })
+    expect(text()).toContain(t('status.banner.reason'))
+    const note = banner()!.querySelector('[data-testid="moderation-note"]')!
+    expect(note.textContent).toContain('<b>Add</b> sources')
+    expect(note.querySelector('b')).toBeNull()
+    const resubmit = banner()!.querySelector<HTMLButtonElement>('[data-testid="resubmit"]')!
+    expect(resubmit.textContent?.trim()).toBe(t('status.banner.resubmit'))
+    resubmit.click()
+    expect(wrapper.emitted('resubmit')).toHaveLength(1)
+  })
+
+  it('offers Resubmit on a rejected post without a note', async () => {
+    await mountBanner({ status: 'hidden', hiddenReason: 'rejected' })
+    expect(banner()!.querySelector('[data-testid="moderation-note"]')).toBeNull()
+    expect(text()).not.toContain(t('status.banner.reason'))
+    expect(banner()!.querySelector('[data-testid="resubmit"]')).not.toBeNull()
+  })
+
+  it('shows an admin viewer the note but no Resubmit button', async () => {
+    await mountBanner({
+      status: 'hidden',
+      hiddenReason: 'rejected',
+      moderationNote: 'Too short',
+      forAuthor: false,
+    })
+    expect(banner()!.querySelector('[data-testid="moderation-note"]')?.textContent).toContain(
+      'Too short',
+    )
+    expect(banner()!.querySelector('[data-testid="resubmit"]')).toBeNull()
+  })
+
+  it('disables Resubmit while it is being sent', async () => {
+    await mountBanner({ status: 'hidden', hiddenReason: 'rejected', resubmitting: true })
+    const resubmit = banner()!.querySelector<HTMLButtonElement>('[data-testid="resubmit"]')!
+    expect(resubmit.disabled).toBe(true)
+  })
+
+  it('keeps the note on a resubmitted post waiting for approval, without Resubmit', async () => {
+    await mountBanner({ status: 'pending', moderationNote: 'Add a map' })
+    expect(text()).toContain(t('post.statusHint.pending'))
+    expect(text()).toContain(t('status.banner.reason'))
+    expect(banner()!.querySelector('[data-testid="moderation-note"]')?.textContent).toContain(
+      'Add a map',
+    )
+    expect(banner()!.querySelector('[data-testid="resubmit"]')).toBeNull()
+  })
+
+  it('offers no Resubmit on content hidden by an admin', async () => {
+    await mountBanner({ status: 'hidden', hiddenReason: 'admin', moderationNote: 'x' })
+    expect(banner()!.querySelector('[data-testid="resubmit"]')).toBeNull()
+    expect(banner()!.querySelector('[data-testid="moderation-note"]')).toBeNull()
+  })
+
   it.each(['admin', 'auto_reports'] as const)(
     'explains a thread hidden for reason %s to its author',
     async (reason) => {

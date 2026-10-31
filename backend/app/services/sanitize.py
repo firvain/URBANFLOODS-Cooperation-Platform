@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import html as html_lib
 import re
+import unicodedata
 from urllib.parse import urlsplit, urlunsplit
 
 import nh3
@@ -113,6 +114,17 @@ def html_to_text(html: str) -> str:
     spaced = _BLOCK_BOUNDARY.sub(r" <\1\2", html)
     stripped = nh3.clean(spaced, tags=set(), clean_content_tags=set(DROP_CONTENT_TAGS))
     return " ".join(html_lib.unescape(stripped).split())
+
+
+def plain_text(value: str | None, max_chars: int) -> str | None:
+    """A short plain-text field (never HTML; rendered as text everywhere) ready to store: line
+    breaks normalised to ``\\n``, other control characters (except tabs) dropped, surrounding
+    whitespace stripped, cut to ``max_chars``. ``None`` when nothing is left."""
+    if value is None:
+        return None
+    value = value.replace("\r\n", "\n").replace("\r", "\n")
+    value = "".join(ch for ch in value if ch in "\n\t" or unicodedata.category(ch) != "Cc").strip()
+    return value[:max_chars].rstrip() or None
 
 
 def excerpt(text: str, max_chars: int = EXCERPT_LENGTH) -> str:

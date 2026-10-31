@@ -65,6 +65,7 @@ DETAIL_FIELDS = SUMMARY_FIELDS | {
     "knowbase_links",
     "approved_at",
     "hidden_reason",
+    "moderation_note",
     "deleted_at",
 }
 

@@ -1,9 +1,14 @@
-/** Fixtures for the admin area (4g): stats, users, queue, reports, audit log, categories, tags. */
+/**
+ * Fixtures for the admin area (4g, 5n): stats, users, queue, reports, audit log, categories, tags,
+ * organisations and expertise areas.
+ */
 import { flushPromises } from '@vue/test-utils'
 import { expect } from 'vitest'
 
 import type { AdminStats, AdminUser } from '@/services/admin'
 import type { CategoryOut } from '@/services/categories'
+import type { ExpertiseTag } from '@/services/expertise'
+import type { Organisation } from '@/services/organisations'
 import type { AuditLogEntry, QueueItem, ReportDetail } from '@/services/moderation'
 import type { TagOut } from '@/services/tags'
 import type { UserMe } from '@/services/auth'
@@ -76,6 +81,7 @@ export function makeQueueItem(overrides: Partial<QueueItem> = {}): QueueItem {
     author: { id: 7, display_name: 'Nikos', trusted: false },
     category: { id: 2, name: 'Nature-based solutions', slug: 'nbs' },
     created_at: '2026-10-30T08:00:00Z',
+    resubmitted: false,
     ...overrides,
   }
 }
@@ -136,6 +142,32 @@ export function makeCategory(overrides: Partial<CategoryOut> = {}): CategoryOut 
 
 export function makeTag(overrides: Partial<TagOut> = {}): TagOut {
   return { id: 3, slug: 'flooding', name: 'flooding', usage_count: 12, ...overrides }
+}
+
+export function makeOrganisation(overrides: Partial<Organisation> = {}): Organisation {
+  return {
+    id: 101,
+    name: 'University of Western Macedonia',
+    short_name: 'UOWM',
+    country: 'GR',
+    type: 'PP',
+    website: 'https://www.uowm.gr/en/',
+    is_partner: true,
+    sort_order: 1,
+    member_count: 4,
+    ...overrides,
+  }
+}
+
+export function makeExpertise(overrides: Partial<ExpertiseTag> = {}): ExpertiseTag {
+  return {
+    id: 1,
+    slug: 'hydrology',
+    label: 'Hydrology',
+    sort_order: 1,
+    is_active: true,
+    ...overrides,
+  }
 }
 
 export const page = <T>(items: T[], total = items.length) => ({ total, items })

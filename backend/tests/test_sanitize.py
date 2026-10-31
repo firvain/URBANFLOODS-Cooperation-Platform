@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from app.services.sanitize import excerpt, html_to_text, sanitize_html, validate_external_url
+from app.services.sanitize import (
+    excerpt,
+    html_to_text,
+    plain_text,
+    sanitize_html,
+    validate_external_url,
+)
 
 REL = 'rel="nofollow noopener noreferrer"'
 
@@ -324,3 +330,23 @@ def test_validate_url_length_limit_inclusive() -> None:
     url = "https://example.org/" + "a" * (2048 - len("https://example.org/"))
     assert len(url) == 2048
     assert validate_external_url(url) == url
+
+
+# --- plain_text -------------------------------------------------------------------------------
+
+
+def test_plain_text_keeps_text_and_markup_characters_verbatim() -> None:
+    assert plain_text("Use <b>sources</b> & maps", 100) == "Use <b>sources</b> & maps"
+
+
+def test_plain_text_drops_control_characters_but_keeps_newlines_and_tabs() -> None:
+    assert plain_text("a\x00b\x07c\r\nd\re\tf\u200bg", 100) == "abc\nd\ne\tf\u200bg"
+
+
+def test_plain_text_strips_and_caps() -> None:
+    assert plain_text("  " + "x" * 20 + "  ", 10) == "x" * 10
+
+
+@pytest.mark.parametrize("value", [None, "", "  \n\t ", "\x00"])
+def test_plain_text_blank_is_none(value) -> None:
+    assert plain_text(value, 10) is None

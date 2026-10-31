@@ -113,7 +113,7 @@
     },
     "statusHint": {
       "pending": "Čeka odobrenje administratora. Dok ne bude odobrena, ovu objavu vidite samo Vi i administratori.",
-      "rejected": "Administrator nije odobrio ovu objavu. Vidite je samo Vi i administratori.",
+      "rejected": "Administrator nije odobrio ovu objavu. Vidite je samo Vi i administratori. Možete je urediti i ponovo poslati na odobrenje.",
       "hidden": "Ova objava je skrivena. Vide je samo njen autor i administratori.",
       "deleted": "Ova objava je izbrisana."
     },
@@ -179,7 +179,7 @@
     },
     "statusHint": {
       "pending": "Čeka odobrenje administratora. Dok ne bude odobrena, ovu diskusiju vidite samo Vi i administratori.",
-      "rejected": "Administrator nije odobrio ovu diskusiju. Vidite je samo Vi i administratori.",
+      "rejected": "Administrator nije odobrio ovu diskusiju. Vidite je samo Vi i administratori. Možete je urediti i ponovo poslati na odobrenje.",
       "hidden": "Ova diskusija je skrivena. Vide je samo njen autor i administratori.",
       "deleted": "Ova diskusija je izbrisana."
     },
@@ -1043,7 +1043,10 @@
     },
     "banner": {
       "firstApproval": "Nakon prvog odobrenja, sve što objavite bit će odmah objavljeno.",
-      "contact": "Ako smatrate da je riječ o grešci, obratite se na {email}."
+      "contact": "Ako smatrate da je riječ o grešci, obratite se na {email}.",
+      "reason": "Napomena administratora:",
+      "resubmit": "Pošalji ponovo",
+      "resubmitted": "Ponovo poslano na odobrenje."
     }
   },
   "search": {

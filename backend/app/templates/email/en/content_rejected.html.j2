@@ -4,7 +4,10 @@
 <h1 style="font-size:22px; margin:0 0 16px;">Your {{ content_type_label }} was not approved</h1>
 <p>Hello {{ display_name }},</p>
 <p>An admin reviewed your {{ content_type_label }} “{{ title }}” on the {{ app_name }} and did not approve it for publication. It is not public: only you and the admins can see it.</p>
-<p>While signed in, you can still open it and edit or delete it from your account.</p>
+{% if reason %}
+<p><strong>The admin's note:</strong> <span style="white-space:pre-line;">{{ reason }}</span></p>
+{% endif %}
+<p>While signed in, you can still open it and edit or delete it from your account. Once you have edited it, you can send it for approval again from its page.</p>
 <p><a href="{{ frontend_url }}{{ link_url }}" style="color:#0b4f8a; font-weight:bold;">Open your {{ content_type_label }}</a></p>
 <p>If you have questions, write to <a href="mailto:{{ contact_email }}" style="color:#0b4f8a;">{{ contact_email }}</a>.</p>
 {% endblock %}

@@ -436,15 +436,41 @@ export interface paths {
         };
         /**
          * List Expertise
-         * @description Every active expertise tag, in display order.
+         * @description Expertise tags in display order. ``include_inactive`` is honoured for admins only;
+         *     everyone else always gets the active tags.
          */
         get: operations["list_expertise_api_v1_expertise__get"];
+        put?: never;
+        /**
+         * Create Expertise
+         * @description Add an expertise tag (admin). The slug is derived from the label when omitted.
+         */
+        post: operations["create_expertise_api_v1_expertise__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/expertise/{tag_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Expertise
+         * @description Update an expertise tag (admin). Omitted fields are kept. ``is_active: false``
+         *     deactivates: members keep the tag, nobody can pick it any more.
+         */
+        patch: operations["update_expertise_api_v1_expertise__tag_id__patch"];
         trace?: never;
     };
     "/api/v1/members/": {
@@ -861,8 +887,8 @@ export interface paths {
         put?: never;
         /**
          * Reject Content
-         * @description Hide a pending post or thread as rejected; the optional reason is audited (it is not in
-         *     the email to the author).
+         * @description Hide a pending post or thread as rejected. The optional reason is audited and stored as
+         *     the item's note, which its author sees on the item's page and in the email.
          */
         post: operations["reject_content_api_v1_moderation__content_type___content_id__reject_post"];
         delete?: never;
@@ -946,6 +972,28 @@ export interface paths {
          * @description Restore deleted content (to pending if it was never approved).
          */
         post: operations["restore_content_api_v1_moderation__content_type___content_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moderation/{content_type}/{content_id}/resubmit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resubmit Content
+         * @description The author sends their rejected (and possibly edited) post or thread for approval again:
+         *     it goes back to pending, keeping the admin's note until the next decision. 404 when the
+         *     caller cannot see the item, 403 when they are not its author (admins included).
+         */
+        post: operations["resubmit_content_api_v1_moderation__content_type___content_id__resubmit_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2510,6 +2558,18 @@ export interface components {
             /** Sent */
             sent: boolean;
         };
+        /** ExpertiseTagCreate */
+        ExpertiseTagCreate: {
+            /** Label */
+            label: string;
+            /** Slug */
+            slug?: string | null;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
+        };
         /** ExpertiseTagList */
         ExpertiseTagList: {
             /** Total */
@@ -2519,7 +2579,9 @@ export interface components {
         };
         /**
          * ExpertiseTagOut
-         * @description One expertise area. ``label`` is English; the frontend translates by ``slug``.
+         * @description One expertise area. ``label`` is English; the frontend translates by ``slug``. A
+         *     deactivated tag (``is_active: false``) stays on the members who hold it but cannot be picked
+         *     any more.
          */
         ExpertiseTagOut: {
             /** Id */
@@ -2530,6 +2592,22 @@ export interface components {
             label: string;
             /** Sort Order */
             sort_order: number;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /**
+         * ExpertiseTagUpdate
+         * @description Partial update: only fields present in the body are applied; none may be ``null``.
+         */
+        ExpertiseTagUpdate: {
+            /** Label */
+            label?: string | null;
+            /** Slug */
+            slug?: string | null;
+            /** Sort Order */
+            sort_order?: number | null;
+            /** Is Active */
+            is_active?: boolean | null;
         };
         /**
          * ExportAuditEntry
@@ -3265,7 +3343,8 @@ export interface components {
         };
         /**
          * ModerationReason
-         * @description Optional body of ``reject`` and ``hide``; the reason goes into the audit row only.
+         * @description Optional body of ``reject`` and ``hide``. The reason goes into the audit row; a rejection's
+         *     reason is also stored on the item as its ``moderation_note``, which the author sees.
          */
         ModerationReason: {
             /** Reason */
@@ -3533,6 +3612,8 @@ export interface components {
             /** Approved At */
             approved_at: string | null;
             hidden_reason: components["schemas"]["HiddenReason"] | null;
+            /** Moderation Note */
+            moderation_note: string | null;
             /** Deleted At */
             deleted_at: string | null;
         };
@@ -3662,6 +3743,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Resubmitted */
+            resubmitted: boolean;
         };
         /** ReadinessResponse */
         ReadinessResponse: {
@@ -4057,6 +4140,8 @@ export interface components {
             /** Approved At */
             approved_at: string | null;
             hidden_reason: components["schemas"]["HiddenReason"] | null;
+            /** Moderation Note */
+            moderation_note: string | null;
             /** Deleted At */
             deleted_at: string | null;
         };
@@ -5764,7 +5849,9 @@ export interface operations {
     };
     list_expertise_api_v1_expertise__get: {
         parameters: {
-            query?: never;
+            query?: {
+                include_inactive?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -5778,6 +5865,226 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExpertiseTagList"];
+                };
+            };
+            /** @description Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    create_expertise_api_v1_expertise__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertiseTagCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpertiseTagOut"];
+                };
+            };
+            /** @description Error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_expertise_api_v1_expertise__tag_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tag_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpertiseTagUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpertiseTagOut"];
+                };
+            };
+            /** @description Error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
                 };
             };
         };
@@ -8006,6 +8313,114 @@ export interface operations {
         };
     };
     restore_content_api_v1_moderation__content_type___content_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                content_type: components["schemas"]["ContentType"];
+                content_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModerationResult"];
+                };
+            };
+            /** @description Error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    resubmit_content_api_v1_moderation__content_type___content_id__resubmit_post: {
         parameters: {
             query?: never;
             header?: never;

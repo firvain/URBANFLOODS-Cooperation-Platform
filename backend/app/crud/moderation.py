@@ -9,6 +9,11 @@ State machine (docs/PLAN.md, "State machines"), enforced by :data:`TRANSITIONS`:
 - ``hidden`` → unhide → ``published`` (an approval when it was ``hidden(rejected)``)
 - any non-deleted → delete → ``deleted``
 - ``deleted`` → restore → ``published``, or ``pending`` if it was never approved
+- ``hidden(rejected)`` → resubmit (by the author, after editing) → ``pending``
+
+A rejection's reason is stored on the post/thread as ``moderation_note`` (plain text, shown to the
+author); every approval clears it, a resubmission keeps it until the next decision. A ``hide``
+reason stays in the audit row only.
 
 Replies and comments have no ``pending`` state, so approve/reject on them is always invalid. Any
 other edge raises 409 ``moderation.invalid_transition``. Every transition writes an
@@ -47,6 +52,7 @@ from app.db.models import (
     post_tags,
     thread_tags,
 )
+from app.services.sanitize import plain_text
 
 ContentModel = Post | Thread | Reply | Comment
 
@@ -62,6 +68,8 @@ REVIEWED_TYPES = frozenset({ContentType.POST, ContentType.THREAD})
 # Posts and threads have INTEGER ids (replies and comments BIGINT): a larger id cannot exist, and
 # Postgres would reject it as "integer out of range" rather than find nothing.
 MAX_INT_ID = 2**31 - 1
+# The longest ``moderation_note`` stored (the same limit as the reason in the request body).
+NOTE_MAX_LENGTH = 500
 
 _P = ContentStatus.PENDING
 _PUB = ContentStatus.PUBLISHED
@@ -77,8 +85,9 @@ TRANSITIONS: dict[str, dict[ContentStatus, ContentStatus]] = {
     "unhide": {_H: _PUB},
     "delete": {_P: _D, _PUB: _D, _H: _D},
     "restore": {_D: _PUB},
+    "resubmit": {_H: _P},
 }
-_REVIEW_ACTIONS = frozenset({"approve", "reject"})
+_REVIEW_ACTIONS = frozenset({"approve", "reject", "resubmit"})
 
 
 def invalid_transition(action: str, status: ContentStatus) -> AppError:
@@ -191,6 +200,8 @@ def _target(content: ContentModel, action: str) -> ContentStatus:
     to = TRANSITIONS[action].get(status)
     if to is None:
         raise invalid_transition(action, status)
+    if action == "resubmit" and content.hidden_reason != HiddenReason.REJECTED:
+        raise invalid_transition(action, status)
     if action == "restore" and content_type in REVIEWED_TYPES and content.published_at is None:
         return _P
     return to
@@ -295,6 +306,7 @@ def _set_approval(content: ContentModel, *, actor: User | None, now: datetime) -
         content.published_at = now
     content.approved_by = actor.id if actor is not None else None
     content.approved_at = now
+    content.moderation_note = None
 
 
 async def _approve(
@@ -353,17 +365,19 @@ async def reject(
     reason: str | None,
     now: datetime | None = None,
 ) -> ContentModel:
-    """``pending`` → ``hidden(rejected)``; the author stays untrusted."""
+    """``pending`` → ``hidden(rejected)``; the author stays untrusted. ``reason`` (as plain
+    text) becomes the item's ``moderation_note``, which the author sees; none clears it."""
     from_status = content.status
     content.status = _target(content, "reject")
     content.hidden_reason = HiddenReason.REJECTED
+    content.moderation_note = note = plain_text(reason, NOTE_MAX_LENGTH)
     return await _finish(
         db,
         content=content,
         from_status=from_status,
         audit_action="moderation.reject",
         actor=actor,
-        reason=reason,
+        reason=note,
     )
 
 
@@ -463,6 +477,25 @@ async def restore(
         content=content,
         from_status=from_status,
         audit_action="moderation.restore",
+        actor=actor,
+    )
+
+
+async def resubmit(
+    db: AsyncSession, *, content: ContentModel, actor: User, now: datetime | None = None
+) -> ContentModel:
+    """``hidden(rejected)`` → ``pending``: the author (``actor``; the caller checks it) sends
+    their edited post/thread for approval again. Clears ``hidden_reason`` and keeps
+    ``moderation_note``, so the author still sees why it was rejected until the next decision.
+    Trusts nobody."""
+    from_status = content.status
+    content.status = _target(content, "resubmit")
+    content.hidden_reason = None
+    return await _finish(
+        db,
+        content=content,
+        from_status=from_status,
+        audit_action="moderation.resubmit",
         actor=actor,
     )
 

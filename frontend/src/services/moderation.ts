@@ -1,7 +1,8 @@
 /**
  * Moderation endpoints for admins: the approval queue, content actions
  * (`/api/v1/moderation/{type}/{id}/<action>`, `.../purge` for a permanent delete), the audit log, and the admin side of reports
- * (list, resolve, dismiss). Members file reports through `services/reports.ts`.
+ * (list, resolve, dismiss). Members file reports through `services/reports.ts`; an author resubmits
+ * their rejected post or thread through `resubmit`.
  */
 import type { components, operations } from '@/types/api-schema'
 import { api } from './api'
@@ -52,6 +53,10 @@ export const moderationService = {
   /** Permanent delete from any status (comments/replies and images used only there go too). */
   purge: (type: ContentType, id: number) =>
     api<PurgeResult>(`${BASE}/${type}/${id}/purge`, { method: 'POST' }),
+
+  /** The author sends their rejected post or thread for approval again (back to pending). */
+  resubmit: (type: 'post' | 'thread', id: number) =>
+    api<ModerationResult>(`${BASE}/${type}/${id}/resubmit`, { method: 'POST' }),
 
   listReports: (params: ReportListParams = {}) =>
     api<PaginatedReports>(`${REPORTS}/`, { query: { ...params } }),

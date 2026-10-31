@@ -19,7 +19,7 @@ import { useApiErrors } from '@/composables/useApiErrors'
 import { absoluteUrl, usePageHead } from '@/composables/usePageHead'
 import { CONTENT_LICENCE_URL } from '@/constants/links'
 import { ApiError } from '@/services/api'
-import type { ModerationResult } from '@/services/moderation'
+import { moderationService, type ModerationResult } from '@/services/moderation'
 import { threadsService, type ThreadAdminAction, type ThreadDetail } from '@/services/threads'
 import { useAuthStore } from '@/stores/auth'
 import { useRepliesStore } from '@/stores/replies'
@@ -158,6 +158,25 @@ function applyModeration(result: ModerationResult) {
   deletedAt.value = result.deleted_at
 }
 
+// --- Author: resubmit a rejected thread -------------------------------------------------------
+
+const resubmitting = ref(false)
+
+/** Back to the approval queue after editing; the admin's note stays until the next decision. */
+async function resubmit() {
+  const value = thread.value
+  if (!value || resubmitting.value) return
+  resubmitting.value = true
+  try {
+    applyModeration(await moderationService.resubmit('thread', value.id))
+    toast.add({ title: t('status.banner.resubmitted'), color: 'success', icon: 'i-lucide-check' })
+  } catch (error) {
+    toast.add({ title: errorMessage(error), color: 'error', icon: 'i-lucide-circle-alert' })
+  } finally {
+    resubmitting.value = false
+  }
+}
+
 // --- Delete -----------------------------------------------------------------------------------
 
 const deleteOpen = ref(false)
@@ -264,6 +283,9 @@ async function confirmDelete() {
             :status="thread.status"
             :hidden-reason="thread.hidden_reason"
             :for-author="isAuthor"
+            :moderation-note="thread.moderation_note"
+            :resubmitting="resubmitting"
+            @resubmit="resubmit"
           />
 
           <div class="flex flex-wrap items-center justify-between gap-4">

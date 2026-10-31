@@ -113,7 +113,7 @@
     },
     "statusHint": {
       "pending": "Čaka na odobritev skrbnika. Dokler objava ni odobrena, jo vidite samo vi in skrbniki.",
-      "rejected": "Skrbnik te objave ni odobril. Vidite jo samo vi in skrbniki.",
+      "rejected": "Skrbnik te objave ni odobril. Vidite jo samo vi in skrbniki. Lahko jo uredite in znova pošljete v odobritev.",
       "hidden": "Ta objava je skrita. Vidijo jo samo njen avtor in skrbniki.",
       "deleted": "Ta objava je bila izbrisana."
     },
@@ -179,7 +179,7 @@
     },
     "statusHint": {
       "pending": "Čaka na odobritev skrbnika. Dokler razprava ni odobrena, jo vidite samo vi in skrbniki.",
-      "rejected": "Skrbnik te razprave ni odobril. Vidite jo samo vi in skrbniki.",
+      "rejected": "Skrbnik te razprave ni odobril. Vidite jo samo vi in skrbniki. Lahko jo uredite in znova pošljete v odobritev.",
       "hidden": "Ta razprava je skrita. Vidijo jo samo njen avtor in skrbniki.",
       "deleted": "Ta razprava je bila izbrisana."
     },
@@ -1043,7 +1043,10 @@
     },
     "banner": {
       "firstApproval": "Po prvi odobritvi bo vse, kar objavite, objavljeno takoj.",
-      "contact": "Če menite, da gre za napako, pišite na {email}."
+      "contact": "Če menite, da gre za napako, pišite na {email}.",
+      "reason": "Opomba skrbnika:",
+      "resubmit": "Pošlji znova",
+      "resubmitted": "Znova poslano v odobritev."
     }
   },
   "search": {

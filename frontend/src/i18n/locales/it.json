@@ -113,7 +113,7 @@
     },
     "statusHint": {
       "pending": "In attesa di approvazione da parte di un amministratore. Fino all'approvazione, solo tu e gli amministratori potete vedere questo articolo.",
-      "rejected": "Un amministratore non ha approvato questo articolo. Solo tu e gli amministratori potete vederlo.",
+      "rejected": "Un amministratore non ha approvato questo articolo. Solo tu e gli amministratori potete vederlo. Puoi modificarlo e inviarlo di nuovo per l'approvazione.",
       "hidden": "Questo articolo è nascosto. Solo l'autore e gli amministratori possono vederlo.",
       "deleted": "Questo articolo è stato eliminato."
     },
@@ -179,7 +179,7 @@
     },
     "statusHint": {
       "pending": "In attesa di approvazione da parte di un amministratore. Fino all'approvazione, solo tu e gli amministratori potete vedere questa discussione.",
-      "rejected": "Un amministratore non ha approvato questa discussione. Solo tu e gli amministratori potete vederla.",
+      "rejected": "Un amministratore non ha approvato questa discussione. Solo tu e gli amministratori potete vederla. Puoi modificarla e inviarla di nuovo per l'approvazione.",
       "hidden": "Questa discussione è nascosta. Solo l'autore e gli amministratori possono vederla.",
       "deleted": "Questa discussione è stata eliminata."
     },
@@ -1043,7 +1043,10 @@
     },
     "banner": {
       "firstApproval": "Dopo la tua prima approvazione, ciò che pubblichi comparirà subito.",
-      "contact": "Se pensi che si tratti di un errore, scrivi a {email}."
+      "contact": "Se pensi che si tratti di un errore, scrivi a {email}.",
+      "reason": "Nota dell'amministratore:",
+      "resubmit": "Invia di nuovo",
+      "resubmitted": "Inviato di nuovo per l'approvazione."
     }
   },
   "search": {

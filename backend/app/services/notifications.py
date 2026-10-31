@@ -266,6 +266,8 @@ async def notify_moderation_decision(
             "link_url": _content_path(content),
             "newly_trusted": approved and newly_trusted,
             "automatic": approved and automatic,
+            # The admin's note on a rejection (plain text; autoescaped in the HTML part).
+            "reason": None if approved else content.moderation_note,
             "contact_email": settings.CONTACT_EMAIL,
         },
     )

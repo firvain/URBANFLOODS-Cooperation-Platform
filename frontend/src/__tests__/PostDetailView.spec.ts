@@ -163,6 +163,61 @@ describe('PostDetailView', () => {
     expect(t('post.statusHint.pending')).toContain('Waiting for approval by an admin')
   })
 
+  it('lets the author of a rejected post read the note, edit it and resubmit it', async () => {
+    const fetchMock = mockApi(
+      routes(
+        { status: 'hidden', hidden_reason: 'rejected', published_at: null, moderation_note: 'Add sources' },
+        {
+          [ME]: reply(200, makeUser({ id: 11 })),
+          'POST /api/v1/moderation/post/42/resubmit': reply(200, {
+            content_type: 'post',
+            id: 42,
+            status: 'pending',
+            hidden_reason: null,
+            published_at: null,
+            deleted_at: null,
+            author_trusted: false,
+          }),
+        },
+      ),
+    )
+    // The whole app, for the toast.
+    const { wrapper } = await mountApp(`/blog/${SLUG}`)
+    const hint = () => wrapper.find('[data-testid="status-hint"]')
+    expect(hint().text()).toContain(t('post.statusHint.rejected'))
+    expect(hint().find('[data-testid="moderation-note"]').text()).toContain('Add sources')
+    expect(wrapper.find(`a[href="/blog/${SLUG}/edit"]`).exists()).toBe(true)
+
+    await hint().find('[data-testid="resubmit"]').trigger('click')
+    await flushPromises()
+
+    expect(callsTo(fetchMock, 'POST /api/v1/moderation/post/42/resubmit')).toHaveLength(1)
+    expect(wrapper.find('[data-testid="post-status"]').text()).toBe(t('post.status.pending'))
+    expect(hint().text()).toContain(t('post.statusHint.pending'))
+    expect(hint().find('[data-testid="moderation-note"]').text()).toContain('Add sources')
+    expect(hint().find('[data-testid="resubmit"]').exists()).toBe(false)
+    await vi.waitFor(() =>
+      expect(document.body.textContent).toContain(t('status.banner.resubmitted')),
+    )
+  })
+
+  it('shows an error toast when resubmitting fails, keeping the post rejected', async () => {
+    mockApi(
+      routes(
+        { status: 'hidden', hidden_reason: 'rejected', published_at: null },
+        {
+          [ME]: reply(200, makeUser({ id: 11 })),
+          'POST /api/v1/moderation/post/42/resubmit': replyError(409, 'moderation.invalid_transition'),
+        },
+      ),
+    )
+    const { wrapper } = await mountPost()
+    await wrapper.find('[data-testid="resubmit"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="post-status"]').text()).toBe(t('post.status.hidden'))
+    expect(wrapper.find('[data-testid="resubmit"]').exists()).toBe(true)
+  })
+
   it('offers a report button on the post to verified members other than the author', async () => {
     mockApi(routes({}, { [ME]: reply(200, makeUser({ id: 99 })) }))
     let { wrapper } = await mountPost()

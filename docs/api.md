@@ -124,7 +124,9 @@ lists the additional route limit.
 | GET | `/api/v1/organisations/{organisation_id}` | public | – | one organisation with its member count |
 | POST | `/api/v1/organisations/` | admin | – | add an organisation |
 | PATCH | `/api/v1/organisations/{organisation_id}` | admin | – | update an organisation |
-| GET | `/api/v1/expertise/` | public | – | active expertise tags |
+| GET | `/api/v1/expertise/` | public | – | active expertise tags (`include_inactive=true`: all, admins only) |
+| POST | `/api/v1/expertise/` | admin | – | add an expertise tag (slug from the label when omitted) |
+| PATCH | `/api/v1/expertise/{tag_id}` | admin | – | update an expertise tag; `is_active: false` deactivates |
 | GET | `/api/v1/members/` | verified | – | members directory (`q`, `expertise_ids`, `country`, `organisation_id`) |
 | GET | `/api/v1/members/suggested` | verified | – | up to six members sharing the most expertise |
 | GET | `/api/v1/members/{member_id}` | verified | – | one directory member's profile |
@@ -217,7 +219,8 @@ on the KNOWBASE site), so the lookup endpoints currently have no frontend caller
 | GET | `/api/v1/moderation/queue/` | admin | – | pending posts and threads, oldest first |
 | GET | `/api/v1/moderation/log/` | admin | – | audit rows; `action` ending in `.` is a prefix; `actor_id`, `target_type` |
 | POST | `/api/v1/moderation/{content_type}/{content_id}/approve` | admin | – | publish pending; author becomes trusted; author emailed (`content_approved`) |
-| POST | `.../reject` | admin | – | hide pending as rejected (optional reason, audited only); author emailed (`content_rejected`, no reason) |
+| POST | `.../reject` | admin | – | hide pending as rejected (optional reason: audited and stored as the item's `moderation_note`, shown to the author on the detail and in the `content_rejected` email) |
+| POST | `.../resubmit` | verified author | 403 not the author, 404 not visible | rejected post/thread → pending (`hidden_reason` cleared, `moderation_note` kept until the next decision); queue item gets `resubmitted: true` |
 | POST | `.../hide` | admin | – | hide published (optional reason) |
 | POST | `.../unhide` | admin | – | publish hidden again (from rejected = approval, author emailed) |
 | POST | `.../delete` | admin | – | soft delete |

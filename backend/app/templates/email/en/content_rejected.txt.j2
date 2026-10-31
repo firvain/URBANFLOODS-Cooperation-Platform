@@ -1,8 +1,10 @@
 Hello {{ display_name }},
 
 An admin reviewed your {{ content_type_label }} “{{ title }}” on the {{ app_name }} and did not approve it for publication. It is not public: only you and the admins can see it.
-
-While signed in, you can still open it and edit or delete it from your account: {{ frontend_url }}{{ link_url }}
+{% if reason %}
+The admin's note: {{ reason }}
+{% endif %}
+While signed in, you can still open it and edit or delete it from your account. Once you have edited it, you can send it for approval again from its page: {{ frontend_url }}{{ link_url }}
 
 If you have questions, write to {{ contact_email }}.
 

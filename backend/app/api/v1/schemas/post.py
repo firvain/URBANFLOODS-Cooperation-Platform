@@ -172,6 +172,9 @@ class PostDetail(PostSummary):
     knowbase_links: list[KnowbaseLinkOut] = Field(default_factory=list)
     approved_at: datetime | None
     hidden_reason: HiddenReason | None
+    # The admin's note on the last rejection. Only the author and admins ever get a detail of
+    # hidden or pending content, and approval clears the note, so it never reaches the public.
+    moderation_note: str | None
     deleted_at: datetime | None
 
 

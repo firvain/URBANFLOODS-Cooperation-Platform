@@ -130,6 +130,17 @@ async function confirmReject(reason: string) {
               <ULink :to="link(row.original)" class="font-medium text-primary-700 hover:underline">
                 {{ row.original.title }}
               </ULink>
+              <UBadge
+                v-if="row.original.resubmitted"
+                data-testid="queue-resubmitted"
+                color="warning"
+                variant="subtle"
+                size="sm"
+                icon="i-lucide-rotate-cw"
+                class="ms-2"
+              >
+                {{ t('admin.queue.resubmitted') }}
+              </UBadge>
               <p class="line-clamp-2 text-sm text-muted">{{ row.original.excerpt }}</p>
             </div>
           </template>

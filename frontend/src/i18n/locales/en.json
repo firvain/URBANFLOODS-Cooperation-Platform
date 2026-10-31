@@ -113,7 +113,7 @@
     },
     "statusHint": {
       "pending": "Waiting for approval by an admin. Only you and the admins can see this post until it is approved.",
-      "rejected": "An admin did not approve this post. Only you and the admins can see it.",
+      "rejected": "An admin did not approve this post. Only you and the admins can see it. You can edit it and send it for approval again.",
       "hidden": "This post is hidden. Only its author and the admins can see it.",
       "deleted": "This post has been deleted."
     },
@@ -179,7 +179,7 @@
     },
     "statusHint": {
       "pending": "Waiting for approval by an admin. Only you and the admins can see this discussion until it is approved.",
-      "rejected": "An admin did not approve this discussion. Only you and the admins can see it.",
+      "rejected": "An admin did not approve this discussion. Only you and the admins can see it. You can edit it and send it for approval again.",
       "hidden": "This discussion is hidden. Only its author and the admins can see it.",
       "deleted": "This discussion has been deleted."
     },
@@ -1043,7 +1043,10 @@
     },
     "banner": {
       "firstApproval": "After your first approval, what you post is published immediately.",
-      "contact": "If you think this is a mistake, contact {email}."
+      "contact": "If you think this is a mistake, contact {email}.",
+      "reason": "The admin's note:",
+      "resubmit": "Resubmit",
+      "resubmitted": "Sent for approval again."
     }
   },
   "admin": {
@@ -1058,6 +1061,8 @@
       "users": "Users",
       "categories": "Categories",
       "tags": "Tags",
+      "organisations": "Organisations",
+      "expertise": "Expertise areas",
       "log": "Audit log"
     },
     "common": {
@@ -1123,6 +1128,14 @@
       "tags": {
         "same": "A tag cannot be merged into itself.",
         "not_found": "The tag no longer exists."
+      },
+      "organisations": {
+        "name_taken": "Another organisation already has this name.",
+        "not_found": "The organisation no longer exists."
+      },
+      "expertise": {
+        "slug_taken": "Another expertise area already uses this slug.",
+        "not_found": "The expertise area no longer exists."
       }
     },
     "dashboard": {
@@ -1205,9 +1218,10 @@
       "approved": "“{title}” is published.",
       "rejected": "“{title}” was rejected.",
       "rejectTitle": "Reject “{title}”?",
-      "rejectDescription": "The item is hidden from everyone except its author. The reason is recorded in the audit log only.",
+      "rejectDescription": "The item is hidden from everyone except its author, who can edit it and resubmit it.",
       "reason": "Reason (optional)",
-      "reasonHelp": "Recorded in the audit log; the author is not shown it."
+      "reasonHelp": "Shown to the author on the item's page and in the email; also recorded in the audit log.",
+      "resubmitted": "Resubmitted"
     },
     "reports": {
       "title": "Reports",
@@ -1382,6 +1396,78 @@
       "deleteTitle": "Delete “{name}”?",
       "deleteDescription": "The tag is not used by any post or discussion.",
       "deleted": "Tag “{name}” deleted."
+    },
+    "organisations": {
+      "title": "Organisations",
+      "intro": "The organisations members choose from when they register and the partners shown on the Partners page. Organisations cannot be deleted: members belong to them.",
+      "caption": "Organisations, partners first",
+      "empty": "No organisations yet.",
+      "create": "New organisation",
+      "name": "Name",
+      "shortName": "Short name",
+      "country": "Country",
+      "countryPlaceholder": "Choose a country",
+      "type": "Type",
+      "types": {
+        "PP": "Project partner",
+        "AP": "Associated partner",
+        "other": "Other"
+      },
+      "website": "Website",
+      "websiteHelp": "An http:// or https:// address. Left empty, no link is shown.",
+      "partner": "Partner",
+      "isPartner": "Project partnership",
+      "isPartnerHelp": "Shown on the Partners page.",
+      "members": "Members",
+      "sortOrder": "Order",
+      "editLabel": "Edit {name}",
+      "createTitle": "New organisation",
+      "editTitle": "Edit “{name}”",
+      "save": "Save",
+      "created": "Organisation “{name}” created.",
+      "updated": "Organisation “{name}” saved.",
+      "validation": {
+        "nameRequired": "Enter a name of at least {min} characters.",
+        "nameTooLong": "The name can be at most {max} characters.",
+        "shortNameRequired": "Enter a short name.",
+        "shortNameTooLong": "The short name can be at most {max} characters.",
+        "countryRequired": "Choose a country.",
+        "websiteInvalid": "Enter an http:// or https:// address.",
+        "sortOrderInvalid": "Enter a whole number from 0 to {max}."
+      }
+    },
+    "expertise": {
+      "title": "Expertise areas",
+      "intro": "The areas members tag their profiles with and filter the Collaboration Network by. Deactivate an area instead of deleting it: members keep it, nobody can pick it any more.",
+      "caption": "Expertise areas by order",
+      "empty": "No expertise areas yet.",
+      "create": "New area",
+      "label": "Label",
+      "slug": "Slug",
+      "slugHelp": "Lower-case letters, digits and hyphens. Left empty, it is made from the label. Interface translations are looked up by slug.",
+      "sortOrder": "Order",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "editLabel": "Edit {name}",
+      "deactivate": "Deactivate",
+      "deactivateLabel": "Deactivate {name}",
+      "reactivateLabel": "Reactivate {name}",
+      "createTitle": "New expertise area",
+      "editTitle": "Edit “{name}”",
+      "save": "Save",
+      "deactivateTitle": "Deactivate “{name}”?",
+      "deactivateDescription": "Members who have this area keep it on their profiles, but nobody can pick it any more and it disappears from the Collaboration Network filter. You can reactivate it later.",
+      "created": "Expertise area “{name}” created.",
+      "updated": "Expertise area “{name}” saved.",
+      "deactivated": "Expertise area “{name}” deactivated.",
+      "reactivated": "Expertise area “{name}” reactivated.",
+      "validation": {
+        "labelRequired": "Enter a label of at least {min} characters.",
+        "labelTooLong": "The label can be at most {max} characters.",
+        "slugInvalid": "Use lower-case letters, digits and single hyphens only.",
+        "sortOrderInvalid": "Enter a whole number from 0 to {max}."
+      }
     },
     "log": {
       "title": "Audit log",

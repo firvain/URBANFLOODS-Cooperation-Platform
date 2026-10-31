@@ -17,7 +17,7 @@ import { useApiErrors } from '@/composables/useApiErrors'
 import { absoluteUrl, usePageHead } from '@/composables/usePageHead'
 import { CONTENT_LICENCE_URL } from '@/constants/links'
 import { ApiError } from '@/services/api'
-import type { ModerationResult } from '@/services/moderation'
+import { moderationService, type ModerationResult } from '@/services/moderation'
 import { postsService, type PostDetail } from '@/services/posts'
 import { useAuthStore } from '@/stores/auth'
 import { formatDate, formatDateTime } from '@/utils/datetime'
@@ -128,6 +128,25 @@ function applyModeration(result: ModerationResult) {
     published_at: result.published_at,
   }
   deletedAt.value = result.deleted_at
+}
+
+// --- Author: resubmit a rejected post -------------------------------------------------------
+
+const resubmitting = ref(false)
+
+/** Back to the approval queue after editing; the admin's note stays until the next decision. */
+async function resubmit() {
+  const value = post.value
+  if (!value || resubmitting.value) return
+  resubmitting.value = true
+  try {
+    applyModeration(await moderationService.resubmit('post', value.id))
+    toast.add({ title: t('status.banner.resubmitted'), color: 'success', icon: 'i-lucide-check' })
+  } catch (error) {
+    toast.add({ title: errorMessage(error), color: 'error', icon: 'i-lucide-circle-alert' })
+  } finally {
+    resubmitting.value = false
+  }
 }
 
 // --- Delete -----------------------------------------------------------------------------------
@@ -245,6 +264,9 @@ async function confirmDelete() {
           :status="post.status"
           :hidden-reason="post.hidden_reason"
           :for-author="isAuthor"
+          :moderation-note="post.moderation_note"
+          :resubmitting="resubmitting"
+          @resubmit="resubmit"
         />
 
         <div class="flex flex-wrap items-center justify-between gap-4">

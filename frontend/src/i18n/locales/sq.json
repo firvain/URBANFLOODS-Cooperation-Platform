@@ -113,7 +113,7 @@
     },
     "statusHint": {
       "pending": "Në pritje të miratimit nga një administrator. Deri në miratim, këtë postim mund ta shihni vetëm ju dhe administratorët.",
-      "rejected": "Një administrator nuk e miratoi këtë postim. Mund ta shihni vetëm ju dhe administratorët.",
+      "rejected": "Një administrator nuk e miratoi këtë postim. Mund ta shihni vetëm ju dhe administratorët. Mund ta përpunoni dhe ta dërgoni sërish për miratim.",
       "hidden": "Ky postim është i fshehur. Mund ta shohin vetëm autori i tij dhe administratorët.",
       "deleted": "Ky postim është fshirë."
     },
@@ -179,7 +179,7 @@
     },
     "statusHint": {
       "pending": "Në pritje të miratimit nga një administrator. Deri në miratim, këtë diskutim mund ta shihni vetëm ju dhe administratorët.",
-      "rejected": "Një administrator nuk e miratoi këtë diskutim. Mund ta shihni vetëm ju dhe administratorët.",
+      "rejected": "Një administrator nuk e miratoi këtë diskutim. Mund ta shihni vetëm ju dhe administratorët. Mund ta përpunoni dhe ta dërgoni sërish për miratim.",
       "hidden": "Ky diskutim është i fshehur. Mund ta shohin vetëm autori i tij dhe administratorët.",
       "deleted": "Ky diskutim është fshirë."
     },
@@ -1043,7 +1043,10 @@
     },
     "banner": {
       "firstApproval": "Pas miratimit të parë, çdo gjë që publikoni shfaqet menjëherë.",
-      "contact": "Nëse mendoni se bëhet fjalë për një gabim, kontaktoni {email}."
+      "contact": "Nëse mendoni se bëhet fjalë për një gabim, kontaktoni {email}.",
+      "reason": "Shënimi i administratorit:",
+      "resubmit": "Dërgoje sërish",
+      "resubmitted": "U dërgua sërish për miratim."
     }
   },
   "search": {

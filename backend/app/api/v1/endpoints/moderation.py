@@ -1,10 +1,12 @@
-"""Admin moderation: the pending queue, the content actions and the audit log.
+"""Moderation: the pending queue, the content actions and the audit log (admins), and the
+author's resubmission of a rejected post or thread.
 
-Every route needs an admin. Actions load the content row ``FOR UPDATE`` and hand it to
-``crud/moderation.py``, which enforces the state machine (409 ``moderation.invalid_transition``)
-and writes the ``moderation.<action>`` audit row; unknown content is 404
-``moderation.content_not_found``. ``purge`` is outside the state machine: it hard-deletes the item
-from any status (files of the attachments it frees are removed after the response).
+Every route but ``resubmit`` needs an admin. Actions load the content row ``FOR UPDATE`` and hand
+it to ``crud/moderation.py``, which enforces the state machine (409
+``moderation.invalid_transition``) and writes the ``moderation.<action>`` audit row; unknown
+content is 404 ``moderation.content_not_found``. ``purge`` is outside the state machine: it
+hard-deletes the item from any status (files of the attachments it frees are removed after the
+response).
 
 Approve, reject and an unhide that approves a rejected post/thread email the author
 (``services/notifications.py``) from a background task, i.e. after the commit.
@@ -29,10 +31,11 @@ from app.api.v1.schemas.moderation import (
     QueueItem,
 )
 from app.core.config import settings
-from app.core.deps import AdminUser, DbTx
+from app.core.deps import AdminUser, DbTx, VerifiedUser
 from app.core.exceptions import AppError, error_body
 from app.crud import audit as crud_audit
 from app.crud import moderation
+from app.crud.visibility import is_visible
 from app.db.enums import ContentType
 from app.db.models import User
 from app.services import images, notifications
@@ -138,6 +141,7 @@ async def moderation_queue(
                 author=_queue_author(obj.author),
                 category=QueueCategory.model_validate(obj.category),
                 created_at=obj.created_at,
+                resubmitted=obj.moderation_note is not None,
             )
             for content_type, obj in items
         ],
@@ -199,8 +203,8 @@ async def reject_content(
     background: BackgroundTasks,
     body: OptionalReason = None,
 ) -> ModerationResult:
-    """Hide a pending post or thread as rejected; the optional reason is audited (it is not in
-    the email to the author)."""
+    """Hide a pending post or thread as rejected. The optional reason is audited and stored as
+    the item's note, which its author sees on the item's page and in the email."""
     content = await _load(db, content_type, content_id)
     await moderation.reject(db, content=content, actor=admin, reason=_reason(body))
     _notify_decision(background, content, "rejected", admin=admin)
@@ -271,6 +275,25 @@ async def restore_content(
     """Restore deleted content (to pending if it was never approved)."""
     content = await _load(db, content_type, content_id)
     return _result(await moderation.restore(db, content=content, actor=admin))
+
+
+@router.post(
+    "/{content_type}/{content_id}/resubmit",
+    response_model=ModerationResult,
+    responses=ACTION_ERRORS,
+)
+async def resubmit_content(
+    content_type: ContentType, content_id: ContentId, user: VerifiedUser, db: DbTx
+) -> ModerationResult:
+    """The author sends their rejected (and possibly edited) post or thread for approval again:
+    it goes back to pending, keeping the admin's note until the next decision. 404 when the
+    caller cannot see the item, 403 when they are not its author (admins included)."""
+    content = await _load(db, content_type, content_id)
+    if not is_visible(content, user):
+        raise AppError(404, "moderation.content_not_found", "Content not found.")
+    if content.author_id != user.id:
+        raise AppError(403, "auth.forbidden", "Only the author can resubmit this.")
+    return _result(await moderation.resubmit(db, content=content, actor=user))
 
 
 @router.post(

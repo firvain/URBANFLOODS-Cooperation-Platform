@@ -51,6 +51,17 @@ describe('Admin queue', () => {
     expect(thread!.textContent).toContain(t('admin.queue.trusted'))
   })
 
+  it('marks an item its author resubmitted after a rejection', async () => {
+    const again = makeQueueItem({ id: 13, slug: 'again', title: 'Again', resubmitted: true })
+    await mountAdmin('/admin/queue', { [QUEUE]: reply(200, page([POST, again])) })
+    const [first, second] = rows()
+    expect(first!.querySelector('[data-testid="queue-resubmitted"]')).toBeNull()
+    expect(second!.querySelector('[data-testid="queue-resubmitted"]')?.textContent).toContain(
+      t('admin.queue.resubmitted'),
+    )
+    expect(t('admin.queue.resubmitted')).toBe('Resubmitted')
+  })
+
   it('shows an empty state', async () => {
     await mountAdmin('/admin/queue', { [QUEUE]: reply(200, page([])) })
     expect(document.body.textContent).toContain(t('admin.queue.empty'))

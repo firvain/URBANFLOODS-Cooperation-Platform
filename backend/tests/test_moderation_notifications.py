@@ -51,6 +51,8 @@ BY_ADMIN = "An admin approved"
 AUTOMATIC = "published automatically"
 CONTACT_EMAIL = "louta" + "@uowm.gr"
 EDIT_OR_DELETE = "edit or delete it"
+NOTE_LABEL = "The admin's note:"
+RESUBMIT_SENTENCE = "send it for approval again"
 NOW = datetime.now(UTC)
 
 P = ContentStatus.PENDING
@@ -217,6 +219,48 @@ async def test_rejected_email(db_session, outbox, content_type, label) -> None:
     assert f'href="mailto:{CONTACT_EMAIL}"' in sent.html
 
 
+async def test_rejected_email_includes_the_note(db_session, outbox) -> None:
+    _, post = await _rejected(db_session)
+    post.moderation_note = "Add the rainfall data."
+    await db_session.flush()
+
+    sent = await notify_moderation_decision(
+        db_session, content=post, decision="rejected", newly_trusted=False
+    )
+
+    assert sent is not None
+    assert f"{NOTE_LABEL} Add the rainfall data." in sent.text
+    assert "Add the rainfall data." in sent.html
+    assert "The admin&#39;s note:" in sent.html or NOTE_LABEL in sent.html
+    for body in (sent.text, sent.html):
+        assert RESUBMIT_SENTENCE in body
+
+
+async def test_rejected_email_without_note_has_no_note_line(db_session, outbox) -> None:
+    _, post = await _rejected(db_session)
+
+    sent = await notify_moderation_decision(
+        db_session, content=post, decision="rejected", newly_trusted=False
+    )
+
+    assert sent is not None
+    for body in (sent.text, sent.html):
+        assert NOTE_LABEL not in body
+        assert "The admin&#39;s note:" not in body
+        assert RESUBMIT_SENTENCE in body
+
+
+async def test_approved_email_never_has_the_resubmit_sentence(db_session, outbox) -> None:
+    _, post = await _approved(db_session)
+
+    sent = await notify_moderation_decision(
+        db_session, content=post, decision="approved", newly_trusted=False
+    )
+
+    assert sent is not None
+    assert RESUBMIT_SENTENCE not in sent.text
+
+
 def test_contact_email_is_a_setting() -> None:
     assert settings.CONTACT_EMAIL == CONTACT_EMAIL
 
@@ -288,6 +332,7 @@ def _render_context(link: str) -> dict:
         "settings_url": SETTINGS_PATH,
         "newly_trusted": False,
         "automatic": False,
+        "reason": None,
         "contact_email": CONTACT_EMAIL,
     }
 
@@ -603,11 +648,11 @@ async def test_approve_endpoint_audit_is_unchanged(client, env, outbox) -> None:
     ]
 
 
-async def test_reject_endpoint_emails_author_without_reason(client, env, outbox) -> None:
+async def test_reject_endpoint_emails_author_with_reason(client, env, outbox) -> None:
     author = await _user(env)
     thread = await _committed(env, ContentType.THREAD, author, status=P)
     await _admin(client, env)
-    reason = "Internal note: SECRET-REASON-TEXT"
+    reason = "Please cite <the> sources & add a map."
 
     response = await client.post(
         _url(ContentType.THREAD, thread.id, "reject"), json={"reason": reason}
@@ -619,8 +664,12 @@ async def test_reject_endpoint_emails_author_without_reason(client, env, outbox)
     assert msg.to == author.email
     assert msg.template == "content_rejected"
     assert "discussion" in msg.subject
-    for body in (msg.subject, msg.text, msg.html):
-        assert "SECRET-REASON-TEXT" not in body
+    assert reason not in msg.subject
+    assert f"{NOTE_LABEL} {reason}" in msg.text
+    assert "Please cite &lt;the&gt; sources &amp; add a map." in msg.html
+    assert "<the>" not in msg.html
+    for body in (msg.text, msg.html):
+        assert RESUBMIT_SENTENCE in body
     assert await _audit_actions(env.db, ContentType.THREAD, thread.id, author.id) == [
         "moderation.reject"
     ]

@@ -35,6 +35,18 @@ Each row has **Approve** and **Reject**. The author sees their pending item with
 explaining that it awaits review; nobody else sees it. A pending post or thread can also be
 approved from the **Moderate** menu on its own page; rejecting is done on the queue page.
 
+### Rejection notes and resubmission
+
+The reason you type when rejecting is **shown to the author**: it is stored on the item as the
+admin's note, appears in the banner on the item's page ("The admin's note: …") and in the
+rejection email. Write it for the author (what to fix), not as an internal remark. The author can
+then edit the rejected item and press **Resubmit** in the banner: the item goes back to pending
+and reappears in the queue with a **Resubmitted** badge, still carrying your earlier note so you
+can check it was addressed. Resubmitting does not make the author trusted. Approving (or unhiding)
+the item clears the note; rejecting it again replaces the note (or clears it if you give no
+reason). Only the author can resubmit, and only an item that was rejected (not one hidden by an
+admin or by reports).
+
 ### Emails to the author
 
 The author is emailed about each decision, after it has been saved:
@@ -46,7 +58,9 @@ The author is emailed about each decision, after it has been saved:
 - **Rejected**: the item was not approved and only the author and the admins can see it; the
   author can still open it, edit it or delete it. The email gives the contact address
   (`CONTACT_EMAIL`, default louta@uowm.gr) for questions.
-- The reason you type when rejecting is **not** in the email. It stays in the audit log only.
+- The reason you type when rejecting is in the email (and on the item's page, see
+  [above](#rejection-notes-and-resubmission)); the email also says the author can edit the item and
+  send it for approval again. A reason given when hiding stays in the audit log only.
 - Unhiding a rejected item counts as an approval and sends the approval email. Hide, the unhide of
   any other item, delete, restore and delete permanently send no email.
 - No email is sent when an admin decides on their own content, when the author is banned,
@@ -75,6 +89,7 @@ Every action writes an audit row.
 |---|---|---|---|
 | **Approve** | pending → published | author becomes trusted (unless the account is banned or deleted) | none |
 | **Reject** | pending → hidden (`rejected`) | author stays untrusted | none |
+| **Resubmit** (the author, not an admin) | hidden (`rejected`) → pending | unchanged (untrusted) | none |
 | **Hide** | published → hidden (`admin`) | unchanged | open reports stay open |
 | **Unhide** | hidden → published | if the item was *rejected*, this counts as an approval: author becomes trusted | all open reports on the item are dismissed; report count reset to 0 |
 | **Delete** | pending / published / hidden → deleted (soft) | unchanged | open reports stay open |
@@ -83,8 +98,9 @@ Every action writes an audit row.
 
 Notes:
 
-- Reject and hide accept an optional reason (up to 500 characters). It is stored **only in the
-  audit log**; the author sees a generic "rejected" or "hidden" banner with the contact address.
+- Reject and hide accept an optional reason (up to 500 characters, plain text). Both go into the
+  audit log; a rejection's reason is also shown to the author as the admin's note. A hide reason
+  is never shown: the author sees a generic "hidden" banner with the contact address.
 - Approve and reject apply to posts and threads only; replies and comments have no pending state.
 - Delete is soft: the row stays in the database with status `deleted` and can be restored.
 - **Restore**: a deleted post or discussion page cannot be opened again, not even by an admin. So
@@ -229,7 +245,7 @@ account deletion writes a row: when, action, actor (empty for system actions), t
 - Filter by action: an exact name (`moderation.approve`) or a prefix ending in a dot; quick chips
   for `moderation.`, `admin.`, `report.` and `auth.`.
 - Filter by actor id and target type (`post`, `thread`, `reply`, `comment`, `user`, `report`, …).
-- Useful actions: `moderation.approve|reject|hide|unhide|delete|restore|purge`,
+- Useful actions: `moderation.approve|reject|resubmit|hide|unhide|delete|restore|purge`,
   `moderation.auto_hidden`, `moderation.auto_approved`, `upload.deleted`, `user.trusted`, `admin.promote`,
   `admin.demote`, `admin.ban`, `admin.unban`, `admin.trust`, `admin.untrust`,
   `report.create|resolve|dismiss`, `post.created|updated|deleted` (and the same for threads,
