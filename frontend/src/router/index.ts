@@ -26,9 +26,11 @@ declare module 'vue-router' {
   }
 }
 
-// Shared loaders: the preset blog lists and the two editor routes render the same view.
+// Shared loaders: the preset blog/forum lists and the two editor routes render the same view.
 const BlogListView = () => import('@/views/BlogListView.vue')
 const PostEditorView = () => import('@/views/PostEditorView.vue')
+const ForumListView = () => import('@/views/ForumListView.vue')
+const ThreadEditorView = () => import('@/views/ThreadEditorView.vue')
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -72,6 +74,36 @@ export const routes: RouteRecordRaw[] = [
     name: 'post-edit',
     component: PostEditorView,
     meta: { title: 'editor.form.titleEdit', auth: 'verified' },
+  },
+  {
+    path: '/forum',
+    name: 'forum',
+    component: ForumListView,
+    meta: { title: 'nav.forum' },
+  },
+  {
+    path: '/forum/c/:slug',
+    name: 'forum-category',
+    component: ForumListView,
+    meta: { title: 'nav.forum' },
+  },
+  {
+    path: '/forum/new',
+    name: 'thread-new',
+    component: ThreadEditorView,
+    meta: { title: 'thread.form.titleNew', auth: 'verified' },
+  },
+  {
+    path: '/forum/t/:slug',
+    name: 'thread',
+    component: () => import('@/views/ThreadDetailView.vue'),
+    meta: { title: 'thread.pageTitle' },
+  },
+  {
+    path: '/forum/t/:slug/edit',
+    name: 'thread-edit',
+    component: ThreadEditorView,
+    meta: { title: 'thread.form.titleEdit', auth: 'verified' },
   },
   {
     path: '/partners',

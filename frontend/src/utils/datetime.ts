@@ -43,3 +43,29 @@ export function isoToLocalInput(iso: string | null | undefined): string {
     `T${pad(date.getHours())}:${pad(date.getMinutes())}`
   )
 }
+
+const RELATIVE_STEPS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ['second', 60],
+  ['minute', 60],
+  ['hour', 24],
+  ['day', 7],
+  ['week', 30 / 7],
+  ['month', 12],
+  ['year', Infinity],
+]
+
+/**
+ * "3 hours ago", "yesterday", "now" in `locale` (`Intl.RelativeTimeFormat`, English as a
+ * fallback), measured from `now` (ms). Under a minute counts as "now".
+ */
+export function formatRelative(iso: string, locale: string, now: number = Date.now()): string {
+  const format = new Intl.RelativeTimeFormat([locale, 'en'], { numeric: 'auto' })
+  let value = (new Date(iso).getTime() - now) / 1000
+  if (Math.abs(value) < 45) return format.format(0, 'second')
+  for (const [unit, size] of RELATIVE_STEPS) {
+    if (Math.abs(value) < size - 0.5 || unit === 'year')
+      return format.format(Math.round(value), unit)
+    value /= size
+  }
+  return format.format(Math.round(value), 'year')
+}

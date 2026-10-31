@@ -13,10 +13,10 @@ const { isVerified } = storeToRefs(useAuthStore())
 /** The Unified DSS web app; the card is hidden when it is not configured. */
 const dss = dssUrl()
 
-/** Sections of the platform; the forum (M3) stays a placeholder until its routes exist. */
-const sections: { key: string; icon: string; to?: string }[] = [
+/** Sections of the platform. */
+const sections: { key: string; icon: string; to: string }[] = [
   { key: 'blog', icon: 'i-lucide-newspaper', to: '/blog' },
-  { key: 'forum', icon: 'i-lucide-messages-square' },
+  { key: 'forum', icon: 'i-lucide-messages-square', to: '/forum' },
   { key: 'knowbase', icon: 'i-lucide-library', to: '/knowbase' },
 ]
 </script>
@@ -34,23 +34,16 @@ const sections: { key: string; icon: string; to?: string }[] = [
       <li v-for="section in sections" :key="section.key" :data-testid="`home-card-${section.key}`">
         <UCard class="h-full">
           <template #header>
-            <div class="flex items-center justify-between gap-2">
-              <h2 class="flex items-center gap-2 text-lg font-semibold text-highlighted">
-                <UIcon :name="section.icon" class="size-5 text-primary" aria-hidden="true" />
-                <ULink
-                  v-if="section.to"
-                  :to="section.to"
-                  raw
-                  class="text-primary-700 underline-offset-2 hover:underline focus-visible:underline"
-                >
-                  {{ t(`home.cards.${section.key}.title`) }}
-                </ULink>
-                <template v-else>{{ t(`home.cards.${section.key}.title`) }}</template>
-              </h2>
-              <UBadge v-if="!section.to" color="neutral" variant="subtle" size="sm">
-                {{ t('home.comingSoon') }}
-              </UBadge>
-            </div>
+            <h2 class="flex items-center gap-2 text-lg font-semibold text-highlighted">
+              <UIcon :name="section.icon" class="size-5 text-primary" aria-hidden="true" />
+              <ULink
+                :to="section.to"
+                raw
+                class="text-primary-700 underline-offset-2 hover:underline focus-visible:underline"
+              >
+                {{ t(`home.cards.${section.key}.title`) }}
+              </ULink>
+            </h2>
           </template>
           <p class="text-muted">{{ t(`home.cards.${section.key}.description`) }}</p>
         </UCard>

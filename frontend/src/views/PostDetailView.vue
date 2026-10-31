@@ -270,7 +270,7 @@ async function confirmDelete() {
         data-testid="post-body"
         :html="post.body_html"
         :lang="post.locale"
-        class="post-prose"
+        class="content-prose"
       />
 
       <section
@@ -323,82 +323,3 @@ async function confirmDelete() {
     />
   </UContainer>
 </template>
-
-<!--
-  Typography for the post body (Tailwind Typography is not installed). `:deep` because the
-  sanitised HTML does not carry the scoped attribute. Tags: the editor allow-list.
--->
-<style scoped>
-.post-prose {
-  color: var(--ui-text);
-  line-height: 1.7;
-  overflow-wrap: break-word;
-}
-.post-prose :deep(* + *) {
-  margin-top: 0.875em;
-}
-.post-prose :deep(h2) {
-  margin-top: 1.75em;
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1.3;
-  color: var(--color-primary-600);
-}
-.post-prose :deep(h3) {
-  margin-top: 1.5em;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--color-primary-700);
-}
-.post-prose :deep(h4) {
-  font-weight: 600;
-}
-.post-prose :deep(ul) {
-  list-style: disc;
-  padding-inline-start: 1.5rem;
-}
-.post-prose :deep(ol) {
-  list-style: decimal;
-  padding-inline-start: 1.5rem;
-}
-.post-prose :deep(li + li) {
-  margin-top: 0.375em;
-}
-.post-prose :deep(a) {
-  color: var(--color-primary-600);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  overflow-wrap: anywhere;
-}
-.post-prose :deep(a:hover) {
-  color: var(--color-primary-800);
-}
-.post-prose :deep(strong) {
-  font-weight: 600;
-}
-.post-prose :deep(blockquote) {
-  border-inline-start: 3px solid var(--color-secondary-500);
-  padding-inline-start: 1rem;
-  color: var(--ui-text-muted);
-}
-.post-prose :deep(pre) {
-  overflow-x: auto;
-  border-radius: 0.375rem;
-  background: var(--ui-bg-elevated);
-  padding: 0.75rem 1rem;
-  font-family: var(--font-mono, ui-monospace, monospace);
-}
-.post-prose :deep(code) {
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.9em;
-}
-.post-prose :deep(img) {
-  max-width: 100%;
-  height: auto;
-  border-radius: 0.375rem;
-}
-.post-prose :deep(hr) {
-  border: 0;
-  border-top: 1px solid var(--color-secondary-200);
-}
-</style>

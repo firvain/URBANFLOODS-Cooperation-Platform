@@ -63,8 +63,16 @@ describe('HomeView section cards', () => {
     expect(link.exists()).toBe(true)
     expect(link.text()).toContain(t('home.cards.knowbase.title'))
     expect(card.text()).not.toContain(t('home.comingSoon'))
-    // The forum is still a placeholder.
-    expect(wrapper.find('[data-testid="home-card-forum"]').text()).toContain(t('home.comingSoon'))
+  })
+
+  it('the Forum card links to /forum without a "coming soon" badge', async () => {
+    mockApi()
+    const { wrapper } = await mountWithApp(HomeView)
+    const card = wrapper.find('[data-testid="home-card-forum"]')
+    const link = card.find('a[href="/forum"]')
+    expect(link.exists()).toBe(true)
+    expect(link.text()).toContain(t('home.cards.forum.title'))
+    expect(card.text()).not.toContain(t('home.comingSoon'))
   })
 
   it('the Blog card links to /blog without a "coming soon" badge', async () => {

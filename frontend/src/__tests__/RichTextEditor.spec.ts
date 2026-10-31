@@ -188,4 +188,18 @@ describe('RichTextEditor', () => {
       expect(editable().getAttribute('aria-describedby')).toBeTruthy()
     })
   })
+
+  it('compact offers the comment subset: no headings, code blocks or images', async () => {
+    await mountEditor({ compact: true, maxLength: 10_000 })
+    const labels = Array.from(document.querySelectorAll('[role="toolbar"] button'), (b) =>
+      b.getAttribute('aria-label'),
+    )
+    expect(labels).toContain('Bold')
+    expect(labels).toContain('Link')
+    expect(labels).toContain('Quote')
+    for (const missing of ['Heading', 'Subheading', 'Code block', 'Insert image']) {
+      expect(labels).not.toContain(missing)
+    }
+    expect(document.body.textContent).toContain('0 / 10000')
+  })
 })

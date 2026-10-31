@@ -21,6 +21,9 @@
   "blog": {
     "title": "Blog"
   },
+  "forum": {
+    "title": "Forum"
+  },
   "auth": {
     "login": "Accedi",
     "register": "Registrati",

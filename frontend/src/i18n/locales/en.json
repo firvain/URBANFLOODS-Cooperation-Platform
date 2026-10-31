@@ -117,6 +117,147 @@
       "document": "Document"
     }
   },
+  "forum": {
+    "title": "Forum",
+    "intro": "Ask questions, compare approaches and discuss flood management with partners and members of the platform.",
+    "start": "Start a discussion",
+    "loading": "Loading the discussions…",
+    "count": "No discussions | 1 discussion | {count} discussions",
+    "empty": "No discussions match these filters.",
+    "emptyAll": "No discussions yet.",
+    "loadError": "The discussions could not be loaded.",
+    "retry": "Try again",
+    "clearFilters": "Clear filters",
+    "pagination": "Forum pages",
+    "filters": {
+      "title": "Filter the discussions",
+      "category": "Category",
+      "allCategories": "All",
+      "search": "Search",
+      "searchPlaceholder": "Title or text",
+      "locale": "Language",
+      "allLocales": "All languages",
+      "sort": "Order",
+      "sortActivity": "Latest activity",
+      "sortNewest": "Newest",
+      "tag": "Tag",
+      "removeTag": "Remove the tag filter {tag}"
+    }
+  },
+  "thread": {
+    "pageTitle": "Discussion",
+    "back": "Back to the forum",
+    "notFound": "Discussion not found",
+    "notFoundHint": "The discussion does not exist, has been removed, or is not visible to you.",
+    "loadError": "The discussion could not be loaded.",
+    "pinned": "Pinned",
+    "locked": "Locked",
+    "replies": "No replies | 1 reply | {count} replies",
+    "lastActivity": "Last activity",
+    "started": "Started",
+    "tags": "Tags",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleted": "The discussion was deleted.",
+    "deleteConfirm": {
+      "title": "Delete this discussion?",
+      "description": "The discussion and its replies will no longer be visible on the platform.",
+      "confirm": "Delete discussion",
+      "cancel": "Cancel"
+    },
+    "statusHint": {
+      "pending": "Waiting for approval by an admin. Only you and the admins can see this discussion until it is approved.",
+      "rejected": "An admin did not approve this discussion. Only you and the admins can see it.",
+      "hidden": "This discussion is hidden. Only its author and the admins can see it.",
+      "deleted": "This discussion has been deleted."
+    },
+    "admin": {
+      "label": "Moderation",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "lock": "Lock",
+      "unlock": "Unlock",
+      "pinned": "The discussion is pinned.",
+      "unpinned": "The discussion is no longer pinned.",
+      "locked": "The discussion is locked.",
+      "unlocked": "The discussion is unlocked."
+    },
+    "form": {
+      "titleNew": "Start a discussion",
+      "titleEdit": "Edit the discussion",
+      "backToThread": "Back to the discussion",
+      "title": "Title",
+      "titleHint": "A question or topic, in a few words.",
+      "category": "Category",
+      "categoryPlaceholder": "Choose a category",
+      "locale": "Language of the discussion",
+      "localeHint": "The language the discussion is written in.",
+      "body": "Text",
+      "tags": "Tags",
+      "tagsPlaceholder": "Add a tag",
+      "untrustedNote": "Your first discussion will be reviewed by an admin before it is published.",
+      "submitCreate": "Publish",
+      "submitReview": "Send for review",
+      "submitEdit": "Save changes",
+      "cancel": "Cancel",
+      "created": "The discussion is published.",
+      "createdPending": "The discussion was sent. It will be published once an admin approves it.",
+      "saved": "The changes are saved.",
+      "unverified": "Verify your email address to start discussions.",
+      "forbidden": "You cannot edit this discussion.",
+      "errors": {
+        "bodyRequired": "Write the text of the discussion."
+      },
+      "leave": {
+        "title": "Leave without saving?",
+        "description": "Your changes to this discussion are not saved and will be lost.",
+        "confirm": "Leave",
+        "stay": "Keep editing"
+      },
+      "draft": {
+        "found": "You have an unsaved draft of this discussion."
+      }
+    }
+  },
+  "reply": {
+    "title": "Replies",
+    "loading": "Loading the replies…",
+    "loadError": "The replies could not be loaded.",
+    "empty": "No replies yet. Be the first to reply.",
+    "loadMore": "Load more replies",
+    "reply": "Reply",
+    "replyTo": "Reply to {name}",
+    "edit": "Edit",
+    "delete": "Delete",
+    "edited": "edited",
+    "deleted": "[deleted]",
+    "sending": "Sending…",
+    "formerMember": "Former member",
+    "label": "Your reply",
+    "labelEdit": "Edit your reply",
+    "placeholder": "Write a reply…",
+    "submit": "Post reply",
+    "save": "Save",
+    "cancel": "Cancel",
+    "posted": "Your reply is posted.",
+    "saved": "The reply is saved.",
+    "removed": "The reply was deleted.",
+    "lockedNotice": "This discussion is locked. New replies are not accepted.",
+    "unverified": "Verify your email address to reply.",
+    "loginToReply": "Log in to reply",
+    "notPublished": "Replies open once the discussion is published.",
+    "deleteConfirm": {
+      "title": "Delete this reply?",
+      "description": "The reply will no longer be visible. Replies to it stay.",
+      "confirm": "Delete reply",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "empty": "Write something before posting.",
+      "tooLong": "The reply is too long. Shorten it before posting.",
+      "parentInvalid": "The reply you are answering is no longer available."
+    }
+  },
   "partners": {
     "title": "Partners",
     "partnershipTitle": "Partnership",
@@ -410,6 +551,17 @@
       },
       "knowbase": {
         "unavailable": "The KNOWBASE cannot be reached, so the linked items could not be checked. Please try again later."
+      },
+      "threads": {
+        "not_found": "The discussion does not exist or is not visible to you.",
+        "forbidden": "You cannot change this discussion.",
+        "category_admin_only": "Only administrators can start discussions in this category.",
+        "locked": "This discussion is locked. New replies are not accepted.",
+        "slug_taken": "Another discussion already uses this address."
+      },
+      "replies": {
+        "not_found": "The reply does not exist or has been deleted.",
+        "forbidden": "You cannot change this reply."
       }
     },
     "fields": {
@@ -430,7 +582,8 @@
       "string_too_short": "This text is too short.",
       "string_too_long": "This text is too long.",
       "archived": "This category is archived. Choose another one.",
-      "too_many": "There are too many items."
+      "too_many": "There are too many items.",
+      "too_long": "This text is too long."
     }
   },
   "auth": {

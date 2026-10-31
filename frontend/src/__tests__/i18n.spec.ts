@@ -71,6 +71,14 @@ describe('locale files', () => {
     }
   })
 
+  it('every locale names the forum (nav.forum and forum.title)', () => {
+    for (const [path, messages] of Object.entries(localeFiles)) {
+      const flat = flatten(messages)
+      expect(flat['nav.forum'], `${path} nav.forum`).toBeTruthy()
+      expect(flat['forum.title'], `${path} forum.title`).toBeTruthy()
+    }
+  })
+
   it('every non-English locale translates knowbase.title', () => {
     for (const [path, messages] of Object.entries(localeFiles)) {
       if (path.endsWith('/en.json')) continue

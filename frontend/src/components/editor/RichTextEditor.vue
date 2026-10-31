@@ -20,6 +20,8 @@ import {
  * the backend allow-list (`normalizeHtml`), `''` when empty. Label it with `labelId` (the id of
  * the visible label); `maxLength` counts characters of text and shows a counter. Images are
  * uploaded through `ImageUploadDialog` (alt text required), also when pasted or dropped.
+ * `compact` offers the comment subset (replies, comments): no headings, code blocks or images,
+ * and a lower editing area.
  */
 const props = withDefaults(
   defineProps<{
@@ -28,6 +30,7 @@ const props = withDefaults(
     disabled?: boolean
     uploadKind?: UploadKind
     maxLength?: number
+    compact?: boolean
   }>(),
   {
     labelId: undefined,
@@ -35,6 +38,7 @@ const props = withDefaults(
     disabled: false,
     uploadKind: 'image',
     maxLength: undefined,
+    compact: false,
   },
 )
 const model = defineModel<string>({ default: '' })
@@ -65,8 +69,7 @@ const api = useRichEditor({
     const attrs: Record<string, string> = {
       role: 'textbox',
       'aria-multiline': 'true',
-      class:
-        'tiptap-content min-h-40 px-3 py-2 text-default focus:outline-none focus-visible:focus-ring',
+      class: `tiptap-content ${props.compact ? 'min-h-24' : 'min-h-40'} px-3 py-2 text-default focus:outline-none focus-visible:focus-ring`,
     }
     if (props.labelId) attrs['aria-labelledby'] = props.labelId
     if (props.disabled) attrs['aria-disabled'] = 'true'
@@ -81,7 +84,7 @@ const api = useRichEditor({
   },
   onBlur: () => emit('blur'),
   onImageFile: (file) => {
-    if (props.disabled) return
+    if (props.disabled || props.compact) return
     pendingFile.value = file
     imageOpen.value = true
   },
@@ -111,6 +114,20 @@ const toolbarItems = computed<ToolbarItem[]>(() => {
     ...extra,
   })
   const toggle = { toggle: true }
+  if (props.compact) {
+    return [
+      item('bold', 'i-lucide-bold', toggle),
+      item('italic', 'i-lucide-italic', toggle),
+      item('underline', 'i-lucide-underline', toggle),
+      item('strike', 'i-lucide-strikethrough', toggle),
+      item('bulletList', 'i-lucide-list', { toggle: true, groupStart: true }),
+      item('orderedList', 'i-lucide-list-ordered', toggle),
+      item('blockquote', 'i-lucide-text-quote', toggle),
+      item('link', 'i-lucide-link', { toggle: true, groupStart: true }),
+      item('undo', 'i-lucide-undo-2', { groupStart: true }),
+      item('redo', 'i-lucide-redo-2'),
+    ]
+  }
   return [
     item('bold', 'i-lucide-bold', toggle),
     item('italic', 'i-lucide-italic', toggle),
@@ -194,6 +211,7 @@ defineExpose({
       @remove="api.unsetLink()"
     />
     <ImageUploadDialog
+      v-if="!compact"
       v-model:open="imageOpen"
       :kind="uploadKind"
       :file="pendingFile"

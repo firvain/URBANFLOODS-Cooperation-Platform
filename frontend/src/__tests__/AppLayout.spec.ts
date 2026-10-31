@@ -177,6 +177,7 @@ describe('footer branding', () => {
     expect(links.map((a) => a.getAttribute('href'))).toEqual([
       '/',
       '/blog',
+      '/forum',
       '/partners',
       '/network',
       '/knowbase',
@@ -185,6 +186,7 @@ describe('footer branding', () => {
     expect(links.map((a) => a.textContent?.trim())).toEqual([
       t('nav.home'),
       t('nav.blog'),
+      t('nav.forum'),
       t('nav.partners'),
       t('nav.network'),
       t('nav.knowbase'),
@@ -230,8 +232,8 @@ describe('footer branding', () => {
   it('styles column links muted, underlined only on hover/focus', async () => {
     await mountApp()
     const links = footer().querySelectorAll('h2 + ul a')
-    // Six platform pages (blog and KNOWBASE included) + the project links.
-    expect(links).toHaveLength(10)
+    // Seven platform pages (blog, forum and KNOWBASE included) + the project links.
+    expect(links).toHaveLength(11)
     for (const link of links) {
       const classes = link.classList
       expect(classes.contains('text-sm')).toBe(true)
@@ -373,7 +375,7 @@ describe('main navigation and the Unified DSS', () => {
   }
   const label = (a: Element) => a.textContent?.replace(t('a11y.opensInNewTab'), '').trim()
 
-  it('orders the items Home, Blog, Partners, Network, KNOWBASE, Unified DSS, About', async () => {
+  it('orders the items Home, Blog, Forum, Partners, Network, KNOWBASE, Unified DSS, About', async () => {
     vi.stubEnv('VITE_DSS_URL', DSS)
     await mountApp()
     expect(t('nav.network')).toBe('Network')
@@ -382,16 +384,19 @@ describe('main navigation and the Unified DSS', () => {
     expect(navLinks().map(label)).toEqual([
       t('nav.home'),
       t('nav.blog'),
+      t('nav.forum'),
       t('nav.partners'),
       t('nav.network'),
       t('nav.knowbase'),
       t('nav.dss'),
       t('nav.about'),
     ])
+    expect(t('nav.forum')).toBe('Forum')
     expect(navLinks()[1]!.getAttribute('href')).toBe('/blog')
-    expect(navLinks()[3]!.getAttribute('href')).toBe('/network')
-    expect(navLinks()[4]!.getAttribute('href')).toBe('/knowbase')
-    expect(navLinks()[4]!.getAttribute('target')).toBeNull()
+    expect(navLinks()[2]!.getAttribute('href')).toBe('/forum')
+    expect(navLinks()[4]!.getAttribute('href')).toBe('/network')
+    expect(navLinks()[5]!.getAttribute('href')).toBe('/knowbase')
+    expect(navLinks()[5]!.getAttribute('target')).toBeNull()
   })
 
   it('links the DSS in a new tab, announced, with the URL from VITE_DSS_URL', async () => {
@@ -412,6 +417,7 @@ describe('main navigation and the Unified DSS', () => {
     expect(navLinks().map(label)).toEqual([
       t('nav.home'),
       t('nav.blog'),
+      t('nav.forum'),
       t('nav.partners'),
       t('nav.network'),
       t('nav.knowbase'),

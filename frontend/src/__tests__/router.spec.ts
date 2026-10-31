@@ -32,6 +32,11 @@ describe('routes', () => {
     ['/blog/new', 'post-new'],
     ['/blog/rain-gardens', 'post'],
     ['/blog/rain-gardens/edit', 'post-edit'],
+    ['/forum', 'forum'],
+    ['/forum/c/early-warning', 'forum-category'],
+    ['/forum/new', 'thread-new'],
+    ['/forum/t/sirens-or-sms', 'thread'],
+    ['/forum/t/sirens-or-sms/edit', 'thread-edit'],
     ['/this/does/not/exist', 'not-found'],
   ])('%s resolves to %s with an i18n meta.title', (path, name) => {
     const resolved = router.resolve(path)
@@ -91,6 +96,27 @@ it('writing and editing posts need a verified account; reading is public', () =>
   const post = router.resolve('/blog/rain-gardens')
   expect(post.meta.auth).toBeUndefined()
   expect(post.params.slug).toBe('rain-gardens')
+})
+
+it('the forum: list routes public and titled nav.forum, starting/editing a thread needs verified', () => {
+  const router = createAppRouter(createMemoryHistory())
+  const list = router.resolve('/forum')
+  expect(list.meta.title).toBe('nav.forum')
+  expect(list.meta.auth).toBeUndefined()
+  const category = router.resolve('/forum/c/early-warning')
+  expect(category.params.slug).toBe('early-warning')
+  expect(category.meta.title).toBe('nav.forum')
+  expect(category.matched[0]!.components!.default).toBe(list.matched[0]!.components!.default)
+  expect(router.resolve('/forum/new').meta.auth).toBe('verified')
+  const edit = router.resolve('/forum/t/sirens-or-sms/edit')
+  expect(edit.meta.auth).toBe('verified')
+  expect(edit.params.slug).toBe('sirens-or-sms')
+  expect(edit.matched[0]!.components!.default).toBe(
+    router.resolve('/forum/new').matched[0]!.components!.default,
+  )
+  const thread = router.resolve('/forum/t/sirens-or-sms')
+  expect(thread.meta.auth).toBeUndefined()
+  expect(thread.params.slug).toBe('sirens-or-sms')
 })
 
 it('the legal routes are public, titled legal.* and pass the document to LegalView', () => {

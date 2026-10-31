@@ -21,6 +21,9 @@
   "blog": {
     "title": "Blogu"
   },
+  "forum": {
+    "title": "Forumi"
+  },
   "auth": {
     "login": "Hyr",
     "register": "Regjistrohu",

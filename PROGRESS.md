@@ -86,12 +86,12 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
 | 3a | Models Thread/Reply/Comment + migration (one-level trigger, counters) | done | 8710d19 | 28 pytest (885 total) | migration 0005; nesting + counter triggers | | | |
-| 3b | threads endpoints + admin pin/lock | done | | 52 pytest | tag usage now counts threads too | | | |
-| 3c | replies endpoints | done | | 29 pytest (996 total) | one-level nesting via trigger mapped to 422; placeholders for invisible parents; merge_tags moves thread_tags | | | |
-| 3d | comments endpoints | done | | 30 pytest | | | |
-| 3e | notification emails honouring preferences | todo | | | |
-| 3f | FE forum views + stores | in progress | | | |
-| 3g | FE comments + notifications tab | todo | | | |
+| 3b | threads endpoints + admin pin/lock | done | 1ceb637 | 52 pytest | tag usage now counts threads too | | | |
+| 3c | replies endpoints | done | 374abf7 | 29 pytest (996 total) | one-level nesting via trigger mapped to 422; placeholders for invisible parents; merge_tags moves thread_tags | | | |
+| 3d | comments endpoints | done | 88157ae | 30 pytest | | | |
+| 3e | notification emails honouring preferences | in progress | | | |
+| 3f | FE forum views + stores | done | | 84 vitest (555 total) | threads list/detail/editor, replies tree with optimistic insert, compact editor prop, shared .content-prose | | | |
+| 3g | FE comments + notifications tab | in progress | | | |
 | 3h | Playwright `forum.spec.ts` | todo | | | |
 
 ### M4 — Moderation + admin UI
