@@ -6,7 +6,6 @@ import { useRoute } from 'vue-router'
 import logoHorizontal from '@/assets/logos/interreg-urbanfloods-horizontal.png'
 import { dssUrl } from '@/constants/links'
 import { DSS_NAV_ITEM, NAV_ITEMS } from '@/constants/navigation'
-import HeaderSearch from './HeaderSearch.vue'
 import LocaleSwitcher from './LocaleSwitcher.vue'
 import UserMenu from './UserMenu.vue'
 
@@ -52,13 +51,12 @@ function linkAttrs(item: NavLink) {
   <!--
     Project logo (docs/branding.md): the official horizontal image, on white, never narrower than
     240 px (300 px from lg, 384 px from xl). Fixed widths + matching min-widths + max-w-none keep it from
-    shrinking; the navigation collapses into the menu instead, below xl (seven items, the search
-    box, the account buttons and the language switcher do not fit beside the logo on a 1024 px
-    laptop). From xl the row is full at 1280 px (page container): the language switcher shows
-    only its code (full name from 2xl), the search box is collapsed to its icon and widens over
-    the navigation when used, and the nav buttons have px-2 without gaps. In the menu body the
-    search box is a full-width field. py-3/pe-4
-    plus the header height (main.css) keep clear space of at least half the EU emblem height.
+    shrinking; the navigation collapses into the menu instead, below xl (eight items, the account
+    buttons and the language switcher do not fit beside the logo on a 1024 px laptop). From xl
+    the row is nearly full at 1280 px (page container): the language switcher shows only its
+    code (full name from 2xl) and the nav buttons have px-2 without gaps. Search lives on /search
+    (user decision 2026-10-31: no search box in the header). py-3/pe-4 plus the header height
+    (main.css) keep clear space of at least half the EU emblem height.
   -->
   <UHeader
     to="/"
@@ -98,7 +96,6 @@ function linkAttrs(item: NavLink) {
     </nav>
 
     <template #right>
-      <HeaderSearch />
       <UserMenu class="hidden xl:flex" />
       <!-- Below sm the logo needs the room; the language switcher moves into the menu. -->
       <div class="hidden sm:block">
@@ -107,7 +104,6 @@ function linkAttrs(item: NavLink) {
     </template>
 
     <template #body>
-      <HeaderSearch mobile class="mb-4" />
       <ul class="flex flex-col gap-1">
         <li v-for="item in navItems" :key="item.name">
           <UButton

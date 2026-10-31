@@ -1340,7 +1340,6 @@
     "formLabel": "Site search",
     "inputLabel": "Search blog posts and discussions",
     "placeholder": "Search posts and discussions…",
-    "headerPlaceholder": "Search…",
     "submit": "Search",
     "typeLabel": "Show",
     "types": {
