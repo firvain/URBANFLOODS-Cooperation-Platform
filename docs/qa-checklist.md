@@ -139,7 +139,7 @@ Run all of them on a clean tree with the seed freshly reset. Expected counts as 
 
 Notes:
 
-- One full e2e run uses 12 of the 10-per-15-min login budget (14 with `E2E_A11Y=1`). It works
+- One full e2e run uses 12 of the 10-per-15-min login budget (15 with `E2E_A11Y=1`). It works
   because the bucket refills during the run. Do not run it twice within about 15 minutes; if you
   must, run `docker compose restart backend` first. Reset the seed before the run: blog test 1 and
   moderation test 2 assume the seeded state. See [testing.md](testing.md#rate-limit-budget-per-full-run).

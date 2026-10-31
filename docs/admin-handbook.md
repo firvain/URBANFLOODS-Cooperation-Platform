@@ -14,7 +14,7 @@ Last updated: 2026-10-31
 | Role | Can |
 |---|---|
 | member | read; once verified: write posts and threads (reviewed until trusted), replies, comments, report content, upload images |
-| admin | everything a member can, publish without review, moderate (queue, reports, hide/unhide/delete), manage users (within the rules below), categories, tags, organisations, see stats and the audit log |
+| admin | everything a member can, publish without review, moderate (queue, reports, hide/unhide/delete/restore, delete permanently), manage users (within the rules below), categories, tags, organisations, see stats and the audit log |
 | superadmin | everything an admin can, plus grant or remove the superadmin role and ban/demote other superadmins |
 
 Account flags shown on the Users page (`/admin/users`): **verified** (email confirmed),
@@ -113,16 +113,23 @@ Authors create tags by typing them. Admins can:
 
 ### Organisations
 
-The 22 project partners (lead partner, PPs and APs) are seeded by migration 0002 and shown on
-`/partners`. Members pick one of them, or "other" with a free-text name. There is no admin page
-for organisations: add or edit them through the API (`POST /api/v1/organisations/`,
-`PATCH /api/v1/organisations/{id}`) from `/docs` while signed in as an admin.
+The 22 project partners (lead partner, PPs and APs) are seeded by migration 0002 and shown in the
+partnership section of the About page (`/about#partnership`; the old `/partners` address
+redirects there). Members pick one of them, or "other" with a free-text name. There is no admin
+page for organisations: add or edit them through the API (`POST /api/v1/organisations/`,
+`PATCH /api/v1/organisations/{id}`) with curl, as shown in
+[API calls from the command line](#api-calls-from-the-command-line). The Swagger page (`/docs`)
+does not work for this: its *Try it out* sends the session cookie but not the
+`X-Requested-With: XMLHttpRequest` header, so the CSRF check answers 403 `security.csrf` for every
+POST, PATCH or DELETE made while signed in (`backend/app/core/csrf.py` exempts only the docs
+pages themselves, not the API calls made from them).
 
 ## 7. The dashboard (`/admin`)
 
 - **Users**: total (not deleted), verified, trusted, admins, new in the last 30 days.
 - **Content**: published posts and threads, replies, comments, pending items; open reports.
-- **KNOWBASE**: reachable or not, last success, last error, cache sizes; **Clear cache** button.
+- **KNOWBASE**: reachable or not, last success, last error, cache sizes (lists, details, lookups,
+  stale copies); **Clear cache** button.
 - **Reporting export**: choose a date range and download the CSV (next section).
 
 ### Stats CSV export
@@ -149,25 +156,48 @@ partnership) for the progress report. Each export is audited (`admin.stats_expor
 
 ## 8. KNOWBASE cache
 
-The platform shows KNOWBASE measures and documents from an in-memory cache (lists 15 minutes,
-details 6 hours, lookups 24 hours). If the KNOWBASE is down, the last good copy is served and the
-pages show a notice that cached data is being shown.
+The platform has no KNOWBASE library pages of its own: browsing by country, level or subject
+happens on the KNOWBASE itself (the header entry and the home card link to
+knowbase.urbanfloods.app). KNOWBASE data appears in three places only: the KNOWBASE picker in the
+post and discussion editor, the link cards on posts and discussions, and the item pages
+`/knowbase/measures/{id}` and `/knowbase/documents/{id}` with their "Mentioned in" list. All of it
+goes through the backend proxy and its in-memory cache (lists and searches 15 minutes, details
+6 hours, lookups 24 hours). Link cards show the title stored when the link was saved, so they do
+not depend on the KNOWBASE being up.
+
+If the KNOWBASE is down, the proxy serves the last good copy (stale) where it has one. The item
+pages and the picker show no notice when they do; only the admin **dashboard** shows the
+KNOWBASE state (reachable, last success, last error, number of stale copies). An item with no
+copy in the cache shows a load error with *Try again*, and saving a post with a new KNOWBASE link
+answers "The KNOWBASE cannot be reached".
 
 **Clear cache** (dashboard, or `POST /api/v1/admin/knowbase/cache/clear`) empties every cache,
 including the stale copies. Use it when the KNOWBASE team has published corrections that should
 appear at once. Do **not** clear it while the KNOWBASE is unreachable: with no stale copy left,
-the KNOWBASE pages and new KNOWBASE links answer "temporarily unavailable" until it is back.
-Restarting the backend has the same effect as clearing. Audited as `admin.knowbase_cache_clear`.
+the item pages, the picker and new KNOWBASE links answer "temporarily unavailable" until it is
+back. Restarting the backend has the same effect as clearing. Audited as
+`admin.knowbase_cache_clear`.
 
 The platform never changes the KNOWBASE. Problems with KNOWBASE content go to the KNOWBASE team.
 
 ## 9. When email fails
 
+The platform sends: the verification link, the welcome email, password reset links, the
+email-change confirmation, reply and comment notifications, the **decision emails** to authors
+when a post or discussion is approved or rejected (see the
+[moderation guide](moderation-guide.md#emails-to-the-author)) and the admin digest. Messages come
+from `SMTP_FROM` through Brevo's SMTP relay and carry a `Reply-To` header set to `SMTP_REPLY_TO`
+(default `urbanfloods@uowm.gr`; empty = no header), so answers reach a monitored address instead
+of the no-reply sender. Templates exist in English, with Greek versions of the verification and
+reply-to-discussion emails; every other language receives English. Notifications and decision
+emails respect each member's switches under Account → Notifications.
+
 Symptoms: members report missing verification or reset emails; resend shows an error; the digest
-does not arrive.
+or a decision email does not arrive.
 
 1. Check the backend log for `email.send_failed`, `auth.email_not_sent`, `admin.email_not_sent`,
-   `notification.failed`, `digest.failed` / `digest.failed_all` (section 10).
+   `notification.failed` (its `kind` is `moderation_decision` for decision emails),
+   `digest.failed` / `digest.failed_all` (section 10).
 2. Check the settings: `EMAIL_ENABLED=true`, `SMTP_HOST`/`SMTP_PORT` (default
    `smtp-relay.brevo.com:587`, STARTTLS), `SMTP_USER` (the SMTP login shown on Brevo's
    *SMTP & API* page), `SMTP_PASSWORD` (a Brevo **SMTP key**), `SMTP_FROM` (must stay on the
@@ -191,8 +221,9 @@ container name set in M6 [CHECK]). `LOG_JSON=true` gives one JSON object per lin
 also appears in the log lines of that request, so a member can quote it when reporting an error.
 
 Logs never contain passwords, tokens, request bodies, or IP addresses (rate-limit events carry a
-keyed hash of the IP). Exception: with `EMAIL_ENABLED=false` the `email.not_sent` line includes
-the recipient address (`services/email.py`, `LoggingBackend`). [CHECK]
+keyed hash of the IP). With `EMAIL_ENABLED=false` the `email.not_sent`
+line names the template and a keyed hash of the recipient address, not the address itself
+(`services/email.py`, `LoggingBackend`).
 
 The audit log (`/admin/log`) is the record of who did what; the container log is for errors and
 operations.
@@ -213,6 +244,45 @@ Run inside the backend container (`docker compose exec backend …`) or from `ba
 
 The CLI commands write audit rows with no actor.
 
+### API calls from the command line
+
+A few admin functions have no page: managing organisations, restoring or permanently deleting a
+deleted item, a reply or a comment, and deleting another member's image. Call the API with curl.
+Sign in once into a cookie jar, then send every POST, PATCH or DELETE with the session cookie
+**and** the `X-Requested-With: XMLHttpRequest` header (the CSRF check rejects a signed-in write
+without it). The login is rate limited like the sign-in form (10 per 15 minutes). Ids come from
+the audit log (`/admin/log`: the target column shows, for example, `reply #123`).
+
+```bash
+BASE=https://cooperation.urbanfloods.app        # development: http://localhost:8000
+printf 'Password: '; stty -echo; read -r PW; stty echo; echo   # bash and zsh; not in the history
+curl -s -c jar -H 'Content-Type: application/json' \
+  -d "{\"email\":\"admin@example.org\",\"password\":\"$PW\"}" "$BASE/api/v1/auth/login"
+unset PW
+
+# add an organisation (country: ISO 3166-1 alpha-2; type: PP, AP or other)
+curl -s -b jar -H 'X-Requested-With: XMLHttpRequest' -H 'Content-Type: application/json' \
+  -d '{"name":"Municipality of Example","short_name":"Example","country":"GR","type":"other","website":"https://example.org","is_partner":false}' \
+  "$BASE/api/v1/organisations/"
+
+# change one field of organisation 23 (omitted fields are kept; "website": null clears it)
+curl -s -b jar -X PATCH -H 'X-Requested-With: XMLHttpRequest' -H 'Content-Type: application/json' \
+  -d '{"website":"https://www.example.org"}' "$BASE/api/v1/organisations/23"
+
+# restore, or delete permanently, a deleted reply (type: post, thread, reply or comment)
+curl -s -b jar -X POST -H 'X-Requested-With: XMLHttpRequest' "$BASE/api/v1/moderation/reply/123/restore"
+curl -s -b jar -X POST -H 'X-Requested-With: XMLHttpRequest' "$BASE/api/v1/moderation/reply/123/purge"
+
+# delete image 45 (409 uploads.in_use while any content, deleted content included, uses it)
+curl -s -b jar -X DELETE -H 'X-Requested-With: XMLHttpRequest' "$BASE/api/v1/uploads/45"
+
+# sign out and remove the cookie jar
+curl -s -b jar -X POST -H 'X-Requested-With: XMLHttpRequest' "$BASE/api/v1/auth/logout"; rm jar
+```
+
+Every change is audited (`organisation.created`, `organisation.updated`, `moderation.restore`,
+`moderation.purge`, `upload.deleted`). The full list of routes is in [api.md](api.md).
+
 ## 12. Routine maintenance
 
 With `ENABLE_SCHEDULER=true` (run it in one backend process only), two jobs run daily in UTC:
@@ -222,7 +292,9 @@ With `ENABLE_SCHEDULER=true` (run it in one backend process only), two jobs run 
 | 05:00 (`DIGEST_HOUR_UTC` − 1) | maintenance | sessions expired or revoked more than 7 days ago; email tokens expired or used more than 7 days ago; unverified **member** accounts older than `UNVERIFIED_PURGE_DAYS` (30) days, hard-deleted with their sessions, tokens and preferences (audit `maintenance.purge_unverified`, count only); uploaded images older than `ORPHAN_UPLOAD_HOURS` (24) hours that are no cover, no avatar and not used in any post, thread, reply or comment body (any status), rows and files (audit `maintenance.orphan_uploads`); pending posts/threads older than `AUTO_APPROVE_AFTER_DAYS` days are approved (only when > 0) |
 | 06:00 (`DIGEST_HOUR_UTC`) | admin digest | nothing removed; emails admins ([moderation guide](moderation-guide.md#5-the-admin-digest)) |
 
-Not purged by any job: content (soft-deleted items stay), reports, digest runs and the audit log.
+Not purged by any job: content (soft-deleted items stay until an admin uses *Delete permanently*,
+see the [moderation guide](moderation-guide.md#delete-permanently)), reports, digest runs and the
+audit log.
 Database and upload backups are planned for M6 (`scripts/backup.sh`, 14-day retention). [CHECK after 6a]
 
 ## 13. GDPR requests
@@ -232,34 +304,62 @@ The University of Western Macedonia is the data controller; the contact for ever
 
 ### Self-service (preferred)
 
-Members do this themselves under **Account → Data**:
+Members do this themselves under **Account → Your data**:
 
-- **Export**: a JSON file with the profile, organisation, expertise, notification preferences,
-  every session (incl. revoked) and every audit row they made or that is about them. Password
-  hashes and tokens are never included. The `content` lists (posts, threads, replies, comments)
-  in the export are currently always empty (`ExportContent` placeholder in
-  `backend/app/api/v1/schemas/auth.py`); a member's published content is available in the public
-  exports. [CHECK]
+- **Export**: a JSON file `urbanfloods-account-<id>-<date>.json` (`GET /api/v1/auth/me/export`,
+  `format_version` 2; schema in `backend/app/api/v1/schemas/account_export.py`). It contains:
+  - `user`: id, email, display name, organisation (id, name, short name) or the free-text
+    organisation, country, language, bio, role, verified, trusted since, created, updated, last
+    sign-in, expertise areas, and the *show email* and *show in directory* choices;
+  - `notification_preferences`: every switch (replies, comments, replies to replies, admin
+    digest, decisions on my posts and discussions) and the digest frequency;
+  - `sessions`: every session, revoked and expired ones included (created, last seen, expiry,
+    browser description, revoked); never the token;
+  - `audit_log`: every audit row the member made or that is about them or their content (action,
+    target, details, time); the actor is left out and keys that could name an admin are removed;
+  - `content`: the member's posts, threads, replies and comments in **every** status (pending,
+    published, hidden, deleted), oldest first, with the HTML and plain text, status, hidden
+    reason and dates; posts and threads also with title, address, language, category, tags and
+    KNOWBASE links; posts with excerpt, cover image id and event date/link; threads with
+    pinned/locked; replies with their thread and parent reply; comments with their post;
+  - `attachments`: the member's uploads (deleted ones too, until purged) with public URL and
+    thumbnail URL, original file name, type, size, dimensions, alt text and dates; never the
+    storage path;
+  - `reports_made`: the reports the member filed (content, reason, details, status, dates), never
+    who resolved them;
+  - `exported_at`, `format_version` and `licence_note`.
+
+  Never included: password hashes, tokens, the address of a pending email change, or the
+  identity of the admins who acted. Each export is audited (`auth.data_exported`).
 - **Delete account** (current password required): the account is anonymised. Email replaced by a
   placeholder, display name set to "Deleted user", password cleared, organisation, country, bio
   and avatar removed, role set to member, trust cleared, hidden from the members directory,
   notification preferences and expertise deleted, every session revoked and every pending email
   link invalidated. Posts, threads, replies and comments stay public, attributed to
-  "Deleted user". Images embedded in posts stay; an unused avatar image is removed by the next
-  orphan sweep. The last superadmin cannot delete their account.
+  "Deleted user". The member's own uploads that no content uses (not a cover, not in any text),
+  the avatar included, are deleted with their files at once; images used by their contributions
+  stay with them and keep their original file name. The last superadmin cannot delete their
+  account.
 
 ### Manual requests
 
 If a person writes instead (to louta@uowm.gr or an admin):
 
 1. Verify that the request comes from the account's email address.
-2. Access: ask them to use Account → Data → Export, or the operator produces the same export.
+2. Access: ask them to use Account → Your data → Export, or the operator produces the same export.
 3. Erasure: ask them to use Delete account. There is no admin function to anonymise someone
    else's account; if the person cannot sign in, ban the account at once and let the operator
    perform the anonymisation (same fields as above) in the database. [CHECK]
-4. Removal of specific content: hide it, then edit or delete it (see the
-   [moderation guide](moderation-guide.md#personal-data-complaints)).
-5. Keep a note of the request and the date it was handled.
+4. Removal of specific content: hide it, then edit it or delete it permanently, and check its
+   images (see the [moderation guide](moderation-guide.md#personal-data-complaints)).
+5. Rectification: members correct their profile themselves under Account → Profile. Changing the
+   **email address** exists in the API only (`POST /api/v1/auth/me/email` with the current
+   password, then `POST /api/v1/auth/email/confirm` with the token); the interface has no form for
+   it. The confirmation email links to `/confirm-email?token=…`, which has no page in the
+   frontend (it shows "not found"), so the change can only be completed by sending the token to
+   `POST /api/v1/auth/email/confirm` (body `{"token": "…"}`). [CHECK: add a page or keep as a known
+   limitation]
+6. Keep a note of the request and the date it was handled.
 
 ## 14. Settings reference
 

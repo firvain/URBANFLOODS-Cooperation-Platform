@@ -47,23 +47,24 @@ and how it will run after the project.
 ## 3. Requirements traceability
 
 Evidence columns: backend test files (`backend/tests/`), end-to-end specs (`frontend/e2e/`) and
-platform pages. Test counts per area `[TBD]` at the final run (total on 2026-10-31: 1459 backend
-tests collected; vitest `[TBD]`; Playwright 32 tests in 5 specs).
+platform pages. Test counts per area `[TBD]` at the final run (totals on 2026-10-31: 1613 backend
+tests collected in 53 files; 1017 vitest tests in 60 files; Playwright 31 tests in 4 specs, plus 4
+opt-in accessibility tests in `a11y.spec.ts`).
 
 | AF / meeting commitment | Implemented feature | Evidence |
 |---|---|---|
 | Registration-based access | open sign-up, email verification, Turnstile, consent audited; public read | `test_auth_register.py`, `test_auth_session.py`; `auth.spec.ts`; `/register`, `/login` |
-| Categorised KNOWBASE information (measures, actions, policy) | KNOWBASE proxy with cache; measures and documents browser with filters (country, level, subject, category, scale); detail pages; KNOWBASE link cards on posts and threads; "mentioned in" lists | `test_knowbase_proxy.py`, `test_knowbase_links.py`; `blog.spec.ts` tests 2–3; `/knowbase`, `/knowbase/measures`, `/knowbase/documents` |
+| Categorised KNOWBASE information (measures, actions, policy) | KNOWBASE proxy with cache; KNOWBASE picker in the post and thread editor; KNOWBASE link cards on posts and threads; measure and document pages with "mentioned in" lists; browsing by country, level and subject happens on the KNOWBASE itself (header entry and home card link to it; decision 2026-10-31) | `test_knowbase_proxy.py`, `test_knowbase_links.py`; `blog.spec.ts` tests 2–3; `/knowbase/measures/{id}`, `/knowbase/documents/{id}` |
 | Built on the KNOWBASE, which stays untouched | server-side read-only proxy, `GET` to allow-listed public routes only | `services/knowbase.py`; [architecture.md](architecture.md#6-knowbase-proxy-and-caching) |
 | Blog format | posts with categories, tags, cover image, rich text, events (`event_at`, `event_url`), admin-only "Resources" category | `test_posts.py`, `test_categories.py`, `test_tags.py`, `test_uploads.py`; `blog.spec.ts`; `/blog` |
 | Dynamic forum | threads, replies with one nesting level, comments on posts, pin/lock, email notifications | `test_threads.py`, `test_replies.py`, `test_comments.py`, `test_notifications.py`; `forum.spec.ts`; `/forum` |
-| Transnational cooperation among PPs and stakeholders | 22 seeded partner organisations, `/partners`; members directory with expertise, country and organisation filters; suggested collaborators | `test_organisations.py`, `test_members.py`, `test_expertise.py`; `auth.spec.ts` test 6; `/partners`, `/network` |
-| Safe, low-maintenance moderation | trust after first approval, reports with auto-hide, soft delete, audit log, admin area | `test_moderation.py`, `test_moderation_api.py`, `test_reports.py`, `test_crud_audit.py`; `moderation.spec.ts`; `/admin/*` |
+| Transnational cooperation among PPs and stakeholders | 22 seeded partner organisations in the partnership section of the About page; members directory (verified members only) with expertise, country and organisation filters; member profiles; suggested collaborators | `test_organisations.py`, `test_members.py`, `test_expertise.py`; `auth.spec.ts` test 6; `/about#partnership`, `/network`, `/u/{id}` |
+| Safe, low-maintenance moderation | trust after first approval, emails to authors on approval and rejection, reports with auto-hide, soft delete and restore, permanent delete, Moderate menu on post and thread pages, members' Uploads tab, audit log, admin area | `test_moderation.py`, `test_moderation_api.py`, `test_moderation_purge.py`, `test_moderation_notifications.py`, `test_reports.py`, `test_crud_audit.py`; `moderation.spec.ts`; `/admin/*` |
 | Search | full-text search over posts and threads, typo-tolerant titles | `test_search.py`; `/search` |
-| Accessibility (WCAG 2.1 AA) | semantic landmarks, skip link, focus management, labelled forms, required alt text, accessible editor toolbar, eslint a11y rules, axe scans | `a11y.spec.ts` (`E2E_A11Y=1`), `test_uploads.py` (alt text); accessibility statement draft `docs/legal/accessibility-statement.md`; increment 5d `[CHECK: status at submission]` |
+| Accessibility (WCAG 2.1 AA) | semantic landmarks, skip link, focus management, labelled forms, required alt text, accessible editor toolbar, eslint a11y rules, axe scans | `a11y.spec.ts` (`E2E_A11Y=1`), `test_uploads.py` (alt text); accessibility statement draft `docs/legal/accessibility-statement.md`, page `/accessibility`; increment 5d done (axe: 23 pages, 0 violations); manual audit `[TBD]` |
 | FAIR | JSON/CSV exports, Frictionless data package, Atom feeds, sitemap, OpenAPI, schema.org JSON-LD, CC BY 4.0 | `test_export.py`, `test_feeds.py`; [fair-data.md](fair-data.md); `/open-data` `[CHECK: page live]` |
-| GDPR | data minimisation, consent record, self-service export and anonymising deletion, unverified-account purge, no IPs stored, privacy policy | `test_auth_gdpr.py`, `test_maintenance.py`; `/privacy`, `/terms` |
-| Multilingual (9 project locales) | UI in vue-i18n; English complete; content tagged with its language | increment 5f `[CHECK: locales completed]` |
+| GDPR | data minimisation, consent record, self-service export (profile, own content in every status, uploads, reports, sessions, audit rows) and anonymising deletion, permanent delete of content on request, unverified-account purge, no IPs stored, privacy policy | `test_auth_gdpr.py`, `test_gdpr_export.py`, `test_moderation_purge.py`, `test_maintenance.py`; `/privacy`, `/terms` |
+| Multilingual (9 project locales) | UI in vue-i18n; English complete; content tagged with its language | increment 5f done (all public and member texts in 9 locales; admin area English) `[CHECK: partner confirmation of the translations]` |
 | Link to the Unified DSS | navigation link and home card (`VITE_DSS_URL`) | `/` |
 | RCO87 tracking | admin stats CSV with a `rco87` section | `test_admin_stats.py`; `moderation.spec.ts` test 4 |
 | Durability after the project | Docker, documentation, admin digest, `AUTO_APPROVE_AFTER_DAYS`, CLI, zero paid services | `test_digest.py`, `test_scheduler.py`, `test_cli.py`; [admin-handbook.md](admin-handbook.md) |
@@ -83,11 +84,16 @@ host nginx, ports 3002/8002, database not exposed `[CHECK after M6]`.
 
 ## 6. Functionality and user guide pointers (1–2 pages, with screenshots `[TBD]`)
 
-- Visitors: home, blog, forum, KNOWBASE library, partners, network, search, open data.
-- Members: registration and verification, profile and expertise, writing posts and threads,
-  replying and commenting, KNOWBASE links, images with alt text, notification settings, data
+- Visitors: home (with "Project at a Glance"), blog, forum, About with the partnership
+  (`/about#partnership`), KNOWBASE measure and document pages linked from contributions, search,
+  open data, terms, privacy and accessibility pages; links out to the KNOWBASE and the Unified DSS.
+- Members: registration and verification, profile and expertise, members directory and profiles
+  (`/network`, `/u/{id}`, verified members only), writing posts and threads, replying and
+  commenting, KNOWBASE links via the editor picker, images with alt text, the Uploads tab,
+  notification settings (including emails on decisions about their posts and discussions), data
   export and account deletion.
-- Admins: queue, reports, users, categories, tags, audit log, dashboard and CSV export
+- Admins: queue, reports, users, categories, tags, audit log, dashboard and CSV export, the
+  Moderate menu on post and thread pages (hide, unhide, delete, restore, delete permanently)
   ([moderation-guide.md](moderation-guide.md), [admin-handbook.md](admin-handbook.md)).
 - Developers and reusers: [api.md](api.md), [fair-data.md](fair-data.md).
 
@@ -99,7 +105,7 @@ accessibility statement `[TBD]`; feedback channel.
 
 ## 8. GDPR compliance summary
 
-Controller UOWM; processors (hosting `[CHECK]`, Google for email, Cloudflare); data collected and
+Controller UOWM; processors (hosting `[CHECK]`, Brevo for email (EU), Cloudflare); data collected and
 why; consent at registration; rights and how they are exercised (self-service, louta@uowm.gr);
 retention (unverified accounts 30 days, sessions/tokens, audit log `[CHECK]`); no analytics, only
 the strictly necessary session cookie, no cookie banner; no IP addresses in the database. Source:
@@ -144,8 +150,11 @@ contribution = published post, thread, reply or comment).
 - No native mobile app (responsive web only); no OAuth sign-in.
 - DSS integration is a link only (no API available).
 - No XML version of the bulk exports (Atom and sitemap only).
-- Restoring deleted content and managing organisations have no admin page (API only).
-- The personal data export does not yet list the member's own posts and comments.
+- Managing organisations has no admin page (API only). Restoring or permanently deleting a reply,
+  a comment or an item whose page has been left is done through the API; reported items can be
+  restored from the Reports page.
+- Changing the account email address has no form (API only).
+- Admin digest "send now" only from the command line.
 - Email sending limit of the Brevo free plan (300 messages/day).
 - `[TBD]` items from user feedback and the accessibility audit.
 

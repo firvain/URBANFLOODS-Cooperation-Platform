@@ -216,13 +216,13 @@ on the KNOWBASE site), so the lookup endpoints currently have no frontend caller
 | POST | `/api/v1/reports/{report_id}/dismiss` | admin | – | close without action |
 | GET | `/api/v1/moderation/queue/` | admin | – | pending posts and threads, oldest first |
 | GET | `/api/v1/moderation/log/` | admin | – | audit rows; `action` ending in `.` is a prefix; `actor_id`, `target_type` |
-| POST | `/api/v1/moderation/{content_type}/{content_id}/approve` | admin | – | publish pending; author becomes trusted |
-| POST | `.../reject` | admin | – | hide pending as rejected (optional reason) |
+| POST | `/api/v1/moderation/{content_type}/{content_id}/approve` | admin | – | publish pending; author becomes trusted; author emailed (`content_approved`) |
+| POST | `.../reject` | admin | – | hide pending as rejected (optional reason, audited only); author emailed (`content_rejected`, no reason) |
 | POST | `.../hide` | admin | – | hide published (optional reason) |
-| POST | `.../unhide` | admin | – | publish hidden again (from rejected = approval) |
+| POST | `.../unhide` | admin | – | publish hidden again (from rejected = approval, author emailed) |
 | POST | `.../delete` | admin | – | soft delete |
 | POST | `.../restore` | admin | – | restore deleted (to `pending` if never approved) |
-| POST | `.../purge` | admin | – | delete permanently from any status: comments/replies, tag and KNOWBASE links, images nothing else uses; open reports resolved (one `report.resolve` audit row each, `purge: true`); audit `moderation.purge` (counts and the deleted attachments' ids and uploaders, never a body or path) |
+| POST | `.../purge` | admin | – | delete permanently from any status: comments/replies, tag and KNOWBASE links, images nothing else uses; open reports resolved (one `report.resolve` audit row each, `purge: true`); audit `moderation.purge` (counts, the deleted attachments' ids and uploaders, and a post's or thread's title; never a body or path) |
 
 `content_type` is `post`, `thread`, `reply` or `comment`.
 

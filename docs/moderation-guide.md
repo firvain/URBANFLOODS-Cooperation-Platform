@@ -1,10 +1,11 @@
 # Moderation guide
 
 This guide is for platform admins. It explains in plain language how new members earn the right
-to publish, what appears in the moderation queue, what each moderation action does, how reports
-and automatic hiding work, what the daily digest contains, and how to handle spam, abuse and
-personal-data complaints. It ends with a short checklist. Account management is covered in the
-[admin handbook](admin-handbook.md); the technical state machine is in
+to publish, what appears in the moderation queue, what each moderation action does (permanent
+deletion included), which emails authors receive, how reports and automatic hiding work, what the
+daily digest contains, and how to handle spam, abuse and personal-data complaints. It ends with
+a short checklist. Account management is covered in the [admin handbook](admin-handbook.md); the
+technical state machine is in
 [architecture.md](architecture.md#31-content-state-machine).
 
 Last updated: 2026-10-31
@@ -31,15 +32,44 @@ author and category. An item is pending when:
 - a deleted item that had never been approved was restored (it returns to pending).
 
 Each row has **Approve** and **Reject**. The author sees their pending item with a banner
-explaining that it awaits review; nobody else sees it. Authors are not emailed about the
-decision. [CHECK: whether an approval/rejection email is wanted]
+explaining that it awaits review; nobody else sees it. A pending post or thread can also be
+approved from the **Moderate** menu on its own page; rejecting is done on the queue page.
+
+### Emails to the author
+
+The author is emailed about each decision, after it has been saved:
+
+- **Approved**: the post or discussion is now public, with a link to it. If this approval made the
+  author trusted, the email adds that their posts and discussions are now published without
+  review. An approval by the [`AUTO_APPROVE_AFTER_DAYS`](#8-the-auto_approve_after_days-safety-valve)
+  sweep says it was published automatically after the review period instead of naming an admin.
+- **Rejected**: the item was not approved and only the author and the admins can see it; the
+  author can still open it, edit it or delete it. The email gives the contact address
+  (`CONTACT_EMAIL`, default louta@uowm.gr) for questions.
+- The reason you type when rejecting is **not** in the email. It stays in the audit log only.
+- Unhiding a rejected item counts as an approval and sends the approval email. Hide, the unhide of
+  any other item, delete, restore and delete permanently send no email.
+- No email is sent when an admin decides on their own content, when the author is banned,
+  deleted or unverified, or when the author has turned off *Decisions on my posts and
+  discussions* (Account → Notifications; on by default).
+- The decision emails are in English for every interface language.
+- One automatic sweep emails at most 100 authors; items beyond that are published without an
+  email.
 
 ## 3. Moderation actions
 
 All actions are available through the API (`POST /api/v1/moderation/{type}/{id}/<action>`, see
-[api.md](api.md#reports-and-moderation)). In the interface, approve/reject are on the queue page;
-hide, unhide and delete are in the row menu of the Reports page; admins can also edit or delete
-any post or thread, and pin or lock threads, from its own page. Every action writes an audit row.
+[api.md](api.md#reports-and-moderation)). In the interface:
+
+- the **queue** page has Approve and Reject;
+- the **Moderate** menu (admins only) on a post or discussion page offers what applies to its
+  current status: Approve (pending), Hide with an optional reason (published), Unhide (hidden),
+  Delete or, once deleted, Restore, and **Delete permanently**;
+- the row menu of the **Reports** page offers Hide, Unhide, Delete and Restore for the reported
+  post, discussion, reply or comment;
+- admins can also edit or delete any post or thread, and pin or lock threads, from its own page.
+
+Every action writes an audit row.
 
 | Action | From → to | Effect on the author's trust | Effect on reports |
 |---|---|---|---|
@@ -49,18 +79,60 @@ any post or thread, and pin or lock threads, from its own page. Every action wri
 | **Unhide** | hidden → published | if the item was *rejected*, this counts as an approval: author becomes trusted | all open reports on the item are dismissed; report count reset to 0 |
 | **Delete** | pending / published / hidden → deleted (soft) | unchanged | open reports stay open |
 | **Restore** | deleted → published, or → pending if it was never approved | unchanged | when restored to published: open reports dismissed, count reset |
+| **Delete permanently** | any status → removed from the database | unchanged | open reports on the item and on its comments or replies are resolved; the reports themselves stay |
 
 Notes:
 
 - Reject and hide accept an optional reason (up to 500 characters). It is stored **only in the
   audit log**; the author sees a generic "rejected" or "hidden" banner with the contact address.
 - Approve and reject apply to posts and threads only; replies and comments have no pending state.
-- Delete is always soft: the row stays in the database with status `deleted` and can be restored.
-- **Restore has no button in the interface.** Use `POST /api/v1/moderation/{type}/{id}/restore`
-  from the API docs (`/docs`) while signed in as an admin. The Reports page text says deleted
-  content "can be restored from the database only", which is outdated. [CHECK]
+- Delete is soft: the row stays in the database with status `deleted` and can be restored.
+- **Restore**: a deleted post or discussion page cannot be opened again, not even by an admin. So
+  Restore in the Moderate menu is there only while the page on which you deleted the item is
+  still open. Later, restore a reported item from the row menu of the Reports page. For anything
+  else, take the id from the audit log (`moderation.delete`, `post.deleted`, …) and call
+  `POST /api/v1/moderation/{type}/{id}/restore` from the command line (see
+  [admin-handbook.md](admin-handbook.md#api-calls-from-the-command-line)).
 - An action from a status where it does not apply (for example approving published content)
   answers "invalid transition" and changes nothing.
+
+### Delete permanently
+
+**Delete permanently** (in the API: *purge*) cannot be undone. It works from any status. It
+removes from the database:
+
+- the post or discussion, with its tags and KNOWBASE links;
+- all its comments (post) or all its replies at every level (discussion); purging a reply also
+  removes the replies to it;
+- the images it used (cover image, images in the text of the item and of the removed comments or
+  replies) that no other post, discussion, reply or comment uses, whoever uploaded them. Images
+  also used elsewhere stay.
+
+Open reports on the removed items are marked resolved by you (each with a `report.resolve` audit
+row); the reports themselves are kept. The audit row `moderation.purge` holds counts, the ids and
+uploaders of the removed images and, for a post or discussion, its title (up to 200 characters).
+It never holds the text, an image path or a file name.
+
+In the interface, Delete permanently is the last item of the Moderate menu on a post or discussion
+page: a dialog lists what will go and enables the button only after you type `DELETE` (the same
+word in every language). Afterwards you land on the blog or forum list. Replies, comments and
+items whose page can no longer be opened (soft-deleted ones) are purged through the API only:
+`POST /api/v1/moderation/{type}/{id}/purge`.
+
+### Uploads
+
+Every member has an **Uploads** tab under Account. It lists their own images with a thumbnail, alt
+text, size, date and the content that uses each one (any status). An image still used by a post,
+discussion, reply or comment that is not deleted cannot be deleted: the button is disabled with
+the reason shown next to it. Images used only by the member's own deleted content can be deleted
+(if that content is restored later, the image is missing from it).
+
+Admins have no page for other members' images. Through the API, `DELETE /api/v1/uploads/{id}` works
+for an admin on any image, but answers 409 `uploads.in_use` while any content uses it, deleted
+content included. Remove the image by editing or purging that content instead. An image that
+nothing uses any more is also removed by the next daily maintenance run, once it is older than
+`ORPHAN_UPLOAD_HOURS` (24 hours; needs the scheduler, see
+[admin-handbook.md](admin-handbook.md#12-routine-maintenance)).
 
 ## 4. Reports and automatic hiding
 
@@ -105,7 +177,8 @@ Rules:
 
 ### Spam
 
-1. Delete the spam items (Reports page or the item's own page).
+1. Delete the spam items (Reports page or the item's own Moderate menu). Use *Delete
+   permanently* when the spam contains links or images you do not want to keep.
 2. Ban the account on the Users page: it is signed out everywhere and cannot sign in again.
 3. Resolve the related reports.
 4. If spam comes from many new accounts, check that Turnstile is enabled in production
@@ -124,16 +197,26 @@ Rules:
 A person asks for their personal data (name, photo, contact details) to be removed from someone
 else's post, or a member asks for their own data.
 
-1. **Hide the item at once** so it is no longer public.
-2. Ask the author to edit it, or edit it yourself (admins may edit any post, thread, reply or
-   comment through the normal edit form).
-3. If the content cannot be fixed, delete it.
-4. Record what was done (the hide/delete reason is audited) and forward the request to the data
-   controller contact, **louta@uowm.gr** (University of Western Macedonia), who answers the
-   requester.
-5. Soft delete keeps the text in the database. Where full erasure of a third party's data is
-   required, the row must be edited or cleared directly in the database by the operator; there is
-   no hard-delete function in the platform. [CHECK]
+1. **Hide the item at once** (Moderate menu on the page, or the Reports page row menu) so it is no
+   longer public. Do not use plain *Delete* for this: a soft-deleted post or discussion page can no
+   longer be opened, which makes the next steps harder.
+2. If removing a passage is enough, ask the author to edit it, or edit it yourself (admins may
+   edit any post, thread, reply or comment through the normal edit form). The platform keeps no
+   earlier versions of a text; the `post.updated` audit row records only which fields changed.
+3. If the item must go, use **Delete permanently** (see
+   [Delete permanently](#delete-permanently)). It removes the text from the database together with
+   its comments or replies. If the **title** itself contains the personal data, edit the title
+   first: the `moderation.purge` audit row keeps the title. Replies and comments are purged
+   through the API.
+4. **Check the attachments.** Purge removes only the images nothing else uses. If the photo is also
+   used in other content, edit or purge that content too. Once nothing uses the image, the uploader
+   can delete it from Account → Uploads; otherwise the next daily maintenance run removes it (see
+   [Uploads](#uploads)). An admin cannot look up an image's id from its address in the interface.
+   [CHECK]
+5. Write any hide reason without repeating the personal data: reasons stay in the audit log. The
+   reports on the item, with the reporters' free-text details, are kept.
+6. Record what was done and forward the request to the data controller contact,
+   **louta@uowm.gr** (University of Western Macedonia), who answers the requester.
 
 Requests about a member's own account (access, deletion) are self-service; see
 [admin-handbook.md](admin-handbook.md#13-gdpr-requests).
@@ -146,8 +229,8 @@ account deletion writes a row: when, action, actor (empty for system actions), t
 - Filter by action: an exact name (`moderation.approve`) or a prefix ending in a dot; quick chips
   for `moderation.`, `admin.`, `report.` and `auth.`.
 - Filter by actor id and target type (`post`, `thread`, `reply`, `comment`, `user`, `report`, …).
-- Useful actions: `moderation.approve|reject|hide|unhide|delete|restore`,
-  `moderation.auto_hidden`, `moderation.auto_approved`, `user.trusted`, `admin.promote`,
+- Useful actions: `moderation.approve|reject|hide|unhide|delete|restore|purge`,
+  `moderation.auto_hidden`, `moderation.auto_approved`, `upload.deleted`, `user.trusted`, `admin.promote`,
   `admin.demote`, `admin.ban`, `admin.unban`, `admin.trust`, `admin.untrust`,
   `report.create|resolve|dismiss`, `post.created|updated|deleted` (and the same for threads,
   replies, comments), `auth.login`, `auth.consent`, `auth.account_deleted`,
@@ -165,6 +248,8 @@ After the project ends, few admins may be active and new members could wait inde
   and thread that has been pending for more than N days and marks its author trusted;
 - the audit log shows `moderation.auto_approved` and `user.trusted` (reason `auto_approve`) with
   no actor;
+- the authors are emailed that their item was published automatically (see
+  [Emails to the author](#emails-to-the-author));
 - the age is measured from the item's creation time, so a never-approved item that is restored
   after N days is approved at the next run;
 - reports and automatic hiding keep working after auto-approval.
@@ -178,8 +263,8 @@ partnership]
 Daily (or when the digest arrives):
 
 - [ ] Open `/admin/queue`; approve or reject every pending item.
-- [ ] Open `/admin/reports` (status *open*); for each item decide: unhide, keep hidden, hide or
-      delete; then resolve or dismiss the reports.
+- [ ] Open `/admin/reports` (status *open*); for each item decide: unhide, keep hidden, hide,
+      delete or restore; then resolve or dismiss the reports.
 - [ ] Ban obvious spam accounts.
 
 Weekly:
