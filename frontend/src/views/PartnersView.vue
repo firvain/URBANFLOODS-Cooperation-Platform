@@ -88,12 +88,12 @@ const isEmpty = computed(
           <p v-else-if="isEmpty" class="text-gray-600">{{ t('partners.empty') }}</p>
 
           <section v-else aria-labelledby="partnership-heading" class="space-y-6">
-            <h2 id="partnership-heading" class="text-2xl font-bold text-secondary-600">
+            <h2 id="partnership-heading" class="text-2xl font-bold text-secondary">
               {{ t('partners.partnershipTitle') }}
             </h2>
 
             <div v-if="leadPartner">
-              <h3 class="mb-3 text-lg font-semibold text-secondary-600">
+              <h3 class="mb-3 text-lg font-semibold text-secondary">
                 {{ t('partners.leadPartner') }}
               </h3>
               <LeadPartnerCard
@@ -106,7 +106,7 @@ const isEmpty = computed(
             </div>
 
             <div v-if="projectPartners.length">
-              <h3 class="mb-3 text-lg font-semibold text-secondary-600">
+              <h3 class="mb-3 text-lg font-semibold text-secondary">
                 {{ t('partners.projectPartners') }}
               </h3>
               <ul
@@ -118,7 +118,7 @@ const isEmpty = computed(
             </div>
 
             <div v-if="associatedPartners.length">
-              <h3 class="mb-3 text-lg font-semibold text-secondary-600">
+              <h3 class="mb-3 text-lg font-semibold text-secondary">
                 {{ t('partners.associatedPartners') }}
               </h3>
               <ul

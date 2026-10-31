@@ -30,7 +30,7 @@ onMounted(async () => {
     aria-labelledby="kb-mentions-heading"
     class="space-y-3"
   >
-    <h2 id="kb-mentions-heading" class="text-lg font-semibold text-secondary-600">
+    <h2 id="kb-mentions-heading" class="text-lg font-semibold text-secondary">
       {{ t('knowbase.mentions.title') }}
     </h2>
     <ul class="space-y-2">

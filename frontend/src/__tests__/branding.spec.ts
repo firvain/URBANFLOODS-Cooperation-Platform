@@ -192,12 +192,13 @@ describe('About page', () => {
     expect(img!.classList.contains('min-w-[240px]')).toBe(true)
   })
 
-  it('links to the project website and the KNOWBASE in a new tab', async () => {
+  it('links to the project website (only) in a new tab', async () => {
     const main = await mountAbout()
     const hrefs = Array.from(main.querySelectorAll<HTMLAnchorElement>('a[target="_blank"]')).map(
       (a) => a.getAttribute('href'),
     )
-    expect(hrefs).toEqual([EXTERNAL_LINKS.project, EXTERNAL_LINKS.knowbase])
+    // No KNOWBASE link on About since 7b81dee ("no KNOWBASE link on About").
+    expect(hrefs).toEqual([EXTERNAL_LINKS.project])
     for (const link of main.querySelectorAll('a[target="_blank"]')) {
       expect(link.getAttribute('rel')).toContain('noopener')
       expect(link.querySelector('.sr-only')?.textContent?.trim()).toBe(t('a11y.opensInNewTab'))

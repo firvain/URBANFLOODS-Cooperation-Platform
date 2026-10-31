@@ -170,7 +170,7 @@ const initialLoading = computed(() => loading.value && !members.value.length && 
 
     <div class="grid gap-8 lg:grid-cols-[18rem_1fr]">
       <section aria-labelledby="network-filters-heading" class="space-y-4">
-        <h2 id="network-filters-heading" class="text-lg font-semibold text-secondary-600">
+        <h2 id="network-filters-heading" class="text-lg font-semibold text-secondary">
           {{ t('network.filters.title') }}
         </h2>
         <UFormField :label="t('network.filters.search')" name="q">

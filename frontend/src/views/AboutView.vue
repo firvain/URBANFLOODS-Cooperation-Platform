@@ -62,12 +62,12 @@ const outputs = computed(() =>
           </div>
 
           <section aria-labelledby="information-heading" class="border-b border-secondary-200 pb-6">
-            <h2 id="information-heading" class="mb-6 text-2xl font-bold text-secondary-600">
+            <h2 id="information-heading" class="mb-6 text-2xl font-bold text-secondary">
               {{ t('about.informationTitle') }}
             </h2>
 
             <div class="mb-6">
-              <h3 class="mb-2 text-sm font-semibold text-gray-500 uppercase">
+              <h3 class="mb-2 text-sm font-semibold text-muted uppercase">
                 {{ t('about.facts.acronym') }}
               </h3>
               <p class="text-3xl font-bold text-primary-600">{{ t('about.values.acronym') }}</p>
@@ -77,7 +77,7 @@ const outputs = computed(() =>
               data-testid="full-title"
               class="mb-8 rounded-lg border-l-4 border-primary-500 bg-primary-50 p-4"
             >
-              <h3 class="mb-2 text-sm font-semibold text-gray-500 uppercase">
+              <h3 class="mb-2 text-sm font-semibold text-muted uppercase">
                 {{ t('about.facts.fullTitle') }}
               </h3>
               <p class="text-lg leading-relaxed font-semibold text-gray-900">
@@ -91,7 +91,7 @@ const outputs = computed(() =>
               :class="['grid grid-cols-1 gap-6', row.cols, index > 0 && 'mt-6']"
             >
               <div v-for="key in row.keys" :key="key">
-                <h3 class="mb-2 text-sm font-semibold text-gray-500 uppercase">
+                <h3 class="mb-2 text-sm font-semibold text-muted uppercase">
                   {{ t(`about.facts.${key}`) }}
                 </h3>
                 <div v-if="key === 'priority'" class="flex items-center gap-3">
@@ -122,7 +122,7 @@ const outputs = computed(() =>
           </section>
 
           <section aria-labelledby="partners-heading">
-            <h3 id="partners-heading" class="mb-3 text-lg font-semibold text-secondary-600">
+            <h3 id="partners-heading" class="mb-3 text-lg font-semibold text-secondary">
               {{ t('about.partnersTitle') }}
             </h3>
             <LeadPartnerCard
@@ -137,11 +137,6 @@ const outputs = computed(() =>
               <p class="text-xs text-gray-600">{{ t('about.leadPartner.coordinatorRole') }}</p>
               <a
                 :href="coordinatorMailto"
-                :aria-label="
-                  t('about.leadPartner.emailLabel', {
-                    name: t('about.leadPartner.coordinatorName'),
-                  })
-                "
                 class="mt-1 inline-block text-primary-600 underline underline-offset-2 hover:text-primary-700"
               >
                 {{ coordinatorEmail }}
@@ -158,7 +153,7 @@ const outputs = computed(() =>
           </section>
 
           <section aria-labelledby="summary-heading">
-            <h3 id="summary-heading" class="mb-3 text-lg font-semibold text-secondary-600">
+            <h3 id="summary-heading" class="mb-3 text-lg font-semibold text-secondary">
               {{ t('about.summary.title') }}
             </h3>
             <div class="space-y-4 text-sm leading-relaxed text-gray-600">
@@ -178,7 +173,7 @@ const outputs = computed(() =>
           </section>
 
           <section aria-labelledby="links-heading">
-            <h3 id="links-heading" class="mb-3 text-lg font-semibold text-secondary-600">
+            <h3 id="links-heading" class="mb-3 text-lg font-semibold text-secondary">
               {{ t('about.links.title') }}
             </h3>
             <ul class="flex flex-col gap-2">

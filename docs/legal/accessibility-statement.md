@@ -32,15 +32,16 @@ The content listed below is not yet fully accessible, for the following reasons.
 
 ### 3.1 Non-conformities with WCAG 2.1 level AA
 
-- **Colour contrast.** Some badges, buttons, form placeholders and secondary labels do not yet
-  reach the minimum contrast ratio of 4.5:1 (success criterion 1.4.3). **[CHECK after 5d]**
-- **Avatar initials.** The coloured circles that show a member's initials when no picture is set
-  may not reach the minimum contrast ratio on every background colour (success criterion 1.4.3).
-  **[CHECK after 5d]**
-- **Link names.** On some pages the accessible name of an email link does not match its visible
-  text (success criterion 2.5.3). **[CHECK after 5d]**
+The colour-contrast, avatar-initials and link-name issues found in the first self-assessment were
+corrected on 31 October 2026 (text and button colours, placeholders, the focus indicator and the
+email link name now meet the required ratios on every page that was scanned). One item remains:
 
-We are correcting these issues and will update this statement when they are fixed.
+- **Hover state of some buttons.** While the pointer rests on a solid green or amber button (for
+  example "Approve" in the moderation queue), the component library lightens it and the white
+  label falls just below 4.5:1 (about 4.1:1; success criterion 1.4.3). The resting and focused
+  states are compliant.
+
+We are correcting this issue and will update this statement when it is fixed.
 
 ### 3.2 Content outside the scope of the applicable legislation or under the author's control
 

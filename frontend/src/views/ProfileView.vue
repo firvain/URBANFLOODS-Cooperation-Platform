@@ -123,15 +123,15 @@ const memberSince = computed(() => {
         <UCard>
           <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-[10rem_1fr]">
             <template v-if="organisation">
-              <dt class="font-semibold text-secondary-600">{{ t('profile.organisation') }}</dt>
+              <dt class="font-semibold text-secondary">{{ t('profile.organisation') }}</dt>
               <dd class="text-gray-800">{{ organisation }}</dd>
             </template>
             <template v-if="member.country">
-              <dt class="font-semibold text-secondary-600">{{ t('profile.country') }}</dt>
+              <dt class="font-semibold text-secondary">{{ t('profile.country') }}</dt>
               <dd class="text-gray-800"><PartnerCountry :code="member.country" /></dd>
             </template>
             <template v-if="member.expertise.length">
-              <dt class="font-semibold text-secondary-600">{{ t('profile.expertise') }}</dt>
+              <dt class="font-semibold text-secondary">{{ t('profile.expertise') }}</dt>
               <dd>
                 <ul data-testid="profile-expertise" class="flex flex-wrap gap-1.5">
                   <li v-for="tag in member.expertise" :key="tag.id">
@@ -141,7 +141,7 @@ const memberSince = computed(() => {
               </dd>
             </template>
             <template v-if="member.email">
-              <dt class="font-semibold text-secondary-600">{{ t('profile.email') }}</dt>
+              <dt class="font-semibold text-secondary">{{ t('profile.email') }}</dt>
               <dd>
                 <ExternalLink
                   :href="`mailto:${member.email}`"
@@ -155,7 +155,7 @@ const memberSince = computed(() => {
           </dl>
 
           <section v-if="member.bio" aria-labelledby="profile-bio-heading" class="mt-6">
-            <h2 id="profile-bio-heading" class="mb-2 text-lg font-semibold text-secondary-600">
+            <h2 id="profile-bio-heading" class="mb-2 text-lg font-semibold text-secondary">
               {{ t('profile.bio') }}
             </h2>
             <!-- Plain text from the member; line breaks kept, never rendered as HTML. -->

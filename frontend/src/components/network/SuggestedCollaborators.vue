@@ -46,7 +46,7 @@ const shown = computed(() => suggestions.value.slice(0, MAX_SHOWN))
   >
     <div class="flex flex-wrap items-end justify-between gap-2">
       <div>
-        <h2 id="suggested-heading" class="text-2xl font-bold text-secondary-600">
+        <h2 id="suggested-heading" class="text-2xl font-bold text-secondary">
           {{ t('network.suggested.title') }}
         </h2>
         <p class="mt-1 text-muted">{{ t('network.suggested.intro') }}</p>
@@ -95,7 +95,7 @@ const shown = computed(() => suggestions.value.slice(0, MAX_SHOWN))
         <p v-if="memberOrganisation(member)" class="truncate text-xs text-gray-700">
           {{ memberOrganisation(member) }}
         </p>
-        <p v-if="member.shared_expertise > 0" class="mt-1 text-xs font-medium text-secondary-700">
+        <p v-if="member.shared_expertise > 0" class="mt-1 text-xs font-medium text-secondary">
           {{
             t(
               'network.suggested.shared',

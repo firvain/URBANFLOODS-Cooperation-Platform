@@ -84,9 +84,11 @@ describe('AboutView', () => {
     expect(lead.text()).toContain(t('about.leadPartner.coordinatorRole'))
     const mail = lead.find('a[href^="mailto:"]')
     expect(mail.attributes('href')).toBe('mailto:louta@uowm.gr')
-    expect(mail.attributes('aria-label')).toBe(
-      t('about.leadPartner.emailLabel', { name: 'Prof. Malamati Louta' }),
-    )
+    // WCAG 2.5.3 label in name: the accessible name is the visible address (no aria-label that
+    // would replace it); the coordinator's name is the text right above the link.
+    expect(mail.attributes('aria-label')).toBeUndefined()
+    expect(mail.attributes('aria-labelledby')).toBeUndefined()
+    expect(mail.text()).toBe('louta@uowm.gr')
   })
 
   it('keeps the address out of the translation files and the template source', async () => {

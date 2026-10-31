@@ -272,7 +272,7 @@ defineExpose({
   height: auto;
 }
 .rich-text-editor :deep(.tiptap-content img.ProseMirror-selectednode) {
-  outline: 3px solid var(--color-secondary-500);
+  outline: 3px solid var(--focus-ring-color);
 }
 .rich-text-editor :deep(.tiptap-content hr) {
   border-color: var(--ui-border-accented);

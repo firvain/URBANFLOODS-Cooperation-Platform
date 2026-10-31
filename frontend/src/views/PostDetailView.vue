@@ -302,7 +302,7 @@ async function confirmDelete() {
         aria-labelledby="post-kb-heading"
         class="space-y-3"
       >
-        <h2 id="post-kb-heading" class="text-lg font-semibold text-secondary-700">
+        <h2 id="post-kb-heading" class="text-lg font-semibold text-secondary">
           {{ t('post.knowbase.title') }}
         </h2>
         <ul class="grid gap-3 sm:grid-cols-2">

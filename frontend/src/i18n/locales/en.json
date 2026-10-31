@@ -487,8 +487,7 @@
       "name": "University of Western Macedonia",
       "address": "Active Urban Planning Zone (ZEP) I, 50100 Kozani, Greece",
       "coordinatorName": "Prof. Malamati Louta",
-      "coordinatorRole": "Scientific coordinator",
-      "emailLabel": "Email {name}"
+      "coordinatorRole": "Scientific coordinator"
     },
     "summary": {
       "title": "Project summary",

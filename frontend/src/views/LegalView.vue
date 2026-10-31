@@ -45,7 +45,7 @@ const legal = computed(() => {
         :aria-label="t('legal.contents')"
         class="mb-8 rounded-lg border-l-4 border-primary-500 bg-primary-50 p-4"
       >
-        <p class="mb-2 text-sm font-semibold text-gray-500 uppercase" aria-hidden="true">
+        <p class="mb-2 text-sm font-semibold text-muted uppercase" aria-hidden="true">
           {{ t('legal.contents') }}
         </p>
         <ul class="grid gap-x-6 gap-y-1.5 sm:grid-cols-2" lang="en">
@@ -154,7 +154,7 @@ const legal = computed(() => {
 }
 
 .legal-prose :deep(.legal-table:focus-visible) {
-  outline: 3px solid var(--color-secondary-500);
+  outline: 3px solid var(--focus-ring-color);
   outline-offset: 2px;
 }
 

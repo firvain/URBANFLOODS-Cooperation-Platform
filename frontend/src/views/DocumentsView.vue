@@ -146,7 +146,7 @@ const { items, total, loading, failed, initialLoading, load } = useKnowbaseList(
 
     <div class="grid gap-8 lg:grid-cols-[18rem_1fr]">
       <section aria-labelledby="kb-filters-heading" class="space-y-4">
-        <h2 id="kb-filters-heading" class="text-lg font-semibold text-secondary-600">
+        <h2 id="kb-filters-heading" class="text-lg font-semibold text-secondary">
           {{ t('knowbase.filters.title') }}
         </h2>
         <UFormField :label="t('knowbase.filters.search')" name="q">
