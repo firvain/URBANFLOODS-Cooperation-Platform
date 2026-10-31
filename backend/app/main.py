@@ -6,7 +6,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1.endpoints import admin, auth, expertise, health, members, organisations
+from app.api.v1.endpoints import (
+    admin,
+    auth,
+    expertise,
+    health,
+    knowbase,
+    members,
+    organisations,
+)
 from app.core.config import settings
 from app.core.csrf import CSRFMiddleware
 from app.core.exceptions import register_exception_handlers
@@ -14,12 +22,17 @@ from app.core.logging import REQUEST_ID_HEADER, RequestIdMiddleware, configure_l
 from app.core.rate_limit import RateLimitMiddleware
 from app.db import session as db_session
 from app.services import turnstile
+from app.services.knowbase import KnowbaseClient
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging(settings)
-    yield
+    app.state.knowbase = KnowbaseClient()
+    try:
+        yield
+    finally:
+        await app.state.knowbase.aclose()
     await turnstile.aclose_client()
     await db_session.engine.dispose()
 
@@ -68,6 +81,9 @@ def create_app() -> FastAPI:
     )
     app.include_router(members.router, prefix=f"{settings.API_V1_PREFIX}/members", tags=["members"])
     app.include_router(admin.router, prefix=f"{settings.API_V1_PREFIX}/admin", tags=["admin"])
+    app.include_router(
+        knowbase.router, prefix=f"{settings.API_V1_PREFIX}/knowbase", tags=["knowbase"]
+    )
 
     return app
 

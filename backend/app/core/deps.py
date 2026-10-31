@@ -26,6 +26,7 @@ from app.crud import session as crud_session
 from app.db.enums import UserRole
 from app.db.models import User
 from app.db.session import AsyncSessionLocal
+from app.services.knowbase import KnowbaseClient
 
 CLIENT_IP_HEADER = "CF-Connecting-IP"
 # Raw session tokens are 43 characters; anything far longer is not ours and is not looked up.
@@ -142,3 +143,15 @@ async def require_superadmin(user: AdminUser) -> User:
 
 
 SuperadminUser = Annotated[User, Depends(require_superadmin)]
+
+
+# --- KNOWBASE ---------------------------------------------------------------------------------
+
+
+def get_knowbase(request: Request) -> KnowbaseClient:
+    """The app's KNOWBASE proxy client (created in the lifespan)."""
+    client: KnowbaseClient = request.app.state.knowbase
+    return client
+
+
+Knowbase = Annotated[KnowbaseClient, Depends(get_knowbase)]
