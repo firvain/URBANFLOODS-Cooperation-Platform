@@ -36,6 +36,17 @@ const sections: { key: string; icon: string; to?: string; external?: string }[] 
   { key: 'knowbase', icon: 'i-lucide-library', external: EXTERNAL_LINKS.knowbase },
 ]
 
+/**
+ * "Project at a Glance" (modelled on the KNOWBASE home page): the project facts from `about.*`,
+ * the programme period and the partnership size from `home.glance.*`.
+ */
+const GLANCE_FACTS = [
+  { label: 'home.glance.period', value: 'home.glance.periodValue' },
+  { label: 'home.glance.duration', value: 'about.values.dates' },
+  { label: 'about.facts.totalBudget', value: 'about.values.totalBudget' },
+  { label: 'about.facts.interregFunds', value: 'about.values.interregFunds', accent: true },
+] as const
+
 // The site's schema.org WebSite entry, with the search box search engines may offer.
 usePageHead(() => ({
   title: t('app.title'),
@@ -62,76 +73,140 @@ usePageHead(() => ({
 
 <template>
   <UContainer class="py-12">
-    <h1 tabindex="-1" class="text-3xl font-bold text-highlighted focus:outline-none sm:text-4xl">
-      {{ t('home.title') }}
-    </h1>
-    <p class="mt-4 max-w-3xl text-lg text-muted">{{ t('home.intro') }}</p>
+    <!--
+      Hero: heading, intro and the section cards on the left; from lg the glance card is a second
+      column spanning both rows. Below lg it follows the intro (DOM order) and precedes the cards.
+    -->
+    <div class="grid gap-x-8 lg:grid-cols-[minmax(0,1fr)_26rem] lg:grid-rows-[auto_1fr]">
+      <div class="lg:col-start-1 lg:row-start-1">
+        <h1
+          tabindex="-1"
+          class="text-3xl font-bold text-highlighted focus:outline-none sm:text-4xl"
+        >
+          {{ t('home.title') }}
+        </h1>
+        <p class="mt-4 max-w-3xl text-lg text-muted">{{ t('home.intro') }}</p>
+      </div>
 
-    <CompleteProfileBanner class="mt-8" />
-
-    <!-- Two rows of two: Blog and Forum, then the KNOWBASE and the Unified DSS (user decision). -->
-    <ul class="mt-10 grid gap-6 md:grid-cols-2">
-      <li v-for="section in sections" :key="section.key" :data-testid="`home-card-${section.key}`">
+      <section
+        aria-labelledby="glance-heading"
+        data-testid="home-glance"
+        class="mt-8 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0"
+      >
         <UCard class="h-full" :ui="CARD_UI">
           <template #header>
-            <h2 class="flex items-center gap-2 text-lg font-semibold text-primary-800">
-              <span :class="ICON_DISC"
-                ><UIcon :name="section.icon" class="size-4" aria-hidden="true"
-              /></span>
-              <ULink
-                v-if="section.to"
-                :to="section.to"
-                raw
-                class="text-primary-700 underline-offset-2 hover:underline focus-visible:underline"
+            <h2 id="glance-heading" class="text-lg font-semibold text-secondary">
+              {{ t('home.glance.title') }}
+            </h2>
+          </template>
+          <div
+            data-testid="glance-title"
+            class="rounded-lg border-l-4 border-primary-500 bg-primary-50 p-4"
+          >
+            <p class="text-sm leading-relaxed font-semibold text-gray-900">
+              {{ t('about.values.fullTitle') }}
+            </p>
+            <p data-testid="glance-acronym" class="mt-2 text-3xl font-bold text-primary-700">
+              {{ t('about.values.acronym') }}
+            </p>
+          </div>
+          <dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+            <div v-for="fact in GLANCE_FACTS" :key="fact.label">
+              <dt class="text-xs font-semibold text-muted uppercase">{{ t(fact.label) }}</dt>
+              <dd
+                :class="[
+                  'mt-0.5 font-bold',
+                  'accent' in fact && fact.accent ? 'text-secondary' : 'text-highlighted',
+                ]"
               >
-                {{ t(`home.cards.${section.key}.title`) }}
-              </ULink>
-              <template v-else>{{ t(`home.cards.${section.key}.title`) }}</template>
-            </h2>
-          </template>
-          <div class="flex h-full flex-col gap-4">
-            <p class="text-muted">{{ t(`home.cards.${section.key}.description`) }}</p>
-            <UButton
-              v-if="section.external"
-              :to="section.external"
-              target="_blank"
-              rel="noopener noreferrer"
-              trailing-icon="i-lucide-arrow-up-right"
-              class="self-start"
-            >
-              {{ t(`home.cards.${section.key}.open`) }}
-              <span class="sr-only">{{ ` ${t('a11y.opensInNewTab')}` }}</span>
-            </UButton>
-          </div>
+                {{ t(fact.value) }}
+              </dd>
+            </div>
+            <div class="col-span-2 border-t border-default pt-3">
+              <dt class="text-xs font-semibold text-muted uppercase">
+                {{ t('partners.partnershipTitle') }}
+              </dt>
+              <dd class="mt-0.5 font-bold text-highlighted">
+                {{ t('home.glance.partnershipValue') }}
+              </dd>
+            </div>
+          </dl>
+          <UButton to="/about" block class="mt-5">{{ t('home.glance.learnMore') }}</UButton>
         </UCard>
-      </li>
+      </section>
 
-      <li v-if="dss" data-testid="dss-card">
-        <UCard class="h-full" :ui="CARD_UI">
-          <template #header>
-            <h2 class="flex items-center gap-2 text-lg font-semibold text-primary-800">
-              <span :class="ICON_DISC"
-                ><UIcon name="i-lucide-map" class="size-4" aria-hidden="true"
-              /></span>
-              {{ t('home.dss.title') }}
-            </h2>
-          </template>
-          <div class="flex h-full flex-col gap-4">
-            <p class="text-muted">{{ t('home.dss.description') }}</p>
-            <UButton
-              :to="dss"
-              target="_blank"
-              rel="noopener noreferrer"
-              trailing-icon="i-lucide-arrow-up-right"
-              class="self-start"
-            >
-              {{ t('home.dss.open') }}
-              <span class="sr-only">{{ ` ${t('a11y.opensInNewTab')}` }}</span>
-            </UButton>
-          </div>
-        </UCard>
-      </li>
-    </ul>
+      <div class="lg:col-start-1 lg:row-start-2">
+        <CompleteProfileBanner class="mt-8" />
+
+        <!-- Two rows of two: Blog and Forum, then the KNOWBASE and the Unified DSS (user decision). -->
+        <ul class="mt-10 grid gap-6 md:grid-cols-2">
+          <li
+            v-for="section in sections"
+            :key="section.key"
+            :data-testid="`home-card-${section.key}`"
+          >
+            <UCard class="h-full" :ui="CARD_UI">
+              <template #header>
+                <h2 class="flex items-center gap-2 text-lg font-semibold text-primary-800">
+                  <span :class="ICON_DISC"
+                    ><UIcon :name="section.icon" class="size-4" aria-hidden="true"
+                  /></span>
+                  <ULink
+                    v-if="section.to"
+                    :to="section.to"
+                    raw
+                    class="text-primary-700 underline-offset-2 hover:underline focus-visible:underline"
+                  >
+                    {{ t(`home.cards.${section.key}.title`) }}
+                  </ULink>
+                  <template v-else>{{ t(`home.cards.${section.key}.title`) }}</template>
+                </h2>
+              </template>
+              <div class="flex h-full flex-col gap-4">
+                <p class="text-muted">{{ t(`home.cards.${section.key}.description`) }}</p>
+                <UButton
+                  v-if="section.external"
+                  :to="section.external"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  trailing-icon="i-lucide-arrow-up-right"
+                  class="self-start"
+                >
+                  {{ t(`home.cards.${section.key}.open`) }}
+                  <span class="sr-only">{{ ` ${t('a11y.opensInNewTab')}` }}</span>
+                </UButton>
+              </div>
+            </UCard>
+          </li>
+
+          <li v-if="dss" data-testid="dss-card">
+            <UCard class="h-full" :ui="CARD_UI">
+              <template #header>
+                <h2 class="flex items-center gap-2 text-lg font-semibold text-primary-800">
+                  <span :class="ICON_DISC"
+                    ><UIcon name="i-lucide-map" class="size-4" aria-hidden="true"
+                  /></span>
+                  {{ t('home.dss.title') }}
+                </h2>
+              </template>
+              <div class="flex h-full flex-col gap-4">
+                <p class="text-muted">{{ t('home.dss.description') }}</p>
+                <UButton
+                  :to="dss"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  trailing-icon="i-lucide-arrow-up-right"
+                  class="self-start"
+                >
+                  {{ t('home.dss.open') }}
+                  <span class="sr-only">{{ ` ${t('a11y.opensInNewTab')}` }}</span>
+                </UButton>
+              </div>
+            </UCard>
+          </li>
+        </ul>
+      </div>
+    </div>
 
     <SuggestedCollaborators v-if="isVerified" class="mt-12" />
   </UContainer>

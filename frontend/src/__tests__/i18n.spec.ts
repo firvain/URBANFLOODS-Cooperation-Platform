@@ -60,7 +60,6 @@ describe('locale files', () => {
       'nav.blog',
       'nav.forum',
       'nav.knowbase',
-      'nav.partners',
       'nav.login',
       'nav.register',
       'app.title',
@@ -82,6 +81,14 @@ describe('locale files', () => {
 
   it('no locale keeps the removed KNOWBASE Library page keys (user decision 2026-10-31)', () => {
     const removed = ['knowbase.title', 'knowbase.intro', 'knowbase.toolkit.title']
+    for (const [path, messages] of Object.entries(localeFiles)) {
+      const flat = flatten(messages)
+      for (const key of removed) expect(flat[key], `${path} ${key}`).toBeUndefined()
+    }
+  })
+
+  it('no locale keeps the keys of the removed Partners page (merged into About, 2026-10-31)', () => {
+    const removed = ['nav.partners', 'partners.title', 'about.partnersTitle', 'about.partnersLink']
     for (const [path, messages] of Object.entries(localeFiles)) {
       const flat = flatten(messages)
       for (const key of removed) expect(flat[key], `${path} ${key}`).toBeUndefined()

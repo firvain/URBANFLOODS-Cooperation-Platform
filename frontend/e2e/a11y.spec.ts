@@ -23,7 +23,6 @@ import {
  */
 const PUBLIC_PAGES = [
   '/',
-  '/partners',
   '/about',
   '/login',
   '/register',

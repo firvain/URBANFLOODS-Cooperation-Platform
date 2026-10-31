@@ -15,7 +15,6 @@
     "blog": "Блог",
     "forum": "Форум",
     "knowbase": "KNOWBASE",
-    "partners": "Партнери",
     "network": "Мрежа",
     "dss": "Unified DSS",
     "about": "За нас",
@@ -46,6 +45,14 @@
       "title": "URBANFLOODS DSS",
       "description": "Пристапете до Системот за поддршка при одлучување развиен од URBANFLOODS за управување со поплави.",
       "open": "Отвори го DSS"
+    },
+    "glance": {
+      "title": "Проектот накратко",
+      "period": "Период",
+      "periodValue": "2021 – 2027",
+      "duration": "Времетраење",
+      "partnershipValue": "11 партнери од 8 земји",
+      "learnMore": "Дознајте повеќе"
     }
   },
   "blog": {
@@ -298,7 +305,6 @@
     }
   },
   "partners": {
-    "title": "Партнери",
     "partnershipTitle": "Партнерство",
     "leadPartner": "Водечки партнер",
     "leadBadge": "ВОДЕЧКИ",
@@ -449,7 +455,6 @@
       "interregFunds": "EUR 1.485.445,68"
     },
     "priorityIconAlt": "Икона на Приоритет 2 на Interreg IPA ADRION",
-    "partnersTitle": "Партнери",
     "leadPartner": {
       "name": "Универзитет на Западна Македонија",
       "address": "Зона на активно урбанистичко планирање (ZEP) I, 50100 Козани, Грција",
@@ -489,8 +494,7 @@
       "title": "Дознајте повеќе",
       "project": "Веб-страница на проектот URBANFLOODS",
       "knowbase": "URBANFLOODS KNOWBASE"
-    },
-    "partnersLink": "Видете ги партнерите на проектот"
+    }
   },
   "legal": {
     "termsTitle": "Услови за користење",

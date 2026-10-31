@@ -128,3 +128,83 @@ describe('HomeView head', () => {
     expect(document.title).toBe(i18n.global.t('app.title'))
   })
 })
+
+describe('HomeView "Project at a Glance" card (modelled on the KNOWBASE home page)', () => {
+  const t = i18n.global.t
+  const glance = () => document.querySelector<HTMLElement>('[data-testid="home-glance"]')
+
+  it('has an h2 in the olive heading colour inside a card with the green top edge', async () => {
+    mockApi()
+    await mountWithApp(HomeView)
+    const card = glance()
+    expect(card).not.toBeNull()
+    const heading = card!.querySelector('h2')!
+    expect(heading.textContent?.trim()).toBe('Project at a Glance')
+    expect(heading.classList.contains('text-secondary')).toBe(true)
+    expect(card!.getAttribute('aria-labelledby')).toBe(heading.id)
+    expect(card!.querySelector('.border-t-secondary-500')).not.toBeNull()
+  })
+
+  it('shows the full title and the acronym in the highlight box', async () => {
+    mockApi()
+    await mountWithApp(HomeView)
+    const box = glance()!.querySelector('[data-testid="glance-title"]')!
+    expect(box.className).toContain('bg-primary-50')
+    expect(box.className).toContain('border-l-4')
+    expect(box.className).toContain('border-primary-500')
+    expect(box.textContent).toContain(t('about.values.fullTitle'))
+    const acronym = box.querySelector('[data-testid="glance-acronym"]')!
+    expect(acronym.textContent?.trim()).toBe('URBANFLOODS')
+    expect(acronym.className).toMatch(/text-primary-\d00/)
+    expect(acronym.className).toContain('font-bold')
+  })
+
+  it('lists the facts as label/value pairs, the Interreg funds in the olive accent', async () => {
+    mockApi()
+    await mountWithApp(HomeView)
+    const pairs = Array.from(glance()!.querySelectorAll('dl dt')).map((dt) => [
+      dt.textContent?.trim(),
+      dt.nextElementSibling?.textContent?.trim(),
+    ])
+    expect(pairs).toEqual([
+      ['Period', '2021 – 2027'],
+      ['Duration', t('about.values.dates')],
+      [t('about.facts.totalBudget'), t('about.values.totalBudget')],
+      [t('about.facts.interregFunds'), t('about.values.interregFunds')],
+      [t('partners.partnershipTitle'), '11 partners from 8 countries'],
+    ])
+    const funds = Array.from(glance()!.querySelectorAll('dd'))[3]!
+    expect(funds.classList.contains('text-secondary')).toBe(true)
+  })
+
+  it('ends with a full-width "Learn more" link to /about', async () => {
+    mockApi()
+    await mountWithApp(HomeView)
+    const link = glance()!.querySelector('a[href="/about"]')!
+    expect(link).not.toBeNull()
+    expect(link.textContent?.trim()).toBe('Learn more')
+    expect(link.className).toContain('w-full')
+  })
+
+  it('comes after the intro and before the section cards; one h1, headings in order', async () => {
+    mockApi()
+    const { wrapper } = await mountWithApp(HomeView)
+    const intro = wrapper.find('h1 + p').element
+    const cards = wrapper.find('[data-testid="home-card-blog"]').element
+    expect(intro.compareDocumentPosition(glance()!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(glance()!.compareDocumentPosition(cards) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const levels = wrapper.findAll('h1, h2, h3, h4').map((h) => Number(h.element.tagName[1]))
+    expect(levels.filter((l) => l === 1)).toHaveLength(1)
+    for (let i = 1; i < levels.length; i++)
+      expect(levels[i]! - levels[i - 1]!).toBeLessThanOrEqual(1)
+  })
+
+  it('sits in its own column from lg, spanning the hero', async () => {
+    mockApi()
+    await mountWithApp(HomeView)
+    const grid = glance()!.parentElement!
+    expect(grid.className).toContain('lg:grid-cols-[minmax(0,1fr)_26rem]')
+    expect(glance()!.className).toContain('lg:col-start-2')
+    expect(glance()!.className).toContain('lg:row-span-2')
+  })
+})

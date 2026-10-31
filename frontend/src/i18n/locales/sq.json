@@ -15,7 +15,6 @@
     "blog": "Blogu",
     "forum": "Forumi",
     "knowbase": "KNOWBASE",
-    "partners": "Partnerët",
     "network": "Rrjeti",
     "dss": "Unified DSS",
     "about": "Rreth nesh",
@@ -46,6 +45,14 @@
       "title": "URBANFLOODS DSS",
       "description": "Qasuni në Sistemin e Mbështetjes së Vendimmarrjes të zhvilluar nga URBANFLOODS për menaxhimin e përmbytjeve.",
       "open": "Hap DSS"
+    },
+    "glance": {
+      "title": "Projekti me një vështrim",
+      "period": "Periudha",
+      "periodValue": "2021 – 2027",
+      "duration": "Kohëzgjatja",
+      "partnershipValue": "11 partnerë nga 8 vende",
+      "learnMore": "Mësoni më shumë"
     }
   },
   "blog": {
@@ -298,7 +305,6 @@
     }
   },
   "partners": {
-    "title": "Partnerët",
     "partnershipTitle": "Partneriteti",
     "leadPartner": "Partneri drejtues",
     "leadBadge": "DREJTUES",
@@ -449,7 +455,6 @@
       "interregFunds": "EUR 1.485.445,68"
     },
     "priorityIconAlt": "Ikona e Prioritetit 2 të Interreg IPA ADRION",
-    "partnersTitle": "Partnerët",
     "leadPartner": {
       "name": "Universiteti i Maqedonisë Perëndimore",
       "address": "Zona e Planifikimit Urban Aktiv (ZEP) I, 50100 Kozani, Greqi",
@@ -489,8 +494,7 @@
       "title": "Mësoni më shumë",
       "project": "Faqja e internetit e projektit URBANFLOODS",
       "knowbase": "URBANFLOODS KNOWBASE"
-    },
-    "partnersLink": "Shihni partnerët e projektit"
+    }
   },
   "legal": {
     "termsTitle": "Kushtet e përdorimit",

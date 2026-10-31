@@ -113,10 +113,11 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'search.title' },
   },
   {
+    // The partners are a section of the About page (user decision 2026-10-31); the route and its
+    // name stay so old links and bookmarks land on that section.
     path: '/partners',
     name: 'partners',
-    component: () => import('@/views/PartnersView.vue'),
-    meta: { title: 'nav.partners' },
+    redirect: { name: 'about', hash: '#partnership' },
   },
   {
     path: '/network',
@@ -310,7 +311,7 @@ export async function authGuard(to: RouteLocationNormalized): Promise<RouteLocat
 
 /**
  * Back/forward restores the saved position; a `#hash` scrolls to that element (in-page links on
- * the legal pages) below the sticky header; anything else starts at the top.
+ * the legal pages, `/about#partnership`) below the sticky header; anything else starts at the top.
  */
 export function scrollBehavior(
   to: RouteLocationNormalized,

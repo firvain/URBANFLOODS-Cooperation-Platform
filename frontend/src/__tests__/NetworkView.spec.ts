@@ -314,7 +314,7 @@ describe('NetworkView', () => {
       expect(callsTo(fetchMock, MEMBERS)).toHaveLength(0)
       expect(notice()?.textContent).toContain(t('network.restricted.signIn'))
       expect(notice()?.querySelector('a[href="/login?next=/network"]')).not.toBeNull()
-      expect(notice()?.querySelector('a[href="/partners"]')?.textContent).toContain(
+      expect(notice()?.querySelector('a[href="/about#partnership"]')?.textContent).toContain(
         t('network.restricted.partners'),
       )
       expect(wrapper.find('#network-filters-heading').exists()).toBe(false)

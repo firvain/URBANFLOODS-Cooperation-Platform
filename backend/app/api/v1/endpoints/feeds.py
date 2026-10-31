@@ -42,7 +42,6 @@ STATIC_PATHS = (
     "/",
     "/blog",
     "/forum",
-    "/partners",
     "/network",
     "/about",
     "/terms",

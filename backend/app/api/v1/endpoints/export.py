@@ -255,7 +255,7 @@ async def datapackage() -> JSONResponse:
         contributors=[
             DataPackageContributor(
                 title="URBANFLOODS project partnership",
-                path=frontend_url("/partners"),
+                path=frontend_url("/about#partnership"),
                 roles=["publisher"],
             ),
             DataPackageContributor(

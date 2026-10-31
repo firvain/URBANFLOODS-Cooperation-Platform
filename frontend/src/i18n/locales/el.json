@@ -15,7 +15,6 @@
     "blog": "Ιστολόγιο",
     "forum": "Φόρουμ",
     "knowbase": "KNOWBASE",
-    "partners": "Εταίροι",
     "network": "Δίκτυο",
     "dss": "Unified DSS",
     "about": "Σχετικά",
@@ -46,6 +45,14 @@
       "title": "URBANFLOODS DSS",
       "description": "Πρόσβαση στο Σύστημα Υποστήριξης Αποφάσεων που ανέπτυξε το URBANFLOODS για τη διαχείριση πλημμυρών.",
       "open": "Άνοιγμα του DSS"
+    },
+    "glance": {
+      "title": "Το έργο με μια ματιά",
+      "period": "Περίοδος",
+      "periodValue": "2021 – 2027",
+      "duration": "Διάρκεια",
+      "partnershipValue": "11 εταίροι από 8 χώρες",
+      "learnMore": "Μάθετε περισσότερα"
     }
   },
   "blog": {
@@ -298,7 +305,6 @@
     }
   },
   "partners": {
-    "title": "Εταίροι",
     "partnershipTitle": "Σύμπραξη",
     "leadPartner": "Επικεφαλής εταίρος",
     "leadBadge": "ΕΠΙΚΕΦΑΛΗΣ",
@@ -449,7 +455,6 @@
       "interregFunds": "EUR 1.485.445,68"
     },
     "priorityIconAlt": "Εικονίδιο της Προτεραιότητας 2 του Interreg IPA ADRION",
-    "partnersTitle": "Εταίροι",
     "leadPartner": {
       "name": "Πανεπιστήμιο Δυτικής Μακεδονίας",
       "address": "Ζώνη Ενεργού Πολεοδομίας (ΖΕΠ) Ι, 50100 Κοζάνη, Ελλάδα",
@@ -489,8 +494,7 @@
       "title": "Μάθετε περισσότερα",
       "project": "Ιστότοπος του έργου URBANFLOODS",
       "knowbase": "KNOWBASE του URBANFLOODS"
-    },
-    "partnersLink": "Δείτε τους εταίρους του έργου"
+    }
   },
   "legal": {
     "termsTitle": "Όροι χρήσης",

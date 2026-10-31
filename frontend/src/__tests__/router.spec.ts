@@ -1,12 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, RouterView, type RouteLocationNormalized } from 'vue-router'
-import { createPinia } from 'pinia'
+import { createPinia, setActivePinia } from 'pinia'
 import ui from '@nuxt/ui/vue-plugin'
 import { defineComponent, h } from 'vue'
 
 import i18n from '@/i18n'
 import { createAppRouter, scrollBehavior } from '@/router'
+import { mockApi } from './helpers/api'
 import { mountApp, unmountAll } from './helpers/mount'
 
 const t = i18n.global.t
@@ -16,7 +17,6 @@ describe('routes', () => {
 
   it.each([
     ['/', 'home'],
-    ['/partners', 'partners'],
     ['/about', 'about'],
     ['/network', 'network'],
     ['/u/5', 'profile'],
@@ -45,6 +45,28 @@ describe('routes', () => {
     const title = resolved.meta.title
     expect(typeof title).toBe('string')
     expect(i18n.global.te(title as string, 'en')).toBe(true)
+  })
+})
+
+describe('/partners (merged into the About page, user decision 2026-10-31)', () => {
+  it('keeps the route name and redirects to the partnership section of /about', async () => {
+    setActivePinia(createPinia())
+    mockApi()
+    const router = createAppRouter(createMemoryHistory())
+    expect(router.resolve({ name: 'partners' }).path).toBe('/partners')
+    await router.push('/partners')
+    expect(router.currentRoute.value.name).toBe('about')
+    expect(router.currentRoute.value.path).toBe('/about')
+    expect(router.currentRoute.value.hash).toBe('#partnership')
+  })
+
+  it('scrolls to the section below the sticky header', () => {
+    const router = createAppRouter(createMemoryHistory())
+    document.body.innerHTML = '<header></header>'
+    Object.defineProperty(document.querySelector('header')!, 'offsetHeight', { value: 64 })
+    const to = router.resolve('/about#partnership') as unknown as RouteLocationNormalized
+    expect(scrollBehavior(to, to, null)).toEqual({ el: '#partnership', top: 80 })
+    document.body.innerHTML = ''
   })
 })
 

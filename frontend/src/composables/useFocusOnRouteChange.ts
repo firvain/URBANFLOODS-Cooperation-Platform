@@ -24,7 +24,9 @@ export function useFocusOnRouteChange() {
     if (withoutHash(to.fullPath) === withoutHash(from.fullPath)) return
     await nextTick()
     const heading = document.querySelector<HTMLElement>('main h1[tabindex="-1"]')
-    heading?.focus()
+    // A new page opened at a `#hash` (e.g. `/about#partnership`): the router has scrolled to the
+    // target; focusing the h1 must not scroll back to the top.
+    heading?.focus(to.hash ? { preventScroll: true } : undefined)
     // The route title, not `document.title`: unhead writes the `<head>` asynchronously.
     announcement.value = pageTitle(to.meta.title)
   })

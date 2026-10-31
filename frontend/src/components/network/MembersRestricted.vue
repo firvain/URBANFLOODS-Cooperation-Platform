@@ -9,7 +9,7 @@ import { useAuthStore } from '@/stores/auth'
 /**
  * Shown in place of member data (the directory, a profile) to visitors who may not see it: a
  * sign-in link (back to this page) for anonymous visitors, a verify-your-email notice for
- * unverified users. `partners` adds a link to the public partner organisations.
+ * unverified users. `partners` adds a link to the public partner organisations (the About page's partnership section).
  */
 defineProps<{ partners?: boolean }>()
 
@@ -42,7 +42,7 @@ const loginTo = computed(() => ({ name: 'login', query: { next: route.fullPath }
     />
     <p v-if="partners" class="text-sm">
       <ULink
-        to="/partners"
+        to="/about#partnership"
         raw
         class="text-primary-700 underline underline-offset-2 hover:text-primary-800"
       >

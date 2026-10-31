@@ -15,7 +15,6 @@
     "blog": "Blog",
     "forum": "Forum",
     "knowbase": "KNOWBASE",
-    "partners": "Partner",
     "network": "Rete",
     "dss": "Unified DSS",
     "about": "Il progetto",
@@ -46,6 +45,14 @@
       "title": "URBANFLOODS DSS",
       "description": "Consulta il sistema di supporto alle decisioni sviluppato da URBANFLOODS per la gestione delle alluvioni.",
       "open": "Apri il DSS"
+    },
+    "glance": {
+      "title": "Il progetto in breve",
+      "period": "Periodo",
+      "periodValue": "2021 – 2027",
+      "duration": "Durata",
+      "partnershipValue": "11 partner da 8 paesi",
+      "learnMore": "Per saperne di più"
     }
   },
   "blog": {
@@ -298,7 +305,6 @@
     }
   },
   "partners": {
-    "title": "Partner",
     "partnershipTitle": "Partenariato",
     "leadPartner": "Partner capofila",
     "leadBadge": "CAPOFILA",
@@ -449,7 +455,6 @@
       "interregFunds": "EUR 1.485.445,68"
     },
     "priorityIconAlt": "Icona della Priorità 2 di Interreg IPA ADRION",
-    "partnersTitle": "Partner",
     "leadPartner": {
       "name": "Università della Macedonia Occidentale",
       "address": "Zona di urbanizzazione attiva (ZEP) I, 50100 Kozani, Grecia",
@@ -489,8 +494,7 @@
       "title": "Per saperne di più",
       "project": "Sito web del progetto URBANFLOODS",
       "knowbase": "URBANFLOODS KNOWBASE"
-    },
-    "partnersLink": "Vedi i partner del progetto"
+    }
   },
   "legal": {
     "termsTitle": "Condizioni d'uso",

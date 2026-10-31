@@ -5,7 +5,7 @@ import { extractLink, waitForEmailTo } from './helpers/mailpit'
 
 /**
  * M1 auth flow against the real dev stack: register → Mailpit → verify → account → change
- * password → log out → log in → partners; plus wrong-password and forgot-password flows.
+ * password → log out → log in → partnership (/partners → /about#partnership); plus wrong-password and forgot-password flows.
  * The tests share one page (and so one session cookie) and run in order.
  */
 test.describe.configure({ mode: 'serial' })
@@ -121,9 +121,11 @@ test('5. log in with the new password', async () => {
   await expect(loginLink(page)).toHaveCount(0)
 })
 
-test('6. partners page lists the live organisations', async () => {
+test('6. /partners opens the partnership section of About with the live organisations', async () => {
   await page.goto('/partners')
-  await expect(page.getByRole('heading', { level: 1, name: 'Partners' })).toBeVisible()
+  await expect(page).toHaveURL(/\/about#partnership$/)
+  await expect(page.getByRole('heading', { level: 1, name: 'About URBANFLOODS' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 2, name: 'Partnership' })).toBeInViewport()
 
   const lead = page.getByTestId('lead-partner')
   await expect(lead).toContainText(LEAD_PARTNER)

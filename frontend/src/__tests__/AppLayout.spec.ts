@@ -336,6 +336,17 @@ describe('focus management', () => {
     expect(document.activeElement?.tagName).not.toBe('H1')
   })
 
+  it('focuses the h1 without scrolling away from a #hash target on another page', async () => {
+    const { router } = await mountApp('/')
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    await router.push('/about#partnership')
+    await flushPromises()
+    const h1 = document.querySelector('main h1')
+    expect(document.activeElement).toBe(h1)
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+    focus.mockRestore()
+  })
+
   it('does not steal focus on the initial load', async () => {
     await mountApp('/')
     expect(document.activeElement?.tagName).not.toBe('H1')
@@ -365,7 +376,7 @@ describe('main navigation and the Unified DSS', () => {
   }
   const label = (a: Element) => a.textContent?.replace(t('a11y.opensInNewTab'), '').trim()
 
-  it('orders the items Home, Blog, Forum, Network, KNOWBASE, Unified DSS, Partners, About', async () => {
+  it('orders the items Home, Blog, Forum, Network, KNOWBASE, Unified DSS, About', async () => {
     vi.stubEnv('VITE_DSS_URL', DSS)
     await mountApp()
     expect(t('nav.network')).toBe('Network')
@@ -378,7 +389,6 @@ describe('main navigation and the Unified DSS', () => {
       t('nav.network'),
       t('nav.knowbase'),
       t('nav.dss'),
-      t('nav.partners'),
       t('nav.about'),
     ])
     expect(t('nav.forum')).toBe('Forum')
@@ -438,7 +448,6 @@ describe('main navigation and the Unified DSS', () => {
       t('nav.forum'),
       t('nav.network'),
       t('nav.knowbase'),
-      t('nav.partners'),
       t('nav.about'),
     ])
     expect(document.querySelector('[data-testid="dss-card"]')).toBeNull()

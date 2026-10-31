@@ -15,7 +15,6 @@
     "blog": "Blog",
     "forum": "Forum",
     "knowbase": "KNOWBASE",
-    "partners": "Partners",
     "network": "Network",
     "dss": "Unified DSS",
     "about": "About",
@@ -46,6 +45,14 @@
       "title": "URBANFLOODS DSS",
       "description": "Decision Support System for flood management.",
       "open": "Open the DSS"
+    },
+    "glance": {
+      "title": "Project at a Glance",
+      "period": "Period",
+      "periodValue": "2021 – 2027",
+      "duration": "Duration",
+      "partnershipValue": "11 partners from 8 countries",
+      "learnMore": "Learn more"
     }
   },
   "blog": {
@@ -298,7 +305,6 @@
     }
   },
   "partners": {
-    "title": "Partners",
     "partnershipTitle": "Partnership",
     "leadPartner": "Lead partner",
     "leadBadge": "LEAD",
@@ -449,7 +455,6 @@
       "interregFunds": "EUR 1.485.445,68"
     },
     "priorityIconAlt": "Interreg IPA ADRION Priority 2 icon",
-    "partnersTitle": "Partners",
     "leadPartner": {
       "name": "University of Western Macedonia",
       "address": "Active Urban Planning Zone (ZEP) I, 50100 Kozani, Greece",
@@ -489,8 +494,7 @@
       "title": "Learn more",
       "project": "URBANFLOODS project website",
       "knowbase": "URBANFLOODS KNOWBASE"
-    },
-    "partnersLink": "See the project partners"
+    }
   },
   "legal": {
     "termsTitle": "Terms of Use",
