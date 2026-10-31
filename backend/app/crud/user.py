@@ -51,13 +51,14 @@ async def get_user_by_email(db: AsyncSession, *, email: str) -> User | None:
 
 
 async def get_user_by_id(db: AsyncSession, *, user_id: int) -> User | None:
-    """The user with ``organisation``, ``notification_preferences`` and ``expertise`` eagerly
-    loaded."""
+    """The user with ``organisation``, ``notification_preferences``, ``avatar`` and
+    ``expertise`` eagerly loaded."""
     stmt = (
         select(User)
         .options(
             joinedload(User.organisation),
             joinedload(User.notification_preferences),
+            joinedload(User.avatar),
             selectinload(User.expertise),
         )
         .where(User.id == user_id)
@@ -260,7 +261,9 @@ async def list_users(
     total = (await db.execute(total_stmt)).scalar_one()
     stmt = (
         select(User)
-        .options(joinedload(User.organisation), selectinload(User.expertise))
+        .options(
+            joinedload(User.organisation), joinedload(User.avatar), selectinload(User.expertise)
+        )
         .where(*conditions)
         .order_by(User.created_at.desc(), User.id.desc())
         .offset(skip)

@@ -13,6 +13,7 @@ from typing import Annotated, Any, Literal, Self, get_args
 
 from pydantic import (
     AfterValidator,
+    AliasPath,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -20,12 +21,14 @@ from pydantic import (
     Field,
     StringConstraints,
     computed_field,
+    field_serializer,
     field_validator,
     model_validator,
 )
 from pydantic_core import PydanticCustomError
 
 from app.api.v1.schemas.expertise import ExpertiseTagOut
+from app.api.v1.schemas.upload import upload_url
 from app.core.security import PASSWORD_MAX_LENGTH
 from app.db.enums import DigestFrequency, OrganisationType, UserRole
 
@@ -160,6 +163,15 @@ class UserMe(BaseModel):
     expertise: list[ExpertiseTagOut]
     show_email: bool
     show_in_directory: bool
+    # Read from ``user.avatar.storage_path`` (the relationship must be eagerly loaded); served as
+    # the public URL.
+    avatar_url: str | None = Field(
+        default=None, validation_alias=AliasPath("avatar", "storage_path")
+    )
+
+    @field_serializer("avatar_url")
+    def _avatar_url(self, storage_path: str | None) -> str | None:
+        return upload_url(storage_path)
 
     @computed_field  # type: ignore[prop-decorator]
     @property

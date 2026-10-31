@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import AsyncIterator, Iterator
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
@@ -291,3 +292,75 @@ async def cleanup_user_ids(database_url: str) -> AsyncIterator[set[int]]:
                 )
             )
             await session.execute(delete(User).where(User.id.in_(deleted)))
+
+
+@pytest.fixture
+async def cleanup_posts(database_url: str) -> AsyncIterator[set[int]]:
+    """Ids of posts the test commits; deleted afterwards (``post_tags`` rows cascade)."""
+    from sqlalchemy import delete
+
+    from app.db.models import Post
+    from app.db.session import AsyncSessionLocal
+
+    ids: set[int] = set()
+    yield ids
+    if not ids:
+        return
+    async with AsyncSessionLocal() as session, session.begin():
+        await session.execute(delete(Post).where(Post.id.in_(ids)))
+
+
+@pytest.fixture
+async def cleanup_categories(database_url: str) -> AsyncIterator[set[int]]:
+    """Ids of categories the test commits (directly or through the API); deleted afterwards
+    together with any posts in them (``ON DELETE RESTRICT`` would refuse otherwise) and the
+    audit rows about them."""
+    from sqlalchemy import delete
+
+    from app.db.models import AuditLog, Category, Post
+    from app.db.session import AsyncSessionLocal
+
+    ids: set[int] = set()
+    yield ids
+    if not ids:
+        return
+    async with AsyncSessionLocal() as session, session.begin():
+        await session.execute(delete(Post).where(Post.category_id.in_(ids)))
+        await session.execute(
+            delete(AuditLog).where(
+                (AuditLog.target_type == "category") & AuditLog.target_id.in_(ids)
+            )
+        )
+        await session.execute(delete(Category).where(Category.id.in_(ids)))
+
+
+@pytest.fixture
+async def cleanup_tags(database_url: str) -> AsyncIterator[set[int]]:
+    """Ids of tags the test commits; deleted afterwards (``post_tags`` rows cascade) together
+    with the audit rows about them. Ids already gone (deleted or merged away) are fine."""
+    from sqlalchemy import delete
+
+    from app.db.models import AuditLog, Tag
+    from app.db.session import AsyncSessionLocal
+
+    ids: set[int] = set()
+    yield ids
+    if not ids:
+        return
+    async with AsyncSessionLocal() as session, session.begin():
+        await session.execute(
+            delete(AuditLog).where((AuditLog.target_type == "tag") & AuditLog.target_id.in_(ids))
+        )
+        await session.execute(delete(Tag).where(Tag.id.in_(ids)))
+
+
+@pytest.fixture(scope="session", autouse=True)
+def upload_dir(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Path]:
+    """``settings.UPLOAD_DIR`` points at a temporary directory for the whole session, so no
+    test writes under ``backend/uploads``. The app reads the setting per request."""
+    from app.core.config import settings
+
+    path = tmp_path_factory.mktemp("uploads")
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(settings, "UPLOAD_DIR", str(path))
+        yield path

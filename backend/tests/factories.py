@@ -8,14 +8,25 @@ which uses its own sessions, can see the rows; register committed users with the
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.security import hash_password
-from app.db.enums import OrganisationType, UserRole
-from app.db.models import NotificationPreference, Organisation, User
+from app.db.enums import CategoryKind, ContentStatus, OrganisationType, UserRole
+from app.db.models import (
+    Attachment,
+    Category,
+    NotificationPreference,
+    Organisation,
+    Post,
+    Tag,
+    User,
+)
+from app.services.sanitize import html_to_text, sanitize_html
 
 if TYPE_CHECKING:
     import httpx
@@ -116,3 +127,100 @@ async def create_organisation(
     db.add(organisation)
     await db.flush()
     return organisation
+
+
+async def create_category(
+    db: AsyncSession,
+    *,
+    kind: CategoryKind = CategoryKind.BLOG,
+    name: str | None = None,
+    slug: str | None = None,
+    **fields: Any,
+) -> Category:
+    """Insert a category (random slug unless given) and flush. Register committed ones (by id)
+    with the ``cleanup_categories`` fixture."""
+    token = uuid.uuid4().hex[:12]
+    category = Category(
+        kind=kind,
+        name=name or f"Test Category {token}",
+        slug=slug or f"test-category-{token}",
+        **fields,
+    )
+    db.add(category)
+    await db.flush()
+    await db.refresh(category)
+    return category
+
+
+async def create_tag(
+    db: AsyncSession, *, name: str | None = None, slug: str | None = None, usage_count: int = 0
+) -> Tag:
+    """Insert a tag (random name/slug unless given) and flush. Register committed ones (by id)
+    with the ``cleanup_tags`` fixture."""
+    token = uuid.uuid4().hex[:12]
+    tag = Tag(name=name or f"tag {token}", slug=slug or f"tag-{token}", usage_count=usage_count)
+    db.add(tag)
+    await db.flush()
+    await db.refresh(tag)
+    return tag
+
+
+async def create_post(
+    db: AsyncSession,
+    *,
+    category_id: int,
+    title: str | None = None,
+    slug: str | None = None,
+    status: ContentStatus = ContentStatus.PUBLISHED,
+    author_id: int | None = None,
+    tags: Sequence[Tag] = (),
+    **fields: Any,
+) -> Post:
+    """Insert a post row directly (sanitised dummy body; ``published_at`` set when published)
+    and flush. Register committed ones (by id) with the ``cleanup_posts`` fixture."""
+    token = uuid.uuid4().hex[:12]
+    body_html = sanitize_html("<p>Nature-based solutions reduce urban flooding.</p>")
+    post = Post(
+        category_id=category_id,
+        author_id=author_id,
+        title=title or f"Test post {token}",
+        slug=slug or f"test-post-{token}",
+        body_html=body_html,
+        body_text=html_to_text(body_html),
+        status=status,
+        published_at=datetime.now(UTC) if status == ContentStatus.PUBLISHED else None,
+        **fields,
+    )
+    post.tags = list(tags)
+    db.add(post)
+    await db.flush()
+    return post
+
+
+async def create_attachment(
+    db: AsyncSession,
+    *,
+    uploader_id: int | None,
+    alt_text: str = "An image",
+    width: int = 10,
+    height: int = 10,
+    size_bytes: int = 100,
+    deleted_at: datetime | None = None,
+) -> Attachment:
+    """Insert an attachment row (no files on disk) and flush. Paths are unique and random."""
+    stem = f"2026/01/{uuid.uuid4().hex}"
+    attachment = Attachment(
+        uploader_id=uploader_id,
+        storage_path=f"{stem}.webp",
+        thumb_path=f"{stem}_thumb.webp",
+        original_filename="image.png",
+        mime="image/webp",
+        size_bytes=size_bytes,
+        width=width,
+        height=height,
+        alt_text=alt_text,
+        deleted_at=deleted_at,
+    )
+    db.add(attachment)
+    await db.flush()
+    return attachment

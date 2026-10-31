@@ -62,6 +62,9 @@ class Settings(BaseSettings):
     # Uploads
     UPLOAD_DIR: str = "uploads"
     MAX_UPLOAD_MB: int = 5
+    UPLOAD_THUMB_PX: int = 480
+    UPLOAD_MAX_PX: int = 1920
+    UPLOAD_URL_PREFIX: str = "/static/uploads"
 
     # Moderation
     REPORT_AUTO_HIDE_THRESHOLD: int = 3

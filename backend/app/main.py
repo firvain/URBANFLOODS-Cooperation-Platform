@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,11 +10,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.endpoints import (
     admin,
     auth,
+    categories,
     expertise,
     health,
     knowbase,
     members,
     organisations,
+    tags,
+    uploads,
 )
 from app.core.config import settings
 from app.core.csrf import CSRFMiddleware
@@ -28,6 +32,8 @@ from app.services.knowbase import KnowbaseClient
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging(settings)
+    # The /static/uploads mount serves this directory; it must exist before the first request.
+    Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
     app.state.knowbase = KnowbaseClient()
     try:
         yield
@@ -84,6 +90,13 @@ def create_app() -> FastAPI:
     app.include_router(
         knowbase.router, prefix=f"{settings.API_V1_PREFIX}/knowbase", tags=["knowbase"]
     )
+    app.include_router(
+        categories.router, prefix=f"{settings.API_V1_PREFIX}/categories", tags=["categories"]
+    )
+    app.include_router(tags.router, prefix=f"{settings.API_V1_PREFIX}/tags", tags=["tags"])
+    app.include_router(uploads.router, prefix=f"{settings.API_V1_PREFIX}/uploads", tags=["uploads"])
+    # Uploaded images (re-encoded WebP), served with nosniff.
+    app.mount(settings.UPLOAD_URL_PREFIX, uploads.UploadStaticFiles(), name="uploads")
 
     return app
 
