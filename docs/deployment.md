@@ -266,6 +266,19 @@ forward. Return to `main` with `git checkout main` before the next `git pull`.
 - **Monitor**: the daily admin digest arriving; `curl -s http://127.0.0.1:8002/health/ready`;
   disk space; the backup log (`~/backups/cooperation/backup.log`) and a new file each day.
 
+### Refuse unknown hostnames [owner, sudo]
+
+Without a catch-all, a request for a name this server does not host is answered by the first
+HTTPS site (the platform) or by Ubuntu's stock nginx page. `docker/nginx-catch-all.sh` replaces
+the stock `default` site with a catch-all that refuses such requests (TLS handshake rejected on
+443, connection closed on 80). It runs `nginx -t` first, restores the previous state if the test
+fails, and checks that both live sites still answer:
+
+```bash
+sudo ~/URBANFLOODS-Cooperation-Platform/docker/nginx-catch-all.sh          # install
+sudo ~/URBANFLOODS-Cooperation-Platform/docker/nginx-catch-all.sh --undo   # restore default
+```
+
 ## 10. What lives where
 
 | Thing | Where |
