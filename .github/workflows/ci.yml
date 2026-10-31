@@ -126,8 +126,6 @@ jobs:
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
 
-      # Dev image only for now. frontend/Dockerfile.prod (nginx + built SPA) arrives in M6;
-      # add a build step for it here then.
       - name: Build frontend dev image
         uses: docker/build-push-action@v7
         with:
@@ -137,3 +135,15 @@ jobs:
           tags: urbanfloods-cooperation-frontend:ci-dev
           cache-from: type=gha,scope=frontend-dev
           cache-to: type=gha,scope=frontend-dev,mode=max
+
+      # Production image (nginx + built SPA). The context is the repository root because the
+      # legal pages are built from docs/legal/; the root .dockerignore keeps it small.
+      - name: Build frontend production image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./frontend/Dockerfile.prod
+          push: false
+          tags: urbanfloods-cooperation-frontend:ci-prod
+          cache-from: type=gha,scope=frontend-prod
+          cache-to: type=gha,scope=frontend-prod,mode=max

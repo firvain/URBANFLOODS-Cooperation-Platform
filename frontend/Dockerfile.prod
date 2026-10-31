@@ -1,0 +1,43 @@
+# Production image: the built SPA served by nginx, which also proxies the backend paths
+# (see nginx.conf). Used by docker-compose.prod.yml.
+#
+# The build context is the REPOSITORY ROOT, not frontend/: the legal pages are compiled from
+# docs/legal/*.md, which vite.config.ts reads as ../docs/legal relative to the frontend project.
+#   docker build -f frontend/Dockerfile.prod .
+# The root .dockerignore keeps the context to frontend/ and docs/legal/.
+
+# Stage 1: build the static bundle
+FROM node:22-alpine AS build
+
+WORKDIR /app
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+COPY frontend/ ./
+# /app/../docs/legal, where the Vite plugin and fs.allow expect it.
+COPY docs/legal/ /docs/legal/
+
+# Build-time configuration, baked into the bundle (these are public values, never secrets).
+# Empty API base URL = same origin (nginx proxies /api/). Empty DSS URL hides the DSS links.
+ARG VITE_API_BASE_URL=""
+ARG VITE_DSS_URL="https://urbanfloods.finki.ukim.mk/"
+ARG VITE_TURNSTILE_SITE_KEY=""
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
+    VITE_DSS_URL=$VITE_DSS_URL \
+    VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
+
+# build-only: the type check already runs in CI and needs no repeating here.
+RUN npm run build-only
+
+# Stage 2: serve
+FROM nginx:1.27.5-alpine
+
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+# IPv4 literal: "localhost" resolves to ::1 in the container, where nginx is not listening.
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget -q --spider http://127.0.0.1/health-check || exit 1

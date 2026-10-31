@@ -1,0 +1,129 @@
+# Production stack: Postgres (not published), FastAPI backend, nginx serving the built SPA.
+# Runs on the KNOWBASE server next to the urbanfloods-knowbase-*-prod containers, which it never
+# touches (own project name, container names, volumes, network and ports).
+#
+#   cp .env.prod.example .env.prod && chmod 600 .env.prod    # then fill in the secrets
+#   docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
+#   docker compose --env-file .env.prod -f docker-compose.prod.yml exec backend \
+#       python -m app.cli create-superadmin --email <email> --display-name "<name>" --password '<passphrase>'
+#
+# Day-to-day updates: ./deploy.sh (backup, pull, build, up -d, health checks). Backups:
+# scripts/backup.sh. Never `down -v`: it deletes the database and uploads volumes.
+#
+#   Host nginx (TLS) -> 127.0.0.1:3002  frontend (nginx: SPA + proxy of /api, /static, /feeds, ...)
+#                       127.0.0.1:8002  backend (local curl checks only)
+#                       Postgres        internal network only, no host port
+#
+# Migrations run in the backend image entrypoint (`alembic upgrade head`) on every start.
+
+name: urbanfloods-cooperation-prod
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: urbanfloods-cooperation-db-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cooperation_prod}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.prod}
+      POSTGRES_DB: ${POSTGRES_DB:-cooperation_db}
+    # No `ports`: the database is reachable only from the backend on the compose network.
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # $$ defers expansion to the container shell, so the check always matches the env above.
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *default-logging
+
+  # One-shot: the backend image runs as uid 10001, but a fresh named volume is owned by root.
+  backend-uploads-init:
+    image: busybox:1.37
+    container_name: urbanfloods-cooperation-uploads-init-prod
+    command: ["chown", "-R", "10001:10001", "/app/uploads"]
+    volumes:
+      - backend_uploads:/app/uploads
+    restart: "no"
+    logging: *default-logging
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: urbanfloods-cooperation-backend:prod
+    container_name: urbanfloods-cooperation-backend-prod
+    restart: unless-stopped
+    # Secrets and site settings (SECRET_KEY, SMTP_*, TURNSTILE_*, ALLOWED_ORIGINS, ...).
+    # COOPERATION_ENV_FILE exists only so a local smoke test can point at a throwaway file.
+    env_file:
+      - ${COOPERATION_ENV_FILE:-.env.prod}
+    # Fixed for production; `environment` wins over env_file, so these cannot be overridden there.
+    environment:
+      ENV: prod
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-cooperation_prod}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.prod}@postgres:5432/${POSTGRES_DB:-cooperation_db}
+      UPLOAD_DIR: /app/uploads
+      # The image CMD (`fastapi run`) is a single uvicorn worker, so exactly one process runs the
+      # digest/maintenance scheduler and holds the in-memory rate limits and KNOWBASE cache.
+      # Never add workers without moving those out of process first.
+      ENABLE_SCHEDULER: "true"
+      # Behind Cloudflare + host nginx + frontend nginx: client IP from CF-Connecting-IP,
+      # scheme from X-Forwarded-Proto.
+      TRUST_PROXY_HEADERS: "true"
+      COOKIE_SECURE: "true"
+      LOG_JSON: "true"
+      EMAIL_ENABLED: "true"
+      TURNSTILE_ENABLED: "true"
+    volumes:
+      - backend_uploads:/app/uploads
+    ports:
+      - "127.0.0.1:8002:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend-uploads-init:
+        condition: service_completed_successfully
+    # The test command comes from the image's HEALTHCHECK (GET http://127.0.0.1:8000/health).
+    healthcheck:
+      interval: 10s
+      start_period: 20s
+    logging: *default-logging
+
+  frontend:
+    build:
+      # Repository root: the build needs docs/legal/ next to frontend/ (see the root .dockerignore).
+      context: .
+      dockerfile: frontend/Dockerfile.prod
+      # Baked into the bundle at build time; changing them needs a rebuild (deploy.sh does one).
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        # Unset = the default DSS URL; set to empty to hide the DSS links.
+        VITE_DSS_URL: ${VITE_DSS_URL-https://urbanfloods.finki.ukim.mk/}
+        VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:?set VITE_TURNSTILE_SITE_KEY in .env.prod}
+    image: urbanfloods-cooperation-frontend:prod
+    container_name: urbanfloods-cooperation-frontend-prod
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3002:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    # The test command comes from the image's HEALTHCHECK (GET http://127.0.0.1/health-check).
+    logging: *default-logging
+
+volumes:
+  postgres_data:
+    name: urbanfloods_cooperation_postgres_prod
+  backend_uploads:
+    name: urbanfloods_cooperation_uploads_prod
+
+networks:
+  default:
+    name: urbanfloods-cooperation-prod-network

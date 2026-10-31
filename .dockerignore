@@ -1,0 +1,23 @@
+# Build context for frontend/Dockerfile.prod, which is built from the repository root (it needs
+# docs/legal/ next to frontend/). Everything is excluded except those two folders, so the backend,
+# .git, secrets (.env, .env.prod) and local build output never reach the Docker daemon.
+# The backend image has its own context (backend/) and its own backend/.dockerignore.
+*
+!frontend/
+!docs/legal/
+
+# Inside frontend/: local installs, build output, test reports and local env overrides.
+# (frontend/.env.production is kept: it holds the public production build defaults.)
+frontend/node_modules
+frontend/dist
+frontend/.vite
+frontend/coverage
+frontend/test-results
+frontend/playwright-report
+frontend/blob-report
+frontend/playwright/.cache
+frontend/.eslintcache
+frontend/*.tsbuildinfo
+frontend/.env.local
+frontend/.env.*.local
+**/.DS_Store

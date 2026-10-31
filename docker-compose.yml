@@ -10,7 +10,7 @@
 # Backend and frontend source is bind-mounted, so edits reload without a rebuild. A change to
 # backend/pyproject.toml, uv.lock or frontend/package*.json needs a rebuild:
 #   docker compose up --build -V  (-V renews the anonymous node_modules volume), or run with --watch.
-# Not for production: see docker-compose.prod.yml (M6).
+# Not for production: see docker-compose.prod.yml, deploy.sh and docs/deployment.md.
 
 name: urbanfloods-cooperation
 
