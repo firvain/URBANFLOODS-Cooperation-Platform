@@ -599,7 +599,7 @@ async def test_forum_tables_reuse_existing_enum_types(db_session):
         ("status", "content_status"),
         ("hidden_reason", "hidden_reason"),
     }
-    # No new enum types were introduced by 0005.
+    # No new enum types were introduced by 0005 (later migrations' types are excluded).
     types = set(
         (
             await db_session.scalars(
@@ -607,7 +607,7 @@ async def test_forum_tables_reuse_existing_enum_types(db_session):
             )
         ).all()
     )
-    assert types == {
+    assert types - {"report_reason", "report_status"} == {
         "category_kind",
         "content_status",
         "content_type",

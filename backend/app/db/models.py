@@ -3,8 +3,8 @@
 Postgres ENUM types are created and dropped by the Alembic migrations, never by the models, so
 every enum column uses ``create_type=False``.
 
-``knowbase_links`` is polymorphic (``content_type`` + ``content_id``), so it has no FK and no
-relationship to ``posts`` / ``threads``; query it by ``(content_type, content_id)``.
+``knowbase_links`` and ``reports`` are polymorphic (``content_type`` + ``content_id``), so they
+have no FK and no relationship to the content tables; query them by ``(content_type, content_id)``.
 """
 
 from __future__ import annotations
@@ -41,6 +41,8 @@ from app.db.enums import (
     DigestFrequency,
     KbType,
     OrganisationType,
+    ReportReason,
+    ReportStatus,
     TokenPurpose,
     UserRole,
 )
@@ -67,6 +69,8 @@ digest_frequency_enum = pg_enum(DigestFrequency, "digest_frequency")
 category_kind_enum = pg_enum(CategoryKind, "category_kind")
 kb_type_enum = pg_enum(KbType, "kb_type")
 content_type_enum = pg_enum(ContentType, "content_type")
+report_reason_enum = pg_enum(ReportReason, "report_reason")
+report_status_enum = pg_enum(ReportStatus, "report_status")
 
 # posts.fts: English stems weighted by field (title A, body B) plus the unstemmed ('simple') title,
 # so exact title words in any language still match. Must stay identical to migration 0004.
@@ -548,3 +552,63 @@ class KnowbaseLink(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+
+
+class Report(Base):
+    """A member's report of a post, thread, reply or comment (polymorphic: no FK to the content).
+
+    One report per reporter per item (``uq_reports_reporter_content``); an anonymised reporter
+    (``reporter_id`` NULL) never blocks anything, since Postgres treats NULLs as distinct.
+
+    No trigger here: the content's ``report_count`` and the auto-hide at
+    ``REPORT_AUTO_HIDE_THRESHOLD`` distinct reporters are maintained by ``crud/reports.py``.
+    """
+
+    __tablename__ = "reports"
+    __table_args__ = (
+        UniqueConstraint(
+            "reporter_id", "content_type", "content_id", name="uq_reports_reporter_content"
+        ),
+        Index("ix_reports_status_created_at", "status", "created_at"),
+        Index("ix_reports_content_type_content_id", "content_type", "content_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    reporter_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    content_type: Mapped[ContentType] = mapped_column(content_type_enum, nullable=False)
+    content_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    reason: Mapped[ReportReason] = mapped_column(report_reason_enum, nullable=False)
+    details: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    status: Mapped[ReportStatus] = mapped_column(
+        report_status_enum, nullable=False, server_default=text("'open'")
+    )
+    resolved_by: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    reporter: Mapped[User | None] = relationship(foreign_keys=[reporter_id])
+    resolver: Mapped[User | None] = relationship(foreign_keys=[resolved_by])
+
+
+class DigestRun(Base):
+    """One run of an email digest job (``kind`` e.g. ``admin_daily``); the latest run of a kind
+    gives the next window's start."""
+
+    __tablename__ = "digest_runs"
+    __table_args__ = (Index("ix_digest_runs_kind_ran_at", "kind", text("ran_at DESC")),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    ran_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    window_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    recipients: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    items: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))

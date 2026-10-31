@@ -58,3 +58,17 @@ class ContentType(StrEnum):
     THREAD = "thread"
     REPLY = "reply"
     COMMENT = "comment"
+
+
+class ReportReason(StrEnum):
+    SPAM = "spam"
+    ABUSE = "abuse"
+    OFF_TOPIC = "off_topic"
+    MISINFORMATION = "misinformation"
+    OTHER = "other"
+
+
+class ReportStatus(StrEnum):
+    OPEN = "open"
+    RESOLVED = "resolved"
+    DISMISSED = "dismissed"

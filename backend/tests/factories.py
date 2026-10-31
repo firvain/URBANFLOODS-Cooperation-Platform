@@ -374,3 +374,31 @@ async def create_thread_knowbase_link(
     db.add(link)
     await db.flush()
     return link
+
+
+async def create_report(
+    db: AsyncSession,
+    *,
+    reporter_id: int | None,
+    content_type: str = "post",
+    content_id: int,
+    reason: str = "spam",
+    details: str | None = None,
+    **fields: Any,
+) -> Any:
+    """Insert a ``reports`` row directly (no auto-hide counting) and flush. Register committed
+    ones (by id) with the ``cleanup_reports`` fixture."""
+    from app.db.enums import ContentType, ReportReason
+    from app.db.models import Report
+
+    report = Report(
+        reporter_id=reporter_id,
+        content_type=ContentType(content_type),
+        content_id=content_id,
+        reason=ReportReason(reason),
+        details=details,
+        **fields,
+    )
+    db.add(report)
+    await db.flush()
+    return report

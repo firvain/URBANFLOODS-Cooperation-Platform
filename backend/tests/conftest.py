@@ -471,3 +471,20 @@ async def cleanup_forum_categories(cleanup_categories: set[int]) -> AsyncIterato
             delete(AuditLog).where((AuditLog.target_type == "thread") & AuditLog.target_id.in_(ids))
         )
         await session.execute(delete(Thread).where(Thread.id.in_(ids)))
+
+
+@pytest.fixture
+async def cleanup_reports(database_url: str) -> AsyncIterator[set[int]]:
+    """Ids of reports the test commits; deleted afterwards (``reports`` is polymorphic, so
+    nothing cascades from the reported content)."""
+    from sqlalchemy import delete
+
+    from app.db.models import Report
+    from app.db.session import AsyncSessionLocal
+
+    ids: set[int] = set()
+    yield ids
+    if not ids:
+        return
+    async with AsyncSessionLocal() as session, session.begin():
+        await session.execute(delete(Report).where(Report.id.in_(ids)))
