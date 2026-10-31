@@ -6,7 +6,7 @@ import type { components } from '@/types/api-schema'
 
 type KnowbaseLinkOut = components['schemas']['KnowbaseLinkOut']
 
-/** A KNOWBASE measure or document linked from a post, pointing to our KNOWBASE Library page. */
+/** A KNOWBASE measure or document linked from a post, pointing to its item page on the platform. */
 const props = defineProps<{ link: KnowbaseLinkOut }>()
 
 const { t } = useI18n()

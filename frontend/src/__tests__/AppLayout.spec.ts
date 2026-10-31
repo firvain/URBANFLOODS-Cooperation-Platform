@@ -365,7 +365,7 @@ describe('main navigation and the Unified DSS', () => {
   }
   const label = (a: Element) => a.textContent?.replace(t('a11y.opensInNewTab'), '').trim()
 
-  it('orders the items Home, Blog, Forum, Partners, Network, KNOWBASE, Unified DSS, About', async () => {
+  it('orders the items Home, Blog, Forum, Network, KNOWBASE, Unified DSS, Partners, About', async () => {
     vi.stubEnv('VITE_DSS_URL', DSS)
     await mountApp()
     expect(t('nav.network')).toBe('Network')
@@ -385,8 +385,32 @@ describe('main navigation and the Unified DSS', () => {
     expect(navLinks()[1]!.getAttribute('href')).toBe('/blog')
     expect(navLinks()[2]!.getAttribute('href')).toBe('/forum')
     expect(navLinks()[3]!.getAttribute('href')).toBe('/network')
-    expect(navLinks()[4]!.getAttribute('href')).toBe('/knowbase')
-    expect(navLinks()[4]!.getAttribute('target')).toBeNull()
+    expect(navLinks()[4]!.getAttribute('href')).toBe(EXTERNAL_LINKS.knowbase)
+  })
+
+  it('links the KNOWBASE site in a new tab, announced, with the arrow, like the DSS', async () => {
+    vi.stubEnv('VITE_DSS_URL', DSS)
+    await mountApp()
+    const knowbase = navLinks().find((a) => label(a) === t('nav.knowbase'))!
+    expect(knowbase.getAttribute('href')).toBe('https://knowbase.urbanfloods.app')
+    expect(knowbase.getAttribute('target')).toBe('_blank')
+    expect(knowbase.getAttribute('rel')).toContain('noopener')
+    expect(knowbase.getAttribute('rel')).toContain('noreferrer')
+    expect(knowbase.querySelector('.sr-only')?.textContent?.trim()).toBe(t('a11y.opensInNewTab'))
+    const dss = navLinks().find((a) => label(a) === t('nav.dss'))!
+    // The same trailing arrow icon as the DSS item.
+    const arrow = (a: Element) => a.querySelector('[data-slot="trailingIcon"]')?.outerHTML
+    expect(arrow(knowbase)).toBeTruthy()
+    expect(arrow(knowbase)).toBe(arrow(dss))
+  })
+
+  it('never marks the KNOWBASE item active, even on a KNOWBASE item page', async () => {
+    vi.stubEnv('VITE_DSS_URL', DSS)
+    await mountApp('/knowbase/measures/2')
+    const knowbase = navLinks().find((a) => label(a) === t('nav.knowbase'))!
+    const dss = navLinks().find((a) => label(a) === t('nav.dss'))!
+    // Same (inactive) styling as the never-active DSS item.
+    expect(knowbase.className).toBe(dss.className)
   })
 
   it('links the DSS in a new tab, announced, with the URL from VITE_DSS_URL', async () => {
@@ -397,8 +421,12 @@ describe('main navigation and the Unified DSS', () => {
     expect(dss.getAttribute('target')).toBe('_blank')
     expect(dss.getAttribute('rel')).toContain('noopener')
     expect(dss.querySelector('.sr-only')?.textContent?.trim()).toBe(t('a11y.opensInNewTab'))
-    // Internal items stay in the same tab.
-    for (const a of navLinks().filter((l) => l !== dss)) expect(a.getAttribute('target')).toBeNull()
+    // Internal items stay in the same tab; only the DSS and the KNOWBASE are other sites.
+    const external = [dss.getAttribute('href'), EXTERNAL_LINKS.knowbase]
+    for (const a of navLinks().filter((l) => !external.includes(l.getAttribute('href')))) {
+      expect(a.getAttribute('target')).toBeNull()
+    }
+    expect(navLinks().filter((a) => a.getAttribute('target') === '_blank')).toHaveLength(2)
   })
 
   it('hides the DSS item when VITE_DSS_URL is empty', async () => {

@@ -189,6 +189,9 @@ Tags are created implicitly when a post or thread names them; there is no tag cr
 ### KNOWBASE proxy (`/api/v1/knowbase`)
 
 Read-only, cached copies of the KNOWBASE public API (see [architecture.md](architecture.md#6-knowbase-proxy-and-caching)).
+The frontend uses the list endpoints for the editor's link picker search, and the detail and
+mentions endpoints for the item pages; it has no library pages since 2026-10-31 (browsing happens
+on the KNOWBASE site), so the lookup endpoints currently have no frontend caller.
 
 | Method | Path | Who | Limit | Purpose |
 |---|---|---|---|---|

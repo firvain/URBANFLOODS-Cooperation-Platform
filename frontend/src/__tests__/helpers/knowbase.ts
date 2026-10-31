@@ -4,7 +4,6 @@ import type { KbDocument, Measure, MentionPost } from '@/services/knowbase'
 
 export const KB = '/api/v1/knowbase'
 export const MEASURES = `GET ${KB}/measures/`
-export const DOCUMENTS = `GET ${KB}/documents/`
 
 export type CacheHeader = 'hit' | 'miss' | 'stale'
 
@@ -16,9 +15,6 @@ export function kbReply(body: unknown, cache: CacheHeader = 'miss', status = 200
       headers: { 'content-type': 'application/json', 'X-Knowbase-Cache': cache },
     })
 }
-
-/** Search params of a mocked request. */
-export const paramsOf = (url: string) => new URL(url, 'http://x.invalid').searchParams
 
 export const CATEGORIES = [
   { id: 1, code: 'structural', label_en: 'Structural', label_local: null },
@@ -73,37 +69,6 @@ export function measurePage(total: number, skip = 0, limit = 24) {
   return { total, items: Array.from({ length: count }, (_, i) => makeMeasure(skip + i + 1)) }
 }
 
-/** Handler serving `GET /measures/` pages out of `total`, honouring skip/limit. */
-export function measurePages(total: number): Handler {
-  return (request) => {
-    const query = paramsOf(request.url)
-    const page = measurePage(
-      total,
-      Number(query.get('skip') ?? 0),
-      Number(query.get('limit') ?? 24),
-    )
-    return kbReply(page)(request)
-  }
-}
-
-export const COUNTRIES = [
-  { code: 'GR', name: 'Greece', count: 40 },
-  { code: 'IT', name: 'Italy', count: 30 },
-  { code: 'HR', name: 'Croatia', count: 12 },
-]
-export const DOC_LEVELS = [
-  { id: 1, code: 'NAT', label: 'National', count: 50 },
-  { id: 2, code: 'REG', label: 'Regional', count: 20 },
-]
-export const SUBJECTS = [
-  { id: 1, code: 'FLM', label: 'Floods management', count: 30 },
-  { id: 2, code: 'CP', label: 'Civil Protection', count: 10 },
-]
-export const DOC_KEYWORDS = [
-  { id: 7, code: 'flood-risk', label: 'Flood risk', count: 9 },
-  { id: 8, code: 'spatial-planning', label: 'Spatial planning', count: 4 },
-]
-
 export function makeDocument(id: number, overrides: Partial<KbDocument> = {}): KbDocument {
   return {
     id,
@@ -125,23 +90,6 @@ export function makeDocument(id: number, overrides: Partial<KbDocument> = {}): K
   }
 }
 
-export function documentPage(total: number, skip = 0, limit = 24) {
-  const count = Math.max(0, Math.min(limit, total - skip))
-  return { total, items: Array.from({ length: count }, (_, i) => makeDocument(skip + i + 1)) }
-}
-
-export function documentPages(total: number): Handler {
-  return (request) => {
-    const query = paramsOf(request.url)
-    const page = documentPage(
-      total,
-      Number(query.get('skip') ?? 0),
-      Number(query.get('limit') ?? 24),
-    )
-    return kbReply(page)(request)
-  }
-}
-
 export function makeMention(id: number): MentionPost {
   return {
     id,
@@ -149,25 +97,5 @@ export function makeMention(id: number): MentionPost {
     title: `Post ${id} about green roofs`,
     excerpt: `Excerpt of post ${id}.`,
     published_at: '2026-10-20T10:00:00Z',
-  }
-}
-
-/** Measure lookups routes. */
-export function measureLookupRoutes(): Record<string, Handler> {
-  return {
-    [`GET ${KB}/measures/lookups/categories`]: kbReply(CATEGORIES),
-    [`GET ${KB}/measures/lookups/levels-of-application`]: kbReply(LEVELS_OF_APPLICATION),
-    [`GET ${KB}/measures/lookups/scales`]: kbReply(SCALES),
-    [`GET ${KB}/measures/lookups/keywords`]: kbReply(MEASURE_KEYWORDS),
-  }
-}
-
-/** Document lookups routes. */
-export function documentLookupRoutes(): Record<string, Handler> {
-  return {
-    [`GET ${KB}/lookups/countries`]: kbReply(COUNTRIES),
-    [`GET ${KB}/lookups/levels`]: kbReply(DOC_LEVELS),
-    [`GET ${KB}/lookups/subjects`]: kbReply(SUBJECTS),
-    [`GET ${KB}/lookups/keywords`]: kbReply(DOC_KEYWORDS),
   }
 }

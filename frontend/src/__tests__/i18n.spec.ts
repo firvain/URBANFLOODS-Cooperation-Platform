@@ -79,12 +79,11 @@ describe('locale files', () => {
     }
   })
 
-  it('every non-English locale translates knowbase.title', () => {
+  it('no locale keeps the removed KNOWBASE Library page keys (user decision 2026-10-31)', () => {
+    const removed = ['knowbase.title', 'knowbase.intro', 'knowbase.toolkit.title']
     for (const [path, messages] of Object.entries(localeFiles)) {
-      if (path.endsWith('/en.json')) continue
       const flat = flatten(messages)
-      expect(flat['knowbase.title'], `${path} knowbase.title`).toBeTruthy()
-      expect(flat['knowbase.title']).not.toBe(flatten(en)['knowbase.title'])
+      for (const key of removed) expect(flat[key], `${path} ${key}`).toBeUndefined()
     }
   })
 

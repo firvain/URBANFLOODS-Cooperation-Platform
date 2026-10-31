@@ -344,25 +344,10 @@
     }
   },
   "knowbase": {
-    "title": "KNOWBASE Library",
-    "intro": "The URBANFLOODS KNOWBASE collects flood management measures and the legislation and policies of the partner countries. Browse it here, find out which posts discuss an item, or open the KNOWBASE itself.",
-    "openKnowbase": "Open the KNOWBASE",
     "openInKnowbase": "Open in the KNOWBASE",
-    "backToLibrary": "KNOWBASE Library",
     "loading": "Loading…",
     "retry": "Try again",
-    "clearFilters": "Clear filters",
     "notFoundHint": "It may have been removed from the KNOWBASE, or the link is wrong.",
-    "status": {
-      "stale": "The KNOWBASE is temporarily unreachable; showing cached data.",
-      "unavailable": "The KNOWBASE is temporarily unreachable; no data available."
-    },
-    "filters": {
-      "title": "Filters",
-      "search": "Search",
-      "keywords": "Keywords",
-      "any": "Any"
-    },
     "fields": {
       "description": "Description",
       "descriptionLocal": "Description (original language)",
@@ -372,26 +357,12 @@
       "title": "Mentioned in"
     },
     "measures": {
-      "title": "Flood management measures",
       "detailTitle": "Flood management measure",
-      "description": "Structural, nature-based, hybrid and non-structural measures, with benefits, constraints and resources required.",
-      "count": "No measures | {count} measure | {count} measures",
       "untitled": "Untitled measure",
       "back": "All measures",
-      "empty": "No measures match these filters.",
-      "emptyAll": "No measures are available.",
-      "loadError": "The measures could not be loaded.",
       "detailError": "The measure could not be loaded.",
       "notFound": "Measure not found",
-      "pagination": "Measure list pages",
       "photoCredit": "Photo: {source}",
-      "filters": {
-        "searchPlaceholder": "Titles and descriptions",
-        "category": "Category",
-        "allCategories": "All categories",
-        "levels": "Level of application",
-        "scales": "Scale"
-      },
       "fields": {
         "category": "Category",
         "level": "Level of application",
@@ -402,27 +373,11 @@
       }
     },
     "documents": {
-      "title": "Legislation and policies",
       "detailTitle": "Legislation or policy document",
-      "description": "Laws, regulations and policies on flood management from the partner countries, by country, governance level and subject.",
-      "count": "No documents | {count} document | {count} documents",
       "untitled": "Untitled document",
       "back": "All legislation and policies",
-      "empty": "No documents match these filters.",
-      "emptyAll": "No documents are available.",
-      "loadError": "The documents could not be loaded.",
       "detailError": "The document could not be loaded.",
       "notFound": "Document not found",
-      "pagination": "Document list pages",
-      "filters": {
-        "searchPlaceholder": "Names, descriptions and gazette references",
-        "country": "Country",
-        "allCountries": "All countries",
-        "level": "Governance level",
-        "allLevels": "All levels",
-        "subject": "Subject",
-        "allSubjects": "All subjects"
-      },
       "fields": {
         "level": "Governance level",
         "subject": "Subject",
@@ -431,16 +386,6 @@
         "webLinks": "Web links",
         "comments": "Comments"
       }
-    },
-    "toolkit": {
-      "title": "Policy Toolkit",
-      "intro": "Pick a country to see its flood management legislation and policies, then compare them with the measures in the KNOWBASE.",
-      "country": "Country",
-      "allCountries": "All countries",
-      "documents": "Legislation and policies",
-      "documentsFor": "Legislation and policies: {country}",
-      "measures": "Flood management measures",
-      "timelineNote": "Short/mid/long-term filtering will follow once WP3 adds it to the KNOWBASE."
     }
   },
   "profile": {

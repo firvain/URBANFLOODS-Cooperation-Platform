@@ -73,17 +73,24 @@ describe('DocumentDetailView', () => {
     const { wrapper } = await mountDetail()
     const section = wrapper.find('[data-testid="kb-mentions"]')
     expect(section.find('a[href="/blog/post-9"]').exists()).toBe(true)
-    expect(wrapper.find('a[href="/knowbase/documents"]').text()).toContain(
-      t('knowbase.documents.back'),
-    )
-    expect(wrapper.find('a[href="https://knowbase.urbanfloods.app/legislation"]').exists()).toBe(
-      true,
-    )
+    // The list lives on the KNOWBASE site only (user decision 2026-10-31).
+    expect(wrapper.find('a[href="/knowbase/documents"]').exists()).toBe(false)
+    const links = wrapper.findAll('a[href="https://knowbase.urbanfloods.app/legislation"]')
+    expect(links).toHaveLength(2)
+    expect(links[0]!.text()).toContain(t('knowbase.documents.back'))
+    expect(links[1]!.text()).toContain(t('knowbase.openInKnowbase'))
+    for (const link of links) {
+      expect(link.attributes('target')).toBe('_blank')
+      expect(link.find('.sr-only').text()).toBe(t('a11y.opensInNewTab'))
+    }
   })
 
   it('shows a not-found message for an unknown document', async () => {
     mockApi({ [DOCUMENT]: replyError(404, 'knowbase.not_found') })
     const { wrapper } = await mountDetail()
     expect(wrapper.text()).toContain(t('knowbase.documents.notFound'))
+    const back = wrapper.find('a[href="https://knowbase.urbanfloods.app/legislation"]')
+    expect(back.text()).toContain(t('knowbase.documents.back'))
+    expect(back.attributes('target')).toBe('_blank')
   })
 })

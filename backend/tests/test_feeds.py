@@ -27,7 +27,6 @@ STATIC_PATHS = [
     "/",
     "/blog",
     "/forum",
-    "/knowbase",
     "/partners",
     "/network",
     "/about",
@@ -289,6 +288,8 @@ async def test_sitemap_static_pages(client, corpus):
     for path in STATIC_PATHS:
         expected = f"{FRONTEND}/" if path == "/" else f"{FRONTEND}{path}"
         assert expected in locs
+    # Browsing the KNOWBASE happens on its own site (user decision 2026-10-31): no library page.
+    assert not any(loc.startswith(f"{FRONTEND}/knowbase") for loc in locs)
 
 
 async def test_sitemap_content_urls_with_lastmod(client, corpus):

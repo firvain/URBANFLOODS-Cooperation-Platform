@@ -56,14 +56,15 @@ const localDescription = computed(() => {
 
 <template>
   <UContainer class="pt-8 pb-16 lg:pb-24">
-    <ULink
-      to="/knowbase/measures"
-      raw
-      class="mb-6 inline-flex items-center gap-1 text-sm text-primary-700 underline-offset-2 hover:underline"
-    >
-      <UIcon name="i-lucide-arrow-left" class="size-4" aria-hidden="true" />
-      {{ t('knowbase.measures.back') }}
-    </ULink>
+    <!-- The list is browsed on the KNOWBASE site itself (user decision 2026-10-31). -->
+    <p class="mb-6 text-sm">
+      <ExternalLink
+        :href="`${EXTERNAL_LINKS.knowbase}/measures`"
+        trailing-icon="i-lucide-arrow-up-right"
+      >
+        {{ t('knowbase.measures.back') }}
+      </ExternalLink>
+    </p>
 
     <div v-if="state === 'loading'" aria-busy="true" class="space-y-4">
       <span class="sr-only">{{ t('knowbase.loading') }}</span>

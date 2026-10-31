@@ -1,8 +1,10 @@
 /**
- * KNOWBASE Library through the platform's read-only proxy (`/api/v1/knowbase/*`, public).
+ * The KNOWBASE through the platform's read-only proxy (`/api/v1/knowbase/*`, public): the editor's
+ * link picker searches it, the item pages show one measure or document and the posts that mention
+ * it. Browsing the KNOWBASE happens on its own site (user decision 2026-10-31).
  *
  * Every function resolves to `{ data, cache }`: `cache` is the proxy's `X-Knowbase-Cache` header
- * (`hit | miss | stale`), so the store can tell when the KNOWBASE is down and cached data is shown.
+ * (`hit | miss | stale`), which tells when the KNOWBASE is down and cached data is shown.
  * Errors arrive as `ApiError` (503 `knowbase.unavailable`, 502 `knowbase.upstream_error`,
  * 404 `knowbase.not_found`). Array filters are sent as repeated parameters
  * (`level_of_application_ids=1&level_of_application_ids=2`), as in `members.ts`.
@@ -28,12 +30,6 @@ export interface MeasureRef {
   code: string
   label_en: string
   label_local: string | null
-}
-
-/** Option of a measures lookup. */
-export interface MeasureLookupItem extends MeasureRef {
-  count?: number
-  sort_order?: number
 }
 
 export interface Measure {
@@ -66,18 +62,6 @@ export interface DocumentRef {
   id: number
   code: string
   label: string
-}
-
-/** Option of a documents lookup (levels, subjects, keywords). */
-export interface DocumentLookupItem extends DocumentRef {
-  count?: number
-}
-
-export interface CountryLookupItem {
-  /** ISO 3166-1 alpha-2. */
-  code: string
-  name: string
-  count?: number
 }
 
 /** A legislation or policy document (`Document` would shadow the DOM type). */
@@ -139,8 +123,6 @@ export interface DocumentListParams {
   limit?: number
 }
 
-export type MeasureLookup = 'categories' | 'levels-of-application' | 'scales' | 'keywords'
-export type DocumentLookup = 'levels' | 'subjects' | 'keywords'
 export type KbType = 'measure' | 'document'
 
 const BASE = '/api/v1/knowbase'
@@ -163,15 +145,9 @@ export const knowbaseService = {
 
   getMeasure: (id: number) => get<Measure>(`/measures/${id}`),
 
-  measureLookup: (name: MeasureLookup) => get<MeasureLookupItem[]>(`/measures/lookups/${name}`),
-
   listDocuments: (params: DocumentListParams = {}) => get<Page<KbDocument>>('/documents/', params),
 
   getDocument: (id: number) => get<KbDocument>(`/documents/${id}`),
-
-  countries: () => get<CountryLookupItem[]>('/lookups/countries'),
-
-  documentLookup: (name: DocumentLookup) => get<DocumentLookupItem[]>(`/lookups/${name}`),
 
   status: () => get<KnowbaseStatus>('/status'),
 

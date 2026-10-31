@@ -38,6 +38,7 @@ application form text. This file records them and maps each to the plan.
 | Posts with tags, Read more, Download PDF, Comments | Posts (M2), comments (M3); "Download PDF" = print stylesheet / browser PDF (extended) |
 | KNOWBASE highlights: featured resource (Succinct List of Measures download) | Admin-only "Resources" category with link cards (2g) + home widget |
 | Policy Toolkit filter: region, timeline short/mid/long-term | Region = country filter via KNOWBASE API. Timeline facet depends on WP3 adding it to KNOWBASE; until then a platform-side tag on Resources posts |
+| ↳ Update 2026-10-31 (user decision) | Browsing the KNOWBASE by country is done in the KNOWBASE itself (knowbase.urbanfloods.app); the platform's library pages and country picker were removed |
 | Upcoming events / webinars | Blog category "Events" with an optional event date on posts (small schema addition in 2a) |
 | Footer: About, Contact, Accessibility Statement, FAIR Data Principles, partner logos, accessibility widget | Static pages (5e); partner logos row; no third-party accessibility overlay (built-in a11y instead) |
 

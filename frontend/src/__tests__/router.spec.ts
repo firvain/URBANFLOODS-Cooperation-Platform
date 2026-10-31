@@ -24,10 +24,7 @@ describe('routes', () => {
     ['/privacy', 'privacy'],
     ['/accessibility', 'accessibility'],
     ['/open-data', 'open-data'],
-    ['/knowbase', 'knowbase'],
-    ['/knowbase/measures', 'knowbase-measures'],
     ['/knowbase/measures/12', 'knowbase-measure'],
-    ['/knowbase/documents', 'knowbase-documents'],
     ['/knowbase/documents/34', 'knowbase-document'],
     ['/blog', 'blog'],
     ['/blog/category/news', 'blog-category'],
@@ -59,17 +56,22 @@ it('the network route is titled nav.network and the profile route takes an id', 
   expect(profile.meta.auth).toBeUndefined()
 })
 
-it('the KNOWBASE routes are public, the landing is titled nav.knowbase, details take an id', () => {
+it('the KNOWBASE item routes are public and take an id; the library pages are gone', () => {
   const router = createAppRouter(createMemoryHistory())
-  expect(router.resolve('/knowbase').meta.title).toBe('nav.knowbase')
-  expect(router.resolve('/knowbase/measures').meta.title).toBe('knowbase.measures.title')
-  expect(router.resolve('/knowbase/documents').meta.title).toBe('knowbase.documents.title')
   const measure = router.resolve('/knowbase/measures/12')
   const doc = router.resolve('/knowbase/documents/34')
+  expect(measure.meta.title).toBe('knowbase.measures.detailTitle')
+  expect(doc.meta.title).toBe('knowbase.documents.detailTitle')
   expect(measure.params.id).toBe('12')
   expect(doc.params.id).toBe('34')
-  for (const path of ['/knowbase', '/knowbase/measures', '/knowbase/measures/1']) {
-    expect(router.resolve(path).meta.auth).toBeUndefined()
+  expect(measure.meta.auth).toBeUndefined()
+  expect(doc.meta.auth).toBeUndefined()
+  // Browsing happens on the KNOWBASE site itself (user decision 2026-10-31).
+  for (const path of ['/knowbase', '/knowbase/measures', '/knowbase/documents']) {
+    expect(router.resolve(path).name).toBe('not-found')
+  }
+  for (const name of ['knowbase', 'knowbase-measures', 'knowbase-documents']) {
+    expect(router.hasRoute(name)).toBe(false)
   }
 })
 

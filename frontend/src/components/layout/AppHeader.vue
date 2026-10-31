@@ -22,10 +22,15 @@ interface NavLink {
 
 const dss = dssUrl()
 
-/** Internal pages, with the Unified DSS (when configured) after its anchor item. */
+/** The navigation items, with the Unified DSS (when configured) after its anchor item. */
 const navItems = computed<NavLink[]>(() =>
   NAV_ITEMS.flatMap((item) => {
-    const link: NavLink = { name: item.name, label: t(item.labelKey), to: item.to, external: false }
+    const link: NavLink = {
+      name: item.name,
+      label: t(item.labelKey),
+      to: item.to,
+      external: 'external' in item && item.external,
+    }
     if (item.name !== DSS_NAV_ITEM.after || !dss) return [link]
     return [
       link,

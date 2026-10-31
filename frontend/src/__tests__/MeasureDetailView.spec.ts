@@ -72,16 +72,21 @@ describe('MeasureDetailView', () => {
     )
   })
 
-  it('links back to the list and out to the KNOWBASE', async () => {
+  it('links to the measures list on the KNOWBASE site and out to the KNOWBASE, in new tabs', async () => {
     mockApi(routes())
     const { wrapper } = await mountDetail()
-    expect(wrapper.find('a[href="/knowbase/measures"]').text()).toContain(
-      t('knowbase.measures.back'),
-    )
-    const out = wrapper.find('a[href="https://knowbase.urbanfloods.app/measures"]')
-    expect(out.text()).toContain(t('knowbase.openInKnowbase'))
-    expect(out.attributes('target')).toBe('_blank')
-    expect(out.find('.sr-only').text()).toBe(t('a11y.opensInNewTab'))
+    // The list lives on the KNOWBASE site only (user decision 2026-10-31).
+    expect(wrapper.find('a[href="/knowbase/measures"]').exists()).toBe(false)
+    const links = wrapper.findAll('a[href="https://knowbase.urbanfloods.app/measures"]')
+    expect(links).toHaveLength(2)
+    const [back, out] = links
+    expect(back!.text()).toContain(t('knowbase.measures.back'))
+    expect(out!.text()).toContain(t('knowbase.openInKnowbase'))
+    for (const link of links) {
+      expect(link.attributes('target')).toBe('_blank')
+      expect(link.attributes('rel')).toContain('noopener')
+      expect(link.find('.sr-only').text()).toBe(t('a11y.opensInNewTab'))
+    }
   })
 
   it('lists the posts that mention the measure', async () => {
@@ -111,6 +116,8 @@ describe('MeasureDetailView', () => {
     mockApi({ [MEASURE]: replyError(404, 'knowbase.not_found') })
     const { wrapper } = await mountDetail()
     expect(wrapper.text()).toContain(t('knowbase.measures.notFound'))
-    expect(wrapper.find('a[href="/knowbase/measures"]').exists()).toBe(true)
+    const back = wrapper.find('a[href="https://knowbase.urbanfloods.app/measures"]')
+    expect(back.text()).toContain(t('knowbase.measures.back'))
+    expect(back.attributes('target')).toBe('_blank')
   })
 })

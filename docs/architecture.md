@@ -40,7 +40,10 @@ Browser ──HTTPS──> Cloudflare (proxy, DNS, Turnstile)
 - The **KNOWBASE** (a separate delivered application) is never modified. The backend sends only
   `GET` requests to an allow-list of its public routes (`backend/app/services/knowbase.py`). The
   browser never calls the KNOWBASE API; measure photos are plain `<img>` links to
-  `KNOWBASE_PUBLIC_URL/static/...`.
+  `KNOWBASE_PUBLIC_URL/static/...`. The frontend has no KNOWBASE library pages: browsing happens
+  on knowbase.urbanfloods.app (user decision 2026-10-31; the header and home card link out). It
+  keeps the editor's link picker, the link cards and the item pages `/knowbase/measures/:id` and
+  `/knowbase/documents/:id` ("Mentioned in" list).
 - The Unified DSS is a link-out only (`VITE_DSS_URL`, default `https://urbanfloods.finki.ukim.mk/`).
 
 Development stack (`docker-compose.yml`): `postgres` (host port 5432), `mailpit` (UI/API 8025,

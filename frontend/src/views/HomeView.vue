@@ -14,12 +14,15 @@ const { isVerified } = storeToRefs(useAuthStore())
 /** The Unified DSS web app; the card is hidden when it is not configured. */
 const dss = dssUrl()
 
-/** Sections of the platform. */
-const sections: { key: string; icon: string; to: string; external?: string }[] = [
+/**
+ * Sections of the platform: internal ones have a linked title (`to`), the KNOWBASE is another
+ * site browsed there (user decision 2026-10-31), so like the DSS card it has a plain title and an
+ * "Open" button (`external`).
+ */
+const sections: { key: string; icon: string; to?: string; external?: string }[] = [
   { key: 'blog', icon: 'i-lucide-newspaper', to: '/blog' },
   { key: 'forum', icon: 'i-lucide-messages-square', to: '/forum' },
-  // The title links to the library inside the platform; the button opens the KNOWBASE itself.
-  { key: 'knowbase', icon: 'i-lucide-library', to: '/knowbase', external: EXTERNAL_LINKS.knowbase },
+  { key: 'knowbase', icon: 'i-lucide-library', external: EXTERNAL_LINKS.knowbase },
 ]
 
 // The site's schema.org WebSite entry, with the search box search engines may offer.
@@ -63,12 +66,14 @@ usePageHead(() => ({
             <h2 class="flex items-center gap-2 text-lg font-semibold text-highlighted">
               <UIcon :name="section.icon" class="size-5 text-primary" aria-hidden="true" />
               <ULink
+                v-if="section.to"
                 :to="section.to"
                 raw
                 class="text-primary-700 underline-offset-2 hover:underline focus-visible:underline"
               >
                 {{ t(`home.cards.${section.key}.title`) }}
               </ULink>
+              <template v-else>{{ t(`home.cards.${section.key}.title`) }}</template>
             </h2>
           </template>
           <div class="flex h-full flex-col gap-4">
