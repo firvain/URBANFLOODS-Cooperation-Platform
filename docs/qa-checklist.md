@@ -122,17 +122,17 @@ Run all of them on a clean tree with the seed freshly reset. Expected counts as 
 
 | Suite | Command | Expected |
 |---|---|---|
-| Backend | `cd backend && uv run pytest` (Docker for testcontainers, or `TEST_DATABASE_URL=postgresql+asyncpg://test:test@localhost:5434/test` with `docker compose -f docker-compose.test.yml up -d --wait`) | all green. **1607+** (1613 collected on 2026-10-31) |
+| Backend | `cd backend && uv run pytest` (Docker for testcontainers, or `TEST_DATABASE_URL=postgresql+asyncpg://test:test@localhost:5434/test` with `docker compose -f docker-compose.test.yml up -d --wait`) | all green. **1702** (2026-10-31, after 5k–5p) |
 | Backend lint | `cd backend && uv run ruff check . && uv run ruff format --check .` | clean |
 | Coverage | `cd backend && uv run pytest --cov=app --cov-report=term-missing` | ≥ 80 % on `crud/` and `services/` |
-| Frontend unit | `cd frontend && npm run test` | **1017 passed, 60 files** (re-run 2026-10-31) |
+| Frontend unit | `cd frontend && npm run test` | **1094 passed, 64 files** (2026-10-31, after 5k–5p) |
 | Frontend static | `cd frontend && npm run lint:check && npm run type-check && npm run build-only` | clean |
 | E2E | `cd frontend && npx playwright install chromium && npm run e2e` | **32 passed** (auth 9, blog 7, forum 8, moderation 8); the 4 a11y tests skipped |
-| E2E a11y | `cd frontend && E2E_A11Y=1 npm run e2e -- a11y` | 4 passed, 0 axe violations (23 page scans per PROGRESS 5d) |
+| E2E a11y | `cd frontend && E2E_A11Y=1 npm run e2e -- a11y` | 4 passed, 0 axe violations (25 page scans incl. `/admin/organisations` and `/admin/expertise`) |
 | CI | GitHub Actions on `main` | green |
 
-- [x] Backend green (1621, 2026-10-31)
-- [x] Frontend unit, lint, type-check and build green (1038 vitest; editor in its own chunk)
+- [x] Backend green (1702, 2026-10-31 after 5k–5p)
+- [x] Frontend unit, lint, type-check and build green (1094 vitest; editor in its own chunk)
 - [x] E2E green (32 passed, 2026-10-31; stack up, seed reset, rate limits **on**, no override file)
 - [x] E2E a11y green (4 passed, 0 violations; run it after `docker compose restart backend`, or the three signed-in scans fail on 429s right after a full run)
 - [ ] CI green on the commit under test
@@ -432,15 +432,15 @@ decision or an increment before launch).
 
 | Limitation | Accepted / to decide | Notes |
 |---|---|---|
-| No admin page for organisations (API only); no admin way to add expertise tags | | |
+| No admin page for organisations (API only); no admin way to add expertise tags | built (5n) | |
 | XML bulk export (3rd meeting) not implemented | | |
-| Admin digest "send now" only via CLI (no `/admin/digest/send-now`) | | |
+| Admin digest "send now" only via CLI (no `/admin/digest/send-now`) | built (5m) | `POST /admin/digest/send` |
 | `ENABLE_DOCS` in production (the open-data page assumes the OpenAPI file is served) | | |
 | Data package keywords say "urban flooding" (wording rule: "flood management") | | |
 | PLAN.md env-var list and some routes differ from the code (see docs/api.md) | | |
 | Restore from the UI: listed as missing in PROGRESS §4, but added by 5h (Moderate menu, admin reports). Verify in A-02/A-04 and close | | |
-| Resubmit after rejection; reason shown to the author; ban notice | | |
-| Re-reporting after dismissal; `report_count` not recounted when a reporter is anonymised | | |
+| Resubmit after rejection; reason shown to the author; ban notice | resubmit and reason built (5o); ban notice accepted | |
+| Re-reporting after dismissal; `report_count` not recounted when a reporter is anonymised | recount built (5p); re-reporting accepted | |
 | Stricter superadmin self-deletion; cooling-off period for deletion | | |
 | Admin anonymisation of another account (do after launch) | | |
 | Pagination labels in other locales | | |
@@ -448,9 +448,9 @@ decision or an increment before launch).
 | Orphan-upload and usage detection by substring scan (fine at current scale) | | |
 | Public categories list cached per browser session | | |
 | Home suggested-collaborator cards lack the admin badge | | |
-| Author links of directory-hidden members lead to a 404 profile (the content payload does not carry the directory flag) | to decide | found in E-04 |
-| Hover contrast of solid success/warning buttons ~4.1:1 | | |
-| Greek email templates only for two messages; others English | | |
+| Author links of directory-hidden members lead to a 404 profile | built (5l) | found in E-04 |
+| Hover contrast of solid success/warning buttons ~4.1:1 | built (5k) | |
+| Greek email templates only for two messages; others English | accepted (2026-10-31) | |
 | Single backend worker (in-memory rate limits, cache, scheduler) | | |
 | Brevo free plan 300 emails/day | | |
 | Translations to confirm with partners (see 4.3) | | |

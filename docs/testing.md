@@ -116,7 +116,7 @@ Targets can be overridden with `E2E_BASE_URL`, `E2E_API_URL`, `E2E_MAILPIT_URL` 
 | `blog.spec.ts` | 7 | public list, filters and post page with KNOWBASE links; trusted member writes a post with formatting, tags, cover image and a KNOWBASE link, edits and deletes it; untrusted member's post stays pending and private; unsaved-changes guard |
 | `forum.spec.ts` | 8 | reply notification email; trusted member's thread published; reply, nested reply, edit, delete; admin pin/lock; untrusted member's thread pending; comments on posts; notification preferences persist |
 | `moderation.spec.ts` | 8 | first post pending → approve → author trusted; reject with reason in the audit log; three distinct reports auto-hide, dismiss and unhide; dashboard numbers, KNOWBASE state and CSV download; digest email via `docker compose exec backend python -m app.cli digest --force` (skipped when the compose backend is not running); trust toggle and role-menu gating; Moderate menu on a post: hide with a reason, unhide, delete permanently; Uploads tab: an image used by a post cannot be deleted, purging the post removes it |
-| `a11y.spec.ts` | 4 | axe WCAG 2.1 AA, one `h1` and `lang="en"` on 23 pages: 11 public pages, the forum list and a thread, 3 member pages (account, network, editor) and the 7 admin pages; skipped unless `E2E_A11Y=1` |
+| `a11y.spec.ts` | 4 | axe WCAG 2.1 AA, one `h1` and `lang="en"` on 25 pages: 11 public pages, the forum list and a thread, 3 member pages (account, network, editor) and the 9 admin pages; skipped unless `E2E_A11Y=1` |
 
 A full `npm run e2e` therefore runs 32 tests (auth 9, blog 7, forum 8, moderation 8) and skips the
 4 accessibility tests.
