@@ -81,6 +81,8 @@ test('2. the emailed link verifies the address and logs the user in', async () =
 
   await page.goto(link)
   await expect(page.getByRole('heading', { level: 1, name: 'Verify your email' })).toBeVisible()
+  // Nothing is sent until the button is pressed (mail scanners open links but do not click).
+  await page.getByRole('button', { name: 'Verify my email' }).click()
   await expect(
     page.getByText('Your email address is verified and you are logged in. Welcome!'),
   ).toBeVisible()
@@ -129,6 +131,7 @@ test('3b. account page: change the email address through the confirmation link',
   await expect(
     page.getByRole('heading', { level: 1, name: 'Confirm your new email address' }),
   ).toBeVisible()
+  await page.getByRole('button', { name: 'Confirm the new address' }).click()
   await expect(page.getByText('Your email address has been changed')).toBeVisible()
   await expect(page.getByText(`Your account now uses ${newEmail}.`)).toBeVisible()
   accountEmail = newEmail

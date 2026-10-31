@@ -16,24 +16,39 @@ const router = useRouter()
 const auth = useAuthStore()
 const { errorMessage } = useApiErrors()
 
-const state = ref<'verifying' | 'success' | 'error'>('verifying')
+/**
+ * The token is sent only when the person presses the button: mail-security scanners open
+ * links in a sandboxed browser that runs JavaScript, and would otherwise spend the single-use
+ * token before the person clicks.
+ */
+const state = ref<'ready' | 'verifying' | 'success' | 'error'>('ready')
 const error = ref('')
+const token = ref('')
 /** A new member with no expertise yet: the success state points to the profile. */
 const needsExpertise = computed(() => auth.user?.expertise.length === 0)
 let redirectTimer: ReturnType<typeof setTimeout> | undefined
 
-onMounted(async () => {
-  const token = typeof route.query.token === 'string' ? route.query.token : ''
+function fail(e: unknown) {
+  error.value = errorMessage(e)
+  state.value = 'error'
+}
+
+onMounted(() => {
+  token.value = typeof route.query.token === 'string' ? route.query.token : ''
+  if (!token.value) fail(new ApiError(400, 'auth.token_invalid'))
+})
+
+async function verify() {
+  if (state.value !== 'ready') return
+  state.value = 'verifying'
   try {
-    if (!token) throw new ApiError(400, 'auth.token_invalid')
-    await auth.verifyEmail(token)
+    await auth.verifyEmail(token.value)
     state.value = 'success'
     redirectTimer = setTimeout(() => router.push('/'), AUTH_REDIRECT_DELAY_MS)
   } catch (e) {
-    error.value = errorMessage(e)
-    state.value = 'error'
+    fail(e)
   }
-})
+}
 
 onBeforeUnmount(() => clearTimeout(redirectTimer))
 </script>
@@ -43,6 +58,20 @@ onBeforeUnmount(() => clearTimeout(redirectTimer))
     <h1 tabindex="-1" class="text-3xl font-bold text-highlighted focus:outline-none">
       {{ t('auth.verify.title') }}
     </h1>
+
+    <template v-if="state === 'ready' || state === 'verifying'">
+      <p class="mt-8 text-muted">{{ t('auth.verify.prompt') }}</p>
+      <UButton
+        type="button"
+        class="mt-6"
+        icon="i-lucide-mail-check"
+        :loading="state === 'verifying'"
+        :disabled="state === 'verifying'"
+        @click="verify"
+      >
+        {{ t('auth.verify.button') }}
+      </UButton>
+    </template>
 
     <div aria-live="polite" class="mt-8">
       <p v-if="state === 'verifying'" class="flex items-center gap-2 text-muted">

@@ -646,6 +646,8 @@
     },
     "verify": {
       "title": "Potrdite svoj e-poštni naslov",
+      "prompt": "Pritisnite gumb, da potrdite svoj e-poštni naslov in se prijavite.",
+      "button": "Potrdi moj e-poštni naslov",
       "verifying": "Potrjevanje e-poštnega naslova …",
       "success": "Vaš e-poštni naslov je potrjen in prijavljeni ste. Dobrodošli!",
       "redirecting": "Preusmerjanje na domačo stran …",
@@ -657,6 +659,8 @@
     },
     "confirmEmail": {
       "title": "Potrdite svoj novi e-poštni naslov",
+      "prompt": "Pritisnite gumb, da svoj račun preklopite na novi naslov.",
+      "button": "Potrdi novi naslov",
       "confirming": "Potrjevanje novega e-poštnega naslova …",
       "success": "Vaš e-poštni naslov je spremenjen",
       "nowUsing": "Vaš račun zdaj uporablja naslov {email}.",

@@ -646,6 +646,8 @@
     },
     "verify": {
       "title": "Verifikoni email-in tuaj",
+      "prompt": "Shtypni butonin për të verifikuar adresën tuaj të email-it dhe për të hyrë.",
+      "button": "Verifiko email-in tim",
       "verifying": "Po verifikohet adresa juaj e email-it…",
       "success": "Adresa juaj e email-it u verifikua dhe keni hyrë në llogari. Mirë se vini!",
       "redirecting": "Po ju drejtojmë te faqja kryesore…",
@@ -657,6 +659,8 @@
     },
     "confirmEmail": {
       "title": "Konfirmoni adresën tuaj të re të email-it",
+      "prompt": "Shtypni butonin për ta kaluar llogarinë tuaj në adresën e re.",
+      "button": "Konfirmo adresën e re",
       "confirming": "Po konfirmohet adresa juaj e re e email-it…",
       "success": "Adresa juaj e email-it u ndryshua",
       "nowUsing": "Llogaria juaj tani përdor {email}.",

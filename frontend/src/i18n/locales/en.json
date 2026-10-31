@@ -646,6 +646,8 @@
     },
     "verify": {
       "title": "Verify your email",
+      "prompt": "Press the button to verify your email address and sign in.",
+      "button": "Verify my email",
       "verifying": "Verifying your email address…",
       "success": "Your email address is verified and you are logged in. Welcome!",
       "redirecting": "Taking you to the home page…",
@@ -657,6 +659,8 @@
     },
     "confirmEmail": {
       "title": "Confirm your new email address",
+      "prompt": "Press the button to switch your account to the new address.",
+      "button": "Confirm the new address",
       "confirming": "Confirming your new email address…",
       "success": "Your email address has been changed",
       "nowUsing": "Your account now uses {email}.",

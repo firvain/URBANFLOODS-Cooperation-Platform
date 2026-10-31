@@ -646,6 +646,8 @@
     },
     "verify": {
       "title": "Verifica la tua email",
+      "prompt": "Premi il pulsante per verificare il tuo indirizzo email e accedere.",
+      "button": "Verifica la mia email",
       "verifying": "Verifica del tuo indirizzo email in corso…",
       "success": "Il tuo indirizzo email è verificato e hai effettuato l'accesso. Benvenuto!",
       "redirecting": "Ti stiamo portando alla home page…",
@@ -657,6 +659,8 @@
     },
     "confirmEmail": {
       "title": "Conferma il tuo nuovo indirizzo email",
+      "prompt": "Premi il pulsante per passare il tuo account al nuovo indirizzo.",
+      "button": "Conferma il nuovo indirizzo",
       "confirming": "Conferma del tuo nuovo indirizzo email in corso…",
       "success": "Il tuo indirizzo email è stato modificato",
       "nowUsing": "Il tuo account ora usa {email}.",
