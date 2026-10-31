@@ -330,6 +330,7 @@ NOTIFICATION_FIELDS = frozenset(
         "comment_on_my_post",
         "reply_to_my_reply",
         "admin_digest",
+        "moderation_decisions",
         "digest_frequency",
     }
 )

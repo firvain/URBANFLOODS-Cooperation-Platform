@@ -91,10 +91,12 @@ async def _make(db, content_type: ContentType, status: ContentStatus, *, author_
 
 
 async def _call(action: str, db, content, actor, *, reason: str | None = None):
+    """Run ``action``; returns the content (``approve``/``unhide`` return an ``Approval``)."""
     fn = getattr(moderation, action)
     if action in ("reject", "hide"):
         return await fn(db, content=content, actor=actor, reason=reason, now=NOW)
-    return await fn(db, content=content, actor=actor, now=NOW)
+    result = await fn(db, content=content, actor=actor, now=NOW)
+    return result.content if isinstance(result, moderation.Approval) else result
 
 
 async def _audits(db, *, action: str | None = None, target_type: str, target_id: int):

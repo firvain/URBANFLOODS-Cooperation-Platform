@@ -715,6 +715,8 @@
       "commentOnMyPostHint": "Un'email quando qualcuno commenta uno dei tuoi articoli del blog.",
       "replyToMyReply": "Risposte alle mie risposte",
       "replyToMyReplyHint": "Un'email quando qualcuno risponde a una delle tue risposte.",
+      "moderationDecisions": "Decisioni sui miei articoli e sulle mie discussioni",
+      "moderationDecisionsHint": "Un'email quando un amministratore approva o respinge un tuo articolo o una tua discussione.",
       "adminTitle": "Amministrazione",
       "adminDigest": "Riepilogo di moderazione",
       "adminDigestHint": "Un riepilogo dei contenuti in attesa di approvazione e delle segnalazioni aperte.",

@@ -1,0 +1,13 @@
+{% extends "en/_layout.html.j2" %}
+{% block title %}Your {{ content_type_label }} was not approved{% endblock %}
+{% block content %}
+<h1 style="font-size:22px; margin:0 0 16px;">Your {{ content_type_label }} was not approved</h1>
+<p>Hello {{ display_name }},</p>
+<p>An admin reviewed your {{ content_type_label }} “{{ title }}” on the {{ app_name }} and did not approve it for publication. It is not public: only you and the admins can see it.</p>
+<p>While signed in, you can still open it and edit or delete it from your account.</p>
+<p><a href="{{ frontend_url }}{{ link_url }}" style="color:#0b4f8a; font-weight:bold;">Open your {{ content_type_label }}</a></p>
+<p>If you have questions, write to <a href="mailto:{{ contact_email }}" style="color:#0b4f8a;">{{ contact_email }}</a>.</p>
+{% endblock %}
+{% block notice %}
+<p style="margin:0 0 8px;">You received this email because you asked to be told about decisions on your posts and discussions. <a href="{{ frontend_url }}{{ settings_url }}" style="color:#0b4f8a;">Change your notification settings</a> to stop these emails.</p>
+{% endblock %}

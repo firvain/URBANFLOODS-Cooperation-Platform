@@ -88,6 +88,8 @@ class Settings(BaseSettings):
 
     # Content
     CONTENT_LICENSE_URL: str = "https://creativecommons.org/licenses/by/4.0/"
+    # Project contact named in emails (e.g. a rejected post): the University of Western Macedonia.
+    CONTACT_EMAIL: str = "louta@uowm.gr"
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod

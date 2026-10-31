@@ -5,6 +5,9 @@ Every route needs an admin. Actions load the content row ``FOR UPDATE`` and hand
 and writes the ``moderation.<action>`` audit row; unknown content is 404
 ``moderation.content_not_found``. ``purge`` is outside the state machine: it hard-deletes the item
 from any status (files of the attachments it frees are removed after the response).
+
+Approve, reject and an unhide that approves a rejected post/thread email the author
+(``services/notifications.py``) from a background task, i.e. after the commit.
 """
 
 from __future__ import annotations
@@ -32,7 +35,7 @@ from app.crud import audit as crud_audit
 from app.crud import moderation
 from app.db.enums import ContentType
 from app.db.models import User
-from app.services import images
+from app.services import images, notifications
 
 router = APIRouter()
 
@@ -88,6 +91,26 @@ def _result(content: moderation.ContentModel) -> ModerationResult:
 
 def _reason(body: ModerationReason | None) -> str | None:
     return body.reason if body is not None else None
+
+
+def _notify_decision(
+    background: BackgroundTasks,
+    content: moderation.ContentModel,
+    decision: notifications.Decision,
+    *,
+    admin: User,
+    newly_trusted: bool = False,
+) -> None:
+    """Email the author about ``decision`` after the response (so after the commit); an admin
+    deciding on their own content gets no email."""
+    background.add_task(
+        notifications.send_moderation_decision,
+        moderation.content_type_of(content),
+        content.id,
+        decision,
+        newly_trusted,
+        actor_id=admin.id,
+    )
 
 
 # --- queue and log ----------------------------------------------------------------------------
@@ -148,11 +171,19 @@ async def moderation_log(
     responses=ACTION_ERRORS,
 )
 async def approve_content(
-    content_type: ContentType, content_id: ContentId, admin: AdminUser, db: DbTx
+    content_type: ContentType,
+    content_id: ContentId,
+    admin: AdminUser,
+    db: DbTx,
+    background: BackgroundTasks,
 ) -> ModerationResult:
-    """Publish a pending post or thread; its author becomes trusted."""
+    """Publish a pending post or thread; its author becomes trusted and is emailed."""
     content = await _load(db, content_type, content_id)
-    return _result(await moderation.approve(db, content=content, actor=admin))
+    approval = await moderation.approve(db, content=content, actor=admin)
+    _notify_decision(
+        background, content, "approved", admin=admin, newly_trusted=approval.newly_trusted
+    )
+    return _result(content)
 
 
 @router.post(
@@ -165,11 +196,15 @@ async def reject_content(
     content_id: ContentId,
     admin: AdminUser,
     db: DbTx,
+    background: BackgroundTasks,
     body: OptionalReason = None,
 ) -> ModerationResult:
-    """Hide a pending post or thread as rejected; the optional reason is audited."""
+    """Hide a pending post or thread as rejected; the optional reason is audited (it is not in
+    the email to the author)."""
     content = await _load(db, content_type, content_id)
-    return _result(await moderation.reject(db, content=content, actor=admin, reason=_reason(body)))
+    await moderation.reject(db, content=content, actor=admin, reason=_reason(body))
+    _notify_decision(background, content, "rejected", admin=admin)
+    return _result(content)
 
 
 @router.post(
@@ -195,11 +230,21 @@ async def hide_content(
     responses=ACTION_ERRORS,
 )
 async def unhide_content(
-    content_type: ContentType, content_id: ContentId, admin: AdminUser, db: DbTx
+    content_type: ContentType,
+    content_id: ContentId,
+    admin: AdminUser,
+    db: DbTx,
+    background: BackgroundTasks,
 ) -> ModerationResult:
-    """Publish hidden content again (unhiding a rejected post or thread approves it)."""
+    """Publish hidden content again (unhiding a rejected post or thread approves it, and its
+    author is emailed)."""
     content = await _load(db, content_type, content_id)
-    return _result(await moderation.unhide(db, content=content, actor=admin))
+    result = await moderation.unhide(db, content=content, actor=admin)
+    if result.approved:
+        _notify_decision(
+            background, content, "approved", admin=admin, newly_trusted=result.newly_trusted
+        )
+    return _result(content)
 
 
 @router.post(

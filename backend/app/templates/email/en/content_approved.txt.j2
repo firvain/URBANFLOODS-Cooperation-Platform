@@ -1,0 +1,17 @@
+Hello {{ display_name }},
+
+{% if automatic %}
+Your {{ content_type_label }} “{{ title }}” was published automatically after the review period: your {{ content_type_label }} is now public on the {{ app_name }}.
+{% else %}
+An admin approved your {{ content_type_label }} “{{ title }}”: your {{ content_type_label }} is now public on the {{ app_name }}.
+{% endif %}
+{% if newly_trusted %}
+
+From now on, your posts and discussions are published immediately, without review.
+{% endif %}
+
+Open it: {{ frontend_url }}{{ link_url }}
+
+You received this email because you asked to be told about decisions on your posts and discussions. To stop these emails, change your notification settings: {{ frontend_url }}{{ settings_url }}
+
+{% include "en/_footer.txt.j2" %}

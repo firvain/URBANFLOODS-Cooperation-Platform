@@ -58,6 +58,7 @@ DEFAULT_PREFERENCES = {
     "comment_on_my_post": True,
     "reply_to_my_reply": True,
     "admin_digest": True,
+    "moderation_decisions": True,
     "digest_frequency": "daily",
 }
 

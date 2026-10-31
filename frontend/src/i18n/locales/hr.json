@@ -715,6 +715,8 @@
       "commentOnMyPostHint": "Poruka e-pošte kada netko komentira neku od Vaših objava na blogu.",
       "replyToMyReply": "Odgovori na moje odgovore",
       "replyToMyReplyHint": "Poruka e-pošte kada netko odgovori na neki od Vaših odgovora.",
+      "moderationDecisions": "Odluke o mojim objavama i raspravama",
+      "moderationDecisionsHint": "Poruka e-pošte kada administrator odobri ili odbije Vašu objavu ili raspravu.",
       "adminTitle": "Administracija",
       "adminDigest": "Sažetak moderiranja",
       "adminDigestHint": "Pregled sadržaja koji čeka odobrenje i otvorenih prijava.",

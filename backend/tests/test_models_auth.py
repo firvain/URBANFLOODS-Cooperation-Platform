@@ -95,6 +95,7 @@ async def test_user_defaults(db_session):
     assert prefs.comment_on_my_post is True
     assert prefs.reply_to_my_reply is True
     assert prefs.admin_digest is True
+    assert prefs.moderation_decisions is True
     assert prefs.digest_frequency is DigestFrequency.DAILY
     await db_session.refresh(user, ["notification_preferences"])
     assert user.notification_preferences is prefs

@@ -9,9 +9,10 @@ import { authService, type NotificationPreferences } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
 
 /**
- * Email notification preferences: three switches for activity on the member's own content and,
- * for admins only, the moderation digest and its frequency. Saving sends the whole object (the
- * API replaces it), so a member's hidden admin fields go back unchanged.
+ * Email notification preferences: four switches for activity on the member's own content
+ * (replies, comments, and an admin's decision on their posts and discussions) and, for admins
+ * only, the moderation digest and its frequency. Saving sends the whole object (the API replaces
+ * it), so a member's hidden admin fields go back unchanged.
  */
 const { t } = useI18n()
 const toast = useToast()
@@ -22,6 +23,7 @@ const CONTENT_FIELDS = [
   { key: 'reply_to_my_thread', label: 'replyToMyThread' },
   { key: 'comment_on_my_post', label: 'commentOnMyPost' },
   { key: 'reply_to_my_reply', label: 'replyToMyReply' },
+  { key: 'moderation_decisions', label: 'moderationDecisions' },
 ] as const
 
 const state = ref<NotificationPreferences | null>(null)
@@ -74,7 +76,8 @@ async function save() {
 
     <div v-if="loading" aria-busy="true" class="space-y-3">
       <span class="sr-only">{{ t('account.notifications.loading') }}</span>
-      <USkeleton v-for="n in 3" :key="n" class="h-12 w-full" />
+      <!-- One placeholder per switch every member sees. -->
+      <USkeleton v-for="field in CONTENT_FIELDS" :key="field.key" class="h-12 w-full" />
     </div>
 
     <div v-else-if="loadFailed || !state" role="alert">

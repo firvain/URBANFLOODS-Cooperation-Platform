@@ -715,6 +715,8 @@
       "commentOnMyPostHint": "Sporočilo, ko nekdo komentira katero od vaših objav v blogu.",
       "replyToMyReply": "Odgovori na moje odgovore",
       "replyToMyReplyHint": "Sporočilo, ko nekdo odgovori na katerega od vaših odgovorov.",
+      "moderationDecisions": "Odločitve o mojih objavah in razpravah",
+      "moderationDecisionsHint": "Sporočilo, ko skrbnik odobri ali zavrne vašo objavo ali razpravo.",
       "adminTitle": "Administracija",
       "adminDigest": "Povzetek moderiranja",
       "adminDigestHint": "Povzetek vsebin, ki čakajo na odobritev, in odprtih prijav.",

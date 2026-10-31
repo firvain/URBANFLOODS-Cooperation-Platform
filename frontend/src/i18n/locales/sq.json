@@ -715,6 +715,8 @@
       "commentOnMyPostHint": "Një email kur dikush komenton në një nga postimet tuaja të blogut.",
       "replyToMyReply": "Përgjigjet ndaj përgjigjeve të mia",
       "replyToMyReplyHint": "Një email kur dikush i përgjigjet një prej përgjigjeve tuaja.",
+      "moderationDecisions": "Vendimet për postimet dhe diskutimet e mia",
+      "moderationDecisionsHint": "Një email kur një administrator miraton ose refuzon postimin ose diskutimin tuaj.",
       "adminTitle": "Administrimi",
       "adminDigest": "Përmbledhja e moderimit",
       "adminDigestHint": "Një përmbledhje e përmbajtjes në pritje të miratimit dhe e raportimeve të hapura.",

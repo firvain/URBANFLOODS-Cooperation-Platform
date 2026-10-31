@@ -1,0 +1,11 @@
+Hello {{ display_name }},
+
+An admin reviewed your {{ content_type_label }} “{{ title }}” on the {{ app_name }} and did not approve it for publication. It is not public: only you and the admins can see it.
+
+While signed in, you can still open it and edit or delete it from your account: {{ frontend_url }}{{ link_url }}
+
+If you have questions, write to {{ contact_email }}.
+
+You received this email because you asked to be told about decisions on your posts and discussions. To stop these emails, change your notification settings: {{ frontend_url }}{{ settings_url }}
+
+{% include "en/_footer.txt.j2" %}

@@ -715,6 +715,8 @@
       "commentOnMyPostHint": "E-mail kada neko komentariše neku od Vaših objava na blogu.",
       "replyToMyReply": "Odgovori na moje odgovore",
       "replyToMyReplyHint": "E-mail kada neko odgovori na neki od Vaših odgovora.",
+      "moderationDecisions": "Odluke o mojim objavama i diskusijama",
+      "moderationDecisionsHint": "E-mail kada administrator odobri ili odbije Vašu objavu ili diskusiju.",
       "adminTitle": "Administracija",
       "adminDigest": "Pregled moderacije",
       "adminDigestHint": "Sažetak sadržaja koji čeka odobrenje i otvorenih prijava.",

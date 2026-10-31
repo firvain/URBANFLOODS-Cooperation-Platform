@@ -76,6 +76,7 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-noreply@cooperation.localhost}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-URBANFLOODS Cooperation Platform (dev)}
+      CONTACT_EMAIL: ${CONTACT_EMAIL:-louta@uowm.gr}
       TURNSTILE_ENABLED: "false"
       RATE_LIMIT_ENABLED: "true"
       ENABLE_SCHEDULER: "false"

@@ -818,7 +818,7 @@ export interface paths {
         put?: never;
         /**
          * Approve Content
-         * @description Publish a pending post or thread; its author becomes trusted.
+         * @description Publish a pending post or thread; its author becomes trusted and is emailed.
          */
         post: operations["approve_content_api_v1_moderation__content_type___content_id__approve_post"];
         delete?: never;
@@ -838,7 +838,8 @@ export interface paths {
         put?: never;
         /**
          * Reject Content
-         * @description Hide a pending post or thread as rejected; the optional reason is audited.
+         * @description Hide a pending post or thread as rejected; the optional reason is audited (it is not in
+         *     the email to the author).
          */
         post: operations["reject_content_api_v1_moderation__content_type___content_id__reject_post"];
         delete?: never;
@@ -878,7 +879,8 @@ export interface paths {
         put?: never;
         /**
          * Unhide Content
-         * @description Publish hidden content again (unhiding a rejected post or thread approves it).
+         * @description Publish hidden content again (unhiding a rejected post or thread approves it, and its
+         *     author is emailed).
          */
         post: operations["unhide_content_api_v1_moderation__content_type___content_id__unhide_post"];
         delete?: never;
@@ -1357,9 +1359,15 @@ export interface paths {
          * Delete Upload
          * @description Delete an upload (its uploader, or an admin). If it is someone's avatar, the avatar is
          *     cleared. Someone else's upload answers 404 to a member, as if it did not exist. An upload
-         *     still used by content (a post cover or an image in any body, whatever its status) is 409
-         *     ``uploads.in_use`` for everyone: deleting it would break the content (admins remove such
-         *     images by editing or purging the content).
+         *     still used by content (a post cover or an image in a body) is 409 ``uploads.in_use``:
+         *     deleting it would break the content (admins remove such images by editing or purging the
+         *     content).
+         *
+         *     For the uploader's own delete, content whose status is ``deleted`` does not count, so a
+         *     member can free an image that only their deleted posts still show; if such content is
+         *     restored later, the image is missing from it. For anyone else's upload (an admin), every
+         *     status counts. The orphan sweep stays stricter: it never removes an image that any content,
+         *     deleted or not, references.
          */
         delete: operations["delete_upload_api_v1_uploads__attachment_id__delete"];
         options?: never;
@@ -3274,6 +3282,8 @@ export interface components {
             reply_to_my_reply: boolean;
             /** Admin Digest */
             admin_digest: boolean;
+            /** Moderation Decisions */
+            moderation_decisions: boolean;
             digest_frequency: components["schemas"]["DigestFrequency"];
         };
         /** OrganisationCreate */

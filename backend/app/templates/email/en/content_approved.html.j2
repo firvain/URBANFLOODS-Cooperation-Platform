@@ -1,0 +1,18 @@
+{% extends "en/_layout.html.j2" %}
+{% block title %}Your {{ content_type_label }} is now public{% endblock %}
+{% block content %}
+<h1 style="font-size:22px; margin:0 0 16px;">Your {{ content_type_label }} is now public</h1>
+<p>Hello {{ display_name }},</p>
+{% if automatic %}
+<p>Your {{ content_type_label }} “{{ title }}” was published automatically after the review period: your {{ content_type_label }} is now public on the {{ app_name }}.</p>
+{% else %}
+<p>An admin approved your {{ content_type_label }} “{{ title }}”: your {{ content_type_label }} is now public on the {{ app_name }}.</p>
+{% endif %}
+{% if newly_trusted %}
+<p>From now on, your posts and discussions are published immediately, without review.</p>
+{% endif %}
+<p><a href="{{ frontend_url }}{{ link_url }}" style="color:#0b4f8a; font-weight:bold;">Open your {{ content_type_label }}</a></p>
+{% endblock %}
+{% block notice %}
+<p style="margin:0 0 8px;">You received this email because you asked to be told about decisions on your posts and discussions. <a href="{{ frontend_url }}{{ settings_url }}" style="color:#0b4f8a;">Change your notification settings</a> to stop these emails.</p>
+{% endblock %}

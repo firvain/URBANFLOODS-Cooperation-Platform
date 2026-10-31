@@ -20,7 +20,9 @@ Maintenance steps:
   avatar and not referenced in any body are hard-deleted, their files once the deletion has
   committed; audit ``maintenance.orphan_uploads`` with the count.
 - ``auto_approved``: pending posts/threads older than ``AUTO_APPROVE_AFTER_DAYS`` days are
-  approved; skipped (0) when the setting is 0.
+  approved; skipped (0) when the setting is 0. Once that step has committed, each author is
+  emailed (``content_approved``, "published automatically"; at most
+  ``MAX_DECISION_EMAILS_PER_RUN`` per run); only the numbers sent and left over are logged.
 """
 
 from __future__ import annotations
@@ -42,12 +44,16 @@ from app.crud.session import delete_expired_sessions
 from app.crud.token import delete_expired_tokens
 from app.db.models import DigestRun
 from app.db.session import AsyncSessionLocal
-from app.services import images
+from app.services import images, notifications
 from app.services.digest import send_admin_digest
 
 TIMEZONE = "UTC"
 MISFIRE_GRACE_SECONDS = 3600
 FAILED = -1
+# Author emails after an auto-approve sweep: a backlog approved at once must not flood the SMTP
+# relay. The rest of a capped run gets no email (the items are published either way).
+MAX_DECISION_EMAILS_PER_RUN = 100
+DECISION_EMAIL_CONCURRENCY = 3
 
 SessionFactory = Callable[[], AsyncSession]
 Step = Callable[..., Awaitable[int]]
@@ -103,8 +109,43 @@ async def _orphan_uploads(db: AsyncSession, *, now: datetime, files: list[str]) 
     return await sweep_orphan_uploads(db, now=now, files=files)
 
 
-async def _auto_approve(db: AsyncSession, *, now: datetime, files: list[str]) -> int:
-    return await crud_moderation.auto_approve_stale(db, now=now)
+async def _auto_approve(
+    db: AsyncSession,
+    *,
+    now: datetime,
+    files: list[str],
+    approved: list[crud_moderation.ApprovedItem] | None = None,
+) -> int:
+    return await crud_moderation.auto_approve_stale(db, now=now, approved=approved)
+
+
+async def _send_decision_emails(
+    approved: list[crud_moderation.ApprovedItem], factory: SessionFactory
+) -> None:
+    """Email the authors of auto-approved items (after the commit), at most
+    ``MAX_DECISION_EMAILS_PER_RUN`` of them, ``DECISION_EMAIL_CONCURRENCY`` at a time. Logs the
+    number sent and the number left unsent by the cap; never ids or addresses."""
+    batch = approved[:MAX_DECISION_EMAILS_PER_RUN]
+    limit = asyncio.Semaphore(DECISION_EMAIL_CONCURRENCY)
+
+    async def send(item: crud_moderation.ApprovedItem) -> bool:
+        async with limit:
+            return await notifications.send_moderation_decision(
+                item.content_type,
+                item.content_id,
+                "approved",
+                item.newly_trusted,
+                automatic=True,
+                session_factory=factory,
+            )
+
+    results = await asyncio.gather(*(send(item) for item in batch))
+    log.info(
+        "maintenance.decision_emails",
+        step="auto_approved",
+        count=sum(results),
+        remaining=len(approved) - len(batch),
+    )
 
 
 MAINTENANCE_STEPS = ("sessions", "tokens", "unverified_users", "orphan_uploads", "auto_approved")
@@ -137,9 +178,11 @@ async def run_maintenance(
             log.info("maintenance.step", step=name, count=0, skipped=True)
             continue
         files: list[str] = []
+        approved: list[crud_moderation.ApprovedItem] = []
+        extra = {"approved": approved} if name == "auto_approved" else {}
         try:
             async with factory() as db, db.begin():
-                counts[name] = await step(db, now=now, files=files)
+                counts[name] = await step(db, now=now, files=files, **extra)
         except Exception as exc:
             log.error("maintenance.failed", step=name, error=type(exc).__name__)
             counts[name] = FAILED
@@ -147,6 +190,8 @@ async def run_maintenance(
         # Committed: only now may files go (a cancellation above skips this, too).
         if files:
             await asyncio.to_thread(images.delete_files, settings.UPLOAD_DIR, *files)
+        if approved:
+            await _send_decision_emails(approved, factory)
         log.info("maintenance.step", step=name, count=counts[name])
     return counts
 

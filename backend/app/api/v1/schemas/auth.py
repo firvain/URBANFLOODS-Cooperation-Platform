@@ -270,6 +270,7 @@ class NotificationPreferences(BaseModel):
     comment_on_my_post: bool
     reply_to_my_reply: bool
     admin_digest: bool
+    moderation_decisions: bool
     digest_frequency: DigestFrequency
 
 

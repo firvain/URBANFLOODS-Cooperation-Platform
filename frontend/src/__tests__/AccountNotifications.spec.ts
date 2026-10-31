@@ -4,7 +4,16 @@ import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import AccountView from '@/views/AccountView.vue'
 import i18n from '@/i18n'
 import type { UserMe } from '@/services/auth'
-import { callsTo, makeUser, mockApi, reply, replyError, type Handler } from './helpers/api'
+import {
+  callsTo,
+  deferred,
+  jsonResponse,
+  makeUser,
+  mockApi,
+  reply,
+  replyError,
+  type Handler,
+} from './helpers/api'
 import { mountApp, mountWithApp, unmountAll } from './helpers/mount'
 import { controlFor } from './helpers/select'
 
@@ -20,6 +29,7 @@ const PREFS = {
   comment_on_my_post: true,
   reply_to_my_reply: false,
   admin_digest: true,
+  moderation_decisions: false,
   digest_frequency: 'daily',
 }
 
@@ -33,6 +43,7 @@ const LABELS = {
   reply_to_my_thread: 'account.notifications.replyToMyThread',
   comment_on_my_post: 'account.notifications.commentOnMyPost',
   reply_to_my_reply: 'account.notifications.replyToMyReply',
+  moderation_decisions: 'account.notifications.moderationDecisions',
   admin_digest: 'account.notifications.adminDigest',
 } as const
 
@@ -59,6 +70,34 @@ describe('Account → Notifications', () => {
     expect(switchFor(wrapper, 'reply_to_my_thread').getAttribute('aria-checked')).toBe('true')
     expect(switchFor(wrapper, 'comment_on_my_post').getAttribute('aria-checked')).toBe('true')
     expect(switchFor(wrapper, 'reply_to_my_reply').getAttribute('aria-checked')).toBe('false')
+  })
+
+  it('shows the moderation decisions switch to members with its hint and loaded value', async () => {
+    mockApi(routes())
+    const { wrapper } = await mountTab()
+    const el = switchFor(wrapper, 'moderation_decisions')
+    expect(el.getAttribute('aria-checked')).toBe('false')
+    expect(wrapper.text()).toContain(t('account.notifications.moderationDecisionsHint'))
+    unmountAll()
+
+    mockApi(
+      routes(makeUser(), { [GET_PREFS]: reply(200, { ...PREFS, moderation_decisions: true }) }),
+    )
+    const again = await mountTab()
+    expect(switchFor(again.wrapper, 'moderation_decisions').getAttribute('aria-checked')).toBe(
+      'true',
+    )
+  })
+
+  it('saves the moderation decisions switch', async () => {
+    const saved = { ...PREFS, moderation_decisions: true }
+    const fetchMock = mockApi(routes(makeUser(), { [PUT_PREFS]: reply(200, saved) }))
+    const { wrapper } = await mountTab()
+    switchFor(wrapper, 'moderation_decisions').click()
+    await flushPromises()
+    await save(wrapper)
+    expect(callsTo(fetchMock, PUT_PREFS)[0]!.body).toEqual(saved)
+    expect(switchFor(wrapper, 'moderation_decisions').getAttribute('aria-checked')).toBe('true')
   })
 
   it('the email opt-out link /account?tab=notifications lands on the tab after login', async () => {
@@ -144,6 +183,19 @@ describe('Account → Notifications', () => {
     expect(wrapper.find('[aria-live="polite"]').text()).not.toContain(
       t('account.notifications.saved'),
     )
+  })
+
+  it('shows one placeholder row per member switch while loading', async () => {
+    const held = deferred<Response>()
+    mockApi(routes(makeUser(), { [GET_PREFS]: () => held.promise }))
+    const { wrapper } = await mountTab()
+    const busy = wrapper.find('[aria-busy="true"]')
+    expect(busy.exists()).toBe(true)
+    expect(busy.findAll(':scope > :not(.sr-only)')).toHaveLength(4)
+    held.resolve(jsonResponse(PREFS))
+    await flushPromises()
+    expect(wrapper.find('[aria-busy="true"]').exists()).toBe(false)
+    expect(switchFor(wrapper, 'moderation_decisions').getAttribute('aria-checked')).toBe('false')
   })
 
   it('offers a retry when the preferences cannot be loaded', async () => {

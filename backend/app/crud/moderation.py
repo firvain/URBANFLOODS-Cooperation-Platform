@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, NamedTuple
 
 from sqlalchemy import ColumnElement, func, literal, or_, select, union_all, update
 from sqlalchemy import delete as sql_delete
@@ -263,16 +263,17 @@ async def _trust_author(
     actor: User | None,
     reason: str,
     now: datetime,
-) -> None:
+) -> bool:
     """Mark the author trusted and audit it, unless they already are trusted or the account is
-    gone (no author, anonymised or banned: trusting it would undo ``anonymise_user``)."""
+    gone (no author, anonymised or banned: trusting it would undo ``anonymise_user``). Returns
+    True when this call made them trusted."""
     if content.author_id is None:
-        return
+        return False
     author = await db.get(User, content.author_id)
     if author is None or author.deleted_at is not None or not author.is_active:
-        return
+        return False
     if not await crud_user.set_trusted(db, user=author, trusted=True, now=now):
-        return
+        return False
     await log_action(
         db,
         actor_id=actor.id if actor is not None else None,
@@ -285,6 +286,7 @@ async def _trust_author(
             "content_id": content.id,
         },
     )
+    return True
 
 
 def _set_approval(content: ContentModel, *, actor: User | None, now: datetime) -> None:
@@ -303,26 +305,36 @@ async def _approve(
     now: datetime,
     audit_action: str,
     trust_reason: str,
-) -> ContentModel:
+) -> bool:
+    """Approve ``content``; True when its author became trusted by it."""
     from_status = content.status
     content.status = _target(content, "approve")
     _set_approval(content, actor=actor, now=now)
     await _finish(
         db, content=content, from_status=from_status, audit_action=audit_action, actor=actor
     )
-    await _trust_author(db, content=content, actor=actor, reason=trust_reason, now=now)
-    return content
+    return await _trust_author(db, content=content, actor=actor, reason=trust_reason, now=now)
 
 
 # --- transitions ------------------------------------------------------------------------------
 
 
+class Approval(NamedTuple):
+    """What :func:`approve` and :func:`unhide` did: the content, whether it was an approval
+    (always for ``approve``; for ``unhide`` only of a rejected post/thread) and whether its author
+    became trusted by this very call (the approval email says so)."""
+
+    content: ContentModel
+    approved: bool
+    newly_trusted: bool
+
+
 async def approve(
     db: AsyncSession, *, content: ContentModel, actor: User, now: datetime | None = None
-) -> ContentModel:
+) -> Approval:
     """``pending`` → ``published`` (sets ``published_at`` if unset and the approval fields), and
     the author becomes trusted."""
-    return await _approve(
+    newly_trusted = await _approve(
         db,
         content=content,
         actor=actor,
@@ -330,6 +342,7 @@ async def approve(
         audit_action="moderation.approve",
         trust_reason="first_post_approved",
     )
+    return Approval(content, True, newly_trusted)
 
 
 async def reject(
@@ -376,23 +389,28 @@ async def hide(
     )
 
 
+def _unhide_approves(content: ContentModel) -> bool:
+    """Whether unhiding ``content`` is an approval: a post or thread hidden as rejected."""
+    return (
+        content_type_of(content) in REVIEWED_TYPES
+        and content.hidden_reason == HiddenReason.REJECTED
+    )
+
+
 async def unhide(
     db: AsyncSession, *, content: ContentModel, actor: User, now: datetime | None = None
-) -> ContentModel:
+) -> Approval:
     """``hidden`` → ``published``: clears ``hidden_reason``, keeps ``published_at``, resets
     ``report_count`` and dismisses the open reports.
 
     Unhiding a rejected post/thread is an approval: it also sets the approval fields (and
     ``published_at`` if it was never published) and trusts the author; the audit row carries
-    ``"approved": true``.
+    ``"approved": true``. ``newly_trusted`` is always False for a plain unhide.
     """
     now = now or datetime.now(UTC)
     from_status = content.status
     content.status = _target(content, "unhide")
-    approving = (
-        content_type_of(content) in REVIEWED_TYPES
-        and content.hidden_reason == HiddenReason.REJECTED
-    )
+    approving = _unhide_approves(content)
     content.hidden_reason = None
     if approving:
         _set_approval(content, actor=actor, now=now)
@@ -405,9 +423,10 @@ async def unhide(
         actor=actor,
         extra={"approved": True} if approving else None,
     )
-    if approving:
-        await _trust_author(db, content=content, actor=actor, reason="first_post_approved", now=now)
-    return content
+    newly_trusted = approving and await _trust_author(
+        db, content=content, actor=actor, reason="first_post_approved", now=now
+    )
+    return Approval(content, approving, newly_trusted)
 
 
 async def delete(
@@ -672,15 +691,31 @@ async def auto_hide_if_reported(
     return True
 
 
-async def auto_approve_stale(db: AsyncSession, *, now: datetime | None = None) -> int:
+@dataclass(frozen=True)
+class ApprovedItem:
+    """One post or thread the auto-approve sweep approved (for the author emails it sends once
+    the sweep has committed)."""
+
+    content_type: ContentType
+    content_id: int
+    newly_trusted: bool
+
+
+async def auto_approve_stale(
+    db: AsyncSession,
+    *,
+    now: datetime | None = None,
+    approved: list[ApprovedItem] | None = None,
+) -> int:
     """Approve (no actor) every post and thread pending for more than ``AUTO_APPROVE_AFTER_DAYS``
-    days, trusting their authors. Returns how many were approved; 0 when the setting is 0."""
+    days, trusting their authors. Returns how many were approved; 0 when the setting is 0. Each
+    approval is appended to ``approved`` when it is given."""
     days = settings.AUTO_APPROVE_AFTER_DAYS
     if days <= 0:
         return 0
     now = now or datetime.now(UTC)
     cutoff = now - timedelta(days=days)
-    approved = 0
+    count = 0
     for content_type in (ContentType.POST, ContentType.THREAD):
         model = MODELS[content_type]
         stale = await db.scalars(
@@ -689,7 +724,7 @@ async def auto_approve_stale(db: AsyncSession, *, now: datetime | None = None) -
             .order_by(model.created_at, model.id)
         )
         for content in stale.all():
-            await _approve(
+            newly_trusted = await _approve(
                 db,
                 content=content,
                 actor=None,
@@ -697,5 +732,7 @@ async def auto_approve_stale(db: AsyncSession, *, now: datetime | None = None) -
                 audit_action="moderation.auto_approved",
                 trust_reason="auto_approve",
             )
-            approved += 1
-    return approved
+            count += 1
+            if approved is not None:
+                approved.append(ApprovedItem(content_type, content.id, newly_trusted))
+    return count

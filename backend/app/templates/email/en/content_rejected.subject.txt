@@ -1,0 +1,1 @@
+Your {{ content_type_label }} “{{ title }}” was not approved

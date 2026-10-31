@@ -1,5 +1,5 @@
 """Transactional notification emails: a reply to my thread, a reply to my reply, a comment on my
-post.
+post, and a moderator's decision (approved / rejected) on my post or discussion.
 
 The create endpoints schedule :func:`send_reply_notifications` / :func:`send_comment_notifications`
 as FastAPI background tasks. ``DbTx`` (``scope="function"``) commits before the response is sent
@@ -14,17 +14,27 @@ preferences row counts as the defaults (all on); it is not created here (read-on
 A nested reply notifies the parent reply's author (``reply_to_reply``) and the thread author
 (``reply_to_thread``). When they are the same person they get one email: ``reply_to_reply`` if
 they accept it, else ``reply_to_thread`` if they accept that.
+
+Moderation decisions (``content_approved`` / ``content_rejected``, preference
+``moderation_decisions``) go to the author of a post or thread after an approve, a reject, an
+unhide that approves a rejected item (scheduled by the moderation endpoints) or the auto-approve
+sweep (sent by the scheduler once the sweep has committed). The runner re-reads the item in its own
+session and sends nothing when the decision no longer holds (e.g. it was deleted in between). As
+for the other kinds, the acting admin is never emailed about their own decision; a sweep approval
+has no actor and says it was published automatically. The rejection email carries no reason text.
 """
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Callable
+from typing import Any, Literal
 from urllib.parse import quote
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.enums import ContentStatus
+from app.core.config import settings
+from app.db.enums import ContentStatus, ContentType, HiddenReason
 from app.db.models import Comment, NotificationPreference, Post, Reply, Thread, User
 from app.db.session import AsyncSessionLocal
 from app.services import email as email_service
@@ -36,6 +46,13 @@ SETTINGS_PATH = "/account?tab=notifications"
 REPLY_TO_THREAD = "reply_to_thread"
 REPLY_TO_REPLY = "reply_to_reply"
 COMMENT_ON_POST = "comment_on_post"
+CONTENT_APPROVED = "content_approved"
+CONTENT_REJECTED = "content_rejected"
+MODERATION_DECISION = "moderation_decision"
+
+Decision = Literal["approved", "rejected"]
+_DECISION_TEMPLATES: dict[str, str] = {"approved": CONTENT_APPROVED, "rejected": CONTENT_REJECTED}
+_CONTENT_TYPE_LABELS: dict[type, str] = {Post: "post", Thread: "discussion"}
 
 
 def make_excerpt(text: str, limit: int = EXCERPT_MAX_LENGTH) -> str:
@@ -52,9 +69,10 @@ def _published(row: Any) -> bool:
 
 
 async def _recipient(
-    db: AsyncSession, *, user_id: int | None, actor_id: int, preference: str
+    db: AsyncSession, *, user_id: int | None, actor_id: int | None, preference: str
 ) -> User | None:
-    """The user to notify, or ``None`` when they must not get this kind of email."""
+    """The user to notify, or ``None`` when they must not get this kind of email (``actor_id``:
+    the member whose action caused it, who is never told about it)."""
     if user_id is None or user_id == actor_id:
         return None
     user = await db.get(User, user_id)
@@ -200,6 +218,59 @@ async def notify_comment_on_post(db: AsyncSession, *, comment: Comment) -> Outgo
     )
 
 
+def _decision_holds(content: Post | Thread, decision: str) -> bool:
+    """Whether ``content`` is still in the state ``decision`` put it in."""
+    if content.deleted_at is not None:
+        return False
+    if decision == "approved":
+        return content.status == ContentStatus.PUBLISHED
+    return content.status == ContentStatus.HIDDEN and content.hidden_reason == HiddenReason.REJECTED
+
+
+def _content_path(content: Post | Thread) -> str:
+    slug = quote(content.slug, safe="")
+    return f"/blog/{slug}" if isinstance(content, Post) else f"/forum/t/{slug}"
+
+
+async def notify_moderation_decision(
+    db: AsyncSession,
+    *,
+    content: Post | Thread,
+    decision: Decision,
+    newly_trusted: bool,
+    actor_id: int | None = None,
+    automatic: bool = False,
+) -> OutgoingEmail | None:
+    """Email the author of ``content`` about a moderation ``decision``. Returns what was sent, or
+    ``None`` (no eligible author, the author is the acting admin ``actor_id``, preference off, or
+    the decision no longer holds). ``newly_trusted``: the approval made the author trusted (the
+    email says so); ``automatic``: the auto-approve sweep approved it, not an admin."""
+    template = _DECISION_TEMPLATES.get(decision)
+    if template is None:
+        raise ValueError(f"Unknown moderation decision: {decision!r}")
+    if not _decision_holds(content, decision):
+        return None
+    recipient = await _recipient(
+        db, user_id=content.author_id, actor_id=actor_id, preference="moderation_decisions"
+    )
+    if recipient is None:
+        return None
+    approved = decision == "approved"
+    return await _send(
+        kind=template,
+        recipient=recipient,
+        content_id=content.id,
+        context={
+            "content_type_label": _CONTENT_TYPE_LABELS[type(content)],
+            "title": content.title,
+            "link_url": _content_path(content),
+            "newly_trusted": approved and newly_trusted,
+            "automatic": approved and automatic,
+            "contact_email": settings.CONTACT_EMAIL,
+        },
+    )
+
+
 # --- background tasks -------------------------------------------------------------------------
 
 
@@ -242,3 +313,42 @@ async def send_comment_notifications(comment_id: int) -> None:
                 _failed(COMMENT_ON_POST, exc, comment_id=comment_id)
     except Exception as exc:
         _failed("comment", exc, comment_id=comment_id)
+
+
+_DECISION_MODELS: dict[ContentType, type[Post] | type[Thread]] = {
+    ContentType.POST: Post,
+    ContentType.THREAD: Thread,
+}
+
+
+async def send_moderation_decision(
+    content_type: ContentType,
+    content_id: int,
+    decision: Decision,
+    newly_trusted: bool,
+    *,
+    actor_id: int | None = None,
+    automatic: bool = False,
+    session_factory: Callable[[], AsyncSession] | None = None,
+) -> bool:
+    """Background task (and sweep step) after a moderation decision has committed: email the
+    author (see :func:`notify_moderation_decision`). Returns True when an email went out;
+    failures are logged and swallowed."""
+    try:
+        async with (session_factory or AsyncSessionLocal)() as db:
+            model = _DECISION_MODELS.get(content_type)
+            content = None if model is None else await db.get(model, content_id)
+            if content is None:
+                return False
+            sent = await notify_moderation_decision(
+                db,
+                content=content,
+                decision=decision,
+                newly_trusted=newly_trusted,
+                actor_id=actor_id,
+                automatic=automatic,
+            )
+            return sent is not None
+    except Exception as exc:
+        _failed(MODERATION_DECISION, exc, content_id=content_id)
+        return False

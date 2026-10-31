@@ -224,6 +224,9 @@ class NotificationPreference(Base):
         Boolean, nullable=False, server_default=text("true")
     )
     admin_digest: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    moderation_decisions: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("true")
+    )
     digest_frequency: Mapped[DigestFrequency] = mapped_column(
         digest_frequency_enum, nullable=False, server_default=text("'daily'")
     )
