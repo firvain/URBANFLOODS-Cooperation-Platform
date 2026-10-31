@@ -7,6 +7,7 @@ import {
   type Page,
 } from '@playwright/test'
 
+import { API_URL, MEMBER, NEWBIE, deletePostViaApi, loginViaForm } from './helpers/demo'
 import { makePng } from './helpers/png'
 
 /**
@@ -18,19 +19,6 @@ import { makePng } from './helpers/png'
  * and everything created is deleted again (the afterAll hook is a safety net for failed runs).
  */
 test.describe.configure({ mode: 'serial' })
-
-const API_URL = process.env.E2E_API_URL ?? 'http://localhost:8000'
-
-const MEMBER = {
-  email: 'member@urbanfloods.example',
-  password: 'Member-Dev-Pass-2026',
-  name: 'Dev Member',
-}
-const NEWBIE = {
-  email: 'newbie@urbanfloods.example',
-  password: 'Newbie-Dev-Pass-2026',
-  name: 'Dev Newbie',
-}
 
 /** Seeded posts (backend/scripts/seed_dev.py). */
 const GREEN_ROOFS = {
@@ -63,15 +51,6 @@ let newbieSlug = ''
 async function newPage(browser: Browser): Promise<[BrowserContext, Page]> {
   const context = await browser.newContext()
   return [context, await context.newPage()]
-}
-
-async function login(page: Page, account: { email: string; password: string; name: string }) {
-  await page.goto('/login')
-  await page.getByLabel('Email').fill(account.email)
-  await page.getByLabel('Password', { exact: true }).fill(account.password)
-  await page.getByRole('button', { name: 'Log in' }).click()
-  await page.waitForURL('/')
-  await expect(page.getByRole('banner').getByRole('button', { name: account.name })).toBeVisible()
 }
 
 /** The post cards of the blog list. */
@@ -117,17 +96,6 @@ async function deletePost(page: Page) {
   await expect(toast(page, 'The post was deleted.')).toBeVisible()
 }
 
-/** Best-effort API delete with the context's session (cleanup after a failed run only). */
-async function deleteViaApi(context: BrowserContext, slug: string) {
-  const headers = { 'X-Requested-With': 'XMLHttpRequest' }
-  const res = await context.request.get(`${API_URL}/api/v1/posts/${encodeURIComponent(slug)}`, {
-    headers,
-  })
-  if (!res.ok()) return
-  const { id } = (await res.json()) as { id: number }
-  await context.request.delete(`${API_URL}/api/v1/posts/${id}`, { headers })
-}
-
 test.beforeAll(async ({ browser }) => {
   ;[anonContext, anon] = await newPage(browser)
   ;[memberContext, member] = await newPage(browser)
@@ -135,7 +103,10 @@ test.beforeAll(async ({ browser }) => {
 })
 
 test.afterAll(async () => {
-  for (const [slug, context] of created) await deleteViaApi(context, slug).catch(() => {})
+  // Cleanup after a failed run only: the tests delete what they create.
+  for (const [slug, context] of created) {
+    await deletePostViaApi(context.request, slug).catch(() => {})
+  }
   await Promise.all([anonContext, memberContext, newbieContext].map((c) => c.close()))
 })
 
@@ -213,7 +184,7 @@ test('2. anonymous: a post shows its content, and its KNOWBASE links lead back t
 })
 
 test('3. trusted member: write a post with formatting, tags, cover and a KNOWBASE link', async () => {
-  await login(member, MEMBER)
+  await loginViaForm(member, MEMBER)
   await member.goto('/blog')
   await member.getByRole('link', { name: 'Write a post' }).click()
   await expect(member).toHaveURL('/blog/new')
@@ -327,7 +298,7 @@ test('4. trusted member: edit the title, then delete the post', async () => {
 })
 
 test('5. untrusted member: a new post waits for approval and stays private', async () => {
-  await login(newbie, NEWBIE)
+  await loginViaForm(newbie, NEWBIE)
   await newbie.goto('/blog')
   await newbie.getByRole('link', { name: 'Write a post' }).click()
   await expect(newbie).toHaveURL('/blog/new')

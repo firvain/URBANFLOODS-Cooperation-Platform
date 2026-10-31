@@ -91,14 +91,14 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 3d | comments endpoints | done | 88157ae | 30 pytest | | | |
 | 3e | notification emails honouring preferences | done | f00bf94 | 33 pytest (1029 total) | BackgroundTasks after commit; de-dup for nested replies; no addresses in logs | | | |
 | 3f | FE forum views + stores | done | adfc8eb | 84 vitest (555 total) | threads list/detail/editor, replies tree with optimistic insert, compact editor prop, shared .content-prose | | | |
-| 3g | FE comments + notifications tab | done | | 34 vitest (589 total) | + Data tab (export download, delete account) | | | |
-| 3h | Playwright `forum.spec.ts` | in progress | | | |
+| 3g | FE comments + notifications tab | done | 75480d9 | 34 vitest (589 total) | + Data tab (export download, delete account) | | | |
+| 3h | Playwright `forum.spec.ts` | done | | 8 e2e (23 total) | thread/reply/nested/edit/delete, pin/lock, pending, comments, notifications tab, reply email via Mailpit; helpers/demo.ts shared with blog spec; a11y scan of /forum + thread (avatar-initials contrast only) | | | |
 
 ### M4 — Moderation + admin UI
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
 | 4a | Models Report/DigestRun + migration | done | a8e88b5 | 15 pytest (1044 total) | migration 0006 | | | |
-| 4b | `crud/moderation.py` state machine + audit | done | | 91 pytest (1135 total) | transition table; approve/unhide-rejected trust author via set_trusted; restore dismisses reports; get_content(for_update) | | | |
+| 4b | `crud/moderation.py` state machine + audit | done | edb065c | 91 pytest (1135 total) | transition table; approve/unhide-rejected trust author via set_trusted; restore dismisses reports; get_content(for_update) | | | |
 | 4c | reports endpoint + auto-hide | todo | | | |
 | 4d | moderation + admin endpoints incl. stats CSV export | todo | | | |
 | 4e | digest + scheduler (+ AUTO_APPROVE_AFTER_DAYS sweep) + `cli digest` | todo | | | |
@@ -156,8 +156,9 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - M3 3a–3g complete: thread/reply/comment models + migration 0005 (one-level trigger, counters), threads/replies/comments endpoints, notification emails honouring preferences, forum views and stores, comments under posts, Account Notifications + Data tabs (3g, 75480d9; 589 vitest).
 - 4a done (a8e88b5): Report + DigestRun models, migration 0006; 1044 backend tests.
 - 4b implemented (crud/moderation.py, 83 tests); `/code-review medium` found six fixes (threshold-0 off switch, no trust for deleted/banned authors, reuse set_trusted, restore dismisses reports, unhide of rejected = approval, row lock option); sent back to the implementer. Accepted as low risk and deferred: auto-approve staleness measured from `created_at` (a restored never-approved item is swept at once), per-row round trips in the sweep.
-- 3h (`e2e/forum.spec.ts`) running against the dev stack.
-- **Next:** commit 3h (M3 complete) and 4b, then 4c (reports endpoint + auto-hide) and 4d (moderation/admin endpoints + stats CSV) in parallel.
+- 3h done → **M3 complete** (23 e2e). a11y findings carried to 5d: avatar initials fallback contrast (blog post, thread), earlier /partners, /about, /register items.
+- 4c (reports) and 4d (moderation/admin endpoints + stats CSV) running in parallel.
+- **Next:** review and commit 4c and 4d, then 4e (digest + scheduler) and 4f (FE report/status components) in parallel.
 
 ## 4. Open questions / decisions pending
 - Terms of Use draft v1 in `docs/legal/terms-of-use.md` needs UOWM legal review: age threshold (15/16), KNOWBASE data licence, jurisdiction. Contact for everything (incl. data requests): louta@uowm.gr (user, 2026-10-31). Privacy Policy draft v1 in `docs/legal/privacy-policy.md` (2026-10-31): review DPO naming, audit-log retention per subsidy contract, hosting description, Cloudflare/Google DPAs, age threshold.
