@@ -94,14 +94,17 @@ jobs:
       - name: Lint
         run: npm run lint:check
 
+      # The build comes first: the Nuxt UI Vite plugin writes the gitignored `components.d.ts`
+      # and `auto-imports.d.ts` during it, and without them the type check sees `U*` components
+      # as untyped (`any`) and fails.
+      - name: Build
+        run: npm run build-only
+
       - name: Type check
         run: npm run type-check
 
       - name: Unit tests
         run: npm run test
-
-      - name: Build
-        run: npm run build-only
 
   docker:
     name: Docker images build

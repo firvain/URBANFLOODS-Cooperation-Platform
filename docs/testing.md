@@ -45,7 +45,8 @@ npm ci
 npm run test          # vitest run (happy-dom)
 npm run test:watch    # watch mode
 npm run lint:check    # eslint incl. eslint-plugin-vuejs-accessibility (npm run lint fixes)
-npm run type-check    # vue-tsc
+npm run type-check    # vue-tsc; on a fresh clone run `npm run build-only` (or `npm run test`) once before it:
+                      # the Nuxt UI Vite plugin generates the gitignored components.d.ts and auto-imports.d.ts
 npm run build-only    # production build
 ```
 
@@ -157,7 +158,7 @@ resets them.
 | Job | Steps |
 |---|---|
 | Backend (ruff + pytest) | Python 3.11 via uv; `uv sync --all-extras --frozen`; `ruff check`; `ruff format --check`; `pytest --cov=app` against a Postgres 16 service container (`TEST_DATABASE_URL`); coverage XML uploaded as an artifact |
-| Frontend (lint, types, vitest, build) | Node 22; `npm ci`; `lint:check`; `type-check`; `test`; `build-only` |
+| Frontend (lint, types, vitest, build) | Node 22; `npm ci`; `lint:check`; `build-only` (generates `components.d.ts`); `type-check`; `test` |
 | Docker images build | on `main` only, after both jobs: builds the backend image and the frontend dev image (no push) |
 
 Playwright does not run in CI; run it locally against the dev stack before closing a milestone.
