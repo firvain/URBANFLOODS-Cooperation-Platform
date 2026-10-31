@@ -117,6 +117,13 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 5f | translation pass (8 locales) | done | | 115 i18n vitest (935 total) | extended. 740 keys per locale (everything except admin.*, English by design); CLDR plural rules in i18n/plural.ts (sr/hr/bs 3 forms, sl 4, mk one=n%10=1); formal register (it informal); Cyrillic for mk/sr; header fits at every width in all 9 locales |
 | 5g | docs incl. `report-D5.1.1-outline.md`, admin handbook, moderation guide | done | | links verified by script | core. docs/architecture, api, moderation-guide, admin-handbook, fair-data, testing, report-D5.1.1-outline; README rewritten; [CHECK] items inside each doc |
 
+### M5x — Post-review increments (2026-10-31)
+| Inc | Scope | Status | Commit | Tests | Notes |
+|---|---|---|---|---|---|
+| 5h | moderation menu on content pages, purge endpoint, restore in admin, Uploads tab | in progress | | | |
+| 5i | author emails on approve/reject + preference | todo | | | |
+| 5j | privacy policy wording for deletion | todo | | | |
+
 ### M6 — Production deployment (only on explicit request)
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
@@ -172,7 +179,8 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - Translations to confirm with partners (from 5f): programme texts (priority, specific objective, call, disclaimer) in all 8 locales; lead-partner address and coordinator role wording; mk name of the university; hr/bs/sl/sr/mk "prijava" used for both log-in and report (context disambiguates); sr guesses for the KNOWBASE gazette/comments field labels.
 - Bug (user report): uploaded images showed as broken in the dev editor. Two causes fixed: Vite had no /static proxy (browser got HTML from :5173; prod nginx already routes /static/), now proxied to the backend (VITE_DEV_PROXY_TARGET=http://backend:8000 in compose); and the slim Linux image has no .webp MIME mapping, so files were served as application/octet-stream with nosniff; the endpoint module now registers image/webp, with a serving test.
 - Bug (user report): a phone JPEG was rejected as unsupported. Pillow reports such files (a second embedded frame) as format MPO; now accepted as JPEG using the first frame (test with a generated MPO).
-- **Next:** M6 deployment files (prod compose, nginx template, deploy script, backup script, docs/deployment.md) only on explicit permission; optional follow-ups listed in §4.
+- Gap review with the user → M5x (5h, 5i, 5j) added to PLAN.md; the rest deferred as known limitations.
+- **Next:** M5x (5h running), then M6 deployment files (prod compose, nginx template, deploy script, backup script, docs/deployment.md) only on explicit permission; optional follow-ups listed in §4.
 
 ## 4. Open questions / decisions pending
 - Gaps found while writing the docs (2026-10-31), to schedule (GDPR export and the address in the email log fixed the same day, 1i-b): no UI button for "restore" although the API exists (and the UI text says restore is DB-only); no admin page for organisations and no admin way to add expertise tags; the XML bulk export agreed at the 3rd meeting is not implemented (Atom + sitemap only); `/admin/digest/send-now` from the plan not implemented (CLI only); PLAN.md env-var list and a few routes differ from the code (see docs/api.md); decide `ENABLE_DOCS` in production (open-data page assumes the OpenAPI file is served); datapackage keywords say "urban flooding".
