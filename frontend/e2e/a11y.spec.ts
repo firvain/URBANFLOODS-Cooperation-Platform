@@ -6,7 +6,16 @@ import { formatViolations, scanA11y } from './a11y'
  * axe WCAG 2.1 AA scan of the public pages. Off by default until the M5 accessibility pass;
  * run it with `E2E_A11Y=1 npm run e2e -- a11y`.
  */
-const PAGES = ['/', '/partners', '/about', '/login', '/register']
+const PAGES = [
+  '/',
+  '/partners',
+  '/about',
+  '/login',
+  '/register',
+  '/blog',
+  // A seeded post with tags and KNOWBASE link cards (backend/scripts/seed_dev.py).
+  '/blog/green-roofs-and-retention-basins-what-two-years-of-pilot-data-show',
+]
 
 test('public pages have no WCAG 2.1 AA violations', async ({ page }) => {
   test.skip(!process.env.E2E_A11Y, 'axe checks are enabled in M5 (set E2E_A11Y=1)')
