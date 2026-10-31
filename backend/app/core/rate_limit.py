@@ -4,9 +4,10 @@ Single worker only (like the scheduler and the caches; see docs/PLAN.md "Known r
 points share one store:
 
 - ``RateLimitMiddleware`` applies ``DEFAULT_LIMIT`` (a cheap 300/min guard) to every ``/api/``
-  request and, on top, the per-route ``ROUTE_LIMITS`` (the auth endpoints). Matching is by method
-  and path (trailing slash ignored), so every attempt counts, including ones the endpoint would
-  reject with 422, and rejected requests never open a database session.
+  request and, on top, the per-route ``ROUTE_LIMITS`` (the auth endpoints and the one-click
+  unsubscribe). Matching is by method and path (trailing slash ignored), so every attempt counts,
+  including ones the endpoint would reject with 422, and rejected requests never open a database
+  session.
 - ``limit(name, times, seconds)`` is a FastAPI dependency factory for routes added later:
   ``@router.post(..., dependencies=[Depends(limit("posts.create", 10, 3600))])``.
 
@@ -69,6 +70,12 @@ ROUTE_LIMITS: dict[tuple[str, str], Limit] = {
     ("POST", f"{_AUTH}/email/confirm"): Limit("auth.email_confirm", 10, 3600),
     ("POST", f"{_AUTH}/me/password"): Limit("auth.me_password", 10, 3600),
     ("POST", f"{_AUTH}/me/email"): Limit("auth.me_email", 5, 3600),
+    # One-click unsubscribe: mail providers POST from shared server IPs on behalf of many
+    # recipients, so the limit is per minute and generous; the token is an HMAC, so it guards
+    # against write floods, not guessing.
+    ("POST", f"{settings.API_V1_PREFIX}/notifications/unsubscribe"): Limit(
+        "notifications.unsubscribe", 30, 60
+    ),
 }
 DEFAULT_LIMIT = Limit("api.default", 300, 60)
 

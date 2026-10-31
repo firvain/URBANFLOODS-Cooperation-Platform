@@ -116,6 +116,12 @@ lists the additional route limit.
 | GET | `/me/export` | user | – | GDPR export of own data (JSON download) |
 | DELETE | `/me` | user | – | delete own account (anonymise); the last superadmin cannot |
 
+### Notifications
+
+| Method | Path | Who | Limit | Purpose |
+|---|---|---|---|---|
+| POST | `/api/v1/notifications/unsubscribe?token=…` | public (signed token) | 30/min | one-click unsubscribe (RFC 8058) from the `List-Unsubscribe` header of a notification email: turns off the one preference the token names; `{"status": "unsubscribed"}`, 400 `notifications.invalid_token` for a malformed or tampered token. No session, no `X-Requested-With` (the one route exempt from the CSRF middleware). There is no GET. |
+
 ### Organisations, expertise, members
 
 | Method | Path | Who | Limit | Purpose |

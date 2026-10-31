@@ -16,8 +16,15 @@ browsers. This middleware is the second layer:
    allowed origins pass. Requests without the cookie cannot act as a user, so curl-style use of
    the public endpoints works without the header.
 
-Safe methods and the probes / API docs are never checked. Rejections are logged as
-``security.csrf_rejected`` (method, path, reason; never the cookie).
+Safe methods and the probes / API docs are never checked. Exactly one unsafe API route is exempt:
+``POST /api/v1/notifications/unsubscribe`` (``UNSUBSCRIBE_PATH``), the RFC 8058 one-click
+unsubscribe target. Mail clients and mail providers' servers POST to it from anywhere, without
+the custom header and possibly with a foreign ``Origin`` (or, from a browser that holds a
+session, the cookie). It is safe to exempt because it ignores the session entirely: it acts only
+on the signed token in its URL, and the only thing a token can do is switch off the one email
+preference it names for the one user it names (see ``services/unsubscribe.py``).
+
+Rejections are logged as ``security.csrf_rejected`` (method, path, reason; never the cookie).
 """
 
 from __future__ import annotations
@@ -36,7 +43,8 @@ from app.core.exceptions import error_body
 UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 REQUIRED_HEADER = "x-requested-with"
 REQUIRED_HEADER_VALUE = "xmlhttprequest"
-EXEMPT_PATHS = frozenset({"/health", "/health/ready"})
+UNSUBSCRIBE_PATH = f"{settings.API_V1_PREFIX}/notifications/unsubscribe"
+EXEMPT_PATHS = frozenset({"/health", "/health/ready", UNSUBSCRIBE_PATH})
 DOCS_PREFIX = "/docs"
 _DEFAULT_PORTS = {"http": 80, "https": 443}
 

@@ -606,3 +606,26 @@ async def test_all_sends_failed_records_no_run(db_session, monkeypatch) -> None:
     # The window is retried on the next run.
     later = await build_admin_digest(db_session, now=NOW + timedelta(hours=1))
     assert later.window_start == NOW + timedelta(hours=1) - timedelta(hours=24)
+
+
+# --- one-click unsubscribe header -------------------------------------------------------------
+
+
+async def test_digest_carries_the_admin_digest_unsubscribe_token(db_session, outbox) -> None:
+    from urllib.parse import parse_qs, urlsplit
+
+    from app.core.config import settings
+    from app.services.unsubscribe import read_token
+
+    await _clear_queue(db_session)
+    admin = await create_admin(db_session)
+
+    await send_admin_digest(db_session, now=NOW, force=True)
+
+    [msg] = [m for m in outbox if m.to == admin.email]
+    frontend = settings.FRONTEND_URL.rstrip("/")
+    assert msg.list_unsubscribe.startswith(
+        f"{frontend}{settings.API_V1_PREFIX}/notifications/unsubscribe?token="
+    )
+    token = parse_qs(urlsplit(msg.list_unsubscribe).query)["token"][0]
+    assert read_token(token) == (admin.id, "admin_digest")

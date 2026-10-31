@@ -111,6 +111,8 @@ async def test_register_happy_path(client, db_session, outbox, cleanup_users):
     assert "/verify-email?token=" in message.text
     link = re.search(r"\S*/verify-email\?token=\S+", message.text).group(0)
     assert link.startswith(settings.FRONTEND_URL)
+    # Account emails cannot be switched off: no List-Unsubscribe header.
+    assert message.list_unsubscribe is None
 
     assert await _audit_actions(db_session, user.id) == ["auth.register", "auth.consent"]
     consent = await db_session.scalar(

@@ -140,6 +140,7 @@ async def test_forgot_password_known_user(client, db_session, outbox, cleanup_us
     assert message.to == user.email
     assert "/reset-password?token=" in message.text
     assert "Test User" in message.text
+    assert message.list_unsubscribe is None
 
     (token,) = await _tokens(db_session, user.id, TokenPurpose.RESET_PASSWORD)
     assert token.used_at is None

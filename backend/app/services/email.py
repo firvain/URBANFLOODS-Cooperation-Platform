@@ -5,6 +5,13 @@ of the three files is missing for the requested locale, all three are taken from
 
 Backends: ``OutboxBackend`` in tests (in-memory list), ``LoggingBackend`` when email is disabled
 outside tests, ``SmtpBackend`` (aiosmtplib) otherwise. Bodies are never logged: they carry tokens.
+
+Deliverability: every message is marked ``Auto-Submitted: auto-generated`` (RFC 3834). The
+notification emails a member can switch off also carry ``List-Unsubscribe`` and
+``List-Unsubscribe-Post: List-Unsubscribe=One-Click`` (RFC 8058), pointing at the signed one-click
+endpoint (see ``services/unsubscribe.py``). Link text in the HTML parts never shows an address:
+the SMTP relay rewrites every link for click tracking, and a visible address that differs from
+the real target is a phishing signal to spam filters.
 """
 
 from __future__ import annotations
@@ -67,6 +74,8 @@ class OutgoingEmail:
     locale: str
     # The template name, for logs that must not carry the address or the subject.
     template: str = ""
+    # Absolute https URL of the one-click unsubscribe endpoint (notification emails only).
+    list_unsubscribe: str | None = None
 
 
 class EmailBackend(Protocol):
@@ -107,7 +116,8 @@ class LoggingBackend:
 class SmtpBackend:
     """Send through SMTP with aiosmtplib: STARTTLS on 587, implicit TLS on 465, plain otherwise
     (Mailpit in dev). Logs in only when ``SMTP_USER`` is set. Adds ``Reply-To`` when
-    ``SMTP_REPLY_TO`` is set."""
+    ``SMTP_REPLY_TO`` is set, ``Auto-Submitted`` always and the RFC 8058 one-click
+    ``List-Unsubscribe`` pair when the message has an unsubscribe URL."""
 
     def build_message(self, msg: OutgoingEmail) -> EmailMessage:
         message = EmailMessage()
@@ -119,6 +129,10 @@ class SmtpBackend:
         message["Date"] = formatdate(usegmt=True)
         domain = settings.SMTP_FROM.rpartition("@")[2] or None
         message["Message-ID"] = make_msgid(domain=domain)
+        message["Auto-Submitted"] = "auto-generated"
+        if msg.list_unsubscribe:
+            message["List-Unsubscribe"] = f"<{msg.list_unsubscribe}>"
+            message["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
         message.set_content(msg.text)
         message.add_alternative(msg.html, subtype="html")
         return message
@@ -170,6 +184,15 @@ def _check_link_paths(context: dict[str, Any]) -> None:
             raise ValueError(f"Email context {key!r} must be a path starting with '/'")
 
 
+def _check_list_unsubscribe(url: str | None) -> None:
+    """An unsubscribe URL becomes a header: absolute http(s), no whitespace or angle brackets
+    (header injection, and ``<…>`` delimits it)."""
+    if url is None:
+        return
+    if not url.startswith(("https://", "http://")) or any(c.isspace() or c in "<>" for c in url):
+        raise ValueError("list_unsubscribe must be an absolute http(s) URL without whitespace")
+
+
 def _render(template: str, locale: str, context: dict[str, Any]) -> tuple[str, str, str, str]:
     effective = _resolve_locale(template, locale)
     _check_link_paths(context)
@@ -205,11 +228,21 @@ async def send_email(
     locale: str,
     context: dict[str, Any],
     backend: EmailBackend | None = None,
+    list_unsubscribe: str | None = None,
 ) -> OutgoingEmail:
-    """Render and send one email. Returns what was sent; SMTP errors propagate to the caller."""
+    """Render and send one email. Returns what was sent; SMTP errors propagate to the caller.
+    ``list_unsubscribe``: the one-click unsubscribe URL, only for emails a member can switch
+    off."""
+    _check_list_unsubscribe(list_unsubscribe)
     subject, text, html, effective = _render(template, locale, context)
     msg = OutgoingEmail(
-        to=to, subject=subject, text=text, html=html, locale=effective, template=template
+        to=to,
+        subject=subject,
+        text=text,
+        html=html,
+        locale=effective,
+        template=template,
+        list_unsubscribe=list_unsubscribe,
     )
     try:
         await (backend or get_backend()).send(msg)

@@ -9,7 +9,7 @@
 {% endif %}
 <p>While signed in, you can still open it and edit or delete it from your account. Once you have edited it, you can send it for approval again from its page.</p>
 <p><a href="{{ frontend_url }}{{ link_url }}" style="color:#0b4f8a; font-weight:bold;">Open your {{ content_type_label }}</a></p>
-<p>If you have questions, write to <a href="mailto:{{ contact_email }}" style="color:#0b4f8a;">{{ contact_email }}</a>.</p>
+<p>If you have questions, <a href="mailto:{{ contact_email }}" style="color:#0b4f8a;">write to the platform team</a> at {{ contact_email }}.</p>
 {% endblock %}
 {% block notice %}
 <p style="margin:0 0 8px;">You received this email because you asked to be told about decisions on your posts and discussions. <a href="{{ frontend_url }}{{ settings_url }}" style="color:#0b4f8a;">Change your notification settings</a> to stop these emails.</p>

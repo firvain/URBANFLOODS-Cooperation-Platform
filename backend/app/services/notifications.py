@@ -39,6 +39,7 @@ from app.db.models import Comment, NotificationPreference, Post, Reply, Thread, 
 from app.db.session import AsyncSessionLocal
 from app.services import email as email_service
 from app.services.email import OutgoingEmail
+from app.services.unsubscribe import unsubscribe_url
 
 EXCERPT_MAX_LENGTH = 200
 SETTINGS_PATH = "/account?tab=notifications"
@@ -92,9 +93,12 @@ async def _send(
     *,
     kind: str,
     recipient: User,
+    preference: str,
     content_id: int,
     context: dict[str, Any],
 ) -> OutgoingEmail:
+    """Send ``kind`` to ``recipient``; ``preference`` is the switch that turns it off, named in
+    the one-click ``List-Unsubscribe`` URL."""
     msg = await email_service.send_email(
         to=recipient.email,
         template=kind,
@@ -104,6 +108,7 @@ async def _send(
             "display_name": recipient.display_name,
             "settings_url": SETTINGS_PATH,
         },
+        list_unsubscribe=unsubscribe_url(recipient.id, preference),
     )
     structlog.get_logger(__name__).info(
         "notification.sent", kind=kind, recipient_id=recipient.id, content_id=content_id
@@ -166,6 +171,7 @@ async def notify_reply_to_thread(db: AsyncSession, *, reply: Reply) -> OutgoingE
     return await _send(
         kind=REPLY_TO_THREAD,
         recipient=recipient,
+        preference="reply_to_my_thread",
         content_id=reply.id,
         context=_reply_email_context(thread, actor, reply),
     )
@@ -186,6 +192,7 @@ async def notify_reply_to_reply(db: AsyncSession, *, reply: Reply) -> OutgoingEm
     return await _send(
         kind=REPLY_TO_REPLY,
         recipient=recipient,
+        preference="reply_to_my_reply",
         content_id=reply.id,
         context=_reply_email_context(thread, actor, reply),
     )
@@ -208,6 +215,7 @@ async def notify_comment_on_post(db: AsyncSession, *, comment: Comment) -> Outgo
     return await _send(
         kind=COMMENT_ON_POST,
         recipient=recipient,
+        preference="comment_on_my_post",
         content_id=comment.id,
         context={
             "actor_name": actor.display_name,
@@ -259,6 +267,7 @@ async def notify_moderation_decision(
     return await _send(
         kind=template,
         recipient=recipient,
+        preference="moderation_decisions",
         content_id=content.id,
         context={
             "content_type_label": _CONTENT_TYPE_LABELS[type(content)],

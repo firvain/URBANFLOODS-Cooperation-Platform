@@ -370,6 +370,25 @@ async def update_notification_preferences(
     return preferences, changed
 
 
+async def disable_notification_preference(
+    db: AsyncSession, *, user_id: int, preference: str
+) -> bool:
+    """Switch one boolean email preference off for ``user_id`` (one-click unsubscribe). Creates
+    the preferences row when missing. Returns whether anything changed; an unknown or deleted
+    (anonymised) account is a no-op that returns False and creates nothing."""
+    if preference not in NOTIFICATION_FIELDS or preference == "digest_frequency":
+        raise ValueError(f"Not a switchable email preference: {preference!r}")
+    user = await db.get(User, user_id)
+    if user is None or user.deleted_at is not None:
+        return False
+    preferences = await get_notification_preferences(db, user=user)
+    if not getattr(preferences, preference):
+        return False
+    setattr(preferences, preference, False)
+    await db.flush()
+    return True
+
+
 # --- GDPR: export and anonymisation -----------------------------------------------------------
 
 DELETED_DISPLAY_NAME = "Deleted user"

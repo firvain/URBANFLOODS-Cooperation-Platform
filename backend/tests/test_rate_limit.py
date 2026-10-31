@@ -118,6 +118,7 @@ def test_route_limits_match_the_plan():
         ("POST", f"{API}/auth/email/confirm"): ("auth.email_confirm", 10, 3600),
         ("POST", f"{API}/auth/me/password"): ("auth.me_password", 10, 3600),
         ("POST", f"{API}/auth/me/email"): ("auth.me_email", 5, 3600),
+        ("POST", f"{API}/notifications/unsubscribe"): ("notifications.unsubscribe", 30, 60),
     }
     actual = {
         key: (value.name, value.times, value.seconds)

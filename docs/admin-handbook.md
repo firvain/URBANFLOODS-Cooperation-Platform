@@ -220,6 +220,20 @@ of the no-reply sender. Templates exist in English, with Greek versions of the v
 reply-to-discussion emails; every other language receives English. Notifications and decision
 emails respect each member's switches under Account → Notifications.
 
+To keep the mail out of junk folders, every message carries `Auto-Submitted: auto-generated`
+(RFC 3834: automated mail, auto-responders stay quiet), and links in the HTML part never show a web
+or email address as their text. The emails a member can switch off (reply and comment
+notifications, decision emails, the admin digest) also carry `List-Unsubscribe` and
+`List-Unsubscribe-Post: List-Unsubscribe=One-Click` (RFC 8058), so mail clients offer an
+"Unsubscribe" button. It POSTs to `/api/v1/notifications/unsubscribe` with a signed token naming the
+member and the one switch to turn off; no sign-in is needed, the switch is turned off at once and
+the change is audited as `notifications.unsubscribed` (`via: list-unsubscribe`). The member can
+switch it back on under Account → Notifications. Changing `SECRET_KEY` invalidates the links in
+emails already sent (the in-body link to the notification settings keeps working). Brevo rewrites
+every link through its click-tracking domain; this cannot be switched off on the free plan, so
+anonymous tracking is enabled in the Brevo account: clicks are counted without being tied to a
+recipient.
+
 Symptoms: members report missing verification or reset emails; resend shows an error; the digest
 or a decision email does not arrive.
 

@@ -30,6 +30,7 @@ from app.crud import reports as crud_reports
 from app.db.enums import DigestFrequency
 from app.db.models import DigestRun, User
 from app.services import email as email_service
+from app.services.unsubscribe import unsubscribe_url
 
 ADMIN_DIGEST_KIND = "admin_daily"
 TEMPLATE = "admin_digest"
@@ -187,6 +188,7 @@ async def send_admin_digest(
                     template=TEMPLATE,
                     locale=recipient.locale,
                     context=_context(data, recipient),
+                    list_unsubscribe=unsubscribe_url(recipient.id, "admin_digest"),
                 )
             except Exception as exc:
                 # Error type only: the message could carry the address.

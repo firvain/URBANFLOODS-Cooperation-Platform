@@ -362,3 +362,187 @@ async def test_smtp_backend_implicit_tls_on_465(smtp_send, monkeypatch) -> None:
     kwargs = smtp_send.await_args.kwargs
     assert kwargs["use_tls"] is True
     assert kwargs["start_tls"] is False
+
+
+# --- deliverability headers (spam score) --------------------------------------------------------
+
+UNSUBSCRIBE_URL = "https://cooperation.example.org/api/v1/notifications/unsubscribe?token=v1.7.x.y"
+
+
+async def test_smtp_backend_marks_every_message_auto_submitted(smtp_send) -> None:
+    """RFC 3834: auto-responders stay quiet and filters classify the mail as automated."""
+    await SmtpBackend().send(_outgoing())
+    message = smtp_send.await_args.args[0]
+    assert message["Auto-Submitted"] == "auto-generated"
+
+
+async def test_smtp_backend_omits_list_unsubscribe_when_not_set(smtp_send) -> None:
+    await SmtpBackend().send(_outgoing())
+    message = smtp_send.await_args.args[0]
+    assert "List-Unsubscribe" not in message
+    assert "List-Unsubscribe-Post" not in message
+
+
+async def test_smtp_backend_sets_one_click_list_unsubscribe(smtp_send) -> None:
+    """RFC 8058: ``List-Unsubscribe`` with the HTTPS URL in angle brackets plus the ``-Post``
+    header that makes mail clients POST ``List-Unsubscribe=One-Click`` to it."""
+    msg = OutgoingEmail(
+        to="maria@example.org",
+        subject="A reply",
+        text="Plain body",
+        html="<p>HTML body</p>",
+        locale="en",
+        list_unsubscribe=UNSUBSCRIBE_URL,
+    )
+    await SmtpBackend().send(msg)
+    message = smtp_send.await_args.args[0]
+    assert message["List-Unsubscribe"] == f"<{UNSUBSCRIBE_URL}>"
+    assert message["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
+    assert message["Auto-Submitted"] == "auto-generated"
+
+
+async def test_send_email_passes_list_unsubscribe_to_the_backend() -> None:
+    backend = OutboxBackend()
+    msg = await send_email(
+        to="maria@example.org",
+        template="welcome",
+        locale="en",
+        context={"display_name": "Maria"},
+        backend=backend,
+        list_unsubscribe=UNSUBSCRIBE_URL,
+    )
+    assert msg.list_unsubscribe == UNSUBSCRIBE_URL
+    assert backend.messages == [msg]
+
+
+async def test_send_email_has_no_list_unsubscribe_by_default() -> None:
+    backend = OutboxBackend()
+    msg = await send_email(
+        to="maria@example.org",
+        template="welcome",
+        locale="en",
+        context={"display_name": "Maria"},
+        backend=backend,
+    )
+    assert msg.list_unsubscribe is None
+
+
+async def test_send_email_rejects_a_list_unsubscribe_that_is_not_https_or_has_a_newline() -> None:
+    for bad in ("javascript:alert(1)", "ftp://x/y", f"{UNSUBSCRIBE_URL}\r\nBcc: a@b.c"):
+        with pytest.raises(ValueError):
+            await send_email(
+                to="maria@example.org",
+                template="welcome",
+                locale="en",
+                context={"display_name": "Maria"},
+                backend=OutboxBackend(),
+                list_unsubscribe=bad,
+            )
+
+
+# --- no web address as visible link text ------------------------------------------------------
+
+# Every variable any email template needs; extra keys are ignored by the others.
+_ALL_TEMPLATE_CONTEXT: dict = {
+    "display_name": "Maria",
+    "verify_url": "/verify-email?token=t",
+    "reset_url": "/reset-password?token=t",
+    "confirm_url": "/account/confirm-email?token=t",
+    "new_email": "new@example.org",
+    "old_email": "old@example.org",
+    "actor_name": "Andrej",
+    "thread_title": "Ponds",
+    "post_title": "Roofs",
+    "excerpt": "Some text",
+    "link_url": "/forum/t/ponds",
+    "settings_url": "/account?tab=notifications",
+    "content_type_label": "post",
+    "title": "Roofs",
+    "newly_trusted": True,
+    "automatic": False,
+    "reason": "Off topic",
+    "contact_email": "urbanfloods@uowm.gr",
+    "window_start": "2020-06-01 06:00 UTC",
+    "window_end": "2020-06-02 06:00 UTC",
+    "pending_total": 1,
+    "pending": [
+        {
+            "content_type": "post",
+            "content_id": 1,
+            "title": "Roofs",
+            "author_name": "Maria",
+            "created_at": "2020-06-01 07:00 UTC",
+        }
+    ],
+    "pending_more": 1,
+    "reports_total": 1,
+    "reports": [
+        {
+            "content_type": "post",
+            "content_id": 1,
+            "reason": "spam",
+            "created_at": "2020-06-01 07:00 UTC",
+        }
+    ],
+    "reports_more": 1,
+    "new_members": 2,
+    "published": {"posts": 1, "threads": 1, "replies": 1, "comments": 1},
+    "queue_url": "/admin/queue",
+    "reports_url": "/admin/reports",
+}
+
+_HTML_TEMPLATES = sorted(
+    (path.parent.name, path.name.removesuffix(".html.j2"))
+    for path in email_service.TEMPLATE_DIR.glob("*/*.html.j2")
+    if not path.name.startswith("_")
+)
+_LINK = re.compile(r"<a\b[^>]*>(.*?)</a>", re.DOTALL | re.IGNORECASE)
+
+
+def test_every_html_template_is_covered() -> None:
+    names = {name for _, name in _HTML_TEMPLATES}
+    assert {"verify_email", "reply_to_thread", "admin_digest", "content_approved"} <= names
+    assert ("el", "verify_email") in _HTML_TEMPLATES
+
+
+@pytest.mark.parametrize(("locale", "template"), _HTML_TEMPLATES)
+def test_no_link_shows_a_web_or_email_address_as_its_text(locale, template) -> None:
+    """Brevo rewrites every link through its click-tracking domain, so a visible address that
+    differs from the real target looks like phishing to spam filters: link text is words only."""
+    _, _, html = render_email(template, locale, _ALL_TEMPLATE_CONTEXT)
+    texts = _LINK.findall(html)
+    assert texts, "every email links somewhere"
+    host = settings.FRONTEND_URL.split("://", 1)[-1].rstrip("/")
+    for text in texts:
+        lowered = text.lower()
+        assert "http" not in lowered, text
+        assert "www." not in lowered, text
+        assert host.lower() not in lowered, text
+        assert "@" not in text, text
+
+
+@pytest.mark.parametrize("locale", ["en", "el"])
+def test_layout_footer_links_to_the_platform_without_showing_its_address(locale) -> None:
+    _, _, html = render_email("verify_email", locale, _ALL_TEMPLATE_CONTEXT)
+    frontend = settings.FRONTEND_URL.rstrip("/")
+    footer = html.split("<footer", 1)[1]
+    assert f'href="{frontend}/"' in footer
+    assert frontend not in footer.replace(f'href="{frontend}/"', "")
+
+
+@pytest.mark.parametrize(
+    ("template", "key"),
+    [
+        ("verify_email", "verify_url"),
+        ("reset_password", "reset_url"),
+        ("change_email", "confirm_url"),
+    ],
+)
+def test_copy_this_address_fallback_stays_plain_text(template, key) -> None:
+    """For clients that strip links the full address stays readable, but not as a link."""
+    _, text, html = render_email(template, "en", _ALL_TEMPLATE_CONTEXT)
+    url = settings.FRONTEND_URL.rstrip("/") + _ALL_TEMPLATE_CONTEXT[key]
+    escaped = url.replace("&", "&amp;")
+    assert url in text
+    assert f"<br>{escaped}</p>" in html
+    assert all(url not in t and escaped not in t for t in _LINK.findall(html))

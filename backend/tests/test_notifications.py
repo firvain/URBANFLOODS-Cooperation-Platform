@@ -566,3 +566,49 @@ async def test_create_comment_endpoint_sends_notification(
     assert msg.to == author.email
     assert "Very useful." in msg.text
     assert f"{FRONTEND}/blog/{post.slug}#comment-{comment_id}" in msg.text
+
+
+# --- one-click unsubscribe header -------------------------------------------------------------
+
+
+def _unsubscribe_target(msg) -> tuple[int, str] | None:
+    from urllib.parse import parse_qs, urlsplit
+
+    from app.services.unsubscribe import read_token
+
+    assert msg.list_unsubscribe is not None
+    assert msg.list_unsubscribe.startswith(f"{FRONTEND}{API}/notifications/unsubscribe?token=")
+    return read_token(parse_qs(urlsplit(msg.list_unsubscribe).query)["token"][0])
+
+
+async def test_reply_to_thread_carries_its_unsubscribe_token(db_session, outbox) -> None:
+    owner, _, _, reply = await _forum_setup(db_session)
+
+    msg = await notify_reply_to_thread(db_session, reply=reply)
+
+    assert _unsubscribe_target(msg) == (owner.id, "reply_to_my_thread")
+
+
+async def test_reply_to_reply_carries_its_unsubscribe_token(db_session, outbox) -> None:
+    owner, parent_author, thread, parent = await _forum_setup(db_session)
+    actor = await create_verified_user(db_session)
+    reply = await create_reply(
+        db_session, thread_id=thread.id, author_id=actor.id, parent_reply_id=parent.id
+    )
+
+    to_parent = await notify_reply_to_reply(db_session, reply=reply)
+    to_owner = await notify_reply_to_thread(db_session, reply=reply)
+
+    assert _unsubscribe_target(to_parent) == (parent_author.id, "reply_to_my_reply")
+    assert _unsubscribe_target(to_owner) == (owner.id, "reply_to_my_thread")
+
+
+async def test_comment_on_post_carries_its_unsubscribe_token(db_session, outbox) -> None:
+    author = await create_verified_user(db_session)
+    actor = await create_verified_user(db_session)
+    post = await _post(db_session, author)
+    comment = await create_comment(db_session, post_id=post.id, author_id=actor.id)
+
+    msg = await notify_comment_on_post(db_session, comment=comment)
+
+    assert _unsubscribe_target(msg) == (author.id, "comment_on_my_post")

@@ -910,3 +910,28 @@ async def test_sweep_emails_run_at_most_three_at_a_time(monkeypatch) -> None:
     (line,) = [e for e in logs if e["event"] == "maintenance.decision_emails"]
     assert line["count"] == 5
     assert line["remaining"] == 0
+
+
+# --- one-click unsubscribe header -------------------------------------------------------------
+
+
+@pytest.mark.parametrize("decision", ["approved", "rejected"])
+async def test_decision_email_carries_the_moderation_decisions_token(
+    db_session, outbox, decision
+) -> None:
+    from urllib.parse import parse_qs, urlsplit
+
+    from app.services.unsubscribe import read_token
+
+    make = _approved if decision == "approved" else _rejected
+    author, content = await make(db_session)
+
+    sent = await notify_moderation_decision(
+        db_session, content=content, decision=decision, newly_trusted=False
+    )
+
+    assert sent.list_unsubscribe.startswith(
+        f"{FRONTEND}{settings.API_V1_PREFIX}/notifications/unsubscribe?token="
+    )
+    token = parse_qs(urlsplit(sent.list_unsubscribe).query)["token"][0]
+    assert read_token(token) == (author.id, "moderation_decisions")

@@ -19,6 +19,7 @@ from app.api.v1.endpoints import (
     knowbase,
     members,
     moderation,
+    notifications,
     organisations,
     posts,
     replies,
@@ -122,6 +123,11 @@ def create_app() -> FastAPI:
     app.include_router(threads.router, prefix=f"{settings.API_V1_PREFIX}/threads", tags=["threads"])
     # Replies carry their own /threads/{thread_id}/replies/ and /replies/{id} paths.
     app.include_router(replies.router, prefix=settings.API_V1_PREFIX, tags=["replies"])
+    app.include_router(
+        notifications.router,
+        prefix=f"{settings.API_V1_PREFIX}/notifications",
+        tags=["notifications"],
+    )
     app.include_router(reports.router, prefix=f"{settings.API_V1_PREFIX}/reports", tags=["reports"])
     app.include_router(search.router, prefix=f"{settings.API_V1_PREFIX}/search", tags=["search"])
     app.include_router(export.router, prefix=f"{settings.API_V1_PREFIX}/export", tags=["export"])
