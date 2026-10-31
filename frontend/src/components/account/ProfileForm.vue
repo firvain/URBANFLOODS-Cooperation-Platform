@@ -240,11 +240,19 @@ async function onSubmit(event: FormSubmitEvent<State>) {
         :label="t('account.profile.showInDirectory')"
         :description="t('account.profile.showInDirectoryHint')"
       />
+      <!-- The address appears only on the profile and the member card, which exist only for
+           listed members: without a listing the switch has no effect, so it is greyed out (its
+           value is kept for when the member lists themselves again). -->
       <USwitch
         v-model="state.show_email"
         name="show_email"
+        :disabled="!state.show_in_directory"
         :label="t('account.profile.showEmail')"
-        :description="t('account.profile.showEmailHint')"
+        :description="
+          state.show_in_directory
+            ? t('account.profile.showEmailHint')
+            : t('account.profile.showEmailNeedsDirectory')
+        "
       />
     </fieldset>
 

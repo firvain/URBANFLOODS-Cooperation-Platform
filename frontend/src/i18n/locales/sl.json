@@ -718,6 +718,7 @@
       "networkTitle": "Mreža za sodelovanje",
       "showEmail": "Pokaži moj e-poštni naslov drugim članom",
       "showEmailHint": "Prikazan je na vašem profilu in kartici člana, da vas lahko drugi neposredno kontaktirajo.",
+      "showEmailNeedsDirectory": "Prikazan je le, če ste uvrščeni v Mrežo za sodelovanje.",
       "showInDirectory": "Uvrsti me v Mrežo za sodelovanje",
       "showInDirectoryHint": "Drugi vas lahko najdejo glede na strokovno področje, državo in organizacijo, vi pa ste lahko predlagani kot sodelavec.",
       "submit": "Shrani profil",

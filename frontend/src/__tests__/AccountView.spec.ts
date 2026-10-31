@@ -220,6 +220,27 @@ describe('AccountView', () => {
         expect(calls[0]!.body).toEqual({ show_email: true, show_in_directory: false })
       })
 
+      it('greys out the email switch while the member is not listed, keeping its value', async () => {
+        mockApi(routes({ [ME]: reply(200, { ...EXPERT, show_email: true }) }))
+        const { wrapper } = await mountAccount()
+        const email = () => switchFor(wrapper, t('account.profile.showEmail'))
+        expect(email().hasAttribute('disabled')).toBe(false)
+        expect(wrapper.text()).toContain(t('account.profile.showEmailHint'))
+
+        switchFor(wrapper, t('account.profile.showInDirectory')).click()
+        await flushPromises()
+        expect(email().hasAttribute('disabled')).toBe(true)
+        expect(email().getAttribute('aria-checked')).toBe('true')
+        expect(wrapper.text()).toContain(t('account.profile.showEmailNeedsDirectory'))
+        expect(t('account.profile.showEmailNeedsDirectory')).toBe(
+          'Only shown when you are listed in the Collaboration Network.',
+        )
+
+        switchFor(wrapper, t('account.profile.showInDirectory')).click()
+        await flushPromises()
+        expect(email().hasAttribute('disabled')).toBe(false)
+      })
+
       it('sends nothing when a switch is toggled back', async () => {
         const fetchMock = mockApi(routes({ [ME]: reply(200, EXPERT) }))
         const { wrapper } = await mountAccount()

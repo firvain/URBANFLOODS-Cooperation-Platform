@@ -718,6 +718,7 @@
       "networkTitle": "Rete di collaborazione",
       "showEmail": "Mostra il mio indirizzo email agli altri membri",
       "showEmailHint": "Compare sul tuo profilo e sulla tua scheda membro, così gli altri possono contattarti direttamente.",
+      "showEmailNeedsDirectory": "Compare solo se sei incluso nella Rete di collaborazione.",
       "showInDirectory": "Includimi nella Rete di collaborazione",
       "showInDirectoryHint": "Gli altri possono trovarti per competenza, paese e organizzazione, e potrai essere suggerito come collaboratore.",
       "submit": "Salva il profilo",

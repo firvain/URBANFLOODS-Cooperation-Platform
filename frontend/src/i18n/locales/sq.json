@@ -718,6 +718,7 @@
       "networkTitle": "Rrjeti i Bashkëpunimit",
       "showEmail": "Shfaq adresën time të email-it për anëtarët e tjerë",
       "showEmailHint": "Shfaqet në profilin dhe në kartën tuaj të anëtarit, që të tjerët t'ju kontaktojnë drejtpërdrejt.",
+      "showEmailNeedsDirectory": "Shfaqet vetëm kur jeni të listuar në Rrjetin e Bashkëpunimit.",
       "showInDirectory": "Më listo në Rrjetin e Bashkëpunimit",
       "showInDirectoryHint": "Të tjerët mund t'ju gjejnë sipas ekspertizës, vendit dhe organizatës, dhe mund të sugjeroheni si bashkëpunëtor.",
       "submit": "Ruaj profilin",

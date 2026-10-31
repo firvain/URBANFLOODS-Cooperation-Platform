@@ -718,6 +718,7 @@
       "networkTitle": "Collaboration Network",
       "showEmail": "Show my email address to other members",
       "showEmailHint": "Shown on your profile and member card so others can contact you directly.",
+      "showEmailNeedsDirectory": "Only shown when you are listed in the Collaboration Network.",
       "showInDirectory": "List me in the Collaboration Network",
       "showInDirectoryHint": "Others can find you by expertise, country and organisation, and you can be suggested as a collaborator.",
       "submit": "Save profile",
