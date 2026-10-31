@@ -387,3 +387,50 @@ async def cleanup_knowbase_links(database_url: str) -> AsyncIterator[set[int]]:
                 KnowbaseLink.content_id.in_(ids),
             )
         )
+
+
+@pytest.fixture
+async def cleanup_threads(database_url: str) -> AsyncIterator[set[int]]:
+    """Ids of threads the test commits; deleted afterwards (``replies`` and ``thread_tags`` rows
+    cascade) together with their ``knowbase_links`` rows and the audit rows about them.
+
+    Request it after ``cleanup_categories`` when both are used, so it tears down first (a
+    category with threads cannot be deleted)."""
+    from sqlalchemy import delete
+
+    from app.db.enums import ContentType
+    from app.db.models import AuditLog, KnowbaseLink, Thread
+    from app.db.session import AsyncSessionLocal
+
+    ids: set[int] = set()
+    yield ids
+    if not ids:
+        return
+    async with AsyncSessionLocal() as session, session.begin():
+        await session.execute(
+            delete(KnowbaseLink).where(
+                KnowbaseLink.content_type == ContentType.THREAD,
+                KnowbaseLink.content_id.in_(ids),
+            )
+        )
+        await session.execute(
+            delete(AuditLog).where((AuditLog.target_type == "thread") & AuditLog.target_id.in_(ids))
+        )
+        await session.execute(delete(Thread).where(Thread.id.in_(ids)))
+
+
+@pytest.fixture
+async def cleanup_comments(database_url: str) -> AsyncIterator[set[int]]:
+    """Ids of comments the test commits on posts that outlive the test; deleted afterwards
+    (comments on posts registered with ``cleanup_posts`` cascade anyway)."""
+    from sqlalchemy import delete
+
+    from app.db.models import Comment
+    from app.db.session import AsyncSessionLocal
+
+    ids: set[int] = set()
+    yield ids
+    if not ids:
+        return
+    async with AsyncSessionLocal() as session, session.begin():
+        await session.execute(delete(Comment).where(Comment.id.in_(ids)))

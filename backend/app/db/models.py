@@ -75,6 +75,10 @@ POST_FTS_SQL = (
     "setweight(to_tsvector('english', coalesce(body_text, '')), 'B') || "
     "to_tsvector('simple', coalesce(title, ''))"
 )
+# threads.fts: same weighting as posts. Must stay identical to migration 0005.
+THREAD_FTS_SQL = POST_FTS_SQL
+# replies.fts: body only, English stems. Must stay identical to migration 0005.
+REPLY_FTS_SQL = "to_tsvector('english', coalesce(body_text, ''))"
 
 
 class Organisation(TimestampMixin, Base):
@@ -265,6 +269,7 @@ class Category(TimestampMixin, Base):
 
     # ON DELETE RESTRICT: never let the ORM null out posts.category_id; the DB refuses instead.
     posts: Mapped[list[Post]] = relationship(back_populates="category", passive_deletes="all")
+    threads: Mapped[list[Thread]] = relationship(back_populates="category", passive_deletes="all")
 
 
 class Tag(Base):
@@ -288,6 +293,9 @@ class Tag(Base):
 
     posts: Mapped[list[Post]] = relationship(
         secondary=lambda: post_tags, back_populates="tags", passive_deletes=True
+    )
+    threads: Mapped[list[Thread]] = relationship(
+        secondary=lambda: thread_tags, back_populates="tags", passive_deletes=True
     )
 
 
@@ -377,6 +385,144 @@ class Post(TimestampMixin, SoftDeleteMixin, ContentMixin, Base):
         order_by=lambda: Tag.name,
         passive_deletes=True,
     )
+    # ON DELETE CASCADE: the ORM deletes loaded comments, Postgres the rest.
+    comments: Mapped[list[Comment]] = relationship(
+        back_populates="post",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by=lambda: (Comment.created_at, Comment.id),
+    )
+
+
+thread_tags = Table(
+    "thread_tags",
+    Base.metadata,
+    Column("thread_id", ForeignKey("threads.id", ondelete="CASCADE"), primary_key=True),
+    Column("tag_id", ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
+    Index("ix_thread_tags_tag_id", "tag_id"),
+)
+
+
+class Thread(TimestampMixin, SoftDeleteMixin, ContentMixin, Base):
+    """A forum thread. ``category_id`` must point at a ``forum`` category (checked in crud).
+
+    ``reply_count`` (published replies) and ``last_activity_at`` (bumped by each published reply)
+    are maintained by the ``replies_reply_count`` trigger from migration 0005; refresh to read.
+    """
+
+    __tablename__ = "threads"
+    __table_args__ = (
+        Index("ix_threads_fts", "fts", postgresql_using="gin"),
+        Index(
+            "ix_threads_title_trgm",
+            "title",
+            postgresql_using="gin",
+            postgresql_ops={"title": "gin_trgm_ops"},
+        ),
+        Index(
+            "ix_threads_listing",
+            "status",
+            text("is_pinned DESC"),
+            text("last_activity_at DESC"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    author_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    category_id: Mapped[int] = mapped_column(
+        ForeignKey("categories.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    slug: Mapped[str] = mapped_column(String(220), nullable=False, unique=True)
+    locale: Mapped[str] = mapped_column(
+        String(5), nullable=False, server_default=text("'en'"), index=True
+    )
+    is_pinned: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    is_locked: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    reply_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    last_activity_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    approved_by: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    fts: Mapped[str] = mapped_column(
+        TSVECTOR, Computed(THREAD_FTS_SQL, persisted=True), nullable=True, deferred=True
+    )
+
+    author: Mapped[User | None] = relationship(foreign_keys=[author_id])
+    category: Mapped[Category] = relationship(back_populates="threads")
+    tags: Mapped[list[Tag]] = relationship(
+        secondary=thread_tags,
+        back_populates="threads",
+        order_by=lambda: Tag.name,
+        passive_deletes=True,
+    )
+    # ON DELETE CASCADE: the ORM deletes loaded replies, Postgres the rest.
+    replies: Mapped[list[Reply]] = relationship(
+        back_populates="thread",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by=lambda: (Reply.created_at, Reply.id),
+    )
+
+
+class Reply(TimestampMixin, SoftDeleteMixin, ContentMixin, Base):
+    """A reply in a thread, optionally to a top-level reply of the same thread (one level only:
+    enforced by the ``replies_one_level`` trigger, which raises ``replies.nesting``)."""
+
+    __tablename__ = "replies"
+    __table_args__ = (
+        Index("ix_replies_thread_id_status_created_at", "thread_id", "status", "created_at"),
+        Index("ix_replies_fts", "fts", postgresql_using="gin"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    thread_id: Mapped[int] = mapped_column(
+        ForeignKey("threads.id", ondelete="CASCADE"), nullable=False
+    )
+    author_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    # ON DELETE SET NULL: children of a hard-deleted reply survive as top-level replies.
+    parent_reply_id: Mapped[int | None] = mapped_column(
+        ForeignKey("replies.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    fts: Mapped[str] = mapped_column(
+        TSVECTOR, Computed(REPLY_FTS_SQL, persisted=True), nullable=True, deferred=True
+    )
+
+    thread: Mapped[Thread] = relationship(back_populates="replies")
+    author: Mapped[User | None] = relationship()
+    parent: Mapped[Reply | None] = relationship(back_populates="children", remote_side=[id])
+    children: Mapped[list[Reply]] = relationship(
+        back_populates="parent",
+        passive_deletes=True,
+        order_by=lambda: (Reply.created_at, Reply.id),
+    )
+
+
+class Comment(TimestampMixin, SoftDeleteMixin, ContentMixin, Base):
+    """A comment on a blog post. ``posts.comment_count`` (published comments) is maintained by
+    the ``comments_comment_count`` trigger from migration 0005."""
+
+    __tablename__ = "comments"
+    __table_args__ = (
+        Index("ix_comments_post_id_status_created_at", "post_id", "status", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    post_id: Mapped[int] = mapped_column(ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
+    author_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
+    post: Mapped[Post] = relationship(back_populates="comments")
+    author: Mapped[User | None] = relationship()
 
 
 class KnowbaseLink(Base):

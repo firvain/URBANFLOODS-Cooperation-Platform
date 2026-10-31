@@ -253,3 +253,95 @@ async def create_knowbase_link(
     db.add(link)
     await db.flush()
     return link
+
+
+async def create_thread(
+    db: AsyncSession,
+    *,
+    category_id: int,
+    title: str | None = None,
+    slug: str | None = None,
+    status: ContentStatus = ContentStatus.PUBLISHED,
+    author_id: int | None = None,
+    tags: Sequence[Tag] = (),
+    body_text: str | None = None,
+    **fields: Any,
+) -> Any:
+    """Insert a thread row directly (sanitised dummy body unless ``body_text`` is given;
+    ``published_at`` set when published) and flush. ``category_id`` should be a forum category.
+    Register committed ones (by id) with the ``cleanup_threads`` fixture."""
+    from app.db.models import Thread
+
+    token = uuid.uuid4().hex[:12]
+    body_html = sanitize_html(f"<p>{body_text or 'How do you size retention ponds?'}</p>")
+    thread = Thread(
+        category_id=category_id,
+        author_id=author_id,
+        title=title or f"Test thread {token}",
+        slug=slug or f"test-thread-{token}",
+        body_html=body_html,
+        body_text=html_to_text(body_html),
+        status=status,
+        published_at=datetime.now(UTC) if status == ContentStatus.PUBLISHED else None,
+        **fields,
+    )
+    thread.tags = list(tags)
+    db.add(thread)
+    await db.flush()
+    return thread
+
+
+async def create_reply(
+    db: AsyncSession,
+    *,
+    thread_id: int,
+    author_id: int | None = None,
+    parent_reply_id: int | None = None,
+    status: ContentStatus = ContentStatus.PUBLISHED,
+    body: str = "We used swales and a detention basin.",
+    **fields: Any,
+) -> Any:
+    """Insert a reply row directly (sanitised body) and flush. Replies go away with their
+    thread (``cleanup_threads``)."""
+    from app.db.models import Reply
+
+    body_html = sanitize_html(f"<p>{body}</p>")
+    reply = Reply(
+        thread_id=thread_id,
+        author_id=author_id,
+        parent_reply_id=parent_reply_id,
+        body_html=body_html,
+        body_text=html_to_text(body_html),
+        status=status,
+        **fields,
+    )
+    db.add(reply)
+    await db.flush()
+    return reply
+
+
+async def create_comment(
+    db: AsyncSession,
+    *,
+    post_id: int,
+    author_id: int | None = None,
+    status: ContentStatus = ContentStatus.PUBLISHED,
+    body: str = "Thanks for sharing this case study.",
+    **fields: Any,
+) -> Any:
+    """Insert a comment row directly (sanitised body) and flush. Comments go away with their
+    post (``cleanup_posts``) or, on a post that stays, via ``cleanup_comments``."""
+    from app.db.models import Comment
+
+    body_html = sanitize_html(f"<p>{body}</p>")
+    comment = Comment(
+        post_id=post_id,
+        author_id=author_id,
+        body_html=body_html,
+        body_text=html_to_text(body_html),
+        status=status,
+        **fields,
+    )
+    db.add(comment)
+    await db.flush()
+    return comment
