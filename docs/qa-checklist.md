@@ -531,9 +531,9 @@ only with explicit permission for each step. The KNOWBASE is never touched.
 
 **After first start (with permission)**
 
-- [ ] First superadmin via `python -m app.cli create-superadmin`; a second superadmin and admins
+- [x] First superadmin via `python -m app.cli create-superadmin` (2026-10-31, info@xtc.codes); a second superadmin and admins
   from several partners named (sustainability, report §10).
-- [ ] The dev seed is **not** run (it refuses unless `ENV` is dev/test).
+- [x] The dev seed is **not** run (it refuses unless `ENV` is dev/test); production holds one account.
 - [ ] Smoke test on production: register with a real inbox → verify → first post pending →
   approve → email; X-S4 Secure cookie; X-S8 headers; Turnstile renders; `/feeds/posts.atom`,
   `/sitemap.xml`, `/robots.txt` served by the backend; `curl -sI https://cooperation.urbanfloods.app`
