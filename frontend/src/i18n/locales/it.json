@@ -73,7 +73,10 @@
       "sortEvents": "Prossimi eventi",
       "tag": "Tag",
       "removeTag": "Rimuovi il filtro per tag {tag}",
-      "popularTags": "Tag più usati:"
+      "popularTags": "Tag più usati:",
+      "byAuthor": "di {name}",
+      "removeAuthor": "Rimuovi il filtro per autore {name}",
+      "unknownAuthor": "questo membro"
     }
   },
   "post": {
@@ -140,7 +143,10 @@
       "sortActivity": "Attività più recente",
       "sortNewest": "Più recenti",
       "tag": "Tag",
-      "removeTag": "Rimuovi il filtro per tag {tag}"
+      "removeTag": "Rimuovi il filtro per tag {tag}",
+      "byAuthor": "di {name}",
+      "removeAuthor": "Rimuovi il filtro per autore {name}",
+      "unknownAuthor": "questo membro"
     }
   },
   "thread": {
@@ -341,6 +347,11 @@
       "empty": "Ancora nessun suggerimento. Aggiungi le tue aree di competenza al profilo per trovare membri con interessi simili.",
       "editProfile": "Modifica il tuo profilo",
       "loadError": "Non è stato possibile caricare i suggerimenti."
+    },
+    "restricted": {
+      "signIn": "Accedi per vedere l'elenco dei membri",
+      "verify": "Verifica il tuo indirizzo email per vedere l'elenco dei membri.",
+      "partners": "Scopri le organizzazioni partner"
     }
   },
   "knowbase": {
@@ -399,7 +410,17 @@
     "loading": "Caricamento del profilo…",
     "loadError": "Non è stato possibile caricare questo profilo.",
     "retry": "Riprova",
-    "backToNetwork": "Torna alla Rete di collaborazione"
+    "backToNetwork": "Torna alla Rete di collaborazione",
+    "contributions": {
+      "title": "Contributi",
+      "posts": "Articoli del blog",
+      "threads": "Discussioni",
+      "seeAllPosts": "Vedi tutti gli articoli",
+      "seeAllThreads": "Vedi tutte le discussioni",
+      "empty": "{name} non ha ancora pubblicato articoli o discussioni.",
+      "loading": "Caricamento dei contributi…",
+      "loadError": "Non è stato possibile caricare i contributi."
+    }
   },
   "about": {
     "title": "Il progetto URBANFLOODS",

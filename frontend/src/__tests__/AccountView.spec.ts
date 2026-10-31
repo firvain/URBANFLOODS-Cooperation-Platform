@@ -98,7 +98,8 @@ describe('AccountView', () => {
       expect((wrapper.find('textarea').element as HTMLTextAreaElement).value).toBe(
         'Hydrologist in Kozani.',
       )
-      expect(wrapper.text()).toContain('UOWM – University of Western Macedonia')
+      expect(wrapper.text()).toContain('University of Western Macedonia')
+      expect(wrapper.text()).not.toContain('UOWM')
       expect(wrapper.text()).toContain('Greece')
       expect(wrapper.text()).toContain(`${'Hydrologist in Kozani.'.length}/2000`)
     })

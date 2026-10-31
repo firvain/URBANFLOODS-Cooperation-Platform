@@ -48,12 +48,13 @@ describe('routes', () => {
   })
 })
 
-it('the network route is titled nav.network and the profile route takes an id', () => {
+it('the network route is titled nav.network; the profile route takes an id and needs a verified account', () => {
   const router = createAppRouter(createMemoryHistory())
   expect(router.resolve('/network').meta.title).toBe('nav.network')
   const profile = router.resolve('/u/42')
   expect(profile.params.id).toBe('42')
-  expect(profile.meta.auth).toBeUndefined()
+  expect(profile.meta.auth).toBe('verified')
+  expect(router.resolve('/network').meta.auth).toBeUndefined()
 })
 
 it('the KNOWBASE item routes are public and take an id; the library pages are gone', () => {

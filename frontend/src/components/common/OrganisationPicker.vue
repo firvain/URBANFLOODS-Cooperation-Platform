@@ -33,7 +33,7 @@ onMounted(async () => {
 })
 
 const items = computed(() => [
-  ...all.value.map((o) => ({ label: `${o.short_name} – ${o.name}`, value: o.id })),
+  ...all.value.map((o) => ({ label: o.name, value: o.id })),
   { label: t('auth.fields.organisationOtherOption'), value: OTHER },
 ])
 

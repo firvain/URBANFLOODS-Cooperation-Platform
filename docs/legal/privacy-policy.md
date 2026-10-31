@@ -100,8 +100,8 @@ not, delete this section]**
   and your profile when you appear in the directory. Your email address is shown to other members
   only if you switch that on.
 - **Public:** your contributions are public by design once published, together with the author
-  details shown with them (such as your display name). The members directory is not public.
-  **[CHECK: confirm that individual member profile pages are restricted in the same way]**
+  details shown with them (such as your display name). The members directory and the member
+  profile pages are not public; they are shown to registered, verified members only.
 - **Authorities:** we disclose data when required by law, a court or a competent authority,
   including programme audit and control bodies.
 

@@ -55,6 +55,21 @@ describe('meta.auth guard', () => {
     expect(router.currentRoute.value.name).toBe('account')
   })
 
+  it('anonymous → a member profile redirects to /login?next=/u/5', async () => {
+    mockApi()
+    const router = makeRouter()
+    await router.push('/u/5')
+    expect(router.currentRoute.value.name).toBe('login')
+    expect(router.currentRoute.value.query).toEqual({ next: '/u/5' })
+  })
+
+  it('verified → a member profile is allowed', async () => {
+    mockApi(loggedIn())
+    const router = makeRouter()
+    await router.push('/u/5')
+    expect(router.currentRoute.value.name).toBe('profile')
+  })
+
   it('anonymous → public pages are allowed', async () => {
     mockApi()
     const router = makeRouter()

@@ -140,7 +140,8 @@ export const routes: RouteRecordRaw[] = [
     path: '/u/:id',
     name: 'profile',
     component: () => import('@/views/ProfileView.vue'),
-    meta: { title: 'profile.title' },
+    // Member profiles are for verified users (as `GET /members/{id}`).
+    meta: { title: 'profile.title', auth: 'verified' },
   },
   {
     path: '/about',

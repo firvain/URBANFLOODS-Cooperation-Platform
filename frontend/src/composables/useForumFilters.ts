@@ -14,6 +14,8 @@ export interface ForumFilters {
   category: string
   tag: string
   locale: string
+  /** Only this member's content (`?author_id=11`, the "See all" links of a profile). */
+  author_id: number | undefined
   sort: ThreadSort
 }
 
@@ -27,6 +29,11 @@ function first(query: LocationQuery, key: string): string {
   const raw = query[key]
   const value = Array.isArray(raw) ? raw[0] : raw
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function positiveInt(value: string): number | undefined {
+  const n = Number(value)
+  return value !== '' && Number.isInteger(n) && n > 0 ? n : undefined
 }
 
 export function useForumFilters() {
@@ -44,6 +51,7 @@ export function useForumFilters() {
       category: presetCategory.value || first(route.query, 'category'),
       tag: first(route.query, 'tag'),
       locale: first(route.query, 'locale'),
+      author_id: positiveInt(first(route.query, 'author_id')),
       sort: SORTS.includes(sort) ? sort : DEFAULT_SORT,
     }
   })
@@ -54,8 +62,8 @@ export function useForumFilters() {
   })
 
   const hasFilters = computed(() => {
-    const { q, category, tag, locale, sort } = filters.value
-    return Boolean(q || category || tag || locale || sort !== DEFAULT_SORT)
+    const { q, category, tag, locale, author_id, sort } = filters.value
+    return Boolean(q || category || tag || locale || author_id || sort !== DEFAULT_SORT)
   })
 
   function location(next: ForumFilters, nextPage: number) {
@@ -65,6 +73,7 @@ export function useForumFilters() {
     if (next.category && !keepPreset) query.category = next.category
     if (next.tag) query.tag = next.tag
     if (next.locale) query.locale = next.locale
+    if (next.author_id) query.author_id = String(next.author_id)
     if (next.sort !== DEFAULT_SORT) query.sort = next.sort
     if (nextPage > 1) query.page = String(nextPage)
     return keepPreset

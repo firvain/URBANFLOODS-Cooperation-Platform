@@ -19,6 +19,9 @@ import { clickOption, enterOption, openSelect } from './helpers/select'
 
 const t = i18n.global.t
 const MEMBERS = 'GET /api/v1/members/'
+const AUTH_ME = 'GET /api/v1/auth/me'
+/** The directory is for verified users; this one has expertise, so no profile nudge shows. */
+const VIEWER = makeUser({ id: 999, expertise: [EXPERTISE[0]!] })
 
 afterEach(() => {
   vi.useRealTimers()
@@ -37,6 +40,7 @@ function pages(total: number): Handler {
 
 function routes(members: Handler = pages(60)) {
   return {
+    [AUTH_ME]: reply(200, VIEWER),
     [MEMBERS]: members,
     'GET /api/v1/expertise/': reply(200, EXPERTISE_RESPONSE),
     'GET /api/v1/organisations/': reply(200, ORGANISATIONS),
@@ -173,6 +177,11 @@ describe('NetworkView', () => {
     const fetchMock = mockApi(routes())
     const { wrapper, router } = await mountNetwork()
     await openSelect(wrapper, t('network.filters.organisation'))
+    const labels = Array.from(document.querySelectorAll('[role="option"]')).map((o) =>
+      o.textContent?.trim(),
+    )
+    expect(labels).toContain('University of Western Macedonia')
+    expect(labels.some((l) => /UOWM|\bMC\b/.test(l ?? ''))).toBe(false)
     await clickOption('Macerata Municipality')
     expect(router.currentRoute.value.query.organisation_id).toBe('4')
     expect(lastQuery(fetchMock).get('organisation_id')).toBe('4')
@@ -242,7 +251,7 @@ describe('NetworkView', () => {
     })
 
     it('shows no banner for anonymous visitors or members with expertise', async () => {
-      mockApi(routes())
+      mockApi({ ...routes(), [ME]: replyError(401, 'auth.not_authenticated') })
       await mountNetwork()
       expect(banner()).toBeNull()
       unmountAll()
@@ -275,6 +284,61 @@ describe('NetworkView', () => {
       const own = cards(wrapper)[0]!
       expect(ownLink(own).exists()).toBe(false)
       expect(own.findAll('[data-testid="expertise-badge"]')).toHaveLength(2)
+    })
+  })
+
+  describe('access (members directory for verified users only)', () => {
+    const notice = () => document.querySelector('[data-testid="members-restricted"]')
+
+    it('anonymous: a sign-in notice instead of the directory, and no members request', async () => {
+      const fetchMock = mockApi({
+        ...routes(),
+        [AUTH_ME]: replyError(401, 'auth.not_authenticated'),
+      })
+      const { wrapper } = await mountNetwork()
+      expect(wrapper.find('h1').text()).toBe(t('network.title'))
+      expect(callsTo(fetchMock, MEMBERS)).toHaveLength(0)
+      expect(notice()?.textContent).toContain(t('network.restricted.signIn'))
+      expect(notice()?.querySelector('a[href="/login?next=/network"]')).not.toBeNull()
+      expect(notice()?.querySelector('a[href="/partners"]')?.textContent).toContain(
+        t('network.restricted.partners'),
+      )
+      expect(wrapper.find('#network-filters-heading').exists()).toBe(false)
+      expect(cards(wrapper)).toHaveLength(0)
+      expect(wrapper.text()).not.toContain(t('network.loadError'))
+    })
+
+    it('unverified: a verify-your-email notice, and no members request', async () => {
+      const fetchMock = mockApi({
+        ...routes(),
+        [AUTH_ME]: reply(200, makeUser({ is_verified: false })),
+      })
+      const { wrapper } = await mountNetwork()
+      expect(callsTo(fetchMock, MEMBERS)).toHaveLength(0)
+      expect(notice()?.textContent).toContain(t('network.restricted.verify'))
+      expect(notice()?.querySelector('a[href^="/login"]')).toBeNull()
+      expect(cards(wrapper)).toHaveLength(0)
+    })
+
+    it('verified: the directory loads', async () => {
+      const fetchMock = mockApi(routes())
+      const { wrapper } = await mountNetwork()
+      expect(callsTo(fetchMock, MEMBERS)).toHaveLength(1)
+      expect(notice()).toBeNull()
+      expect(cards(wrapper)).toHaveLength(24)
+    })
+
+    it('a 401 or 403 from the API shows the notice, not an error', async () => {
+      for (const [status, code] of [
+        [401, 'auth.not_authenticated'],
+        [403, 'auth.email_not_verified'],
+      ] as const) {
+        mockApi(routes(replyError(status, code)))
+        const { wrapper } = await mountNetwork()
+        expect(notice(), String(status)).not.toBeNull()
+        expect(wrapper.text()).not.toContain(t('network.loadError'))
+        unmountAll()
+      }
     })
   })
 })

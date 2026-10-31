@@ -15,6 +15,8 @@ export interface BlogFilters {
   category: string
   tag: string
   locale: string
+  /** Only this member's content (`?author_id=11`, the "See all" links of a profile). */
+  author_id: number | undefined
   sort: BlogSort
 }
 
@@ -27,6 +29,11 @@ function first(query: LocationQuery, key: string): string {
   const raw = query[key]
   const value = Array.isArray(raw) ? raw[0] : raw
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function positiveInt(value: string): number | undefined {
+  const n = Number(value)
+  return value !== '' && Number.isInteger(n) && n > 0 ? n : undefined
 }
 
 export function useBlogFilters() {
@@ -47,6 +54,7 @@ export function useBlogFilters() {
       category: presetCategory.value || first(route.query, 'category'),
       tag: presetTag.value || first(route.query, 'tag'),
       locale: first(route.query, 'locale'),
+      author_id: positiveInt(first(route.query, 'author_id')),
       sort: SORTS.includes(sort) ? sort : 'newest',
     }
   })
@@ -57,8 +65,8 @@ export function useBlogFilters() {
   })
 
   const hasFilters = computed(() => {
-    const { q, category, tag, locale, sort } = filters.value
-    return Boolean(q || category || tag || locale || sort !== 'newest')
+    const { q, category, tag, locale, author_id, sort } = filters.value
+    return Boolean(q || category || tag || locale || author_id || sort !== 'newest')
   })
 
   function location(next: BlogFilters, nextPage: number) {
@@ -76,6 +84,7 @@ export function useBlogFilters() {
     if (next.category && name !== 'blog-category') query.category = next.category
     if (next.tag && name !== 'blog-tag') query.tag = next.tag
     if (next.locale) query.locale = next.locale
+    if (next.author_id) query.author_id = String(next.author_id)
     if (next.sort !== 'newest') query.sort = next.sort
     if (nextPage > 1) query.page = String(nextPage)
     return { name, params, query }

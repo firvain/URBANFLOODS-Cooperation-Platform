@@ -73,7 +73,10 @@
       "sortEvents": "Predstojeći događaji",
       "tag": "Oznaka",
       "removeTag": "Ukloni filter oznake {tag}",
-      "popularTags": "Popularne oznake:"
+      "popularTags": "Popularne oznake:",
+      "byAuthor": "autor: {name}",
+      "removeAuthor": "Ukloni filter autora {name}",
+      "unknownAuthor": "ovaj član"
     }
   },
   "post": {
@@ -140,7 +143,10 @@
       "sortActivity": "Najnovija aktivnost",
       "sortNewest": "Najnovije",
       "tag": "Oznaka",
-      "removeTag": "Ukloni filter oznake {tag}"
+      "removeTag": "Ukloni filter oznake {tag}",
+      "byAuthor": "autor: {name}",
+      "removeAuthor": "Ukloni filter autora {name}",
+      "unknownAuthor": "ovaj član"
     }
   },
   "thread": {
@@ -341,6 +347,11 @@
       "empty": "Još nema prijedloga. Dodajte oblasti stručnosti u svoj profil kako biste pronašli članove sa sličnim interesima.",
       "editProfile": "Uredite svoj profil",
       "loadError": "Prijedloge nije bilo moguće učitati."
+    },
+    "restricted": {
+      "signIn": "Prijavite se da biste vidjeli spisak članova",
+      "verify": "Potvrdite svoju e-mail adresu da biste vidjeli spisak članova.",
+      "partners": "Pogledajte partnerske organizacije"
     }
   },
   "knowbase": {
@@ -399,7 +410,17 @@
     "loading": "Učitavanje profila…",
     "loadError": "Ovaj profil nije bilo moguće učitati.",
     "retry": "Pokušaj ponovo",
-    "backToNetwork": "Nazad na Mrežu saradnje"
+    "backToNetwork": "Nazad na Mrežu saradnje",
+    "contributions": {
+      "title": "Doprinosi",
+      "posts": "Objave na blogu",
+      "threads": "Diskusije",
+      "seeAllPosts": "Pogledajte sve objave",
+      "seeAllThreads": "Pogledajte sve diskusije",
+      "empty": "{name} još nije objavio/la nijednu objavu ni diskusiju.",
+      "loading": "Učitavanje doprinosa…",
+      "loadError": "Doprinose nije bilo moguće učitati."
+    }
   },
   "about": {
     "title": "O projektu URBANFLOODS",

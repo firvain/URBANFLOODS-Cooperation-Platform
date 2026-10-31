@@ -7,6 +7,7 @@ import { storeToRefs } from 'pinia'
 import PostCard from '@/components/blog/PostCard.vue'
 import { BLOG_PAGE_SIZE, BLOG_SEARCH_DEBOUNCE_MS } from '@/constants/blog'
 import { BLOG_LIST_ROUTES, useBlogFilters, type BlogSort } from '@/composables/useBlogFilters'
+import { useAuthorName } from '@/composables/useAuthorName'
 import { useDebouncedSearch } from '@/composables/useKnowbaseList'
 import { SUPPORTED_LOCALES } from '@/i18n'
 import { categoryName } from '@/services/categories'
@@ -17,9 +18,10 @@ import { usePostsStore } from '@/stores/posts'
 import { useTagsStore } from '@/stores/tags'
 
 /**
- * The blog: posts filterable by category (chips), tag, text, language and order, 12 per page.
- * Filters live in the URL (`useBlogFilters`); `/blog/category/:slug` and `/blog/tag/:slug` open
- * the list with that filter set.
+ * The blog: posts filterable by category (chips), tag, author, text, language and order, 12 per
+ * page. Filters live in the URL (`useBlogFilters`); `/blog/category/:slug` and `/blog/tag/:slug`
+ * open the list with that filter set; `?author_id=` (a profile's "See all") shows a "by <name>"
+ * chip that clears it.
  */
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -30,6 +32,15 @@ const categories = useCategoriesStore()
 const tags = useTagsStore()
 
 const { filters, page, hasFilters, setFilters, setPage, clearFilters } = useBlogFilters()
+
+/** Name for the "by <name>" chip of an `?author_id=` filter. */
+const authorName = useAuthorName(
+  () => filters.value.author_id,
+  () => items.value,
+  // The members directory answers verified users only.
+  () => isVerified.value && !loading.value && !failed.value,
+)
+const authorLabel = computed(() => authorName.value ?? t('blog.filters.unknownAuthor'))
 
 /** Select value for "no filter" (reka-ui selects cannot hold an empty string). */
 const ALL = 'all'
@@ -78,11 +89,12 @@ const sort = computed<BlogSort>({
 // --- Posts ------------------------------------------------------------------------------------
 
 const params = computed<PostListParams>(() => {
-  const { q, category, tag, locale: postLocale, sort: order } = filters.value
+  const { q, category, tag, author_id, locale: postLocale, sort: order } = filters.value
   return {
     q: q || undefined,
     category: category || undefined,
     tag: tag || undefined,
+    author_id,
     locale: postLocale || undefined,
     sort: order,
     upcoming_only: order === 'events' ? true : undefined,
@@ -160,6 +172,21 @@ watch(
       </div>
 
       <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+        <p
+          v-if="filters.author_id"
+          data-testid="active-author"
+          class="inline-flex items-center gap-1 rounded-full border border-primary-300 bg-primary-50 py-0.5 ps-3 pe-1 text-primary-800"
+        >
+          <span>{{ t('blog.filters.byAuthor', { name: authorLabel }) }}</span>
+          <UButton
+            icon="i-lucide-x"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            :aria-label="t('blog.filters.removeAuthor', { name: authorLabel })"
+            @click="setFilters({ author_id: undefined })"
+          />
+        </p>
         <p
           v-if="filters.tag"
           data-testid="active-tag"

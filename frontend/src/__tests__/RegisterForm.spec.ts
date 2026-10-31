@@ -121,6 +121,18 @@ describe('RegisterForm', () => {
     expect(wrapper.find('input[name="organisation_other"]').exists()).toBe(true)
   })
 
+  it('lists organisations by their full name only', async () => {
+    mockApi(routes())
+    const wrapper = await mountForm()
+    await openSelect(wrapper, t('auth.fields.organisation'))
+    const labels = Array.from(document.querySelectorAll('[role="option"]')).map((o) =>
+      o.textContent?.trim(),
+    )
+    expect(labels).toContain('University of Western Macedonia')
+    expect(labels).toContain('Macerata Municipality')
+    expect(labels.some((l) => /UOWM|\bMC\b/.test(l ?? ''))).toBe(false)
+  })
+
   it('emits `registered` with the email after a successful submit', async () => {
     const fetchMock = mockApi(routes({ 'POST /api/v1/auth/register': reply(201, CREATED) }))
     const wrapper = await mountForm()

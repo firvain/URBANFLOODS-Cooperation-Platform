@@ -73,7 +73,10 @@
       "sortEvents": "Upcoming events",
       "tag": "Tag",
       "removeTag": "Remove the tag filter {tag}",
-      "popularTags": "Popular tags:"
+      "popularTags": "Popular tags:",
+      "byAuthor": "by {name}",
+      "removeAuthor": "Remove the author filter {name}",
+      "unknownAuthor": "this member"
     }
   },
   "post": {
@@ -140,7 +143,10 @@
       "sortActivity": "Latest activity",
       "sortNewest": "Newest",
       "tag": "Tag",
-      "removeTag": "Remove the tag filter {tag}"
+      "removeTag": "Remove the tag filter {tag}",
+      "byAuthor": "by {name}",
+      "removeAuthor": "Remove the author filter {name}",
+      "unknownAuthor": "this member"
     }
   },
   "thread": {
@@ -341,6 +347,11 @@
       "empty": "No suggestions yet. Add your expertise areas to your profile to find members with similar interests.",
       "editProfile": "Edit your profile",
       "loadError": "Suggestions could not be loaded."
+    },
+    "restricted": {
+      "signIn": "Sign in to see the members directory",
+      "verify": "Verify your email address to see the members directory.",
+      "partners": "Browse the partner organisations"
     }
   },
   "knowbase": {
@@ -399,7 +410,17 @@
     "loading": "Loading the profile…",
     "loadError": "This profile could not be loaded.",
     "retry": "Try again",
-    "backToNetwork": "Back to the Collaboration Network"
+    "backToNetwork": "Back to the Collaboration Network",
+    "contributions": {
+      "title": "Contributions",
+      "posts": "Blog posts",
+      "threads": "Discussions",
+      "seeAllPosts": "See all posts",
+      "seeAllThreads": "See all discussions",
+      "empty": "{name} has not published any posts or discussions yet.",
+      "loading": "Loading the contributions…",
+      "loadError": "The contributions could not be loaded."
+    }
   },
   "about": {
     "title": "About URBANFLOODS",

@@ -13,16 +13,21 @@ import { storeToRefs } from 'pinia'
 
 import CompleteProfileBanner from '@/components/account/CompleteProfileBanner.vue'
 import MemberCard from '@/components/network/MemberCard.vue'
+import MembersRestricted from '@/components/network/MembersRestricted.vue'
 import { useCountries } from '@/composables/useCountries'
 import { useQueryFilters } from '@/composables/useQueryFilters'
 import { PROJECT_COUNTRIES } from '@/constants/auth'
+import { ApiError } from '@/services/api'
 import { membersService, type Member, type MemberListParams } from '@/services/members'
+import { useAuthStore } from '@/stores/auth'
 import { useExpertiseStore } from '@/stores/expertise'
 import { useOrganisationsStore } from '@/stores/organisations'
 
 /**
  * Collaboration Network: the members directory, filterable by text, expertise, country and
- * organisation. Filters and page live in the URL (`useQueryFilters`).
+ * organisation. Filters and page live in the URL (`useQueryFilters`). The directory is for
+ * verified users (as `GET /members/`): anyone else sees a sign-in or verify notice in its place,
+ * and no members request is made; a 401/403 from the API falls back to the same notice.
  */
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -31,6 +36,7 @@ const expertiseStore = useExpertiseStore()
 const organisationsStore = useOrganisationsStore()
 const { tags } = storeToRefs(expertiseStore)
 const { all: organisations } = storeToRefs(organisationsStore)
+const { isVerified } = storeToRefs(useAuthStore())
 
 const { filters, page, hasFilters, setFilter, setPage, clearFilters } = useQueryFilters({
   q: 'string',
@@ -91,7 +97,7 @@ const country = computed<string>({
 
 const organisationItems = computed(() => [
   { label: t('network.filters.allOrganisations'), value: ALL },
-  ...organisations.value.map((o) => ({ label: `${o.short_name} – ${o.name}`, value: o.id })),
+  ...organisations.value.map((o) => ({ label: o.name, value: o.id })),
 ])
 const organisation = computed<number | typeof ALL>({
   get: () => filters.value.organisation_id ?? ALL,
@@ -110,6 +116,10 @@ const members = ref<Member[]>([])
 const total = ref(0)
 const loading = ref(true)
 const failed = ref(false)
+/** The API refused the directory (401/403) although the session looked verified. */
+const refused = ref(false)
+
+const showDirectory = computed(() => isVerified.value && !refused.value)
 
 const params = computed<MemberListParams>(() => {
   const { q, expertise_ids, country, organisation_id } = filters.value
@@ -127,16 +137,22 @@ let latest = 0
 
 async function load() {
   const request = ++latest
-  loading.value = true
   failed.value = false
+  if (!isVerified.value) {
+    loading.value = false
+    return
+  }
+  loading.value = true
+  refused.value = false
   try {
     const result = await membersService.list(params.value)
     if (request !== latest) return
     members.value = result.items
     total.value = result.total
-  } catch {
+  } catch (e) {
     if (request !== latest) return
-    failed.value = true
+    if (e instanceof ApiError && (e.status === 401 || e.status === 403)) refused.value = true
+    else failed.value = true
     members.value = []
     total.value = 0
   } finally {
@@ -145,7 +161,7 @@ async function load() {
 }
 
 watch(
-  () => JSON.stringify(params.value),
+  () => [JSON.stringify(params.value), isVerified.value],
   () => {
     // Leaving the page also changes the query; only this route's query matters.
     if (route.name === 'network') void load()
@@ -168,7 +184,14 @@ const initialLoading = computed(() => loading.value && !members.value.length && 
 
     <CompleteProfileBanner class="mb-8" />
 
-    <div class="grid gap-8 lg:grid-cols-[18rem_1fr]">
+    <MembersRestricted
+      v-if="!showDirectory"
+      data-testid="members-restricted"
+      partners
+      class="max-w-3xl"
+    />
+
+    <div v-else class="grid gap-8 lg:grid-cols-[18rem_1fr]">
       <section aria-labelledby="network-filters-heading" class="space-y-4">
         <h2 id="network-filters-heading" class="text-lg font-semibold text-secondary">
           {{ t('network.filters.title') }}

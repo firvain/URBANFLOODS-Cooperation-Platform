@@ -73,7 +73,10 @@
       "sortEvents": "Ngjarjet e ardhshme",
       "tag": "Etiketa",
       "removeTag": "Hiq filtrin e etiketës {tag}",
-      "popularTags": "Etiketat më të përdorura:"
+      "popularTags": "Etiketat më të përdorura:",
+      "byAuthor": "nga {name}",
+      "removeAuthor": "Hiq filtrin e autorit {name}",
+      "unknownAuthor": "ky anëtar"
     }
   },
   "post": {
@@ -140,7 +143,10 @@
       "sortActivity": "Aktiviteti më i fundit",
       "sortNewest": "Më të rejat",
       "tag": "Etiketa",
-      "removeTag": "Hiq filtrin e etiketës {tag}"
+      "removeTag": "Hiq filtrin e etiketës {tag}",
+      "byAuthor": "nga {name}",
+      "removeAuthor": "Hiq filtrin e autorit {name}",
+      "unknownAuthor": "ky anëtar"
     }
   },
   "thread": {
@@ -341,6 +347,11 @@
       "empty": "Ende nuk ka sugjerime. Shtoni fushat tuaja të ekspertizës në profil për të gjetur anëtarë me interesa të ngjashme.",
       "editProfile": "Redaktoni profilin tuaj",
       "loadError": "Sugjerimet nuk mund të ngarkoheshin."
+    },
+    "restricted": {
+      "signIn": "Hyr për të parë listën e anëtarëve",
+      "verify": "Verifikoni adresën tuaj të email-it për të parë listën e anëtarëve.",
+      "partners": "Shihni organizatat partnere"
     }
   },
   "knowbase": {
@@ -399,7 +410,17 @@
     "loading": "Po ngarkohet profili…",
     "loadError": "Ky profil nuk mund të ngarkohej.",
     "retry": "Provo përsëri",
-    "backToNetwork": "Kthehu te Rrjeti i Bashkëpunimit"
+    "backToNetwork": "Kthehu te Rrjeti i Bashkëpunimit",
+    "contributions": {
+      "title": "Kontributet",
+      "posts": "Postimet në blog",
+      "threads": "Diskutimet",
+      "seeAllPosts": "Shihni të gjitha postimet",
+      "seeAllThreads": "Shihni të gjitha diskutimet",
+      "empty": "{name} ende nuk ka publikuar postime ose diskutime.",
+      "loading": "Po ngarkohen kontributet…",
+      "loadError": "Kontributet nuk mund të ngarkoheshin."
+    }
   },
   "about": {
     "title": "Rreth URBANFLOODS",

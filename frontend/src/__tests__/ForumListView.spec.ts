@@ -132,6 +132,54 @@ describe('ForumListView', () => {
     expect(lastQuery(fetchMock).get('sort')).toBe('activity')
   })
 
+  it('?author_id= filters by author and shows a "by <name>" chip that clears it', async () => {
+    const fetchMock = mockApi(routes())
+    const { wrapper, router } = await mountForum('/forum?author_id=11')
+    expect(lastQuery(fetchMock).get('author_id')).toBe('11')
+    const chip = wrapper.find('[data-testid="active-author"]')
+    expect(chip.text()).toContain(t('forum.filters.byAuthor', { name: 'Eleni Papadopoulou' }))
+    const remove = chip.find('button')
+    expect(remove.attributes('aria-label')).toBe(
+      t('forum.filters.removeAuthor', { name: 'Eleni Papadopoulou' }),
+    )
+    await remove.trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.query).toEqual({})
+    expect(lastQuery(fetchMock).has('author_id')).toBe(false)
+    expect(wrapper.find('[data-testid="active-author"]').exists()).toBe(false)
+  })
+
+  it('names the author from the members API (verified viewers) when the list is empty', async () => {
+    mockApi(
+      routes(reply(200, { total: 0, items: [] }), {
+        [ME]: reply(200, makeUser()),
+        'GET /api/v1/members/11': reply(200, { id: 11, display_name: 'Eleni P.' }),
+      }),
+    )
+    const { wrapper } = await mountForum('/forum?author_id=11&category=news')
+    expect(wrapper.find('[data-testid="active-author"]').text()).toContain(
+      t('forum.filters.byAuthor', { name: 'Eleni P.' }),
+    )
+  })
+
+  it('does not ask the members API for anonymous viewers (generic chip label)', async () => {
+    const fetchMock = mockApi(routes(reply(200, { total: 0, items: [] })))
+    const { wrapper } = await mountForum('/forum?author_id=11')
+    expect(callsTo(fetchMock, 'GET /api/v1/members/11')).toHaveLength(0)
+    expect(wrapper.find('[data-testid="active-author"]').text()).toContain(
+      t('forum.filters.byAuthor', { name: t('forum.filters.unknownAuthor') }),
+    )
+  })
+
+  it('keeps author_id when another filter changes', async () => {
+    const fetchMock = mockApi(routes())
+    const { wrapper, router } = await mountForum('/forum?author_id=11')
+    await chips(wrapper)[1]!.trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.query.author_id).toBe('11')
+    expect(lastQuery(fetchMock).get('author_id')).toBe('11')
+  })
+
   it('debounces the search, then puts q in the URL', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     const fetchMock = mockApi(routes())

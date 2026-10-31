@@ -6,6 +6,7 @@ import i18n from '@/i18n'
 import type { OrganisationChoice } from '@/services/organisations'
 import { callsTo, mockApi, ORGANISATIONS, reply } from './helpers/api'
 import { mountWithApp, unmountAll } from './helpers/mount'
+import { openSelect } from './helpers/select'
 
 const t = i18n.global.t
 
@@ -50,6 +51,20 @@ describe('OrganisationPicker', () => {
     const fetchMock = mockApi({ 'GET /api/v1/organisations/': reply(200, ORGANISATIONS) })
     await mountPicker({ organisation_id: null, organisation_other: null })
     expect(callsTo(fetchMock, 'GET /api/v1/organisations/')).toHaveLength(1)
+  })
+
+  it('labels each listed organisation with its full name only (no short name)', async () => {
+    mockApi({ 'GET /api/v1/organisations/': reply(200, ORGANISATIONS) })
+    const wrapper = await mountPicker({ organisation_id: null, organisation_other: null })
+    await openSelect(wrapper, t('auth.fields.organisation'))
+    const labels = Array.from(document.querySelectorAll('[role="option"]')).map((o) =>
+      o.textContent?.trim(),
+    )
+    expect(labels).toEqual([
+      'University of Western Macedonia',
+      'Macerata Municipality',
+      t('auth.fields.organisationOtherOption'),
+    ])
   })
 
   it('emits organisation_id when a listed organisation is picked', async () => {

@@ -73,7 +73,10 @@
       "sortEvents": "Prihajajoči dogodki",
       "tag": "Oznaka",
       "removeTag": "Odstrani filter oznake {tag}",
-      "popularTags": "Priljubljene oznake:"
+      "popularTags": "Priljubljene oznake:",
+      "byAuthor": "avtor: {name}",
+      "removeAuthor": "Odstrani filter avtorja {name}",
+      "unknownAuthor": "ta član"
     }
   },
   "post": {
@@ -140,7 +143,10 @@
       "sortActivity": "Zadnja dejavnost",
       "sortNewest": "Najnovejše",
       "tag": "Oznaka",
-      "removeTag": "Odstrani filter oznake {tag}"
+      "removeTag": "Odstrani filter oznake {tag}",
+      "byAuthor": "avtor: {name}",
+      "removeAuthor": "Odstrani filter avtorja {name}",
+      "unknownAuthor": "ta član"
     }
   },
   "thread": {
@@ -341,6 +347,11 @@
       "empty": "Predlogov še ni. V profil dodajte svoja strokovna področja, da boste našli člane s podobnimi interesi.",
       "editProfile": "Uredite svoj profil",
       "loadError": "Predlogov ni bilo mogoče naložiti."
+    },
+    "restricted": {
+      "signIn": "Prijavite se, da si ogledate imenik članov",
+      "verify": "Za ogled imenika članov potrdite svoj e-poštni naslov.",
+      "partners": "Oglejte si partnerske organizacije"
     }
   },
   "knowbase": {
@@ -399,7 +410,17 @@
     "loading": "Nalaganje profila …",
     "loadError": "Tega profila ni bilo mogoče naložiti.",
     "retry": "Poskusi znova",
-    "backToNetwork": "Nazaj na Mrežo za sodelovanje"
+    "backToNetwork": "Nazaj na Mrežo za sodelovanje",
+    "contributions": {
+      "title": "Prispevki",
+      "posts": "Objave na blogu",
+      "threads": "Razprave",
+      "seeAllPosts": "Prikaži vse objave",
+      "seeAllThreads": "Prikaži vse razprave",
+      "empty": "{name} še ni objavil(a) nobene objave ali razprave.",
+      "loading": "Nalaganje prispevkov …",
+      "loadError": "Prispevkov ni bilo mogoče naložiti."
+    }
   },
   "about": {
     "title": "O projektu URBANFLOODS",
