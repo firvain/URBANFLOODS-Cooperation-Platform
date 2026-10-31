@@ -2,7 +2,8 @@
 
 Every upload is decoded by Pillow and re-encoded to WebP: the declared content type is never
 trusted (the format is sniffed by Pillow), polyglot payloads do not survive re-encoding, and all
-metadata (EXIF incl. GPS, ICC, XMP) is dropped. Only JPEG, PNG and WebP stills are accepted.
+metadata (EXIF incl. GPS, ICC, XMP) is dropped. Only JPEG (incl. phone MPO), PNG and WebP stills
+are accepted.
 
 Files live under ``UPLOAD_DIR`` at ``YYYY/MM/<uuid>.webp`` (+ ``_thumb.webp``); they are written
 atomically (temp file + rename). ``process_image`` is CPU-bound and synchronous: call it from a
@@ -24,7 +25,10 @@ import structlog
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp"}
-ALLOWED_FORMATS = frozenset({"JPEG", "PNG", "WEBP"})
+# "MPO" is the Multi Picture Object container phone cameras write for JPEGs (a second frame
+# holds a depth map or preview); Pillow reports it instead of "JPEG". It is a still: the first
+# frame is used and re-encoded like any JPEG.
+ALLOWED_FORMATS = frozenset({"JPEG", "PNG", "WEBP", "MPO"})
 OUTPUT_MIME = "image/webp"
 MAX_IMAGE_PIXELS = 40_000_000
 MAIN_QUALITY = 82
@@ -80,7 +84,9 @@ def _open_checked(data: bytes) -> Image.Image:
     # ``verify`` leaves the image unusable, so decode a fresh one.
     try:
         im = Image.open(io.BytesIO(data))
-        if getattr(im, "n_frames", 1) > 1:
+        if im.format == "MPO":
+            im.seek(0)  # the main picture; the other frames are not an animation
+        elif getattr(im, "n_frames", 1) > 1:
             raise ImageError(ANIMATED)
         im.load()
     except ImageError:

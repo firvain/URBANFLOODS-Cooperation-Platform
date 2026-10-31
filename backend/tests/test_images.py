@@ -172,6 +172,21 @@ def test_other_formats_are_unsupported(fmt):
     assert _error_code(_encode(Image.new("RGB", (16, 16)), fmt)) == "uploads.unsupported_type"
 
 
+def test_mpo_phone_jpeg_is_accepted_as_jpeg_using_its_first_frame():
+    """Phone cameras write JPEGs with a second embedded frame (MPO, Multi Picture Object);
+    Pillow reports the format as "MPO", not "JPEG". They are stills and must be accepted."""
+    frames = [Image.new("RGB", (40, 30), color) for color in ((200, 20, 20), (20, 200, 20))]
+    data = _encode(frames[0], "MPO", save_all=True, append_images=frames[1:])
+    assert Image.open(io.BytesIO(data)).format == "MPO"
+
+    result = _process(data)
+    assert (result.width, result.height) == (40, 30)
+    assert result.mime == "image/webp"
+    # The first (main) frame is used: red, not the green second frame.
+    r, g, b = Image.open(io.BytesIO(result.main_bytes)).convert("RGB").getpixel((5, 5))
+    assert r > 150 and g < 100 and b < 100
+
+
 def test_animated_webp_is_rejected():
     frames = [Image.new("RGB", (10, 10), color) for color in ((255, 0, 0), (0, 255, 0))]
     data = _encode(frames[0], "WEBP", save_all=True, append_images=frames[1:], duration=100)

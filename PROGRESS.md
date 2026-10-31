@@ -171,6 +171,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - 5f done → **M5 complete; M0–M5 all done.** Backend 1488 tests, frontend 935 vitest, 29 e2e + a11y scan of 23 pages, all green.
 - Translations to confirm with partners (from 5f): programme texts (priority, specific objective, call, disclaimer) in all 8 locales; lead-partner address and coordinator role wording; mk name of the university; hr/bs/sl/sr/mk "prijava" used for both log-in and report (context disambiguates); sr guesses for the KNOWBASE gazette/comments field labels.
 - Bug (user report): uploaded images showed as broken in the dev editor. Two causes fixed: Vite had no /static proxy (browser got HTML from :5173; prod nginx already routes /static/), now proxied to the backend (VITE_DEV_PROXY_TARGET=http://backend:8000 in compose); and the slim Linux image has no .webp MIME mapping, so files were served as application/octet-stream with nosniff; the endpoint module now registers image/webp, with a serving test.
+- Bug (user report): a phone JPEG was rejected as unsupported. Pillow reports such files (a second embedded frame) as format MPO; now accepted as JPEG using the first frame (test with a generated MPO).
 - **Next:** M6 deployment files (prod compose, nginx template, deploy script, backup script, docs/deployment.md) only on explicit permission; optional follow-ups listed in §4.
 
 ## 4. Open questions / decisions pending
