@@ -306,7 +306,12 @@ const dialog = computed(() => {
             {{ row.original.is_trusted ? t('admin.common.yes') : t('admin.common.no') }}
           </template>
           <template #active-cell="{ row }">
-            <UBadge v-if="!row.original.is_active" color="error" variant="subtle" size="sm">
+            <!-- Deletion also switches the account off (is_active false), so check it first:
+                 a deleted account is not a banned one. -->
+            <span v-if="row.original.deleted_at" class="text-muted">
+              {{ t('admin.users.deleted') }}
+            </span>
+            <UBadge v-else-if="!row.original.is_active" color="error" variant="subtle" size="sm">
               {{ t('admin.users.banned') }}
             </UBadge>
             <span v-else>{{ t('admin.common.yes') }}</span>

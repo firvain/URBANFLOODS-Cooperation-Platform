@@ -151,7 +151,7 @@ test('4. log out via the user menu', async () => {
 
   await expect(loginLink(page)).toBeVisible()
   await expect(userMenu(page)).toHaveCount(0)
-  // Logging out from a page that needs a session (/account) returns to the home page.
+  // Logging out always returns to the home page.
   await expect(page).toHaveURL('/')
 })
 

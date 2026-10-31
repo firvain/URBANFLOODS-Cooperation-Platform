@@ -206,4 +206,17 @@ describe('Admin users', () => {
     expect(rows()[0]!.textContent).toContain(t('admin.users.deleted'))
     expect(findButton(menu('Nikos'))).toBeUndefined()
   })
+
+  it('a deleted account is "Deleted" in the Active column, not "Banned"', async () => {
+    // Deleting an account also switches it off (is_active false), like a ban.
+    await mountAdmin('/admin/users', {
+      [USERS]: reply(
+        200,
+        page([makeAdminUser({ is_active: false, deleted_at: '2026-10-01T00:00:00Z' })]),
+      ),
+    })
+    const active = rows()[0]!.querySelectorAll('td')[4]!
+    expect(active.textContent?.trim()).toBe(t('admin.users.deleted'))
+    expect(rows()[0]!.textContent).not.toContain(t('admin.users.banned'))
+  })
 })

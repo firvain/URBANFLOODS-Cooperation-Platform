@@ -32,7 +32,8 @@ const signedInAs = computed(() => t('auth.menu.signedInAs', { name: auth.user?.d
 async function logout() {
   await auth.logout()
   toast.add({ title: t('auth.loggedOut'), color: 'neutral', icon: 'i-lucide-log-out' })
-  if (route.meta.auth) await router.push('/')
+  // Always back to the home page, whatever page the member was on.
+  if (route.path !== '/') await router.push('/')
 }
 
 const items = computed<DropdownMenuItem[][]>(() => [

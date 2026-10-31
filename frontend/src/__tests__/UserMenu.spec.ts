@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 
 import UserMenu from '@/components/layout/UserMenu.vue'
@@ -49,6 +49,19 @@ describe('UserMenu', () => {
     await flushPromises()
     expect(callsTo(fetchMock, 'POST /api/v1/auth/logout')).toHaveLength(1)
     expect(auth.isAuthenticated).toBe(false)
+  })
+
+  it.each(['/blog', '/account'])('logging out on %s goes to the home page', async (path) => {
+    mockApi({
+      'GET /api/v1/auth/me': reply(200, makeUser({ display_name: 'Maria P.' })),
+      'POST /api/v1/auth/logout': reply(204),
+    })
+    const { router } = await mountWithApp(UserMenu, { path })
+    await openMenu()
+    const items = Array.from(document.querySelectorAll<HTMLElement>('[role="menuitem"]'))
+    items.find((i) => i.textContent?.includes(t('auth.logout')))!.click()
+    await flushPromises()
+    await vi.waitFor(() => expect(router.currentRoute.value.fullPath).toBe('/'))
   })
 
   it('mobile variant lists the same actions as plain buttons', async () => {
