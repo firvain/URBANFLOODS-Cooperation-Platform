@@ -1,3 +1,4 @@
+import { flushPromises } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import MeasureDetailView from '@/views/MeasureDetailView.vue'
@@ -119,5 +120,21 @@ describe('MeasureDetailView', () => {
     const back = wrapper.find('a[href="https://knowbase.urbanfloods.app/measures"]')
     expect(back.text()).toContain(t('knowbase.measures.back'))
     expect(back.attributes('target')).toBe('_blank')
+  })
+
+  it('keeps one focusable h1 with the page title when the KNOWBASE is unavailable', async () => {
+    const fetchMock = mockApi({ [MEASURE]: replyError(503, 'knowbase.unavailable') })
+    const { wrapper } = await mountDetail()
+    const headings = wrapper.findAll('h1')
+    expect(headings).toHaveLength(1)
+    expect(headings[0]!.attributes('tabindex')).toBe('-1')
+    expect(headings[0]!.text()).toBe(t('knowbase.measures.detailTitle'))
+    const alert = wrapper.find('[role="alert"]')
+    expect(alert.text()).toContain(t('knowbase.measures.detailError'))
+    const retry = alert.findAll('button').find((b) => b.text().includes(t('knowbase.retry')))
+    expect(retry).toBeDefined()
+    await retry!.trigger('click')
+    await flushPromises()
+    expect(callsTo(fetchMock, MEASURE)).toHaveLength(2)
   })
 })

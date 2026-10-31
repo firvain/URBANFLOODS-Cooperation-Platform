@@ -90,23 +90,29 @@ function linkLabel(url: string): string {
       <p class="mt-4 text-muted">{{ t('knowbase.notFoundHint') }}</p>
     </template>
 
-    <div v-else-if="state === 'failed'" role="alert">
-      <UAlert
-        color="error"
-        variant="subtle"
-        icon="i-lucide-circle-alert"
-        :title="t('knowbase.documents.detailError')"
-        :actions="[
-          {
-            label: t('knowbase.retry'),
-            color: 'error',
-            variant: 'outline',
-            icon: 'i-lucide-rotate-cw',
-            onClick: () => load(),
-          },
-        ]"
-      />
-    </div>
+    <template v-else-if="state === 'failed'">
+      <!-- The generic page title, so the page keeps its one focusable h1. -->
+      <h1 tabindex="-1" class="text-3xl font-bold text-primary-600 focus:outline-none">
+        {{ t('knowbase.documents.detailTitle') }}
+      </h1>
+      <div role="alert" class="mt-4">
+        <UAlert
+          color="error"
+          variant="subtle"
+          icon="i-lucide-circle-alert"
+          :title="t('knowbase.documents.detailError')"
+          :actions="[
+            {
+              label: t('knowbase.retry'),
+              color: 'error',
+              variant: 'outline',
+              icon: 'i-lucide-rotate-cw',
+              onClick: () => load(),
+            },
+          ]"
+        />
+      </div>
+    </template>
 
     <article v-else-if="doc" class="max-w-4xl space-y-8">
       <header class="space-y-3">
