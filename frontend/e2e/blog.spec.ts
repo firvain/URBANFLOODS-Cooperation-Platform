@@ -7,7 +7,19 @@ import {
   type Page,
 } from '@playwright/test'
 
-import { API_URL, MEMBER, NEWBIE, deletePostViaApi, loginViaForm } from './helpers/demo'
+import {
+  ADMIN,
+  API_HEADERS,
+  API_URL,
+  MEMBER,
+  NEWBIE,
+  categoryBySlug,
+  deletePostViaApi,
+  displayNameOf,
+  listCategories,
+  loginViaApi,
+  meOf,
+} from './helpers/demo'
 import { makePng } from './helpers/png'
 
 /**
@@ -15,17 +27,23 @@ import { makePng } from './helpers/png'
  * anonymous browsing (list, category chips, search, post detail, KNOWBASE link cards and the
  * "Mentioned in" round trip), a trusted member writing → editing → deleting a post, an untrusted
  * member's post waiting for approval, and the editor's unsaved-changes guard.
- * One page per role, kept across the tests, which run in order. Titles carry a per-run suffix
- * and everything created is deleted again (the afterAll hook is a safety net for failed runs).
+ * One page per role, logged in once through the API (the UI login is covered by auth.spec.ts;
+ * logins are rate limited) and kept across the tests, which run in order. Titles carry a
+ * per-run suffix and everything created is deleted again (the afterAll hook is a safety net for
+ * failed runs).
+ *
+ * Manual testing changes the dev data, so the spec does not rely on its exact state: display
+ * names come from `GET /auth/me`, category names from `GET /categories/`, counts from the public
+ * post list, and the pending content it asserts on is created here. If newbie is trusted (an
+ * admin approved one of its posts), the mark is removed for the run and put back afterwards.
  */
 test.describe.configure({ mode: 'serial' })
 
-/** Seeded posts (backend/scripts/seed_dev.py). */
+/** Seeded post by the member, with KNOWBASE links (backend/scripts/seed_dev.py). */
 const GREEN_ROOFS = {
   slug: 'green-roofs-and-retention-basins-what-two-years-of-pilot-data-show',
   title: 'Green roofs and retention basins: what two years of pilot data show',
 }
-const PENDING_DRAINS_TITLE = 'Cleaning storm drains before the autumn rains: a municipal routine'
 /** The live KNOWBASE title of measure 2, linked from the green-roofs post. */
 const MEASURE_2_TITLE = 'floodplain reconnection'
 
@@ -35,6 +53,9 @@ const memberTitleEdited = `E2E trusted post ${RUN} (edited)`
 const newbieTitle = `E2E pending post ${RUN}`
 const coverAlt = `E2E cover: a teal and violet gradient ${RUN}`
 const TAGS = ['e2e-test', 'playwright']
+/** A word no other post contains: test 1 searches for newbie's pending post by it. */
+const PENDING_TOKEN = `pendingprobe${RUN}`
+const pendingProbeTitle = `E2E pending search probe ${PENDING_TOKEN}`
 
 let anonContext: BrowserContext
 let memberContext: BrowserContext
@@ -47,6 +68,11 @@ let newbie: Page
 const created = new Map<string, BrowserContext>()
 let memberSlug = ''
 let newbieSlug = ''
+/** The member's live display name (the seeded one may have been changed in the UI). */
+let memberName = ''
+/** Set when newbie was trusted at the start: the admin removes the mark and restores it. */
+let adminContext: BrowserContext | undefined
+let newbieId = 0
 
 async function newPage(browser: Browser): Promise<[BrowserContext, Page]> {
   const context = await browser.newContext()
@@ -84,6 +110,32 @@ async function anonPostStatus(slug: string): Promise<number> {
   return res.status
 }
 
+interface ListedPost {
+  slug: string
+  title: string
+  category: { id: number; slug: string; name: string }
+}
+
+/** The public post list as an anonymous client sees it (optionally searched). */
+async function anonPosts(q?: string): Promise<{ total: number; items: ListedPost[] }> {
+  const query = q ? `&q=${encodeURIComponent(q)}` : ''
+  const res = await fetch(`${API_URL}/api/v1/posts/?limit=50${query}`)
+  expect(res.status, 'GET /posts/').toBe(200)
+  return (await res.json()) as { total: number; items: ListedPost[] }
+}
+
+/** The English list count ("blog.count" in en.json). */
+const postCount = (total: number) =>
+  total === 0 ? 'No posts' : total === 1 ? '1 post' : `${total} posts`
+
+/** Mark or unmark newbie as trusted with the admin session. */
+async function setNewbieTrust(context: BrowserContext, action: 'trust' | 'untrust') {
+  const res = await context.request.post(`${API_URL}/api/v1/admin/users/${newbieId}/${action}`, {
+    headers: API_HEADERS,
+  })
+  expect(res.status(), `${action} newbie`).toBe(200)
+}
+
 /** A success toast (Nuxt UI also mirrors it into a hidden live region, hence `exact`). */
 const toast = (page: Page, text: string) => page.getByText(text, { exact: true })
 
@@ -100,6 +152,20 @@ test.beforeAll(async ({ browser }) => {
   ;[anonContext, anon] = await newPage(browser)
   ;[memberContext, member] = await newPage(browser)
   ;[newbieContext, newbie] = await newPage(browser)
+  // The pages share their context's cookie jar, so these sessions are the browsers' too.
+  await loginViaApi(memberContext.request, MEMBER)
+  await loginViaApi(newbieContext.request, NEWBIE)
+  memberName = await displayNameOf(memberContext.request, MEMBER)
+
+  // Tests 1 and 5 need newbie untrusted. An admin approving one of its posts trusts it: then
+  // (only then) log the admin in, remove the mark and put it back in afterAll.
+  const newbieMe = await meOf(newbieContext.request, NEWBIE)
+  newbieId = newbieMe.id
+  if (newbieMe.trusted_at) {
+    adminContext = await browser.newContext()
+    await loginViaApi(adminContext.request, ADMIN)
+    await setNewbieTrust(adminContext, 'untrust')
+  }
 })
 
 test.afterAll(async () => {
@@ -107,51 +173,80 @@ test.afterAll(async () => {
   for (const [slug, context] of created) {
     await deletePostViaApi(context.request, slug).catch(() => {})
   }
+  if (adminContext) {
+    await setNewbieTrust(adminContext, 'trust').catch(() => {})
+    await adminContext.close()
+  }
   await Promise.all([anonContext, memberContext, newbieContext].map((c) => c.close()))
 })
 
 test('1. anonymous: the blog lists the posts; category chips and search filter them', async () => {
+  // What an anonymous visitor may see right now (counts and categories drift with manual testing).
+  const published = await anonPosts()
+  expect(published.total, 'published posts in the dev data').toBeGreaterThan(0)
   await anon.goto('/blog')
   await expect(anon.getByRole('heading', { level: 1, name: 'Blog' })).toBeVisible()
-  await expect.poll(() => cards(anon).count()).toBeGreaterThanOrEqual(7)
+  const count = anon.getByTestId('blog-count')
+  await expect(count).toHaveText(postCount(published.total))
+  await expect.poll(() => cards(anon).count()).toBeGreaterThan(0)
   // Only verified members can write.
   await expect(anon.getByRole('link', { name: 'Write a post' })).toHaveCount(0)
 
-  // Category chip → only that category, reflected in the URL.
+  // Category chip → only that category, reflected in the URL. The category of a published post,
+  // so the filtered list is not empty; its name as the API has it now.
+  const { slug: categorySlug, name: categoryName } = published.items[0]!.category
   const chips = anon.getByRole('group', { name: 'Category' })
-  await chips.getByRole('button', { name: 'Resources', exact: true }).click()
-  await expect(anon).toHaveURL(/[?&]category=resources(&|$)/)
-  await expect(chips.getByRole('button', { name: 'Resources', exact: true })).toHaveAttribute(
+  await chips.getByRole('button', { name: categoryName, exact: true }).click()
+  await expect(anon).toHaveURL(new RegExp(`[?&]category=${categorySlug}(&|$)`))
+  await expect(chips.getByRole('button', { name: categoryName, exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   )
   await expect
     .poll(async () => {
       const names = await cards(anon).getByTestId('post-category').allTextContents()
-      return names.length > 0 && names.every((name) => name.trim() === 'Resources')
+      return names.length > 0 && names.every((name) => name.trim() === categoryName)
     })
     .toBe(true)
 
   await chips.getByRole('button', { name: 'All', exact: true }).click()
   await expect(anon).not.toHaveURL(/category=/)
-  await expect.poll(() => cards(anon).count()).toBeGreaterThanOrEqual(7)
+  await expect(count).toHaveText(postCount(published.total))
 
-  // Search: the drains post is pending, so it is not found (another post merely mentions
-  // "storm drains" in its body); the green-roofs post is.
-  const count = anon.getByTestId('blog-count')
-  const unfiltered = (await count.textContent()) ?? ''
+  // Search never finds a post that is not published: newbie (untrusted) sends one for review
+  // whose title and body carry a word no other post has, and the anonymous search for it is
+  // empty (were the pending post leaking, it would be the one hit).
+  const category = (await listCategories()).find(
+    (c) => c.kind === 'blog' && !c.admin_only && !c.is_archived,
+  )
+  if (!category) throw new Error('No blog category open to members')
+  const res = await newbieContext.request.post(`${API_URL}/api/v1/posts/`, {
+    headers: API_HEADERS,
+    data: {
+      title: pendingProbeTitle,
+      body_html: `<p>A pending post the blog e2e search must not find: ${PENDING_TOKEN}.</p>`,
+      category_id: category.id,
+    },
+  })
+  expect(res.status(), 'newbie creates the pending probe').toBe(201)
+  const probe = (await res.json()) as { slug: string; status: string }
+  created.set(probe.slug, newbieContext)
+  expect(probe.status).toBe('pending')
+
   const search = anon.getByRole('searchbox', { name: 'Search', exact: true })
-  await search.fill('drains')
-  await expect(anon).toHaveURL(/[?&]q=drains(&|$)/)
-  // Wait for the filtered result before asserting on what is missing from it.
-  await expect(count).not.toHaveText(unfiltered)
-  await expect.poll(() => cardTitles(anon)).not.toContain(PENDING_DRAINS_TITLE)
-  await expect(anon.getByRole('link', { name: PENDING_DRAINS_TITLE })).toHaveCount(0)
+  await search.fill(PENDING_TOKEN)
+  await expect(anon).toHaveURL(new RegExp(`[?&]q=${PENDING_TOKEN}(&|$)`))
+  await expect(count).toHaveText('No posts')
+  await expect(anon.getByRole('link', { name: pendingProbeTitle })).toHaveCount(0)
+  expect((await anonPosts(PENDING_TOKEN)).total).toBe(0)
+  await deletePostViaApi(newbieContext.request, probe.slug)
+  created.delete(probe.slug)
 
+  // A published post is found by a word of its title.
   await search.fill('green')
   await expect(anon).toHaveURL(/[?&]q=green(&|$)/)
   await expect(anon.getByRole('link', { name: GREEN_ROOFS.title })).toBeVisible()
-  await expect.poll(() => cardTitles(anon)).not.toContain(PENDING_DRAINS_TITLE)
+  await expect.poll(() => cardTitles(anon)).not.toContain(pendingProbeTitle)
 })
 
 test('2. anonymous: a post shows its content, and its KNOWBASE links lead back to it', async () => {
@@ -159,7 +254,7 @@ test('2. anonymous: a post shows its content, and its KNOWBASE links lead back t
   await expect(anon).toHaveURL(`/blog/${GREEN_ROOFS.slug}`)
 
   await expect(anon.getByRole('heading', { level: 1, name: GREEN_ROOFS.title })).toBeVisible()
-  await expect(anon.getByTestId('post-author')).toContainText(MEMBER.name)
+  await expect(anon.getByTestId('post-author')).toContainText(memberName)
   await expect(anon.getByTestId('post-body')).toContainText('Sarajevo pilot')
   await expect(
     anon.getByTestId('post-body').getByRole('heading', { name: 'Results' }),
@@ -184,7 +279,6 @@ test('2. anonymous: a post shows its content, and its KNOWBASE links lead back t
 })
 
 test('3. trusted member: write a post with formatting, tags, cover and a KNOWBASE link', async () => {
-  await loginViaForm(member, MEMBER)
   await member.goto('/blog')
   await member.getByRole('link', { name: 'Write a post' }).click()
   await expect(member).toHaveURL('/blog/new')
@@ -193,7 +287,7 @@ test('3. trusted member: write a post with formatting, tags, cover and a KNOWBAS
   await expect(member.getByTestId('untrusted-note')).toHaveCount(0)
 
   await member.getByLabel('Title', { exact: true }).fill(memberTitle)
-  await chooseCategory(member, 'Best practices')
+  await chooseCategory(member, (await categoryBySlug('best-practices', 'blog')).name)
 
   // Body: a heading, a paragraph and a bulleted list, made with the toolbar.
   const body = editorBody(member)
@@ -298,7 +392,6 @@ test('4. trusted member: edit the title, then delete the post', async () => {
 })
 
 test('5. untrusted member: a new post waits for approval and stays private', async () => {
-  await loginViaForm(newbie, NEWBIE)
   await newbie.goto('/blog')
   await newbie.getByRole('link', { name: 'Write a post' }).click()
   await expect(newbie).toHaveURL('/blog/new')
@@ -307,7 +400,7 @@ test('5. untrusted member: a new post waits for approval and stays private', asy
   ).toBeVisible()
 
   await newbie.getByLabel('Title', { exact: true }).fill(newbieTitle)
-  await chooseCategory(newbie, 'News')
+  await chooseCategory(newbie, (await categoryBySlug('news', 'blog')).name)
   await editorBody(newbie).click()
   await newbie.keyboard.type('A short report from our municipality, written by an e2e test.')
 

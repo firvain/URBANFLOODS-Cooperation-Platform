@@ -19,6 +19,8 @@ import {
   EDITOR,
   MEMBER,
   NEWBIE,
+  categoryBySlug,
+  displayNameOf,
   type DemoAccount,
 } from './helpers/demo'
 import { waitForEmailTo } from './helpers/mailpit'
@@ -36,7 +38,11 @@ import { makePng } from './helpers/png'
  * One browser context per role, logged in once through the API (the UI login is covered by
  * auth.spec.ts; logins are rate limited) and kept across the tests, which run in order. Titles
  * carry a per-run suffix. afterAll deletes every post this run created, dismisses the reports
- * still open on them and removes newbie's trusted mark, so the suite is repeatable.
+ * still open on them and puts newbie's trusted mark back as it found it, so the suite is
+ * repeatable and leaves the dev data as it was.
+ *
+ * Manual testing changes the dev data, so display names come from each account's
+ * `GET /auth/me` and category names from `GET /categories/`, never from the seed.
  */
 test.describe.configure({ mode: 'serial' })
 
@@ -65,6 +71,13 @@ let firstSlug = ''
 let secondSlug = ''
 let secondId = 0
 let rejectedSlug = ''
+/** Whether newbie was trusted before this run (restored in afterAll). */
+let newbieWasTrusted = false
+/** Live display names, read once each account is logged in. */
+let adminName = ''
+let editorName = ''
+let memberName = ''
+let newbieName = ''
 
 async function newPage(browser: Browser): Promise<[BrowserContext, Page]> {
   const context = await browser.newContext()
@@ -72,11 +85,12 @@ async function newPage(browser: Browser): Promise<[BrowserContext, Page]> {
 }
 
 /**
- * Log a browser context in through the API (its pages share the cookie jar). On 429 waits for
- * `Retry-After` and tries again once, so a full `npm run e2e` (12 logins over a few minutes
- * against a 10 per 15 min budget) does not fail on the bucket refill.
+ * Log a browser context in through the API (its pages share the cookie jar) and return the
+ * account's current display name. On 429 waits for `Retry-After` and tries again once, so a
+ * full `npm run e2e` (12 logins over a few minutes against a 10 per 15 min budget) does not
+ * fail on the bucket refill.
  */
-async function login(context: BrowserContext, account: DemoAccount): Promise<void> {
+async function login(context: BrowserContext, account: DemoAccount): Promise<string> {
   for (let attempt = 0; ; attempt++) {
     const res = await context.request.post(`${API_URL}/api/v1/auth/login`, {
       headers: API_HEADERS,
@@ -89,7 +103,7 @@ async function login(context: BrowserContext, account: DemoAccount): Promise<voi
       continue
     }
     expect(res.status(), `login as ${account.email}`).toBe(200)
-    return
+    return displayNameOf(context.request, account)
   }
 }
 
@@ -168,6 +182,9 @@ async function waitForPostPage(page: Page): Promise<string> {
   return decodeURIComponent(new URL(page.url()).pathname.split('/').pop() ?? '')
 }
 
+/** The live name of the News blog category (an admin may rename it; the slug stays). */
+const newsCategory = async () => (await categoryBySlug('news', 'blog')).name
+
 /** Write a post in the editor UI (category News, one paragraph) and submit it. */
 async function writePost(
   page: Page,
@@ -183,10 +200,11 @@ async function writePost(
   else await expect(note).toHaveCount(0)
 
   await page.getByLabel('Title', { exact: true }).fill(title)
+  const news = await newsCategory()
   const category = page.getByRole('combobox', { name: 'Category' })
   await category.click()
-  await page.getByRole('option', { name: 'News', exact: true }).click()
-  await expect(category).toContainText('News')
+  await page.getByRole('option', { name: news, exact: true }).click()
+  await expect(category).toContainText(news)
   await page.getByRole('textbox', { name: 'Text', exact: true }).click()
   await page.keyboard.type(`A short municipal update written by the moderation e2e test, ${RUN}.`)
 
@@ -231,10 +249,11 @@ test.afterAll(async () => {
         headers: API_HEADERS,
       })
     }
-    // Back to the seeded state: newbie is not trusted (blog.spec.ts relies on it).
+    // Newbie's trusted mark as this run found it.
     const id = newbieId || (await newbieUser(request).catch(() => null))?.id
     if (id) {
-      await request.post(`${API_URL}/api/v1/admin/users/${id}/untrust`, { headers: API_HEADERS })
+      const action = newbieWasTrusted ? 'trust' : 'untrust'
+      await request.post(`${API_URL}/api/v1/admin/users/${id}/${action}`, { headers: API_HEADERS })
     }
   }
   await Promise.all(
@@ -244,14 +263,16 @@ test.afterAll(async () => {
 
 test('1. first post waits for approval; approving it publishes it and trusts the author', async () => {
   test.setTimeout(240_000)
-  await login(adminContext, ADMIN)
-  // A failed earlier run may have left newbie trusted: start from the seeded state.
+  adminName = await login(adminContext, ADMIN)
+  // Manual testing (an approved post) may have left newbie trusted: start untrusted, and put
+  // the mark back in afterAll.
   const user = await newbieUser(adminContext.request)
   newbieId = user.id
+  newbieWasTrusted = user.is_trusted
   if (user.is_trusted) {
     await apiJson(adminContext.request, 'POST', `/admin/users/${newbieId}/untrust`)
   }
-  await login(newbieContext, NEWBIE)
+  newbieName = await login(newbieContext, NEWBIE)
 
   firstSlug = await writePost(newbie, firstTitle, 'Send for review')
   await expect(
@@ -274,7 +295,7 @@ test('1. first post waits for approval; approving it publishes it and trusts the
   await expect(admin.getByRole('heading', { level: 1, name: 'Approval queue' })).toBeVisible()
   const row = queueRow(admin, firstTitle)
   await expect(row).toHaveCount(1)
-  await expect(row).toContainText(NEWBIE.name)
+  await expect(row).toContainText(newbieName)
   await expect(row).toContainText('Post')
   await expect(row.getByText('Trusted', { exact: true })).toHaveCount(0)
 
@@ -337,7 +358,7 @@ test('2. a rejected post is hidden with the rejected banner; the reason is in th
   const logRow = admin.getByTestId('log-table').getByRole('row').filter({ hasText: rejectReason })
   await expect(logRow).toHaveCount(1)
   await expect(logRow).toContainText('moderation.reject')
-  await expect(logRow).toContainText(ADMIN.name)
+  await expect(logRow).toContainText(adminName)
   const rejectedId = await postId(adminContext.request, rejectedSlug)
   await expect(logRow).toContainText(`post #${rejectedId}`)
   const metadata = logRow.locator('dl')
@@ -349,7 +370,7 @@ test('3. three distinct reports hide a post; the admin dismisses one and unhides
   // Reports are one per member and item, whatever their status, so a seeded post could be
   // reported only once: the target is newbie's published second post from test 1.
   test.setTimeout(240_000)
-  await login(memberContext, MEMBER)
+  memberName = await login(memberContext, MEMBER)
   await member.goto(`/blog/${secondSlug}`)
   await expect(member.getByRole('heading', { level: 1, name: secondTitle })).toBeVisible()
 
@@ -379,7 +400,7 @@ test('3. three distinct reports hide a post; the admin dismisses one and unhides
   )
 
   // Two more distinct reporters (through the API): the third report hides the post.
-  await login(editorContext, EDITOR)
+  editorName = await login(editorContext, EDITOR)
   const second = await apiJson<{ auto_hidden: boolean }>(
     editorContext.request,
     'POST',
@@ -405,8 +426,8 @@ test('3. three distinct reports hide a post; the admin dismisses one and unhides
   const reports = await reportsOnPost(adminContext.request, secondId)
   expect(reports).toHaveLength(3)
   expect(reports.every((r) => r.status === 'open')).toBe(true)
-  const memberReport = reports.find((r) => r.reporter?.display_name === MEMBER.name)
-  const editorReport = reports.find((r) => r.reporter?.display_name === EDITOR.name)
+  const memberReport = reports.find((r) => r.reporter?.display_name === memberName)
+  const editorReport = reports.find((r) => r.reporter?.display_name === editorName)
   if (!memberReport || !editorReport) throw new Error('Missing reports of the member/editor')
 
   await admin.goto('/admin/reports')
@@ -422,14 +443,14 @@ test('3. three distinct reports hide a post; the admin dismisses one and unhides
   }
 
   // Dismiss the member's report.
-  const memberRow = rows.filter({ hasText: MEMBER.name })
+  const memberRow = rows.filter({ hasText: memberName })
   await memberRow.getByRole('button', { name: `Actions for report ${memberReport.id}` }).click()
   await admin.getByRole('menuitem', { name: 'Dismiss' }).click()
   await expect(toast(admin, 'Report dismissed.')).toBeVisible()
   await expect(memberRow).toContainText('Dismissed')
 
   // Unhide the content from the editor's report row.
-  const editorRow = rows.filter({ hasText: EDITOR.name })
+  const editorRow = rows.filter({ hasText: editorName })
   await editorRow.getByRole('button', { name: `Actions for report ${editorReport.id}` }).click()
   await admin.getByRole('menuitem', { name: 'Unhide content' }).click()
   const confirm = admin.getByRole('dialog', { name: 'Publish this content again?' })
@@ -482,7 +503,39 @@ test('4. the dashboard shows the numbers and the KNOWBASE state; the CSV downloa
   expect(csv).toContain('rco87')
 })
 
+interface NotificationPreferences {
+  admin_digest: boolean
+  digest_frequency: 'daily' | 'weekly'
+}
+
+/**
+ * Whether the account (an admin, logged in with `context`) gets a digest run today: its
+ * preferences can be changed on the account page, so they are read, not assumed. Mirrors
+ * `list_admin_digest_recipients`: `admin_digest` on and daily, or weekly on a Monday (UTC).
+ */
+async function wantsDigestToday(context: BrowserContext): Promise<boolean> {
+  const prefs = await apiJson<NotificationPreferences>(
+    context.request,
+    'GET',
+    '/auth/me/notifications',
+  )
+  if (!prefs.admin_digest) return false
+  return prefs.digest_frequency === 'daily' || new Date().getUTCDay() === 1
+}
+
 test('5. the digest command emails the admins a link to the queue', async () => {
+  const recipients: DemoAccount[] = []
+  for (const [account, context] of [
+    [ADMIN, adminContext],
+    [EDITOR, editorContext],
+  ] as const) {
+    if (await wantsDigestToday(context)) recipients.push(account)
+  }
+  test.skip(
+    recipients.length === 0,
+    'Neither demo admin wants a digest today (notification preferences)',
+  )
+
   let dockerReady = false
   try {
     const services = execFileSync(
@@ -514,7 +567,7 @@ test('5. the digest command emails the admins a link to the queue', async () => 
     ],
     { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 60_000 },
   )
-  for (const account of [ADMIN, EDITOR]) {
+  for (const account of recipients) {
     const mail = await waitForEmailTo(account.email, {
       subjectIncludes: 'digest',
       since,
@@ -537,37 +590,37 @@ test('6. users: the superadmin toggles trust; an admin is not offered "Make supe
   await expect(admin.getByRole('heading', { level: 1, name: 'Users' })).toBeVisible()
   await admin.getByRole('searchbox', { name: 'Search', exact: true }).fill('newbie')
   await expect(admin).toHaveURL(/[?&]q=newbie(&|$)/)
-  await expect(usersRow(admin, NEWBIE.name)).toHaveCount(1)
-  await expect(trustedCell(admin, NEWBIE.name)).toHaveText('No')
+  await expect(usersRow(admin, newbieName)).toHaveCount(1)
+  await expect(trustedCell(admin, newbieName)).toHaveText('No')
 
-  await menuButton(admin, NEWBIE.name).click()
+  await menuButton(admin, newbieName).click()
   await admin.getByRole('menuitem', { name: 'Mark trusted' }).click()
-  let dialog = admin.getByRole('dialog', { name: `Mark ${NEWBIE.name} as trusted?` })
+  let dialog = admin.getByRole('dialog', { name: `Mark ${newbieName} as trusted?` })
   await expect(dialog).toBeVisible()
   await dialog.getByRole('button', { name: 'Mark trusted' }).click()
   await expect(dialog).toBeHidden()
-  await expect(toast(admin, `${NEWBIE.name} is trusted.`)).toBeVisible()
-  await expect(trustedCell(admin, NEWBIE.name)).toHaveText('Yes')
+  await expect(toast(admin, `${newbieName} is trusted.`)).toBeVisible()
+  await expect(trustedCell(admin, newbieName)).toHaveText('Yes')
 
-  await menuButton(admin, NEWBIE.name).click()
+  await menuButton(admin, newbieName).click()
   await admin.getByRole('menuitem', { name: 'Remove trusted mark' }).click()
-  dialog = admin.getByRole('dialog', { name: `Remove the trusted mark from ${NEWBIE.name}?` })
+  dialog = admin.getByRole('dialog', { name: `Remove the trusted mark from ${newbieName}?` })
   await dialog.getByRole('button', { name: 'Remove trusted mark' }).click()
   await expect(dialog).toBeHidden()
-  await expect(toast(admin, `${NEWBIE.name} is no longer trusted.`)).toBeVisible()
-  await expect(trustedCell(admin, NEWBIE.name)).toHaveText('No')
+  await expect(toast(admin, `${newbieName} is no longer trusted.`)).toBeVisible()
+  await expect(trustedCell(admin, newbieName)).toHaveText('No')
   expect((await newbieUser(adminContext.request)).is_trusted).toBe(false)
 
   // The superadmin may promote the admin to superadmin (offered, not used)…
   await admin.goto('/admin/users?q=editor')
-  await menuButton(admin, EDITOR.name).click()
+  await menuButton(admin, editorName).click()
   await expect(admin.getByRole('menuitem', { name: 'Make superadmin' })).toBeVisible()
   await admin.keyboard.press('Escape')
 
   // …an admin may not: neither on the superadmin's row nor on their own.
   await editor.goto('/admin/users?q=urbanfloods.example')
   await expect(editor.getByRole('heading', { level: 1, name: 'Users' })).toBeVisible()
-  for (const name of [ADMIN.name, EDITOR.name]) {
+  for (const name of [adminName, editorName]) {
     await menuButton(editor, name).click()
     const menu = editor.getByRole('menu')
     await expect(menu.getByRole('menuitem').first()).toBeVisible()
@@ -637,7 +690,7 @@ test('8. Uploads tab: an image used by a post cannot be deleted; purging the pos
   await member.getByLabel('Title', { exact: true }).fill(title)
   const category = member.getByRole('combobox', { name: 'Category' })
   await category.click()
-  await member.getByRole('option', { name: 'News', exact: true }).click()
+  await member.getByRole('option', { name: await newsCategory(), exact: true }).click()
   await member.getByRole('textbox', { name: 'Text', exact: true }).click()
   await member.keyboard.type(`A post with a cover image for the uploads e2e test, ${RUN}.`)
   await member.getByRole('button', { name: 'Add a cover image' }).click()

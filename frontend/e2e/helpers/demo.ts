@@ -14,6 +14,10 @@ export const API_HEADERS = { 'X-Requested-With': 'XMLHttpRequest' }
 export interface DemoAccount {
   email: string
   password: string
+  /**
+   * The seeded display name. Manual testing may rename an account, so specs assert the live
+   * name from `displayNameOf`; this is only a fallback for content a spec creates itself.
+   */
   name: string
 }
 
@@ -45,7 +49,9 @@ export async function loginViaForm(page: Page, account: DemoAccount): Promise<vo
   await page.getByLabel('Password', { exact: true }).fill(account.password)
   await page.getByRole('button', { name: 'Log in' }).click()
   await page.waitForURL('/')
-  await expect(page.getByRole('banner').getByRole('button', { name: account.name })).toBeVisible()
+  // The page's request context shares the browser's cookie jar: no second login.
+  const name = await displayNameOf(page.request, account)
+  await expect(page.getByRole('banner').getByRole('button', { name })).toBeVisible()
 }
 
 /** Log in an API request context (no browser); its cookie jar keeps the session. */
@@ -55,6 +61,39 @@ export async function loginViaApi(request: APIRequestContext, account: DemoAccou
     data: { email: account.email, password: account.password },
   })
   expect(res.status(), `login as ${account.email}`).toBe(200)
+}
+
+/** The fields of `GET /api/v1/auth/me` the specs use. */
+export interface Me {
+  id: number
+  email: string
+  display_name: string
+  trusted_at: string | null
+}
+
+/**
+ * `GET /api/v1/auth/me` for a request context logged in as `account` (asserts it is that
+ * account's session).
+ */
+export async function meOf(request: APIRequestContext, account: DemoAccount): Promise<Me> {
+  const res = await request.get(`${API_URL}/api/v1/auth/me`, { headers: API_HEADERS })
+  expect(res.status(), `GET /auth/me as ${account.email}`).toBe(200)
+  const me = (await res.json()) as Me
+  expect(me.email.toLowerCase(), 'the session belongs to the account').toBe(
+    account.email.toLowerCase(),
+  )
+  return me
+}
+
+/**
+ * The account's current display name, read from its own API session: an admin may have renamed
+ * a demo account during manual testing, so never assert the seeded `name`.
+ */
+export async function displayNameOf(
+  request: APIRequestContext,
+  account: DemoAccount,
+): Promise<string> {
+  return (await meOf(request, account)).display_name
 }
 
 /** Status of `GET /api/v1/threads/:slug` for an anonymous client. */
@@ -87,11 +126,36 @@ export const deletePostViaApi = (request: APIRequestContext, slug: string) =>
 export const deleteThreadViaApi = (request: APIRequestContext, slug: string) =>
   deleteBySlugViaApi(request, 'threads', slug)
 
+export interface Category {
+  id: number
+  kind: 'forum' | 'blog'
+  slug: string
+  name: string
+  admin_only: boolean
+  is_archived: boolean
+}
+
+/** Every category (both kinds), from the public categories endpoint. */
+export async function listCategories(): Promise<Category[]> {
+  const res = await fetch(`${API_URL}/api/v1/categories/`)
+  expect(res.status, 'GET /categories/').toBe(200)
+  return ((await res.json()) as { items: Category[] }).items
+}
+
+/**
+ * A forum (or blog) category by slug, from the public categories endpoint. Slugs are stable;
+ * names can be edited by an admin, so specs take the name they click or assert from here.
+ */
+export async function categoryBySlug(
+  slug: string,
+  kind: 'forum' | 'blog' = 'forum',
+): Promise<Category> {
+  const category = (await listCategories()).find((c) => c.kind === kind && c.slug === slug)
+  if (!category) throw new Error(`No ${kind} category "${slug}"`)
+  return category
+}
+
 /** The id of a forum (or blog) category by slug, from the public categories endpoint. */
 export async function categoryId(slug: string, kind: 'forum' | 'blog' = 'forum'): Promise<number> {
-  const res = await fetch(`${API_URL}/api/v1/categories/`)
-  const { items } = (await res.json()) as { items: { id: number; kind: string; slug: string }[] }
-  const category = items.find((c) => c.kind === kind && c.slug === slug)
-  if (!category) throw new Error(`No ${kind} category "${slug}"`)
-  return category.id
+  return (await categoryBySlug(slug, kind)).id
 }
