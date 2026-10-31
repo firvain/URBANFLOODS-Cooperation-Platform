@@ -3,12 +3,20 @@
     python -m app.cli create-superadmin --email X --display-name Y [--password Z]
                                         [--organisation-id N]
     python -m app.cli promote --email X --to admin|superadmin
+    python -m app.cli digest [--force]
+    python -m app.cli maintenance
 
 ``create-superadmin`` creates a verified, trusted superadmin, or, if the address is already
 registered, makes that account a verified, trusted superadmin (its password and profile are
 kept). Running it again changes nothing. Without ``--password`` the password is prompted for
 (twice) when a new account is created. Both commands print the user id on success, write an
 audit row with no actor, and exit 0; errors go to stderr with exit code 1 (2 for usage errors).
+
+``digest`` sends the admin moderation digest now (``--force`` sends it even when nothing is
+pending or reported) and prints ``recipients=N items=M``. ``maintenance`` runs the maintenance
+sweeps once and prints one ``step=count`` line per step; it exits 1 if a step failed (``-1``).
+Both exit 1 with one ``error: <type>: <message>`` line (addresses redacted) if the job raises,
+and ``digest`` also when every email failed.
 
 Each run uses its own short-lived engine (no pool), so ``main`` can be called from any thread
 that has no running event loop.
@@ -19,8 +27,10 @@ from __future__ import annotations
 import argparse
 import asyncio
 import getpass
+import re
 import sys
 from collections.abc import Sequence
+from functools import partial
 
 from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -34,6 +44,7 @@ from app.crud import user as crud_user
 from app.db.enums import UserRole
 from app.db.models import User
 from app.db.session import AsyncSessionLocal
+from app.services import scheduler
 
 ROLE_RANK = {UserRole.MEMBER: 0, UserRole.ADMIN: 1, UserRole.SUPERADMIN: 2}
 DISPLAY_NAME_MIN, DISPLAY_NAME_MAX = 2, 120
@@ -152,6 +163,12 @@ def build_parser() -> argparse.ArgumentParser:
     promote = commands.add_parser("promote", help="raise an existing user's role")
     promote.add_argument("--email", required=True)
     promote.add_argument("--to", required=True, choices=["admin", "superadmin"])
+
+    digest = commands.add_parser("digest", help="send the admin moderation digest now")
+    digest.add_argument(
+        "--force", action="store_true", help="send even when nothing is pending or reported"
+    )
+    commands.add_parser("maintenance", help="run the maintenance sweeps once")
     return parser
 
 
@@ -167,9 +184,41 @@ async def _run(args: argparse.Namespace) -> int:
     return 0
 
 
+async def _run_job(args: argparse.Namespace) -> int:
+    """``digest`` / ``maintenance``: the scheduler's coroutines on a short-lived engine."""
+    engine = create_async_engine(settings.DATABASE_URL, poolclass=NullPool)
+    session_factory = partial(AsyncSessionLocal, bind=engine)
+    try:
+        if args.command == "digest":
+            run = await scheduler.run_digest(args.force, session_factory=session_factory)
+            if run is None:
+                print("error: every digest email failed; nothing recorded", file=sys.stderr)
+                return 1
+            print(f"recipients={run.recipients} items={run.items}")
+            return 0
+        counts = await scheduler.run_maintenance(session_factory=session_factory)
+    finally:
+        await engine.dispose()
+    for step, count in counts.items():
+        print(f"{step}={count}")
+    return 1 if any(count < 0 for count in counts.values()) else 0
+
+
+JOB_COMMANDS = frozenset({"digest", "maintenance"})
+# Job errors are printed without email addresses (a database or SMTP message may carry one).
+_ADDRESS = re.compile(r"[^\s@<>\"']+@[^\s@<>\"']+")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
+        if args.command in JOB_COMMANDS:
+            try:
+                return asyncio.run(_run_job(args))
+            except Exception as exc:
+                message = _ADDRESS.sub("<address>", " ".join(str(exc).split()))
+                print(f"error: {type(exc).__name__}: {message}", file=sys.stderr)
+                return 1
         return asyncio.run(_run(args))
     except CliError as exc:
         print(f"error: {exc}", file=sys.stderr)

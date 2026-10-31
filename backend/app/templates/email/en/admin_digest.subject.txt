@@ -1,0 +1,1 @@
+[URBANFLOODS Cooperation] Moderation digest: {{ pending_total }} pending, {{ reports_total }} reports

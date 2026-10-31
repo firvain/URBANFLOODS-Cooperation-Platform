@@ -22,6 +22,7 @@ dependencies = [
     "pillow>=11",
     "cachetools>=5.5",
     "python-multipart>=0.0.20",
+    "apscheduler>=3.10,<4",
 ]
 
 [project.optional-dependencies]

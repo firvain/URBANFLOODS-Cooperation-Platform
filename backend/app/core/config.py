@@ -74,6 +74,10 @@ class Settings(BaseSettings):
     ENABLE_SCHEDULER: bool = False
     DIGEST_HOUR_UTC: int = 6
 
+    # Maintenance (scheduler job / ``python -m app.cli maintenance``)
+    UNVERIFIED_PURGE_DAYS: int = 30
+    ORPHAN_UPLOAD_HOURS: int = 24
+
     # Rate limiting / proxy
     RATE_LIMIT_ENABLED: bool = True
     TRUST_PROXY_HEADERS: bool = False

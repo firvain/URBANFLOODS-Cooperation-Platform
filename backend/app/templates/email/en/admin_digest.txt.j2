@@ -1,0 +1,39 @@
+Hello {{ display_name }},
+
+Here is the moderation digest of the {{ app_name }} for {{ window_start }} to {{ window_end }}.
+
+WAITING FOR REVIEW ({{ pending_total }})
+{% if pending %}
+{% for item in pending %}
+- {{ item.title }} ({{ item.content_type }} #{{ item.content_id }}) by {{ item.author_name }}, submitted {{ item.created_at }}
+{% endfor %}
+{% if pending_more %}
+- and {{ pending_more }} more
+{% endif %}
+{% else %}
+Nothing is waiting for review.
+{% endif %}
+
+Review queue: {{ frontend_url }}{{ queue_url }}
+
+OPEN REPORTS ({{ reports_total }})
+{% if reports %}
+{% for report in reports %}
+- {{ report.content_type }} #{{ report.content_id }}: {{ report.reason }} (reported {{ report.created_at }})
+{% endfor %}
+{% if reports_more %}
+- and {{ reports_more }} more
+{% endif %}
+{% else %}
+No open reports.
+{% endif %}
+
+Reports: {{ frontend_url }}{{ reports_url }}
+
+ACTIVITY SINCE THE LAST DIGEST
+- New members: {{ new_members }}
+- Published: {{ published.posts }} posts, {{ published.threads }} threads, {{ published.replies }} replies, {{ published.comments }} comments
+
+You received this email because you moderate the {{ app_name }} and the moderation digest is on. To stop it, change your notification settings: {{ frontend_url }}{{ settings_url }}
+
+{% include "en/_footer.txt.j2" %}

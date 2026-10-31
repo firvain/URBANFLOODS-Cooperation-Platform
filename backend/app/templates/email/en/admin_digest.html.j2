@@ -1,0 +1,46 @@
+{% extends "en/_layout.html.j2" %}
+{% block title %}Moderation digest{% endblock %}
+{% block content %}
+<h1 style="font-size:22px; margin:0 0 16px;">Moderation digest</h1>
+<p>Hello {{ display_name }},</p>
+<p>Here is the moderation digest for {{ window_start }} to {{ window_end }}.</p>
+
+<h2 style="font-size:18px; margin:24px 0 8px;">Waiting for review ({{ pending_total }})</h2>
+{% if pending %}
+<ul style="margin:0 0 16px; padding-left:20px;">
+{% for item in pending %}
+<li>{{ item.title }} ({{ item.content_type }} #{{ item.content_id }}) by {{ item.author_name }}, submitted {{ item.created_at }}</li>
+{% endfor %}
+{% if pending_more %}
+<li>and {{ pending_more }} more</li>
+{% endif %}
+</ul>
+{% else %}
+<p>Nothing is waiting for review.</p>
+{% endif %}
+<p><a href="{{ frontend_url }}{{ queue_url }}" style="color:#0b4f8a; font-weight:bold;">Open the review queue</a></p>
+
+<h2 style="font-size:18px; margin:24px 0 8px;">Open reports ({{ reports_total }})</h2>
+{% if reports %}
+<ul style="margin:0 0 16px; padding-left:20px;">
+{% for report in reports %}
+<li>{{ report.content_type }} #{{ report.content_id }}: {{ report.reason }} (reported {{ report.created_at }})</li>
+{% endfor %}
+{% if reports_more %}
+<li>and {{ reports_more }} more</li>
+{% endif %}
+</ul>
+{% else %}
+<p>No open reports.</p>
+{% endif %}
+<p><a href="{{ frontend_url }}{{ reports_url }}" style="color:#0b4f8a; font-weight:bold;">Open the reports</a></p>
+
+<h2 style="font-size:18px; margin:24px 0 8px;">Activity since the last digest</h2>
+<ul style="margin:0 0 16px; padding-left:20px;">
+<li>New members: {{ new_members }}</li>
+<li>Published: {{ published.posts }} posts, {{ published.threads }} threads, {{ published.replies }} replies, {{ published.comments }} comments</li>
+</ul>
+{% endblock %}
+{% block notice %}
+<p style="margin:0 0 8px;">You received this email because you moderate the {{ app_name }} and the moderation digest is on. <a href="{{ frontend_url }}{{ settings_url }}" style="color:#0b4f8a;">Change your notification settings</a> to stop it.</p>
+{% endblock %}
