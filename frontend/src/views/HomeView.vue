@@ -54,7 +54,8 @@ usePageHead(() => ({
 
     <CompleteProfileBanner class="mt-8" />
 
-    <ul class="mt-10 grid gap-6 md:grid-cols-3">
+    <!-- Two rows of two: Blog and Forum, then the KNOWBASE and the Unified DSS (user decision). -->
+    <ul class="mt-10 grid gap-6 md:grid-cols-2">
       <li v-for="section in sections" :key="section.key" :data-testid="`home-card-${section.key}`">
         <UCard class="h-full">
           <template #header>
@@ -72,29 +73,31 @@ usePageHead(() => ({
           <p class="text-muted">{{ t(`home.cards.${section.key}.description`) }}</p>
         </UCard>
       </li>
-    </ul>
 
-    <UCard v-if="dss" data-testid="dss-card" class="mt-6">
-      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 class="flex items-center gap-2 text-lg font-semibold text-highlighted">
-            <UIcon name="i-lucide-map" class="size-5 text-primary" aria-hidden="true" />
-            {{ t('home.dss.title') }}
-          </h2>
-          <p class="mt-2 max-w-3xl text-muted">{{ t('home.dss.description') }}</p>
-        </div>
-        <UButton
-          :to="dss"
-          target="_blank"
-          rel="noopener noreferrer"
-          trailing-icon="i-lucide-arrow-up-right"
-          class="shrink-0 self-start md:self-center"
-        >
-          {{ t('home.dss.open') }}
-          <span class="sr-only">{{ ` ${t('a11y.opensInNewTab')}` }}</span>
-        </UButton>
-      </div>
-    </UCard>
+      <li v-if="dss" data-testid="dss-card">
+        <UCard class="h-full">
+          <template #header>
+            <h2 class="flex items-center gap-2 text-lg font-semibold text-highlighted">
+              <UIcon name="i-lucide-map" class="size-5 text-primary" aria-hidden="true" />
+              {{ t('home.dss.title') }}
+            </h2>
+          </template>
+          <div class="flex h-full flex-col gap-4">
+            <p class="text-muted">{{ t('home.dss.description') }}</p>
+            <UButton
+              :to="dss"
+              target="_blank"
+              rel="noopener noreferrer"
+              trailing-icon="i-lucide-arrow-up-right"
+              class="self-start"
+            >
+              {{ t('home.dss.open') }}
+              <span class="sr-only">{{ ` ${t('a11y.opensInNewTab')}` }}</span>
+            </UButton>
+          </div>
+        </UCard>
+      </li>
+    </ul>
 
     <SuggestedCollaborators v-if="isVerified" class="mt-12" />
   </UContainer>
