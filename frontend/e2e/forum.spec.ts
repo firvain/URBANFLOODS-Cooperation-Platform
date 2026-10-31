@@ -15,7 +15,9 @@ import {
   MEMBER,
   NEWBIE,
   anonThreadStatus,
+  categoryBySlug,
   deleteThreadViaApi,
+  displayNameOf,
   loginViaForm,
   type DemoAccount,
 } from './helpers/demo'
@@ -29,12 +31,18 @@ import { FRONTEND_URL, waitForEmailTo } from './helpers/mailpit'
  * member comments on a seeded post; the notifications tab keeps a switch across a reload.
  * One page per role, logged in once (logins are rate limited) and kept across the tests, which
  * run in order. Titles carry a per-run suffix; afterAll deletes what the run created via the API.
+ *
+ * Manual testing changes the dev data, so display names come from each account's
+ * `GET /auth/me` and the category name from `GET /categories/` (by slug), never from the seed.
+ * If newbie is trusted (an admin approved one of its posts), the mark is removed for test 5 and
+ * put back in afterAll.
  */
 test.describe.configure({ mode: 'serial' })
 
 /** A seeded published post by the member (backend/scripts/seed_dev.py). */
 const GREEN_ROOFS_SLUG = 'green-roofs-and-retention-basins-what-two-years-of-pilot-data-show'
-const GENERAL = 'General discussion'
+/** The forum category the threads go to, by slug (an admin may rename it). */
+const GENERAL_SLUG = 'general'
 
 const RUN = Date.now().toString(36)
 const editorTitle = `E2E editor discussion ${RUN}`
@@ -70,6 +78,10 @@ let newbieSlug = ''
 let commentId: number | null = null
 /** Set while the "comments on my posts" switch may be off (afterAll turns it back on). */
 let preferenceChanged = false
+/** The member's live display name (read after its login in test 1). */
+let memberName = ''
+/** Newbie's id when test 5 removed its trusted mark (afterAll puts it back). */
+let retrustNewbieId: number | null = null
 
 async function newPage(browser: Browser): Promise<[BrowserContext, Page]> {
   const context = await browser.newContext()
@@ -105,10 +117,11 @@ async function startThread(page: Page, account: DemoAccount, thread: NewThread):
   const form = page.getByTestId('thread-form')
   await form.getByLabel('Title', { exact: true }).fill(thread.title)
 
+  const general = (await categoryBySlug(GENERAL_SLUG, 'forum')).name
   const category = form.getByRole('combobox', { name: 'Category' })
   await category.click()
-  await page.getByRole('option', { name: GENERAL, exact: true }).click()
-  await expect(category).toContainText(GENERAL)
+  await page.getByRole('option', { name: general, exact: true }).click()
+  await expect(category).toContainText(general)
 
   // The rich-text editor: a contenteditable with role="textbox", labelled "Text".
   const body = form.getByRole('textbox', { name: 'Text', exact: true })
@@ -140,7 +153,9 @@ async function startThread(page: Page, account: DemoAccount, thread: NewThread):
   created.set(slug, page.context())
   allSlugs.push(slug)
   await expect(page.getByRole('heading', { level: 1, name: thread.title })).toBeVisible()
-  await expect(page.getByTestId('thread-author')).toContainText(account.name)
+  await expect(page.getByTestId('thread-author')).toContainText(
+    await displayNameOf(page.request, account),
+  )
   return slug
 }
 
@@ -204,6 +219,11 @@ test.afterAll(async () => {
       .delete(`${API_URL}/api/v1/comments/${commentId}`, { headers: API_HEADERS })
       .catch(() => {})
   }
+  if (retrustNewbieId !== null) {
+    await adminContext.request
+      .post(`${API_URL}/api/v1/admin/users/${retrustNewbieId}/trust`, { headers: API_HEADERS })
+      .catch(() => {})
+  }
   if (preferenceChanged) {
     const url = `${API_URL}/api/v1/auth/me/notifications`
     const res = await memberContext.request.get(url, { headers: API_HEADERS })
@@ -238,6 +258,7 @@ test('1. a reply to the editor’s discussion emails the editor a link to it', a
   await expect(toast(editor, 'The discussion is published.')).toBeVisible()
 
   await loginViaForm(member, MEMBER)
+  memberName = await displayNameOf(memberContext.request, MEMBER)
   await member.goto(`/forum/t/${editorSlug}`)
   await expect(member.getByRole('heading', { level: 1, name: editorTitle })).toBeVisible()
   const since = new Date()
@@ -251,7 +272,7 @@ test('1. a reply to the editor’s discussion emails the editor a link to it', a
     timeoutMs: 20_000,
   })
   expect(email.Subject).toContain('replied')
-  expect(email.Subject).toContain(MEMBER.name)
+  expect(email.Subject).toContain(memberName)
   expect(email.Text).toContain(editorTitle)
   expect(email.Text).toContain(editorReplyText)
   expect(email.Text).toContain(
@@ -287,16 +308,16 @@ test('3. trusted member: reply, answer the reply, edit the answer, delete the re
   const topId = await savedId(topReplies(member).filter({ hasText: topReplyText }), 'reply')
   // By id from here on: the text filters stop matching once a reply is edited or deleted.
   const top = member.locator(`#reply-${topId}`)
-  await expect(top.getByTestId('reply-author').first()).toContainText(MEMBER.name)
+  await expect(top.getByTestId('reply-author').first()).toContainText(memberName)
   await expect(member.getByRole('heading', { level: 2, name: '1 reply' })).toBeVisible()
   // The form empties for the next reply.
   await expect(member.getByRole('textbox', { name: 'Your reply', exact: true })).toHaveText('')
 
   // Nested reply: "Reply" opens an inline form under the reply; the answer is listed indented.
-  const replyButton = top.getByRole('button', { name: `Reply to ${MEMBER.name}` })
+  const replyButton = top.getByRole('button', { name: `Reply to ${memberName}` })
   await replyButton.click()
   await expect(replyButton).toHaveAttribute('aria-expanded', 'true')
-  const label = `Reply to ${MEMBER.name}`
+  const label = `Reply to ${memberName}`
   await submitEditor(replyForm(top, label), label, nestedReplyText, 'Post reply')
   const children = top.getByTestId('reply-children')
   const childId = await savedId(
@@ -396,6 +417,27 @@ test('4. admin: pin and lock the member’s discussion, then unlock and unpin it
 })
 
 test('5. untrusted member: a new discussion waits for approval and stays private', async () => {
+  // An admin approving one of newbie's posts trusts it: remove the mark for this test (the
+  // admin is logged in since test 4) and put it back in afterAll.
+  const users = await adminContext.request.get(
+    `${API_URL}/api/v1/admin/users/?q=${encodeURIComponent(NEWBIE.email)}`,
+    { headers: API_HEADERS },
+  )
+  expect(users.status(), 'GET /admin/users/').toBe(200)
+  const { items } = (await users.json()) as {
+    items: { id: number; email: string; is_trusted: boolean }[]
+  }
+  const newbieUser = items.find((u) => u.email === NEWBIE.email)
+  if (!newbieUser) throw new Error('The seeded newbie account is missing')
+  if (newbieUser.is_trusted) {
+    const res = await adminContext.request.post(
+      `${API_URL}/api/v1/admin/users/${newbieUser.id}/untrust`,
+      { headers: API_HEADERS },
+    )
+    expect(res.status(), 'untrust newbie').toBe(200)
+    retrustNewbieId = newbieUser.id
+  }
+
   await loginViaForm(newbie, NEWBIE)
   await newbie.goto('/forum/new')
   await expect(newbie.getByTestId('untrusted-note')).toHaveText(
@@ -446,7 +488,7 @@ test('6. comments: write, edit and delete a comment on a seeded post', async () 
   const commentSavedAt = Date.now()
   // By id from here on: the text filter stops matching once the comment is edited.
   const comment = section.locator(`#comment-${commentId}`)
-  await expect(comment.getByTestId('comment-author')).toContainText(MEMBER.name)
+  await expect(comment.getByTestId('comment-author')).toContainText(memberName)
   await expect(heading).toHaveText(commentsTitle(before + 1))
 
   // Edit inline → "edited".
