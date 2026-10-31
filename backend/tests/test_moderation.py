@@ -476,6 +476,53 @@ async def test_get_content_missing(db_session):
     )
 
 
+@pytest.mark.parametrize("content_type", list(ContentType))
+async def test_get_content_out_of_range_id(db_session, content_type):
+    """Ids past a column's range are simply not found (posts and threads have INTEGER ids;
+    asking Postgres for 2**31 would fail with "integer out of range")."""
+    too_big = moderation.MAX_INT_ID + 1 if content_type in moderation.REVIEWED_TYPES else 2**63 - 1
+    assert (
+        await moderation.get_content(
+            db_session, content_type=content_type, content_id=too_big, for_update=True
+        )
+        is None
+    )
+
+
+async def test_open_reporter_count_is_public(db_session):
+    reporter = await create_verified_user(db_session)
+    post = await _make(db_session, ContentType.POST, PUB)
+    await create_report(db_session, reporter_id=reporter.id, content_id=post.id)
+    await create_report(db_session, reporter_id=None, content_id=post.id)
+    assert (
+        await moderation.open_reporter_count(
+            db_session, content_type=ContentType.POST, content_id=post.id
+        )
+        == 1
+    )
+
+
+async def test_auto_hide_uses_given_reporter_count(db_session, monkeypatch):
+    """``reporters`` given: no count query of its own (the caller just counted)."""
+    monkeypatch.setattr(settings, "REPORT_AUTO_HIDE_THRESHOLD", 2)
+    post = await _make(db_session, ContentType.POST, PUB)
+
+    async def boom(*args, **kwargs):
+        raise AssertionError("counted again")
+
+    monkeypatch.setattr(moderation, "open_reporter_count", boom)
+    assert (
+        await moderation.auto_hide_if_reported(db_session, content=post, now=NOW, reporters=1)
+        is False
+    )
+    assert (
+        await moderation.auto_hide_if_reported(db_session, content=post, now=NOW, reporters=2)
+        is True
+    )
+    assert post.status == H
+    assert post.hidden_reason == HiddenReason.AUTO_REPORTS
+
+
 # --- auto-hide --------------------------------------------------------------------------------
 
 

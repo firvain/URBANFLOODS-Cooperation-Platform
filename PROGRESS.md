@@ -99,7 +99,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 |---|---|---|---|---|---|
 | 4a | Models Report/DigestRun + migration | done | a8e88b5 | 15 pytest (1044 total) | migration 0006 | | | |
 | 4b | `crud/moderation.py` state machine + audit | done | edb065c | 91 pytest (1135 total) | transition table; approve/unhide-rejected trust author via set_trusted; restore dismisses reports; get_content(for_update) | | | |
-| 4c | reports endpoint + auto-hide | todo | | | |
+| 4c | reports endpoint + auto-hide | done | | 62 pytest | POST /reports/ (20/day) + admin GET/resolve/dismiss under /reports/ (PLAN updated); content locked FOR UPDATE, content-before-report lock order; int-range guard in get_content | | | |
 | 4d | moderation + admin endpoints incl. stats CSV export | todo | | | |
 | 4e | digest + scheduler (+ AUTO_APPROVE_AFTER_DAYS sweep) + `cli digest` | todo | | | |
 | 4f | FE report/status components | todo | | | |

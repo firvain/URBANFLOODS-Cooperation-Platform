@@ -19,6 +19,7 @@ from app.api.v1.endpoints import (
     organisations,
     posts,
     replies,
+    reports,
     tags,
     threads,
     uploads,
@@ -105,6 +106,7 @@ def create_app() -> FastAPI:
     app.include_router(threads.router, prefix=f"{settings.API_V1_PREFIX}/threads", tags=["threads"])
     # Replies carry their own /threads/{thread_id}/replies/ and /replies/{id} paths.
     app.include_router(replies.router, prefix=settings.API_V1_PREFIX, tags=["replies"])
+    app.include_router(reports.router, prefix=f"{settings.API_V1_PREFIX}/reports", tags=["reports"])
     # Uploaded images (re-encoded WebP), served with nosniff.
     app.mount(settings.UPLOAD_URL_PREFIX, uploads.UploadStaticFiles(), name="uploads")
 

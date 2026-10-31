@@ -46,6 +46,9 @@ MODELS: dict[ContentType, type[Any]] = {
 _TYPES: dict[type[Any], ContentType] = {model: ct for ct, model in MODELS.items()}
 # Only posts and threads go through review.
 REVIEWED_TYPES = frozenset({ContentType.POST, ContentType.THREAD})
+# Posts and threads have INTEGER ids (replies and comments BIGINT): a larger id cannot exist, and
+# Postgres would reject it as "integer out of range" rather than find nothing.
+MAX_INT_ID = 2**31 - 1
 
 _P = ContentStatus.PENDING
 _PUB = ContentStatus.PUBLISHED
@@ -86,9 +89,12 @@ async def get_content(
     """The content item (any status) with its author loaded, refreshed from the database.
 
     ``for_update`` locks the content row (only that row: Postgres refuses ``FOR UPDATE`` on the
-    nullable side of the author outer join, hence ``of=``) until the transaction ends.
+    nullable side of the author outer join, hence ``of=``) until the transaction ends. An id
+    beyond the column's range is None without a query.
     """
     model = MODELS[content_type]
+    if content_type in REVIEWED_TYPES and content_id > MAX_INT_ID:
+        return None
     stmt = (
         select(model)
         .where(model.id == content_id)
@@ -104,7 +110,7 @@ async def list_pending(
     db: AsyncSession, *, skip: int = 0, limit: int = 50
 ) -> tuple[int, list[tuple[ContentType, Post | Thread]]]:
     """``(total, [(content_type, obj), ...])`` of pending posts and threads, oldest first, each
-    with its author loaded."""
+    with its author and category loaded."""
     queue = union_all(
         select(
             literal(ContentType.POST.value).label("content_type"),
@@ -134,7 +140,9 @@ async def list_pending(
         if not ids:
             continue
         rows = await db.scalars(
-            select(model).where(model.id.in_(ids)).options(joinedload(model.author))
+            select(model)
+            .where(model.id.in_(ids))
+            .options(joinedload(model.author), joinedload(model.category))
         )
         for obj in rows.unique():
             loaded[(content_type, obj.id)] = obj
@@ -145,9 +153,11 @@ async def list_pending(
     return total, items
 
 
-async def _open_reporter_count(
+async def open_reporter_count(
     db: AsyncSession, *, content_type: ContentType, content_id: int
 ) -> int:
+    """Distinct reporters with an open report on the item (anonymised ones, NULL, not counted):
+    the content's ``report_count`` and what the auto-hide threshold is compared with."""
     stmt = select(func.count(func.distinct(Report.reporter_id))).where(
         Report.content_type == content_type,
         Report.content_id == content_id,
@@ -429,17 +439,22 @@ async def restore(
 
 
 async def auto_hide_if_reported(
-    db: AsyncSession, *, content: ContentModel, now: datetime | None = None
+    db: AsyncSession,
+    *,
+    content: ContentModel,
+    now: datetime | None = None,
+    reporters: int | None = None,
 ) -> bool:
     """Hide published ``content`` (``hidden(auto_reports)``) once it has open reports from
     ``REPORT_AUTO_HIDE_THRESHOLD`` distinct reporters (0 turns auto-hide off). Returns True when it
-    was hidden."""
+    was hidden. ``reporters`` is the caller's fresh :func:`open_reporter_count`, if it has one."""
     threshold = settings.REPORT_AUTO_HIDE_THRESHOLD
     if threshold <= 0 or content.status != _PUB:
         return False
-    reporters = await _open_reporter_count(
-        db, content_type=content_type_of(content), content_id=content.id
-    )
+    if reporters is None:
+        reporters = await open_reporter_count(
+            db, content_type=content_type_of(content), content_id=content.id
+        )
     if reporters < threshold:
         return False
     content.status = _target(content, "hide")
