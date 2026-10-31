@@ -125,9 +125,9 @@ lists the additional route limit.
 | POST | `/api/v1/organisations/` | admin | – | add an organisation |
 | PATCH | `/api/v1/organisations/{organisation_id}` | admin | – | update an organisation |
 | GET | `/api/v1/expertise/` | public | – | active expertise tags |
-| GET | `/api/v1/members/` | public | – | members directory (`q`, `expertise_ids`, `country`, `organisation_id`) |
+| GET | `/api/v1/members/` | verified | – | members directory (`q`, `expertise_ids`, `country`, `organisation_id`) |
 | GET | `/api/v1/members/suggested` | verified | – | up to six members sharing the most expertise |
-| GET | `/api/v1/members/{member_id}` | public | – | one member's public profile |
+| GET | `/api/v1/members/{member_id}` | verified | – | one directory member's profile |
 
 ### Categories and tags
 

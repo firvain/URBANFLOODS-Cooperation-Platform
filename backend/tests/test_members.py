@@ -1,5 +1,6 @@
-"""Increment 1m: the public members directory (``GET /members/``, ``/members/{id}``) and
-suggested collaborators (``GET /members/suggested``).
+"""Increment 1m: the members directory (``GET /members/``, ``/members/{id}``) and suggested
+collaborators (``GET /members/suggested``). Since 2026-10-31 all three need a verified account;
+the list and detail tests run signed in as a verified ``signed_in`` viewer.
 
 Each test tags its users' display names with a unique token and filters on it (``q``) where it
 counts rows, so committed users of other tests can never leak in. Rows the app commits are
@@ -11,6 +12,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime, timedelta
 
+import pytest
 from sqlalchemy import insert, select
 
 from app.core.config import settings
@@ -34,6 +36,17 @@ MEMBER_KEYS = {
 
 
 # --- helpers ----------------------------------------------------------------------------------
+
+
+@pytest.fixture
+async def signed_in(client, db_session, cleanup_users) -> User:
+    """A committed verified viewer, logged in on ``client``. Its name never contains a test
+    token and it has no organisation, so it never matches the tests' filters."""
+    viewer = await create_verified_user(db_session, display_name="Directory Viewer")
+    cleanup_users.add(viewer.email)
+    await db_session.commit()
+    await login_as(client, viewer)
+    return viewer
 
 
 def _token() -> str:
@@ -76,10 +89,33 @@ def _assert_error(response, status: int, code: str) -> None:
     assert response.json()["detail"]["code"] == code
 
 
+# --- access -----------------------------------------------------------------------------------
+
+
+async def test_list_requires_login(client):
+    _assert_error(await client.get(MEMBERS), 401, "auth.not_authenticated")
+
+
+async def test_detail_requires_login(client, db_session, cleanup_users):
+    user = await _member(db_session, cleanup_users)
+
+    _assert_error(await client.get(f"{MEMBERS}{user.id}"), 401, "auth.not_authenticated")
+
+
+async def test_list_and_detail_require_verification(client, db_session, cleanup_users):
+    member = await _member(db_session, cleanup_users)
+    unverified = await _member(db_session, cleanup_users, factory=create_user)
+    await login_as(client, unverified)
+
+    _assert_error(await client.get(MEMBERS), 403, "auth.email_not_verified")
+    _assert_error(await client.get(f"{MEMBERS}{member.id}"), 403, "auth.email_not_verified")
+
+
 # --- list -------------------------------------------------------------------------------------
 
 
-async def test_anonymous_can_list(client, db_session, cleanup_users):
+@pytest.mark.usefixtures("signed_in")
+async def test_verified_member_can_list(client, db_session, cleanup_users):
     token = _token()
     user = await _member(
         db_session,
@@ -105,6 +141,7 @@ async def test_anonymous_can_list(client, db_session, cleanup_users):
     assert item["email"] is None
 
 
+@pytest.mark.usefixtures("signed_in")
 async def test_only_verified_active_visible_listed(client, db_session, cleanup_users):
     token = _token()
     visible = await _member(db_session, cleanup_users, display_name=f"Visible {token}")
@@ -128,6 +165,7 @@ async def test_only_verified_active_visible_listed(client, db_session, cleanup_u
     assert _ids(body) == [visible.id]
 
 
+@pytest.mark.usefixtures("signed_in")
 async def test_email_only_when_show_email(client, db_session, cleanup_users):
     token = _token()
     shown = await _member(db_session, cleanup_users, display_name=f"Shown {token}", show_email=True)
@@ -139,6 +177,7 @@ async def test_email_only_when_show_email(client, db_session, cleanup_users):
     assert items[hidden.id]["email"] is None
 
 
+@pytest.mark.usefixtures("signed_in")
 async def test_never_exposes_private_fields(client, db_session, cleanup_users):
     token = _token()
     await _member(
@@ -154,6 +193,7 @@ async def test_never_exposes_private_fields(client, db_session, cleanup_users):
     assert not {"role", "is_trusted", "trusted_at", "last_login_at", "locale"} & set(item)
 
 
+@pytest.mark.usefixtures("signed_in")
 async def test_order_newest_first(client, db_session, cleanup_users):
     token = _token()
     now = datetime.now(UTC)
@@ -167,6 +207,7 @@ async def test_order_newest_first(client, db_session, cleanup_users):
     assert _ids(await _list(client, q=token)) == [newer.id, older.id]
 
 
+@pytest.mark.usefixtures("signed_in")
 async def test_filter_q_matches_name_and_organisation(
     client, db_session, cleanup_users, cleanup_organisations
 ):
@@ -194,6 +235,7 @@ async def test_filter_q_matches_name_and_organisation(
     assert set(org_item["organisation"]) == {"id", "short_name", "name", "country", "type"}
 
 
+@pytest.mark.usefixtures("signed_in")
 async def test_filter_q_escapes_wildcards(client, db_session, cleanup_users):
     token = _token()
     await _member(db_session, cleanup_users, display_name=f"Plain {token}")
@@ -201,11 +243,13 @@ async def test_filter_q_escapes_wildcards(client, db_session, cleanup_users):
     assert (await _list(client, q=f"{token}%"))["total"] == 0
 
 
+@pytest.mark.usefixtures("signed_in")
 async def test_filter_q_length(client):
     assert (await client.get(MEMBERS, params={"q": "a"})).status_code == 422
     assert (await client.get(MEMBERS, params={"q": "a" * 101})).status_code == 422
 
 
+@pytest.mark.usefixtures("signed_in")
 async def test_filter_expertise_any_match(client, db_session, cleanup_users):
     token = _token()
     hydro = await _member(db_session, cleanup_users, display_name=f"H {token}", tags=("hydrology",))
@@ -234,6 +278,7 @@ async def test_filter_expertise_any_match(client, db_session, cleanup_users):
     assert [tag["slug"] for tag in both_item["expertise"]] == ["hydrology", "urban-planning"]
 
 
+@pytest.mark.usefixtures("signed_in")
 async def test_filter_country_and_organisation(
     client, db_session, cleanup_users, cleanup_organisations
 ):
@@ -255,6 +300,7 @@ async def test_filter_country_and_organisation(
     assert (await client.get(MEMBERS, params={"country": "GRC"})).status_code == 422
 
 
+@pytest.mark.usefixtures("signed_in")
 async def test_pagination(client, db_session, cleanup_users):
     token = _token()
     now = datetime.now(UTC)
@@ -276,6 +322,7 @@ async def test_pagination(client, db_session, cleanup_users):
     assert (await client.get(MEMBERS, params={"limit": 0})).status_code == 422
 
 
+@pytest.mark.usefixtures("signed_in")
 async def test_default_limit_is_24(client, db_session, cleanup_users):
     token = _token()
     for index in range(25):
@@ -287,6 +334,7 @@ async def test_default_limit_is_24(client, db_session, cleanup_users):
     assert len(body["items"]) == 24
 
 
+@pytest.mark.usefixtures("signed_in")
 async def test_bio_excerpt_truncated(client, db_session, cleanup_users):
     token = _token()
     bio = "Flood  risk\n" + "x" * 400
@@ -304,6 +352,7 @@ async def test_bio_excerpt_truncated(client, db_session, cleanup_users):
 # --- detail -----------------------------------------------------------------------------------
 
 
+@pytest.mark.usefixtures("signed_in")
 async def test_detail(client, db_session, cleanup_users):
     bio = "Line one.\n" + "y" * 300
     user = await _member(db_session, cleanup_users, bio=bio, show_email=True, tags=("hydrology",))
@@ -319,6 +368,7 @@ async def test_detail(client, db_session, cleanup_users):
     assert [tag["slug"] for tag in body["expertise"]] == ["hydrology"]
 
 
+@pytest.mark.usefixtures("signed_in")
 async def test_detail_not_found_for_hidden_users(client, db_session, cleanup_users):
     hidden = [
         await _member(db_session, cleanup_users, factory=create_user),

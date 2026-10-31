@@ -1,5 +1,6 @@
-"""Members directory (Collaboration Network): public list and profile of members who chose to be
-listed, and suggested collaborators for the signed-in member (partner matchmaking)."""
+"""Members directory (Collaboration Network): list and profile of members who chose to be listed,
+and suggested collaborators for the signed-in member (partner matchmaking). All three routes need
+a verified account (401 signed out, 403 unverified); the directory is not public."""
 
 from __future__ import annotations
 
@@ -32,8 +33,9 @@ def _error_responses(*codes: int) -> dict[int | str, dict[str, Any]]:
     }
 
 
-@router.get("/", response_model=MemberList, responses=_error_responses(422))
+@router.get("/", response_model=MemberList, responses=_error_responses(401, 403, 422))
 async def list_members(
+    _user: VerifiedUser,
     db: DbTx,
     q: Annotated[str | None, Query(min_length=2, max_length=100)] = None,
     expertise_ids: Annotated[list[int] | None, Query()] = None,
@@ -67,9 +69,11 @@ async def suggested_members(user: VerifiedUser, db: DbTx) -> SuggestedMemberList
     return SuggestedMemberList(total=len(items), items=items)
 
 
-@router.get("/{member_id}", response_model=MemberDetail, responses=_error_responses(404, 422))
-async def get_member(member_id: int, db: DbTx) -> MemberDetail:
-    """One directory member's public profile."""
+@router.get(
+    "/{member_id}", response_model=MemberDetail, responses=_error_responses(401, 403, 404, 422)
+)
+async def get_member(member_id: int, _user: VerifiedUser, db: DbTx) -> MemberDetail:
+    """One directory member's profile."""
     user = await crud_member.get_member(db, user_id=member_id)
     if user is None:
         raise AppError(404, "members.not_found", "Member not found.")
