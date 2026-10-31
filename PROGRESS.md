@@ -122,7 +122,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 |---|---|---|---|---|---|
 | 5h | moderation menu on content pages, purge endpoint, restore in admin, Uploads tab | in progress | | | |
 | 5i | author emails on approve/reject + preference | todo | | | |
-| 5j | privacy policy wording for deletion | todo | | | |
+| 5j | privacy policy wording for deletion | done | | LegalView spec 23 | v1.1: deletion removes the profile picture and unused own uploads; kept images keep their file name; pending email-change address not exported; audit keeps the browser description of sign-ins; permanent removal by an admin on request |
 
 ### M6 — Production deployment (only on explicit request)
 | Inc | Scope | Status | Commit | Tests | Notes |

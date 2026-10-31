@@ -1,6 +1,6 @@
 # Privacy Policy — URBANFLOODS Cooperation Platform
 
-**Version 1 (draft for legal review), 31 October 2026.** This is the text the platform's
+**Version 1.1 (draft for legal review), 31 October 2026.** This is the text the platform's
 `/privacy` page will show (increment 5e). It describes how personal data is processed when you
 use https://cooperation.urbanfloods.app. Items marked **[CHECK]** need confirmation by the
 University of Western Macedonia's legal office before go-live.
@@ -41,9 +41,9 @@ report on the project to the programme that funds it.
 |---|---|---|---|
 | Email address (verified), password (stored only as an argon2id hash) | Create and secure your account; send verification, password-reset and notification emails | Performance of the agreement you enter by registering (art. 6(1)(b)) | Until you delete your account (then anonymised, section 7). Unverified accounts are deleted automatically after 30 days. |
 | Display name, optional organisation (from the partner list or free text), country, interface language, short biography, expertise areas | Your public member profile, the members directory, suggested collaborators, and attribution of your contributions | Performance of the agreement (art. 6(1)(b)); for the directory and email visibility, your choice in the account settings (consent, art. 6(1)(a), which you can withdraw at any time by changing the setting) | Until you delete your account |
-| Your contributions: posts, threads, replies, comments, uploaded images and their descriptions, links to KNOWBASE items | The purpose of the Platform: knowledge exchange among stakeholders; published under the CC BY 4.0 licence (Terms of Use, section 8) | Performance of the agreement (art. 6(1)(b)) and public interest in the implementation of an EU co-funded project (art. 6(1)(e)) | Kept on the Platform; after account deletion attributed to "Deleted user" (section 7) |
+| Your contributions: posts, threads, replies, comments, uploaded images with their descriptions and original file names, links to KNOWBASE items | The purpose of the Platform: knowledge exchange among stakeholders; published under the CC BY 4.0 licence (Terms of Use, section 8) | Performance of the agreement (art. 6(1)(b)) and public interest in the implementation of an EU co-funded project (art. 6(1)(e)) | Kept on the Platform; after account deletion attributed to "Deleted user" (section 7) |
 | Session cookie (`uf_session`, random identifier, HttpOnly, Secure, SameSite=Lax) | Keep you signed in; protect against cross-site request forgery | Strictly necessary for the service you requested (no consent required under the ePrivacy rules) | 30 days of inactivity, or until you sign out or revoke the session from your account page |
-| Session list: creation time, last activity, expiry, browser description (user agent) | Let you see and sign out your devices; security | Performance of the agreement (art. 6(1)(b)) | Expired and revoked sessions are deleted after 7 days |
+| Session list: creation time, last activity, expiry, browser description (user agent) | Let you see and sign out your devices; security | Performance of the agreement (art. 6(1)(b)) | Expired and revoked sessions are deleted after 7 days. The browser description of each sign-in also stays in the audit log (section 7). |
 | Audit log: time-stamped record of actions on your account and content (registration and consent, verification, sign-in and failed sign-in, profile and settings changes, password and email changes, moderation decisions about your content, data export, deletion) | Security, accountability of moderation, evidence of your consent, and project reporting | Legitimate interest (art. 6(1)(f)) and legal obligation to keep records for the funded project (art. 6(1)(c)) | For the life of the Platform and the statutory retention period of the Interreg IPA ADRION programme **[CHECK: retention per the subsidy contract]**. Audit entries never contain passwords, tokens or IP addresses. |
 | Notification preferences | Send you only the emails you want | Performance of the agreement (art. 6(1)(b)) | Until you delete your account |
 | Reports you make about content, and reports made about your content | Moderation | Legitimate interest in keeping the Platform safe (art. 6(1)(f)) | For the life of the Platform |
@@ -112,16 +112,23 @@ regularly; backups are kept for 14 days **[CHECK]**.
 
 - You can delete your account at any time from your account settings. Deletion is immediate and
   anonymising: your email address, display name, organisation, country, biography, expertise and
-  settings are erased, your password hash is removed, and all your sessions and pending email links
-  are cancelled.
+  settings are erased, your password hash is removed, your profile picture is removed, and all
+  your sessions and pending email links (including a new address you had asked to switch to) are
+  cancelled. Images you uploaded that no contribution uses any more are deleted from the server at
+  the same time.
 - Your contributions remain on the Platform under the CC BY 4.0 licence you granted when posting,
-  attributed to "Deleted user", so that discussions other members took part in stay intact. If you
-  want particular contributions removed as well, say so when deleting or write to us; we remove them
-  unless we are legally required to keep them.
-- Audit log entries about the deleted account are kept, without any identifying data, for
-  accountability and project reporting.
+  attributed to "Deleted user", so that discussions other members took part in stay intact. Images
+  that are part of a kept contribution stay with it, including their original file name. If you
+  want particular contributions removed as well, say so when deleting or write to us; an admin can
+  remove a contribution permanently, together with the images only it used, unless we are legally
+  required to keep it.
+- Audit log entries about the deleted account are kept for accountability and project reporting.
+  They contain no name, email address or IP address; entries about sign-ins keep the browser
+  description recorded at the time.
 - Unverified accounts are deleted automatically 30 days after registration.
-- Email tokens expire after 1 to 48 hours and are deleted 7 days after expiry.
+- Email tokens expire after 1 to 48 hours and are deleted 7 days after expiry. A pending request
+  to change your email address holds the new address until it is confirmed or expires; it is not
+  part of the data export.
 
 ## 8. Your rights
 
@@ -171,6 +178,7 @@ authorities.
 
 ## Notes for the reviewer (not part of the policy)
 
+- Version 1.1 (31 Oct 2026) adds what deletion does to images and pending email changes, after the export/deletion increment 1i-b.
 - Everything stated here is implemented in the code as of 31 Oct 2026: argon2id hashing, hashed
   session tokens, HttpOnly/Secure/SameSite cookie, 30-day sliding sessions, 7-day cleanup of expired
   sessions and tokens, no IPs in the database, HMAC-hashed IPs in rate-limit logs, audit log without
