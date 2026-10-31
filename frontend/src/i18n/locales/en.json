@@ -50,7 +50,6 @@
   },
   "blog": {
     "title": "Blog",
-    "intro": "News, case studies, good practices and events on flood management from partners and members of the platform.",
     "write": "Write a post",
     "loading": "Loading the posts…",
     "count": "No posts | 1 post | {count} posts",
@@ -120,7 +119,6 @@
   },
   "forum": {
     "title": "Forum",
-    "intro": "Ask questions, compare approaches and discuss flood management with partners and members of the platform.",
     "start": "Start a discussion",
     "loading": "Loading the discussions…",
     "count": "No discussions | 1 discussion | {count} discussions",

@@ -111,7 +111,6 @@ watch(
           {{ t('blog.title') }}
         </h1>
         <div class="h-1 w-20 rounded bg-secondary-500" />
-        <p class="mt-4 max-w-3xl text-muted">{{ t('blog.intro') }}</p>
       </div>
       <UButton
         v-if="isVerified"
