@@ -16,6 +16,7 @@ from app.api.v1.endpoints import (
     knowbase,
     members,
     organisations,
+    posts,
     tags,
     uploads,
 )
@@ -95,6 +96,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(tags.router, prefix=f"{settings.API_V1_PREFIX}/tags", tags=["tags"])
     app.include_router(uploads.router, prefix=f"{settings.API_V1_PREFIX}/uploads", tags=["uploads"])
+    app.include_router(posts.router, prefix=f"{settings.API_V1_PREFIX}/posts", tags=["posts"])
     # Uploaded images (re-encoded WebP), served with nosniff.
     app.mount(settings.UPLOAD_URL_PREFIX, uploads.UploadStaticFiles(), name="uploads")
 

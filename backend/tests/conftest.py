@@ -364,3 +364,26 @@ def upload_dir(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Path]:
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(settings, "UPLOAD_DIR", str(path))
         yield path
+
+
+@pytest.fixture
+async def cleanup_knowbase_links(database_url: str) -> AsyncIterator[set[int]]:
+    """Ids of posts whose ``knowbase_links`` rows the test commits; those rows are deleted
+    afterwards (the table is polymorphic, so nothing cascades from ``posts``)."""
+    from sqlalchemy import delete
+
+    from app.db.enums import ContentType
+    from app.db.models import KnowbaseLink
+    from app.db.session import AsyncSessionLocal
+
+    ids: set[int] = set()
+    yield ids
+    if not ids:
+        return
+    async with AsyncSessionLocal() as session, session.begin():
+        await session.execute(
+            delete(KnowbaseLink).where(
+                KnowbaseLink.content_type == ContentType.POST,
+                KnowbaseLink.content_id.in_(ids),
+            )
+        )

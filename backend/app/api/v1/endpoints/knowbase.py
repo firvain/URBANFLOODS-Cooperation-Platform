@@ -26,8 +26,11 @@ from app.api.v1.schemas.knowbase import (
     MeasureFilters,
     MeasureLookupFilters,
 )
-from app.core.deps import Knowbase
+from app.api.v1.schemas.post import PaginatedPosts, paginated_posts
+from app.core.deps import CurrentUser, DbTx, Knowbase
 from app.core.exceptions import AppError, error_body, validation_error
+from app.crud import post as crud_post
+from app.db.enums import KbType
 from app.services.knowbase import (
     DOCUMENT_LOOKUPS,
     MEASURE_LOOKUPS,
@@ -42,6 +45,7 @@ router = APIRouter()
 
 CACHE_HEADER = "X-Knowbase-Cache"
 MAX_ID = 2**31 - 1
+MAX_MENTIONS_PAGE = 50
 
 ItemId = Annotated[int, Path(ge=1, le=MAX_ID)]
 
@@ -238,3 +242,27 @@ async def get_document_lookup(
 async def knowbase_status(kb: Knowbase) -> KnowbaseStatus:
     """Whether the KNOWBASE answered the last call, and cache sizes. Makes no request."""
     return KnowbaseStatus.model_validate(kb.status())
+
+
+# --- mentions (posts linking a KNOWBASE item) -------------------------------------------------
+
+
+@router.get(
+    "/{kb_type}/{kb_id}/mentions/",
+    response_model=PaginatedPosts,
+    responses=_error_responses(422),
+)
+async def list_mentions(
+    kb_type: KbType,
+    kb_id: ItemId,
+    db: DbTx,
+    user: CurrentUser,
+    skip: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=MAX_MENTIONS_PAGE)] = 20,
+) -> PaginatedPosts:
+    """Posts that link this KNOWBASE document or measure (visible to the caller), newest first.
+    Answered from our own database; the KNOWBASE is not called."""
+    total, posts = await crud_post.list_mentions(
+        db, kb_type=kb_type, kb_id=kb_id, user=user, skip=skip, limit=limit
+    )
+    return paginated_posts(total, posts)

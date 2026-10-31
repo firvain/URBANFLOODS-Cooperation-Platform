@@ -17,7 +17,7 @@ from sqlalchemy import select
 
 from app.core import rate_limit
 from app.core.config import settings
-from app.db.enums import ContentStatus, HiddenReason
+from app.db.enums import CategoryKind, ContentStatus, HiddenReason
 from app.db.models import AuditLog, Category, Post, Tag, User
 from tests.factories import (
     create_admin,
@@ -342,9 +342,10 @@ async def test_q_matches_title_substring(client, db_session, cleanup_categories)
 async def test_default_order_is_newest_published_first(client, db_session, cleanup_categories):
     category = await _category(db_session, cleanup_categories)
     now = datetime.now(UTC)
-    old = await _post(db_session, category, published_at=now - timedelta(days=3))
-    new = await _post(db_session, category, published_at=now - timedelta(days=1))
-    mid = await _post(db_session, category, published_at=now - timedelta(days=2))
+    old, new, mid = [await _post(db_session, category) for _ in range(3)]
+    for post, days in ((old, 3), (new, 1), (mid, 2)):
+        post.published_at = now - timedelta(days=days)
+    await db_session.commit()
 
     newest = await client.get(POSTS, params={"category": category.slug})
     oldest = await client.get(POSTS, params={"category": category.slug, "sort": "oldest"})
@@ -391,9 +392,7 @@ async def test_pagination_and_limit_cap(client, db_session, cleanup_categories):
 # --- create -----------------------------------------------------------------------------------
 
 
-async def test_create_requires_verified_user(
-    client, db_session, cleanup_users, cleanup_categories
-):
+async def test_create_requires_verified_user(client, db_session, cleanup_users, cleanup_categories):
     category = await _category(db_session, cleanup_categories)
     _assert_error(await _create(client, category), 401, "auth.not_authenticated")
 
@@ -531,17 +530,17 @@ async def test_slug_from_title_is_unique_and_transliterated(
 ):
     user = await _trusted(db_session, cleanup_users)
     category = await _category(db_session, cleanup_categories)
-    await db_session.commit()
-    existing = await _post(db_session, category, slug="sponge-city-pilot")
+    token = category.slug[-12:]
+    base = f"sponge-city-pilot-{token}"
+    await _post(db_session, category, slug=base)
     await login_as(client, user)
 
-    first = await _create(client, category, title="Sponge city pilot")
-    second = await _create(client, category, title="Sponge City Pilot!")
+    first = await _create(client, category, title=f"Sponge city pilot {token}")
+    second = await _create(client, category, title=f"Sponge City Pilot {token}!")
     greek = await _create(client, category, title="Πλημμύρες στην Κοζάνη")
 
-    assert existing.slug == "sponge-city-pilot"
-    assert first.json()["slug"] == "sponge-city-pilot-2"
-    assert second.json()["slug"] == "sponge-city-pilot-3"
+    assert first.json()["slug"] == f"{base}-2"
+    assert second.json()["slug"] == f"{base}-3"
     assert greek.json()["slug"].startswith("plemmures-sten-kozane")
     assert greek.json()["title"] == "Πλημμύρες στην Κοζάνη"
 
@@ -623,7 +622,7 @@ async def test_category_must_exist_be_active_and_blog(
 ):
     user = await _trusted(db_session, cleanup_users)
     archived = await _category(db_session, cleanup_categories, is_archived=True)
-    forum = await _category(db_session, cleanup_categories, kind="forum")
+    forum = await _category(db_session, cleanup_categories, kind=CategoryKind.FORUM)
     await login_as(client, user)
 
     _assert_field(await _create(client, archived), "category_id", "archived")
@@ -665,9 +664,7 @@ async def test_event_fields(client, db_session, cleanup_users, cleanup_categorie
         event_url="HTTPS://Example.org/Webinar",
     )
     assert ok.status_code == 201, ok.text
-    assert datetime.fromisoformat(ok.json()["event_at"]) == datetime(
-        2027, 3, 1, 7, 30, tzinfo=UTC
-    )
+    assert datetime.fromisoformat(ok.json()["event_at"]) == datetime(2027, 3, 1, 7, 30, tzinfo=UTC)
     assert ok.json()["event_url"] == "https://example.org/Webinar"
 
     naive = await _create(client, category, event_at="2027-03-01T09:30:00")
@@ -725,9 +722,7 @@ async def test_author_edits_title_and_body(client, db_session, cleanup_users, cl
     assert rows[0].metadata_ == {"fields": ["body_html", "title"]}
 
 
-async def test_update_keeps_a_custom_excerpt(
-    client, db_session, cleanup_users, cleanup_categories
-):
+async def test_update_keeps_a_custom_excerpt(client, db_session, cleanup_users, cleanup_categories):
     user = await _trusted(db_session, cleanup_users)
     category = await _category(db_session, cleanup_categories)
     await login_as(client, user)
@@ -869,6 +864,7 @@ async def test_author_soft_deletes(
     await login_as(client, user)
     created = (await _create(client, category, cleanup_tags, tags=[f"d {category.slug}"])).json()
     tag_id = created["tags"][0]["id"]
+    user_id = user.id
     assert created["tags"][0]["usage_count"] == 1
 
     response = await client.delete(f"{POSTS}{created['id']}")
@@ -884,7 +880,7 @@ async def test_author_soft_deletes(
     assert tag.usage_count == 0
     rows = await _audit(db_session, created["id"], "post.deleted")
     assert len(rows) == 1
-    assert rows[0].actor_id == user.id
+    assert rows[0].actor_id == user_id
 
     # Gone for the author too: no editing, no second delete.
     _assert_error(
@@ -912,3 +908,60 @@ async def test_admin_can_edit_and_delete_any_post(
     assert (await client.delete(f"{POSTS}{post.id}")).status_code == 204
     rows = await _audit(db_session, post.id, "post.deleted")
     assert rows[0].actor_id == admin.id
+
+
+async def test_update_category_cover_excerpt_and_event(
+    client, db_session, cleanup_users, cleanup_categories
+):
+    user = await _trusted(db_session, cleanup_users)
+    category = await _category(db_session, cleanup_categories)
+    target = await _category(db_session, cleanup_categories)
+    admin_only = await _category(db_session, cleanup_categories, admin_only=True)
+    archived = await _category(db_session, cleanup_categories, is_archived=True)
+    cover = await create_attachment(db_session, uploader_id=user.id)
+    await db_session.commit()
+    await login_as(client, user)
+    created = (
+        await _create(
+            client,
+            category,
+            excerpt="Hand-written",
+            event_at="2027-01-01T10:00:00Z",
+            event_url="https://example.org/e",
+        )
+    ).json()
+    url = f"{POSTS}{created['id']}"
+
+    _assert_error(
+        await client.patch(url, json={"category_id": admin_only.id}),
+        403,
+        "posts.category_admin_only",
+    )
+    _assert_field(await client.patch(url, json={"category_id": archived.id}), "category_id")
+    _assert_field(await client.patch(url, json={"event_at": "2027-01-01T10:00:00"}), "event_at")
+
+    response = await client.patch(
+        url,
+        json={
+            "category_id": target.id,
+            "cover_attachment_id": cover.id,
+            "excerpt": None,
+            "event_at": None,
+            "event_url": None,
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["category"]["id"] == target.id
+    assert body["cover"]["id"] == cover.id
+    assert body["excerpt"] == "Green roofs slow down stormwater run-off."  # regenerated
+    assert body["event_at"] is None
+    assert body["event_url"] is None
+    rows = await _audit(db_session, created["id"], "post.updated")
+    assert rows[-1].metadata_ == {
+        "fields": ["category_id", "cover_attachment_id", "event_at", "event_url", "excerpt"]
+    }
+
+    cleared = await client.patch(url, json={"cover_attachment_id": None})
+    assert cleared.json()["cover"] is None

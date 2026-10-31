@@ -224,3 +224,32 @@ async def create_attachment(
     db.add(attachment)
     await db.flush()
     return attachment
+
+
+async def create_knowbase_link(
+    db: AsyncSession,
+    *,
+    post_id: int,
+    kb_type: str = "measure",
+    kb_id: int = 7,
+    title_en: str = "Linked KNOWBASE item",
+    title_local: str | None = None,
+    order: int = 0,
+) -> Any:
+    """Insert a ``knowbase_links`` row for a post (no KNOWBASE call) and flush. Register committed
+    ones (by post id) with the ``cleanup_knowbase_links`` fixture."""
+    from app.db.enums import ContentType, KbType
+    from app.db.models import KnowbaseLink
+
+    link = KnowbaseLink(
+        content_type=ContentType.POST,
+        content_id=post_id,
+        kb_type=KbType(kb_type),
+        kb_id=kb_id,
+        cached_title_en=title_en,
+        cached_title_local=title_local,
+        sort_order=order,
+    )
+    db.add(link)
+    await db.flush()
+    return link

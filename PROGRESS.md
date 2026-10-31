@@ -74,9 +74,9 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 2b | `services/sanitize.py` (nh3) + `services/slugs.py` | done | a258d05 | 91 pytest | | | |
 | 2c | `services/knowbase.py` proxy + cache + `/knowbase/*` endpoints | done | 2b4e995 | 61 pytest (694 total) | | | |
 | 2d | categories + tags endpoints | done | 5db7103 | 39 pytest | | | |
-| 2e | posts endpoints (visibility, trust→status, knowbase_links) | in progress | | | |
+| 2e | posts endpoints (visibility, trust→status, knowbase_links) | done | | 56 pytest (852 total) | `crud/visibility.py` shared rule; FTS + trigram; mentions route; moderation transitions left to 4b | | | |
 | 2f | `services/images.py` + uploads + static mount | done | a8f704e | 62 pytest (796 total) | WebP re-encode, EXIF stripped, avatars; orphan sweep + export/delete of attachments deferred to M4 | | | |
-| 2g | `scripts/seed_dev.py` + `npm run gen:types` | todo | | | |
+| 2g | `scripts/seed_dev.py` + `npm run gen:types` | in progress | | | |
 | 2h | FE knowbase store/views | in progress | | | |
 | 2i | FE editor components (Tiptap) | in progress | | | |
 | 2j | FE blog views + stores | todo | | | |
