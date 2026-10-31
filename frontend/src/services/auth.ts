@@ -1,4 +1,5 @@
 /** Auth endpoints (`/api/v1/auth/*`). The session itself is the HttpOnly `uf_session` cookie. */
+import type { components } from '@/types/api-schema'
 import { api } from './api'
 import type { ExpertiseTag } from './expertise'
 import type { OrganisationSummary } from './organisations'
@@ -85,6 +86,34 @@ export interface AcceptedResponse {
   message: string
 }
 
+/** Email notification preferences (`GET`/`PUT /auth/me/notifications`; PUT replaces all). */
+export type NotificationPreferences = components['schemas']['NotificationPreferences']
+export type DigestFrequency = components['schemas']['DigestFrequency']
+
+/** The account data download (`GET /auth/me/export`). */
+export interface AccountExportFile {
+  blob: Blob
+  filename: string
+}
+
+const EXPORT_FALLBACK_FILENAME = 'urbanfloods-account.json'
+
+/** The filename of a `Content-Disposition` header (`filename*=UTF-8''…` or `filename="…"`). */
+export function filenameFromDisposition(header: string | null): string | null {
+  if (!header) return null
+  const encoded = /filename\*\s*=\s*(?:UTF-8|utf-8)''([^;]+)/.exec(header)
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded[1]!.trim().replace(/^"|"$/g, ''))
+    } catch {
+      // Fall through to the plain parameter.
+    }
+  }
+  const plain = /filename\s*=\s*(?:"([^"]*)"|([^;]+))/.exec(header)
+  const name = (plain?.[1] ?? plain?.[2])?.trim()
+  return name || null
+}
+
 const BASE = '/api/v1/auth'
 
 export const authService = {
@@ -130,4 +159,28 @@ export const authService = {
 
   revokeSession: (id: string) =>
     api<void>(`${BASE}/me/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
+  getNotifications: () => api<NotificationPreferences>(`${BASE}/me/notifications`),
+
+  /** Full replace: every field is sent. */
+  updateNotifications: (preferences: NotificationPreferences) =>
+    api<NotificationPreferences>(`${BASE}/me/notifications`, { method: 'PUT', body: preferences }),
+
+  /** The account data as a file (with the session cookie, like every request here). */
+  async exportData(): Promise<AccountExportFile> {
+    const response = await api.raw(`${BASE}/me/export`, { responseType: 'blob' })
+    return {
+      blob: response._data as Blob,
+      filename:
+        filenameFromDisposition(response.headers.get('content-disposition')) ??
+        EXPORT_FALLBACK_FILENAME,
+    }
+  },
+
+  /**
+   * 204; the account is erased and every session ends. 400 `auth.invalid_credentials` for a
+   * wrong password, 409 `admin.last_superadmin` for the only superadmin.
+   */
+  deleteMe: (currentPassword: string) =>
+    api<void>(`${BASE}/me`, { method: 'DELETE', body: { current_password: currentPassword } }),
 }

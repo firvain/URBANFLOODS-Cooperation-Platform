@@ -20,3 +20,10 @@ export const POST_TAG_MAX_LENGTH = 40
 export const DRAFT_SAVE_DELAY_MS = 500
 /** `sessionStorage` key prefix of editor drafts (followed by the route path). */
 export const DRAFT_KEY_PREFIX = 'post-draft:'
+
+/** Comments per "Load more comments" page (the backend allows at most 100). */
+export const COMMENTS_PAGE_SIZE = 50
+/** Comment length in characters of text, mirroring the backend (`crud/comment.py`). */
+export const COMMENT_BODY_MAX_LENGTH = 5_000
+/** Authors may edit their comment for this long after posting it (admins always). */
+export const COMMENT_EDIT_WINDOW_MS = 24 * 60 * 60 * 1000

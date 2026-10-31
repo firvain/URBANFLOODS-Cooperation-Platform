@@ -40,6 +40,10 @@
   "account": {
     "nudge": {
       "title": "Dite ai membri di cosa vi occupate"
+    },
+    "tabs": {
+      "notifications": "Notifiche",
+      "data": "I tuoi dati"
     }
   },
   "knowbase": {

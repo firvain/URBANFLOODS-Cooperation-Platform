@@ -6,6 +6,7 @@ import { useToast } from '@nuxt/ui/composables'
 
 import KnowbaseLinkCard from '@/components/blog/KnowbaseLinkCard.vue'
 import PostStatusBadge from '@/components/blog/PostStatusBadge.vue'
+import CommentList from '@/components/comments/CommentList.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 import SafeHtml from '@/components/common/SafeHtml.vue'
@@ -16,7 +17,10 @@ import { postsService, type PostDetail } from '@/services/posts'
 import { useAuthStore } from '@/stores/auth'
 import { formatDate, formatDateTime } from '@/utils/datetime'
 
-/** One blog post: cover, meta, body (sanitised), event, KNOWBASE links; edit/delete for its author. */
+/**
+ * One blog post: cover, meta, body (sanitised), event, KNOWBASE links and the comments;
+ * edit/delete for its author.
+ */
 const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -290,8 +294,8 @@ async function confirmDelete() {
         </ul>
       </section>
 
-      <footer class="space-y-4 border-t border-default pt-6">
-        <ul v-if="post.tags.length" class="flex flex-wrap gap-1.5" :aria-label="t('post.tags')">
+      <footer v-if="post.tags.length" class="border-t border-default pt-6">
+        <ul class="flex flex-wrap gap-1.5" :aria-label="t('post.tags')">
           <li v-for="tag in post.tags" :key="tag.id">
             <ULink
               :to="`/blog/tag/${tag.slug}`"
@@ -302,12 +306,14 @@ async function confirmDelete() {
             </ULink>
           </li>
         </ul>
-        <!-- Comments (list and form) arrive in M3; until then only the count is shown. -->
-        <p data-testid="post-comments" class="flex items-center gap-1.5 text-sm text-gray-700">
-          <UIcon name="i-lucide-message-circle" class="size-4" aria-hidden="true" />
-          {{ t('post.comments', post.comment_count) }}
-        </p>
       </footer>
+
+      <CommentList
+        :post-id="post.id"
+        :count="post.comment_count"
+        :status="post.status"
+        class="border-t border-default pt-8"
+      />
     </article>
 
     <ConfirmDialog

@@ -258,6 +258,40 @@
       "parentInvalid": "The reply you are answering is no longer available."
     }
   },
+  "comments": {
+    "title": "No comments | 1 comment | {count} comments",
+    "loading": "Loading the comments…",
+    "loadError": "The comments could not be loaded.",
+    "retry": "Try again",
+    "empty": "No comments yet. Be the first to comment.",
+    "loadMore": "Load more comments",
+    "edit": "Edit",
+    "delete": "Delete",
+    "edited": "edited",
+    "sending": "Sending…",
+    "formerMember": "Former member",
+    "label": "Your comment",
+    "labelEdit": "Edit your comment",
+    "placeholder": "Write a comment…",
+    "submit": "Post comment",
+    "save": "Save",
+    "cancel": "Cancel",
+    "removed": "The comment was deleted.",
+    "unverified": "Verify your email address to comment.",
+    "loginToComment": "Log in to comment",
+    "notPublished": "Comments open once the post is published.",
+    "closed": "This post is not public, so it takes no new comments.",
+    "deleteConfirm": {
+      "title": "Delete this comment?",
+      "description": "The comment will no longer be visible.",
+      "confirm": "Delete comment",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "empty": "Write something before posting.",
+      "tooLong": "The comment is too long. Shorten it before posting."
+    }
+  },
   "partners": {
     "title": "Partners",
     "partnershipTitle": "Partnership",
@@ -562,6 +596,11 @@
       "replies": {
         "not_found": "The reply does not exist or has been deleted.",
         "forbidden": "You cannot change this reply."
+      },
+      "comments": {
+        "not_found": "The comment does not exist or has been deleted.",
+        "forbidden": "You cannot change this comment.",
+        "post_not_published": "Comments are open on published posts only."
       }
     },
     "fields": {
@@ -674,11 +713,13 @@
     "expertisePlaceholder": "Select your areas of expertise"
   },
   "account": {
-    "intro": "Manage your profile, your password and the devices where you are signed in.",
+    "intro": "Manage your profile, your password, the devices where you are signed in, your email notifications and your data.",
     "tabs": {
       "profile": "Profile",
       "password": "Password",
-      "sessions": "Sessions"
+      "sessions": "Sessions",
+      "notifications": "Notifications",
+      "data": "Your data"
     },
     "profile": {
       "bio": "About you",
@@ -718,6 +759,49 @@
       "loadError": "Your sessions could not be loaded.",
       "retry": "Try again",
       "empty": "No active sessions."
+    },
+    "notifications": {
+      "intro": "Choose which emails the platform sends you. Account emails (verification, password reset) are always sent.",
+      "contentTitle": "Activity on your content",
+      "replyToMyThread": "Replies to my discussions",
+      "replyToMyThreadHint": "An email when someone replies to a discussion you started.",
+      "commentOnMyPost": "Comments on my posts",
+      "commentOnMyPostHint": "An email when someone comments on one of your blog posts.",
+      "replyToMyReply": "Replies to my replies",
+      "replyToMyReplyHint": "An email when someone answers one of your replies.",
+      "adminTitle": "Administration",
+      "adminDigest": "Moderation digest",
+      "adminDigestHint": "A summary of content waiting for approval and open reports.",
+      "frequency": "Digest frequency",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "submit": "Save preferences",
+      "saved": "Your notification preferences have been saved.",
+      "loading": "Loading your notification preferences…",
+      "loadError": "Your notification preferences could not be loaded.",
+      "retry": "Try again"
+    },
+    "data": {
+      "intro": "Download a copy of everything stored about you, or delete your account.",
+      "export": {
+        "title": "Download your data",
+        "description": "A JSON file with your profile, preferences, sessions and account history.",
+        "button": "Download my data",
+        "failed": "Your data could not be downloaded. Please try again."
+      },
+      "delete": {
+        "title": "Delete your account",
+        "description": "Your personal data is erased and you are signed out everywhere. What you published stays, attributed to “Deleted user”. This cannot be undone.",
+        "button": "Delete my account",
+        "dialogTitle": "Delete your account?",
+        "dialogDescription": "Enter your current password to confirm. This cannot be undone.",
+        "password": "Current password",
+        "confirm": "Delete permanently",
+        "cancel": "Cancel",
+        "wrongPassword": "The current password is incorrect.",
+        "lastSuperadmin": "You are the only superadmin. Make another member superadmin before deleting your account.",
+        "done": "Your account has been deleted."
+      }
     },
     "nudge": {
       "title": "Tell members what you work on",

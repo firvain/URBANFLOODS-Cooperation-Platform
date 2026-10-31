@@ -40,6 +40,10 @@
   "account": {
     "nudge": {
       "title": "Recite članovima čime se bavite"
+    },
+    "tabs": {
+      "notifications": "Obavještenja",
+      "data": "Vaši podaci"
     }
   },
   "knowbase": {

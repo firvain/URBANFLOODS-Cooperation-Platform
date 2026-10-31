@@ -40,6 +40,10 @@
   "account": {
     "nudge": {
       "title": "Tregojuni anëtarëve me çfarë merreni"
+    },
+    "tabs": {
+      "notifications": "Njoftimet",
+      "data": "Të dhënat tuaja"
     }
   },
   "knowbase": {

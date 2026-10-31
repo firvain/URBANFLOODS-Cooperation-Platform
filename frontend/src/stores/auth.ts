@@ -114,6 +114,12 @@ export const useAuthStore = defineStore('auth', () => {
     return authService.changePassword(currentPassword, newPassword)
   }
 
+  /** Delete the account (throws the `ApiError`); on success the user is signed out here too. */
+  async function deleteAccount(currentPassword: string): Promise<void> {
+    await authService.deleteMe(currentPassword)
+    clear()
+  }
+
   // Toasts need the app's injection context (Pinia provides it when installed in an app).
   const toast = hasInjectionContext() ? useToast() : null
   setApiHooks({
@@ -146,6 +152,7 @@ export const useAuthStore = defineStore('auth', () => {
     resetPassword,
     updateProfile,
     changePassword,
+    deleteAccount,
     clear,
   }
 })

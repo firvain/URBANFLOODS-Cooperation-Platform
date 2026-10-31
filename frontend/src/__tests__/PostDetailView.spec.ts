@@ -7,6 +7,7 @@ import { formatDateTime } from '@/utils/datetime'
 import type { PostDetail } from '@/services/posts'
 import { callsTo, makeUser, mockApi, reply, replyError, type Handler } from './helpers/api'
 import { COVER, makePostDetail } from './helpers/blog'
+import { commentsOf, makeComment } from './helpers/comments'
 import { buttonIn, dialog } from './helpers/editor'
 import { mountApp, mountWithApp, unmountAll } from './helpers/mount'
 
@@ -15,12 +16,18 @@ const ME = 'GET /api/v1/auth/me'
 const SLUG = 'rain-gardens-in-kozani'
 const GET_POST = `GET /api/v1/posts/${SLUG}`
 const DELETE_POST = 'DELETE /api/v1/posts/42'
+const LIST_COMMENTS = `GET ${commentsOf(42)}`
+const COMMENTS = {
+  total: 3,
+  items: [makeComment(1), makeComment(2), makeComment(3, { body_html: '<p>Third comment</p>' })],
+}
 
 afterEach(unmountAll)
 
 function routes(post: Partial<PostDetail> | Handler = {}, extra: Record<string, Handler> = {}) {
   return {
     [GET_POST]: typeof post === 'function' ? post : reply(200, makePostDetail(post)),
+    [LIST_COMMENTS]: reply(200, COMMENTS),
     ...extra,
   }
 }
@@ -94,10 +101,44 @@ describe('PostDetailView', () => {
     expect(wrapper.find('[data-testid="post-event"]').exists()).toBe(false)
   })
 
-  it('shows the comment count', async () => {
+  it('shows the comments under the post: "N comments", oldest first', async () => {
     mockApi(routes())
     const { wrapper } = await mountPost()
-    expect(wrapper.find('[data-testid="post-comments"]').text()).toContain(t('post.comments', 3))
+    const section = wrapper.find('[data-testid="post-comments"]')
+    expect(section.find('h2').text()).toBe(t('comments.title', 3))
+    expect(t('comments.title', 3)).toBe('3 comments')
+    const items = section.findAll('[data-testid="comment"]')
+    expect(items).toHaveLength(3)
+    expect(items[2]!.text()).toContain('Third comment')
+  })
+
+  it('offers the comment form to verified members and a login link to visitors', async () => {
+    mockApi(routes({}, { [ME]: reply(200, makeUser({ id: 99 })) }))
+    let { wrapper } = await mountPost()
+    expect(wrapper.find('[data-testid="comment-form"]').exists()).toBe(true)
+    unmountAll()
+
+    mockApi(routes())
+    ;({ wrapper } = await mountPost())
+    expect(wrapper.find('[data-testid="comment-form"]').exists()).toBe(false)
+    expect(wrapper.find(`a[href="/login?next=/blog/${SLUG}"]`).text()).toBe(
+      t('comments.loginToComment'),
+    )
+  })
+
+  it('a pending post shows a note instead of the comment form', async () => {
+    const fetchMock = mockApi(
+      routes(
+        { status: 'pending', published_at: null, comment_count: 0 },
+        { [ME]: reply(200, makeUser({ id: 11 })) },
+      ),
+    )
+    const { wrapper } = await mountPost()
+    expect(wrapper.find('[data-testid="comment-form"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="comments-closed"]').text()).toContain(
+      t('comments.notPublished'),
+    )
+    expect(callsTo(fetchMock, LIST_COMMENTS)).toHaveLength(0)
   })
 
   it('explains a pending status to its author', async () => {
