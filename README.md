@@ -44,6 +44,18 @@ docker compose up --build
 - API docs: http://localhost:8000/docs
 - Mailpit (captured email): http://localhost:8025
 
+Seed demo data (idempotent; refuses `ENV=prod`): demo accounts and eight sample blog posts.
+
+```bash
+docker compose cp backend/scripts backend:/app/scripts
+docker compose exec backend python -m scripts.seed_dev
+```
+
+Log in as `admin@urbanfloods.example` / `Admin-Dev-Pass-2026` (superadmin), or `editor@`,
+`member@` or `newbie@` with `Editor-`, `Member-` or `Newbie-Dev-Pass-2026`. See
+[`backend/README.md`](backend/README.md#development-seed) for the accounts and for running it
+from the host with `uv`.
+
 See [`docs/`](docs/) for architecture, API, deployment and the admin handbook.
 
 ## Licence

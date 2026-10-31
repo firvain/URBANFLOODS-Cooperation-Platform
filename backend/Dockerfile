@@ -26,6 +26,7 @@ COPY --from=builder /app/.venv /app/.venv
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY app ./app
+COPY scripts ./scripts
 COPY --chmod=0755 docker-entrypoint.sh ./
 
 ENV PATH="/app/.venv/bin:$PATH" \

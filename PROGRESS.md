@@ -76,8 +76,8 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 2d | categories + tags endpoints | done | 5db7103 | 39 pytest | | | |
 | 2e | posts endpoints (visibility, trust→status, knowbase_links) | done | | 56 pytest (852 total) | `crud/visibility.py` shared rule; FTS + trigram; mentions route; moderation transitions left to 4b | | | |
 | 2f | `services/images.py` + uploads + static mount | done | a8f704e | 62 pytest (796 total) | WebP re-encode, EXIF stripped, avatars; orphan sweep + export/delete of attachments deferred to M4 | | | |
-| 2g | `scripts/seed_dev.py` + `npm run gen:types` | in progress | | | |
-| 2h | FE knowbase store/views | in progress | | | |
+| 2g | `scripts/seed_dev.py` + `npm run gen:types` | done | | 5 pytest (857 total) | demo accounts `*@urbanfloods.example` (see backend/README.md); api-schema.ts generated (services not rewired yet) | | | |
+| 2h | FE knowbase store/views | done | bda74dc | 40 vitest | | | |
 | 2i | FE editor components (Tiptap) | in progress | | | |
 | 2j | FE blog views + stores | todo | | | |
 | 2k | Playwright `blog.spec.ts` | todo | | | |
