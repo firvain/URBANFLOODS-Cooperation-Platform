@@ -11,3 +11,9 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+/** `docs/legal/*.md?legal`: prepared at build time by the `legalDocuments` plugin (vite.config.ts). */
+declare module '*.md?legal' {
+  const document: import('./src/utils/legalDocument').LegalDocument
+  export default document
+}

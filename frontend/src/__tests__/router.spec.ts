@@ -1,12 +1,12 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { createMemoryHistory, RouterView } from 'vue-router'
+import { createMemoryHistory, RouterView, type RouteLocationNormalized } from 'vue-router'
 import { createPinia } from 'pinia'
 import ui from '@nuxt/ui/vue-plugin'
 import { defineComponent, h } from 'vue'
 
 import i18n from '@/i18n'
-import { createAppRouter } from '@/router'
+import { createAppRouter, scrollBehavior } from '@/router'
 
 const t = i18n.global.t
 
@@ -19,6 +19,8 @@ describe('routes', () => {
     ['/about', 'about'],
     ['/network', 'network'],
     ['/u/5', 'profile'],
+    ['/terms', 'terms'],
+    ['/privacy', 'privacy'],
     ['/this/does/not/exist', 'not-found'],
   ])('%s resolves to %s with an i18n meta.title', (path, name) => {
     const resolved = router.resolve(path)
@@ -35,6 +37,47 @@ it('the network route is titled nav.network and the profile route takes an id', 
   const profile = router.resolve('/u/42')
   expect(profile.params.id).toBe('42')
   expect(profile.meta.auth).toBeUndefined()
+})
+
+it('the legal routes are public, titled legal.* and pass the document to LegalView', () => {
+  const router = createAppRouter(createMemoryHistory())
+  const terms = router.resolve('/terms')
+  const privacy = router.resolve('/privacy')
+  expect(terms.meta.title).toBe('legal.termsTitle')
+  expect(privacy.meta.title).toBe('legal.privacyTitle')
+  expect(terms.meta.auth).toBeUndefined()
+  expect(privacy.meta.auth).toBeUndefined()
+  expect(terms.matched[0]!.props.default).toEqual({ doc: 'terms' })
+  expect(privacy.matched[0]!.props.default).toEqual({ doc: 'privacy' })
+})
+
+describe('scrollBehavior', () => {
+  const router = createAppRouter(createMemoryHistory())
+  const at = (path: string) => router.resolve(path) as unknown as RouteLocationNormalized
+
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  it('restores the saved position on back/forward', () => {
+    const saved = { left: 0, top: 420 }
+    expect(scrollBehavior(at('/terms#x'), at('/'), saved)).toBe(saved)
+  })
+
+  it('scrolls to the hash target, below the sticky header', () => {
+    document.body.innerHTML = '<header style="height: 72px"></header>'
+    Object.defineProperty(document.querySelector('header')!, 'offsetHeight', { value: 72 })
+    expect(scrollBehavior(at('/terms#section-8'), at('/terms'), null)).toEqual({
+      el: '#section-8',
+      top: 88,
+    })
+  })
+
+  it('scrolls to the top otherwise', () => {
+    expect(scrollBehavior(at('/about'), at('/'), null)).toEqual({
+      top: 0,
+    })
+  })
 })
 
 describe('navigation', () => {
@@ -59,6 +102,13 @@ describe('navigation', () => {
   it('sets document.title from meta.title and the app title', async () => {
     await mountAt('/about')
     expect(document.title).toBe(`${t('nav.about')} | ${t('app.title')}`)
+  })
+
+  it('sets the legal page titles', async () => {
+    await mountAt('/terms')
+    expect(document.title).toBe(`${t('legal.termsTitle')} | ${t('app.title')}`)
+    await mountAt('/privacy')
+    expect(document.title).toBe(`${t('legal.privacyTitle')} | ${t('app.title')}`)
   })
 
   it('uses the bare app title on the home page', async () => {

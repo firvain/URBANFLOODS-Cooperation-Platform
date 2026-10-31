@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import logoProject from '@/assets/logos/urbanfloods-wordmark.svg'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 import { EXTERNAL_LINKS } from '@/constants/links'
+import { LEGAL_TITLE_KEYS } from '@/constants/legal'
 import { NAV_ITEMS } from '@/constants/navigation'
 
 const { t } = useI18n()
@@ -12,6 +13,14 @@ const year = new Date().getFullYear()
 const LINK_CLASS =
   'text-sm text-muted underline-offset-2 hover:text-highlighted hover:underline focus-visible:underline'
 const HEADING_CLASS = 'text-xs font-semibold uppercase tracking-wider text-highlighted'
+
+const LEGAL_LINK_CLASS =
+  'text-xs text-muted underline-offset-2 hover:text-highlighted hover:underline focus-visible:underline'
+
+const legalLinks = [
+  { to: '/terms', labelKey: LEGAL_TITLE_KEYS.terms },
+  { to: '/privacy', labelKey: LEGAL_TITLE_KEYS.privacy },
+] as const
 
 const projectLinks = [
   { key: 'project', href: EXTERNAL_LINKS.project },
@@ -90,7 +99,18 @@ const projectLinks = [
     </template>
 
     <template #left>
-      <p class="text-xs text-muted">{{ t('footer.copyright', { year }) }}</p>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <p class="text-xs text-muted">{{ t('footer.copyright', { year }) }}</p>
+        <ULink
+          v-for="link in legalLinks"
+          :key="link.to"
+          :to="link.to"
+          raw
+          :class="LEGAL_LINK_CLASS"
+        >
+          {{ t(link.labelKey) }}
+        </ULink>
+      </div>
     </template>
 
     <template #bottom>

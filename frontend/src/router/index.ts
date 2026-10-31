@@ -58,6 +58,20 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.about' },
   },
   {
+    path: '/terms',
+    name: 'terms',
+    component: () => import('@/views/LegalView.vue'),
+    props: { doc: 'terms' },
+    meta: { title: 'legal.termsTitle' },
+  },
+  {
+    path: '/privacy',
+    name: 'privacy',
+    component: () => import('@/views/LegalView.vue'),
+    props: { doc: 'privacy' },
+    meta: { title: 'legal.privacyTitle' },
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('@/views/LoginView.vue'),
@@ -137,13 +151,30 @@ export async function authGuard(to: RouteLocationNormalized): Promise<RouteLocat
   if (required === 'admin' && !auth.isAdmin) return notFoundAt(to)
 }
 
+/**
+ * Back/forward restores the saved position; a `#hash` scrolls to that element (in-page links on
+ * the legal pages) below the sticky header; anything else starts at the top.
+ */
+export function scrollBehavior(
+  to: RouteLocationNormalized,
+  _from: RouteLocationNormalized,
+  saved: { left: number; top: number } | null,
+) {
+  if (saved) return saved
+  if (to.hash) {
+    const headerHeight = document.querySelector<HTMLElement>('header')?.offsetHeight ?? 0
+    return { el: to.hash, top: headerHeight + 16 }
+  }
+  return { top: 0 }
+}
+
 export function createAppRouter(
   history: RouterHistory = createWebHistory(import.meta.env.BASE_URL),
 ) {
   const router = createRouter({
     history,
     routes,
-    scrollBehavior: (_to, _from, saved) => saved ?? { top: 0 },
+    scrollBehavior,
   })
 
   router.beforeEach(authGuard)

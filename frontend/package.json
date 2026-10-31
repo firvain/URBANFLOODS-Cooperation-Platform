@@ -25,7 +25,9 @@
   "dependencies": {
     "@nuxt/ui": "^4.12.0",
     "@unhead/vue": "^3.4.3",
+    "dompurify": "^3.4.17",
     "flag-icons": "^7.6.0",
+    "marked": "^18.1.1",
     "ofetch": "^1.5.1",
     "pinia": "^4.1.0",
     "tailwindcss": "^4.3.3",

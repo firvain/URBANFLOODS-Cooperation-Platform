@@ -23,6 +23,11 @@
     "register": "Regjistrohu",
     "logout": "Dil"
   },
+  "legal": {
+    "termsTitle": "Kushtet e përdorimit",
+    "privacyTitle": "Politika e privatësisë",
+    "englishOnly": "Ky dokument është i disponueshëm vetëm në anglisht."
+  },
   "footer": {
     "statement": "Projekti bashkëfinancohet nga Bashkimi Evropian përmes programit Interreg IPA ADRION."
   }

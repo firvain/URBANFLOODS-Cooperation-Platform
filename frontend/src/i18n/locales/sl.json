@@ -23,6 +23,11 @@
     "register": "Registracija",
     "logout": "Odjava"
   },
+  "legal": {
+    "termsTitle": "Pogoji uporabe",
+    "privacyTitle": "Politika zasebnosti",
+    "englishOnly": "Ta dokument je na voljo samo v angleščini."
+  },
   "footer": {
     "statement": "Projekt sofinancira Evropska unija prek programa Interreg IPA ADRION."
   }

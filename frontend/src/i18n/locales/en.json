@@ -182,6 +182,13 @@
     },
     "partnersLink": "See the project partners"
   },
+  "legal": {
+    "termsTitle": "Terms of Use",
+    "privacyTitle": "Privacy Policy",
+    "version": "Version {version} – {date}",
+    "contents": "Contents",
+    "englishOnly": "This document is available in English only."
+  },
   "footer": {
     "statement": "The project is co-funded by the European Union through the Interreg IPA ADRION programme.",
     "disclaimer": "This website has been produced with the financial assistance of the European Union. The content of the website is the sole responsibility of the University of Western Macedonia and can under no circumstances be regarded as reflecting the position of the European Union and/or IPA ADRION programme authorities.",

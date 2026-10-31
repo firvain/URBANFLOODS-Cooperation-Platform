@@ -69,10 +69,10 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 ### M2 — Blog + KNOWBASE proxy
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
-| 1o | Expertise asked at registration (backend: `expertise_ids` on register; FE: optional picker on the form, 'complete your profile' nudge after verification and on empty Network cards) | in progress | | backend 8 pytest done | backend half committed; FE half after 5e-a |
-| 2a | Models Category/Tag/Post/Attachment/KnowbaseLink + migration (FTS, trigram) | done | | 21 pytest | migration 0004; `sa.Computed` tsvector; seeded 9 categories |
-| 2b | `services/sanitize.py` (nh3) + `services/slugs.py` | done | | 91 pytest | | | |
-| 2c | `services/knowbase.py` proxy + cache + `/knowbase/*` endpoints | done | | 61 pytest (694 total) | | | |
+| 1o | Expertise asked at registration (backend: `expertise_ids` on register; FE: optional picker on the form, 'complete your profile' nudge after verification and on empty Network cards) | in progress | 43bcd21 (backend) | backend 8 pytest done | FE half next |
+| 2a | Models Category/Tag/Post/Attachment/KnowbaseLink + migration (FTS, trigram) | done | 317b387 | 21 pytest | migration 0004; `sa.Computed` tsvector; seeded 9 categories |
+| 2b | `services/sanitize.py` (nh3) + `services/slugs.py` | done | a258d05 | 91 pytest | | | |
+| 2c | `services/knowbase.py` proxy + cache + `/knowbase/*` endpoints | done | 2b4e995 | 61 pytest (694 total) | | | |
 | 2d | categories + tags endpoints | in progress | | | |
 | 2e | posts endpoints (visibility, trust→status, knowbase_links) | todo | | | |
 | 2f | `services/images.py` + uploads + static mount | in progress | | | |
@@ -113,7 +113,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 5b | export endpoints, Atom, sitemap | todo | | | extended |
 | 5c | FE SearchView + header search + `usePageHead` | todo | | | core |
 | 5d | accessibility pass + axe in Playwright | todo | | | core |
-| 5e | static pages + consent text | in progress | | | core; 5e-a legal pages (/terms, /privacy from docs/legal markdown) running 2026-10-31 |
+| 5e | static pages + consent text | in progress | | 5e-a: 42 vitest (288 total) | 5e-a done: /terms, /privacy from docs/legal markdown via a Vite plugin that strips reviewer notes at build time; marked + dompurify added; /about, /accessibility, /open-data still to do |
 | 5f | translation pass (8 locales) | todo | | | extended |
 | 5g | docs incl. `report-D5.1.1-outline.md`, admin handbook, moderation guide | todo | | | core |
 

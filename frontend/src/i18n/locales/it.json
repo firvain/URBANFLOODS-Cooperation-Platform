@@ -23,6 +23,11 @@
     "register": "Registrati",
     "logout": "Esci"
   },
+  "legal": {
+    "termsTitle": "Condizioni d'uso",
+    "privacyTitle": "Informativa sulla privacy",
+    "englishOnly": "Questo documento è disponibile solo in inglese."
+  },
   "footer": {
     "statement": "Il progetto è cofinanziato dall'Unione europea attraverso il programma Interreg IPA ADRION."
   }

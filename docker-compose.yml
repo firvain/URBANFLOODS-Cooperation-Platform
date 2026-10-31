@@ -113,6 +113,8 @@ services:
       VITE_DSS_URL: ${DSS_URL:-https://urbanfloods.finki.ukim.mk/}
     volumes:
       - ./frontend:/app
+      # Legal pages (/terms, /privacy) are built from the markdown in docs/legal.
+      - ./docs/legal:/docs/legal:ro
       # Anonymous volume: keep the image's Linux node_modules instead of the host's.
       - /app/node_modules
     ports:

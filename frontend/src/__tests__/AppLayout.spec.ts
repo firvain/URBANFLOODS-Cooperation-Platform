@@ -245,6 +245,31 @@ describe('footer branding', () => {
     expect(copyright!.classList.contains('text-xs')).toBe(true)
   })
 
+  it('links the terms and privacy pages in the bottom bar, next to the copyright', async () => {
+    await mountApp()
+    const copyright = Array.from(footer().querySelectorAll('p')).find(
+      (p) => p.textContent?.trim() === t('footer.copyright', { year: new Date().getFullYear() }),
+    )!
+    const bar = copyright.parentElement!
+    const terms = bar.querySelector<HTMLAnchorElement>('a[href="/terms"]')
+    const privacy = bar.querySelector<HTMLAnchorElement>('a[href="/privacy"]')
+    expect(terms?.textContent?.trim()).toBe(t('legal.termsTitle'))
+    expect(privacy?.textContent?.trim()).toBe(t('legal.privacyTitle'))
+    for (const link of [terms!, privacy!]) {
+      expect(link.classList.contains('text-xs')).toBe(true)
+      expect(link.hasAttribute('target')).toBe(false)
+    }
+  })
+
+  it('opens the legal pages from the footer links', async () => {
+    const { router } = await mountApp('/')
+    document.querySelector<HTMLAnchorElement>('footer a[href="/privacy"]')!.click()
+    // The view is a lazy chunk: the route commits once it has loaded.
+    await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('privacy'))
+    await flushPromises()
+    expect(document.querySelector('main h1')?.textContent?.trim()).toBe(t('legal.privacyTitle'))
+  })
+
   it('is white with a top border and the green accent line', async () => {
     await mountApp()
     const classes = footer().classList
@@ -303,6 +328,13 @@ describe('focus management', () => {
     const headings = document.querySelectorAll('main h1')
     expect(headings).toHaveLength(1)
     expect(headings[0]!.getAttribute('tabindex')).toBe('-1')
+  })
+
+  it('does not move focus to the h1 when only the hash changes (in-page links)', async () => {
+    const { router } = await mountApp('/terms')
+    await router.push('/terms#section-8-licence-for-the-content-you-contribute')
+    await flushPromises()
+    expect(document.activeElement?.tagName).not.toBe('H1')
   })
 
   it('does not steal focus on the initial load', async () => {

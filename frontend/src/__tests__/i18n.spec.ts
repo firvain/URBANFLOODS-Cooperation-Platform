@@ -82,6 +82,18 @@ describe('locale files', () => {
     }
   })
 
+  it('every non-English locale translates the legal page titles and the English-only note', () => {
+    const enFlat = flatten(en)
+    for (const [path, messages] of Object.entries(localeFiles)) {
+      if (path.endsWith('/en.json')) continue
+      const flat = flatten(messages)
+      for (const key of ['legal.termsTitle', 'legal.privacyTitle', 'legal.englishOnly']) {
+        expect(flat[key], `${path} ${key}`).toBeTruthy()
+        expect(flat[key], `${path} ${key} is translated`).not.toBe(enFlat[key])
+      }
+    }
+  })
+
   it('no locale defines a key that en.json lacks', () => {
     const enKeys = new Set(Object.keys(flatten(en)))
     for (const [path, messages] of Object.entries(localeFiles)) {
