@@ -36,6 +36,11 @@ the sibling KNOWBASE app. Non-compliance can have financial consequences for the
     applies the minimum to the whole image. Our desktop header matches that 385 px whole-image
     width; mobile uses the 240 px smartphone minimum. Confirm with the JS if in doubt.
 
+Footer layout (2026-10-31, compact): one row with the 48 px mark beside the statement and an
+inline list of the four project links (no column headings, no duplicate of the header
+navigation), a thin legal bar (copyright, Terms, Privacy), then the disclaimer as the last text.
+About 200 px tall on desktop.
+
 ## Compliance check (2026-10-30, after the footer change)
 
 | Rule | Where | Status |

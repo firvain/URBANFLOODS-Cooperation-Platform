@@ -5,14 +5,9 @@ import logoProject from '@/assets/logos/urbanfloods-wordmark.svg'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 import { EXTERNAL_LINKS } from '@/constants/links'
 import { LEGAL_TITLE_KEYS } from '@/constants/legal'
-import { NAV_ITEMS } from '@/constants/navigation'
 
 const { t } = useI18n()
 const year = new Date().getFullYear()
-
-const LINK_CLASS =
-  'text-sm text-muted underline-offset-2 hover:text-highlighted hover:underline focus-visible:underline'
-const HEADING_CLASS = 'text-xs font-semibold uppercase tracking-wider text-highlighted'
 
 const LEGAL_LINK_CLASS =
   'text-xs text-muted underline-offset-2 hover:text-highlighted hover:underline focus-visible:underline'
@@ -22,36 +17,27 @@ const legalLinks = [
   { to: '/privacy', labelKey: LEGAL_TITLE_KEYS.privacy },
 ] as const
 
-const projectLinks = [
+const externalLinks = [
   { key: 'project', href: EXTERNAL_LINKS.project },
   { key: 'programme', href: EXTERNAL_LINKS.programme },
   { key: 'knowbase', href: EXTERNAL_LINKS.knowbase },
+  { key: 'linkedin', href: EXTERNAL_LINKS.linkedin, icon: 'i-lucide-linkedin' },
 ] as const
 </script>
 
 <!--
-  Mandatory visibility (docs/branding.md): the stacked project logo on white, the statement on the
-  Interreg support, and the disclaimer as the last thing on the page. The logo renders at 448 px
-  (560 px from lg) so its Interreg logotype + EU emblem part reaches ~240/300 px; that is why the
-  brand block takes a full row until xl, where half the 12-column grid is wide enough.
-  The green line above the border is the one accent use of the project green.
+  Compact footer (docs/branding.md). Mandatory: the illustrated project mark at 48 px beside the
+  co-funding statement, and the disclaimer as the last text, in small print. The green line
+  (border-secondary-300) is the one accent use of the project green. The header carries the
+  platform navigation, so the footer only lists the external project links. From lg the brand and
+  the links share one row (the links wrap into two right-aligned lines) to keep the footer short.
+  A plain <footer> rather than UFooter: three short rows need none of its slots.
 -->
 <template>
-  <UFooter
-    :ui="{
-      root: 'bg-gradient-to-r from-primary-50 to-secondary-50 border-t-2 border-secondary-300',
-      top: 'py-12 lg:py-16',
-      container: 'border-t border-secondary-200 py-6 lg:py-6',
-      left: 'mt-0 justify-start',
-      center: 'hidden',
-      right: 'hidden',
-      bottom: 'pt-0 pb-8 lg:pt-0 lg:pb-10',
-    }"
-  >
-    <template #top>
-      <UContainer class="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-12">
-        <div class="flex items-center gap-4 sm:col-span-2 md:col-span-12 lg:col-span-4">
-          <!-- Same size and placement as the KNOWBASE footer: a small mark beside the statement. -->
+  <footer class="bg-gradient-to-r from-primary-50 to-secondary-50 border-t-2 border-secondary-300">
+    <UContainer>
+      <div class="flex flex-wrap items-center justify-between gap-6 py-6 lg:flex-nowrap">
+        <div class="flex items-center gap-4">
           <img
             :src="logoProject"
             :alt="t('app.projectLogoAlt')"
@@ -60,46 +46,24 @@ const projectLinks = [
           <p class="max-w-md text-sm font-semibold text-primary-700">{{ t('footer.statement') }}</p>
         </div>
 
-        <div class="md:col-span-4 lg:col-span-3">
-          <h2 :class="HEADING_CLASS">{{ t('footer.columns.platform') }}</h2>
-          <ul class="mt-4 space-y-3">
-            <li v-for="item in NAV_ITEMS" :key="item.name">
-              <ULink :to="item.to" raw :class="LINK_CLASS">{{ t(item.labelKey) }}</ULink>
-            </li>
-          </ul>
-        </div>
-
-        <div class="md:col-span-4 lg:col-span-3">
-          <h2 :class="HEADING_CLASS">{{ t('footer.columns.project') }}</h2>
-          <ul class="mt-4 space-y-3">
-            <li v-for="link in projectLinks" :key="link.key">
-              <ExternalLink :href="link.href" trailing-icon="i-lucide-arrow-up-right" subtle>
+        <nav :aria-label="t('footer.navLabel')">
+          <ul class="flex flex-wrap items-center gap-x-5 gap-y-1.5 lg:justify-end">
+            <li v-for="link in externalLinks" :key="link.key">
+              <ExternalLink
+                :href="link.href"
+                :icon="'icon' in link ? link.icon : undefined"
+                trailing-icon="i-lucide-arrow-up-right"
+                subtle
+              >
                 {{ t(`footer.links.${link.key}`) }}
               </ExternalLink>
             </li>
           </ul>
-        </div>
+        </nav>
+      </div>
 
-        <div class="md:col-span-4 lg:col-span-2">
-          <h2 :class="HEADING_CLASS">{{ t('footer.columns.follow') }}</h2>
-          <ul class="mt-4 space-y-3">
-            <li>
-              <ExternalLink
-                :href="EXTERNAL_LINKS.linkedin"
-                icon="i-lucide-linkedin"
-                trailing-icon="i-lucide-arrow-up-right"
-                subtle
-              >
-                {{ t('footer.links.linkedin') }}
-              </ExternalLink>
-            </li>
-          </ul>
-        </div>
-      </UContainer>
-    </template>
-
-    <template #left>
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+      <!-- A later increment adds the Accessibility statement and Open data links here. -->
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-secondary-200 py-3">
         <p class="text-xs text-muted">{{ t('footer.copyright', { year }) }}</p>
         <ULink
           v-for="link in legalLinks"
@@ -111,12 +75,8 @@ const projectLinks = [
           {{ t(link.labelKey) }}
         </ULink>
       </div>
-    </template>
 
-    <template #bottom>
-      <UContainer>
-        <p class="max-w-5xl text-xs leading-relaxed text-muted">{{ t('footer.disclaimer') }}</p>
-      </UContainer>
-    </template>
-  </UFooter>
+      <p class="max-w-5xl pb-5 text-xs leading-relaxed text-muted">{{ t('footer.disclaimer') }}</p>
+    </UContainer>
+  </footer>
 </template>

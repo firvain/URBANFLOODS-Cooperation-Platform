@@ -550,7 +550,8 @@
       "knowbase": "URBANFLOODS KNOWBASE",
       "linkedin": "URBANFLOODS on LinkedIn"
     },
-    "copyright": "© {year} URBANFLOODS"
+    "copyright": "© {year} URBANFLOODS",
+    "navLabel": "Project links"
   },
   "errors": {
     "notFound": "Page not found",

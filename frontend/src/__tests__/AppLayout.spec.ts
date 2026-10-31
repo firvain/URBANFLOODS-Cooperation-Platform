@@ -35,9 +35,17 @@ describe('App layout', () => {
     expect(document.querySelectorAll('main')).toHaveLength(1)
     expect(document.querySelectorAll('main#main')).toHaveLength(1)
     expect(document.querySelectorAll('footer')).toHaveLength(1)
-    const navs = document.querySelectorAll('nav[aria-label]')
-    expect(navs).toHaveLength(1)
-    expect(navs[0]!.getAttribute('aria-label')).toBeTruthy()
+    // One main navigation in the header and one external-links list in the footer, distinctly named.
+    const headerNavs = document.querySelectorAll('header nav[aria-label]')
+    const footerNavs = document.querySelectorAll('footer nav[aria-label]')
+    expect(headerNavs).toHaveLength(1)
+    expect(footerNavs).toHaveLength(1)
+    expect(document.querySelectorAll('nav[aria-label]')).toHaveLength(2)
+    expect(headerNavs[0]!.getAttribute('aria-label')).toBeTruthy()
+    expect(footerNavs[0]!.getAttribute('aria-label')).toBe(t('footer.navLabel'))
+    expect(footerNavs[0]!.getAttribute('aria-label')).not.toBe(
+      headerNavs[0]!.getAttribute('aria-label'),
+    )
   })
 
   it('shows the EU co-funding disclaimer in the footer', async () => {
@@ -116,13 +124,11 @@ describe('footer branding', () => {
     return el!
   }
 
-  /** The link list under the column heading with the given i18n key. */
-  function column(key: string) {
-    const heading = Array.from(footer().querySelectorAll('h2')).find(
-      (h) => h.textContent?.trim() === t(`footer.columns.${key}`),
-    )
-    expect(heading, `column ${key}`).toBeDefined()
-    return heading!.parentElement!
+  /** The single inline list of external links (no column headings). */
+  function externalNav() {
+    const nav = footer().querySelector('nav[aria-label]')
+    expect(nav, 'footer external-links nav').not.toBeNull()
+    return nav!
   }
 
   it('shows the statement and, as the last text, the exact disclaimer in small print', async () => {
@@ -156,46 +162,18 @@ describe('footer branding', () => {
     }
   })
 
-  it('has Platform, Project and Follow column headings', async () => {
-    await mountApp()
-    const headings = Array.from(footer().querySelectorAll('h2')).map((h) => h.textContent?.trim())
-    expect(headings).toEqual([
-      t('footer.columns.platform'),
-      t('footer.columns.project'),
-      t('footer.columns.follow'),
-    ])
-    expect([
-      t('footer.columns.platform'),
-      t('footer.columns.project'),
-      t('footer.columns.follow'),
-    ]).toEqual(['Platform', 'Project', 'Follow'])
-  })
-
-  it('links internally to the existing pages in the Platform column', async () => {
+  // Compact footer (2026-10-31): no columns, no headings, no internal page list (the header
+  // carries the platform navigation).
+  it('has no column headings and no internal page links outside the legal bar', async () => {
     await mountApp('/about')
-    const links = Array.from(column('platform').querySelectorAll('a'))
-    expect(links.map((a) => a.getAttribute('href'))).toEqual([
-      '/',
-      '/blog',
-      '/forum',
-      '/partners',
-      '/network',
-      '/knowbase',
-      '/about',
-    ])
-    expect(links.map((a) => a.textContent?.trim())).toEqual([
-      t('nav.home'),
-      t('nav.blog'),
-      t('nav.forum'),
-      t('nav.partners'),
-      t('nav.network'),
-      t('nav.knowbase'),
-      t('nav.about'),
-    ])
-    for (const link of links) expect(link.getAttribute('target')).toBeNull()
+    expect(footer().querySelectorAll('h1, h2, h3, h4, h5, h6')).toHaveLength(0)
+    const internal = Array.from(footer().querySelectorAll('a'))
+      .map((a) => a.getAttribute('href'))
+      .filter((href) => href?.startsWith('/'))
+    expect(internal).toEqual(['/terms', '/privacy'])
   })
 
-  it('links to the project sites and LinkedIn in a new tab, announced', async () => {
+  it('links to the project sites and LinkedIn in a new tab, announced, in one inline list', async () => {
     await mountApp()
     expect(EXTERNAL_LINKS).toEqual({
       programme: 'https://www.interreg-ipa-adrion.eu',
@@ -203,17 +181,18 @@ describe('footer branding', () => {
       knowbase: 'https://knowbase.urbanfloods.app',
       linkedin: 'https://www.linkedin.com/company/urbanfloods/',
     })
-    const hrefs = (key: string) =>
-      Array.from(column(key).querySelectorAll('a')).map((a) => a.getAttribute('href'))
-    expect(hrefs('project')).toEqual([
+    expect(t('footer.navLabel')).toBe('Project links')
+
+    const links = Array.from(footer().querySelectorAll<HTMLAnchorElement>('a[target="_blank"]'))
+    expect(links.map((a) => a.getAttribute('href'))).toEqual([
       EXTERNAL_LINKS.project,
       EXTERNAL_LINKS.programme,
       EXTERNAL_LINKS.knowbase,
+      EXTERNAL_LINKS.linkedin,
     ])
-    expect(hrefs('follow')).toEqual([EXTERNAL_LINKS.linkedin])
-
-    const links = Array.from(footer().querySelectorAll<HTMLAnchorElement>('a[target="_blank"]'))
-    expect(links).toHaveLength(4)
+    // All four live in the one footer nav, as list items.
+    const navLinks = Array.from(externalNav().querySelectorAll('li > a'))
+    expect(navLinks).toEqual(links)
     for (const link of links) {
       const rel = link.getAttribute('rel') ?? ''
       expect(rel).toContain('noopener')
@@ -229,11 +208,10 @@ describe('footer branding', () => {
     expect(links[3]!.querySelector('[data-icon="i-lucide-linkedin"]')).not.toBeNull()
   })
 
-  it('styles column links muted, underlined only on hover/focus', async () => {
+  it('styles the external links small and muted, underlined only on hover/focus', async () => {
     await mountApp()
-    const links = footer().querySelectorAll('h2 + ul a')
-    // Seven platform pages (blog, forum and KNOWBASE included) + the project links.
-    expect(links).toHaveLength(11)
+    const links = externalNav().querySelectorAll('a')
+    expect(links).toHaveLength(4)
     for (const link of links) {
       const classes = link.classList
       expect(classes.contains('text-sm')).toBe(true)
@@ -242,6 +220,17 @@ describe('footer branding', () => {
       expect(classes.contains('underline')).toBe(false)
       expect(classes.contains('hover:underline')).toBe(true)
       expect(classes.contains('focus-visible:underline')).toBe(true)
+    }
+  })
+
+  it('keeps the compact sizing: no large paddings or column gaps', async () => {
+    await mountApp()
+    const elements = [footer(), ...footer().querySelectorAll('*')]
+    for (const cls of ['py-12', 'py-16', 'lg:py-16', 'gap-10', 'space-y-3', 'pb-8', 'pb-10']) {
+      expect(
+        elements.some((el) => el.classList.contains(cls)),
+        cls,
+      ).toBe(false)
     }
   })
 
