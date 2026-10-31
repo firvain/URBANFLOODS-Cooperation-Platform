@@ -24,7 +24,7 @@
     "account": "Llogaria"
   },
   "home": {
-    "title": "Platforma e Bashkëpunimit",
+    "title": "URBANFLOODS COOPERATION PLATFORM",
     "intro": "Një vend takimi për palët e interesuara në menaxhimin e përmbytjeve në të gjithë rajonin Adriatik-Jonian: ndani përvojat në blog, diskutoni në forum.",
     "comingSoon": "Së shpejti",
     "cards": {
@@ -37,13 +37,13 @@
         "description": "Bëni pyetje dhe diskutoni për menaxhimin e përmbytjeve."
       },
       "knowbase": {
-        "title": "KNOWBASE",
+        "title": "URBANFLOODS KNOWBASE",
         "description": "Shfletoni legjislacionin, politikat dhe masat për mbrojtjen nga përmbytjet.",
         "open": "Hap KNOWBASE"
       }
     },
     "dss": {
-      "title": "Unified DSS",
+      "title": "URBANFLOODS DSS",
       "description": "Qasuni në Sistemin e Mbështetjes së Vendimmarrjes të zhvilluar nga URBANFLOODS për menaxhimin e përmbytjeve.",
       "open": "Hap DSS"
     }

@@ -24,7 +24,7 @@
     "account": "Account"
   },
   "home": {
-    "title": "Piattaforma di cooperazione",
+    "title": "URBANFLOODS COOPERATION PLATFORM",
     "intro": "Un punto d'incontro per i portatori di interesse della gestione delle alluvioni nella regione adriatico-ionica: condividi esperienze nel blog, partecipa alle discussioni nel forum.",
     "comingSoon": "Prossimamente",
     "cards": {
@@ -37,13 +37,13 @@
         "description": "Fai domande e discuti di gestione delle alluvioni."
       },
       "knowbase": {
-        "title": "KNOWBASE",
+        "title": "URBANFLOODS KNOWBASE",
         "description": "Consulta normativa, politiche e misure di protezione dalle alluvioni.",
         "open": "Apri KNOWBASE"
       }
     },
     "dss": {
-      "title": "Unified DSS",
+      "title": "URBANFLOODS DSS",
       "description": "Consulta il sistema di supporto alle decisioni sviluppato da URBANFLOODS per la gestione delle alluvioni.",
       "open": "Apri il DSS"
     }

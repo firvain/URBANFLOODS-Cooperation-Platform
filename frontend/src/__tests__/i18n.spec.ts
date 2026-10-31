@@ -205,6 +205,9 @@ function localeMessages(code: string): Messages {
 
 /** Project and programme names, never translated (docs/branding.md). */
 const PROPER_NOUNS = ['URBANFLOODS', 'KNOWBASE', 'Interreg IPA ADRION', 'IPA ADRION', 'Unified DSS']
+// The three brand strings (URBANFLOODS COOPERATION PLATFORM / KNOWBASE / DSS) are checked by
+// exact equality below, since other keys may phrase them differently (e.g. "the KNOWBASE of
+// URBANFLOODS" in Greek).
 
 /**
  * A string may equal English only when nothing translatable is left once proper nouns,
@@ -212,7 +215,7 @@ const PROPER_NOUNS = ['URBANFLOODS', 'KNOWBASE', 'Interreg IPA ADRION', 'IPA ADR
  * "EUR 1.747.583,17", "Unified DSS").
  */
 const UNTRANSLATABLE_TOKENS =
-  /URBANFLOODS|KNOWBASE|Interreg|IPA|ADRION|Unified|DSS|EUR|LinkedIn|\{\w+\}|[\d\s.,:;/+–—()©%-]/g
+  /URBANFLOODS|KNOWBASE|COOPERATION|PLATFORM|Interreg|IPA|ADRION|Unified|DSS|EUR|LinkedIn|\{\w+\}|[\d\s.,:;/+–—()©%-]/g
 const hasNothingToTranslate = (value: string) => value.replace(UNTRANSLATABLE_TOKENS, '') === ''
 
 /** Keys whose English value is a proper name kept as is in every language. */
@@ -258,7 +261,7 @@ const expectedForms = (code: LocaleCode, englishForms: number) =>
 
 /** Latin words allowed inside Greek, Macedonian and Serbian (Cyrillic) strings. */
 const LATIN_ALLOWED =
-  /URBANFLOODS|KNOWBASE|Interreg|IPA|ADRION|Unified|DSS|LinkedIn|JPEG|PNG|WebP|MB|JSON|EUR|ZEP|\bI\b|SO2|https?|mailto|Enter|\{\w+\}/g
+  /URBANFLOODS|KNOWBASE|COOPERATION|PLATFORM|Interreg|IPA|ADRION|Unified|DSS|LinkedIn|JPEG|PNG|WebP|MB|JSON|EUR|ZEP|\bI\b|SO2|https?|mailto|Enter|\{\w+\}/g
 const NON_LATIN_SCRIPT: Partial<Record<TranslatedLocale, RegExp>> = {
   el: /\p{Script=Greek}/u,
   mk: /\p{Script=Cyrillic}/u,
@@ -325,8 +328,9 @@ describe.each(TRANSLATED_LOCALES)('%s translation', (code) => {
   it('names the platform sections like the navigation does', () => {
     expect(flat['nav.knowbase']).toBe('KNOWBASE')
     expect(flat['nav.dss']).toBe('Unified DSS')
-    expect(flat['home.dss.title']).toBe('Unified DSS')
-    expect(flat['home.cards.knowbase.title']).toBe('KNOWBASE')
+    expect(flat['home.dss.title']).toBe('URBANFLOODS DSS')
+    expect(flat['home.cards.knowbase.title']).toBe('URBANFLOODS KNOWBASE')
+    expect(flat['home.title']).toBe('URBANFLOODS COOPERATION PLATFORM')
   })
 
   it('leaves the admin area in English (absent, or identical to en)', () => {

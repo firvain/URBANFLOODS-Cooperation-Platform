@@ -24,7 +24,7 @@
     "account": "Account"
   },
   "home": {
-    "title": "Cooperation Platform",
+    "title": "URBANFLOODS COOPERATION PLATFORM",
     "intro": "A meeting place for flood-management stakeholders across the Adriatic-Ionian region: share experience in the blog, discuss in the forum.",
     "comingSoon": "Coming soon",
     "cards": {
@@ -37,13 +37,13 @@
         "description": "Ask questions and discuss flood management."
       },
       "knowbase": {
-        "title": "KNOWBASE",
+        "title": "URBANFLOODS KNOWBASE",
         "description": "Browse legislation, policies and flood-protection measures.",
         "open": "Open the KNOWBASE"
       }
     },
     "dss": {
-      "title": "Unified DSS",
+      "title": "URBANFLOODS DSS",
       "description": "Access Decision Support System developed by URBANFLOODS for flood management.",
       "open": "Open the DSS"
     }

@@ -24,7 +24,7 @@
     "account": "Račun"
   },
   "home": {
-    "title": "Platforma za suradnju",
+    "title": "URBANFLOODS COOPERATION PLATFORM",
     "intro": "Mjesto susreta dionika u upravljanju poplavama iz cijele jadransko-jonske regije: razmjenjujte iskustva na blogu, raspravljajte na forumu.",
     "comingSoon": "Uskoro",
     "cards": {
@@ -37,13 +37,13 @@
         "description": "Postavljajte pitanja i raspravljajte o upravljanju poplavama."
       },
       "knowbase": {
-        "title": "KNOWBASE",
+        "title": "URBANFLOODS KNOWBASE",
         "description": "Pregledajte zakonodavstvo, politike i mjere zaštite od poplava.",
         "open": "Otvori KNOWBASE"
       }
     },
     "dss": {
-      "title": "Unified DSS",
+      "title": "URBANFLOODS DSS",
       "description": "Pristupite sustavu za potporu odlučivanju koji je projekt URBANFLOODS razvio za upravljanje poplavama.",
       "open": "Otvori DSS"
     }
