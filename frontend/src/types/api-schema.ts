@@ -164,8 +164,11 @@ export interface paths {
         /**
          * Delete Me
          * @description Delete the account (current password required): personal data is erased and the account
-         *     disabled; published content stays, attributed to "Deleted user". Every session ends and the
-         *     cookie is cleared. The last superadmin cannot delete their account.
+         *     disabled; published content stays, attributed to "Deleted user". The member's own uploads
+         *     that no content uses (not a cover, not in any body), the avatar included, are deleted with
+         *     their files; images used by contributions stay with them, and an avatar someone else
+         *     uploaded is only unlinked. Every session ends and the cookie is cleared.
+         *     The last superadmin cannot delete their account.
          */
         delete: operations["delete_me_api_v1_auth_me_delete"];
         options?: never;
@@ -1974,6 +1977,10 @@ export interface components {
             /** Audit Log */
             audit_log: components["schemas"]["ExportAuditEntry"][];
             content: components["schemas"]["ExportContent"];
+            /** Attachments */
+            attachments: components["schemas"]["ExportedAttachment"][];
+            /** Reports Made */
+            reports_made: components["schemas"]["ExportedReport"][];
         };
         /** AdminStats */
         AdminStats: {
@@ -2451,8 +2458,9 @@ export interface components {
         };
         /**
          * ExportAuditEntry
-         * @description An audit row by or about the account. The actor is left out on purpose (it may be an
-         *     admin).
+         * @description An audit row by or about the account or its content. The actor is left out on purpose
+         *     (it may be an admin), and the metadata validator below removes admin-identifying keys at any
+         *     depth (returning a copy: the ORM row is never mutated).
          */
         ExportAuditEntry: {
             /** Action */
@@ -2501,25 +2509,17 @@ export interface components {
         };
         /**
          * ExportContent
-         * @description The user's own content. Empty until posts (M2) and the forum (M3) exist.
+         * @description The member's own content, every status, oldest first.
          */
         ExportContent: {
             /** Posts */
-            posts?: {
-                [key: string]: unknown;
-            }[];
+            posts?: components["schemas"]["ExportedPost"][];
             /** Threads */
-            threads?: {
-                [key: string]: unknown;
-            }[];
+            threads?: components["schemas"]["ExportedThread"][];
             /** Replies */
-            replies?: {
-                [key: string]: unknown;
-            }[];
+            replies?: components["schemas"]["ExportedReply"][];
             /** Comments */
-            comments?: {
-                [key: string]: unknown;
-            }[];
+            comments?: components["schemas"]["ExportedComment"][];
         };
         /** ExportKnowbaseLink */
         ExportKnowbaseLink: {
@@ -2707,6 +2707,195 @@ export interface components {
             show_email: boolean;
             /** Show In Directory */
             show_in_directory: boolean;
+        };
+        /**
+         * ExportedAttachment
+         * @description An upload of the member's (deleted ones included until they are purged).
+         */
+        ExportedAttachment: {
+            /** Id */
+            id: number;
+            /** Original Filename */
+            original_filename: string;
+            /** Mime */
+            mime: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Width */
+            width: number;
+            /** Height */
+            height: number;
+            /** Alt Text */
+            alt_text: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Deleted At */
+            deleted_at: string | null;
+            /** Url */
+            readonly url: string;
+            /** Thumb Url */
+            readonly thumb_url: string | null;
+        };
+        /** ExportedComment */
+        ExportedComment: {
+            /** Id */
+            id: number;
+            /** Body Html */
+            body_html: string;
+            /** Body Text */
+            body_text: string;
+            status: components["schemas"]["ContentStatus"];
+            hidden_reason: components["schemas"]["HiddenReason"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Deleted At */
+            deleted_at: string | null;
+            /** Post Id */
+            post_id: number;
+        };
+        /** ExportedPost */
+        ExportedPost: {
+            /** Id */
+            id: number;
+            /** Body Html */
+            body_html: string;
+            /** Body Text */
+            body_text: string;
+            status: components["schemas"]["ContentStatus"];
+            hidden_reason: components["schemas"]["HiddenReason"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Deleted At */
+            deleted_at: string | null;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+            /** Locale */
+            locale: string;
+            category: components["schemas"]["CategorySummary"];
+            /** Tags */
+            tags: components["schemas"]["TagOut"][];
+            /** Published At */
+            published_at: string | null;
+            /** Knowbase Links */
+            knowbase_links?: components["schemas"]["KnowbaseLinkOut"][];
+            /** Excerpt */
+            excerpt: string | null;
+            /** Cover Attachment Id */
+            cover_attachment_id: number | null;
+            /** Event At */
+            event_at: string | null;
+            /** Event Url */
+            event_url: string | null;
+        };
+        /** ExportedReply */
+        ExportedReply: {
+            /** Id */
+            id: number;
+            /** Body Html */
+            body_html: string;
+            /** Body Text */
+            body_text: string;
+            status: components["schemas"]["ContentStatus"];
+            hidden_reason: components["schemas"]["HiddenReason"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Deleted At */
+            deleted_at: string | null;
+            /** Thread Id */
+            thread_id: number;
+            /** Parent Reply Id */
+            parent_reply_id: number | null;
+        };
+        /**
+         * ExportedReport
+         * @description A report the member made (never who resolved it).
+         */
+        ExportedReport: {
+            /** Id */
+            id: number;
+            content_type: components["schemas"]["ContentType"];
+            /** Content Id */
+            content_id: number;
+            reason: components["schemas"]["ReportReason"];
+            /** Details */
+            details: string | null;
+            status: components["schemas"]["ReportStatus"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Resolved At */
+            resolved_at: string | null;
+        };
+        /** ExportedThread */
+        ExportedThread: {
+            /** Id */
+            id: number;
+            /** Body Html */
+            body_html: string;
+            /** Body Text */
+            body_text: string;
+            status: components["schemas"]["ContentStatus"];
+            hidden_reason: components["schemas"]["HiddenReason"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Deleted At */
+            deleted_at: string | null;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+            /** Locale */
+            locale: string;
+            category: components["schemas"]["CategorySummary"];
+            /** Tags */
+            tags: components["schemas"]["TagOut"][];
+            /** Published At */
+            published_at: string | null;
+            /** Knowbase Links */
+            knowbase_links?: components["schemas"]["KnowbaseLinkOut"][];
+            /** Is Pinned */
+            is_pinned: boolean;
+            /** Is Locked */
+            is_locked: boolean;
         };
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {

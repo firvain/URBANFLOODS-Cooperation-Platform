@@ -9,6 +9,8 @@ outside tests, ``SmtpBackend`` (aiosmtplib) otherwise. Bodies are never logged: 
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -63,6 +65,8 @@ class OutgoingEmail:
     text: str
     html: str
     locale: str
+    # The template name, for logs that must not carry the address or the subject.
+    template: str = ""
 
 
 class EmailBackend(Protocol):
@@ -79,12 +83,24 @@ class OutboxBackend:
         self.messages.append(msg)
 
 
+def address_hash(address: str) -> str:
+    """Keyed, truncated hash of an address for logs: correlatable within one deployment, never
+    the address itself (a recipient is personal data, and subjects may name other members)."""
+    key = settings.SECRET_KEY.encode()
+    return hmac.new(key, address.casefold().encode(), hashlib.sha256).hexdigest()[:12]
+
+
 class LoggingBackend:
-    """Email disabled outside tests: log recipient and subject only, never bodies."""
+    """Email disabled outside tests: log the template and a keyed hash of the address only;
+    never the address, the subject or the bodies."""
 
     async def send(self, msg: OutgoingEmail) -> None:
         structlog.get_logger(__name__).info(
-            "email.not_sent", reason="EMAIL_ENABLED=false", to=msg.to, subject=msg.subject
+            "email.not_sent",
+            reason="EMAIL_ENABLED=false",
+            template=msg.template,
+            locale=msg.locale,
+            to_hash=address_hash(msg.to),
         )
 
 
@@ -189,7 +205,9 @@ async def send_email(
 ) -> OutgoingEmail:
     """Render and send one email. Returns what was sent; SMTP errors propagate to the caller."""
     subject, text, html, effective = _render(template, locale, context)
-    msg = OutgoingEmail(to=to, subject=subject, text=text, html=html, locale=effective)
+    msg = OutgoingEmail(
+        to=to, subject=subject, text=text, html=html, locale=effective, template=template
+    )
     try:
         await (backend or get_backend()).send(msg)
     except Exception as exc:

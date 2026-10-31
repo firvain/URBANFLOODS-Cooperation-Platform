@@ -230,8 +230,10 @@ async def test_export_contents(client, db_session, cleanup_users, cleanup_user_i
         "sessions",
         "audit_log",
         "content",
+        "attachments",
+        "reports_made",
     }
-    assert body["format_version"] == 1
+    assert body["format_version"] == 2
     assert body["licence_note"] == settings.CONTENT_LICENSE_URL
     exported_at = datetime.fromisoformat(body["exported_at"])
     assert abs((datetime.now(UTC) - exported_at).total_seconds()) < 60
@@ -302,6 +304,8 @@ async def test_export_contents(client, db_session, cleanup_users, cleanup_user_i
     assert register_row["target_id"] == user.id
 
     assert body["content"] == {"posts": [], "threads": [], "replies": [], "comments": []}
+    assert body["attachments"] == []
+    assert body["reports_made"] == []
 
     assert _all_keys(body).isdisjoint(FORBIDDEN_KEYS), _all_keys(body) & FORBIDDEN_KEYS
     stored = await _reload_user(db_session, user.id)

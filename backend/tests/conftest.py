@@ -488,3 +488,19 @@ async def cleanup_reports(database_url: str) -> AsyncIterator[set[int]]:
         return
     async with AsyncSessionLocal() as session, session.begin():
         await session.execute(delete(Report).where(Report.id.in_(ids)))
+
+
+@pytest.fixture
+async def cleanup_attachments(database_url: str) -> AsyncIterator[set[int]]:
+    """Ids of attachments the test commits; deleted afterwards (ids already gone are fine)."""
+    from sqlalchemy import delete
+
+    from app.db.models import Attachment
+    from app.db.session import AsyncSessionLocal
+
+    ids: set[int] = set()
+    yield ids
+    if not ids:
+        return
+    async with AsyncSessionLocal() as session, session.begin():
+        await session.execute(delete(Attachment).where(Attachment.id.in_(ids)))

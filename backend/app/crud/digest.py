@@ -6,9 +6,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Exists, Select, and_, delete, func, literal, or_, select
+from sqlalchemy import Select, and_, delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.crud.attachment import unused_attachment_conditions
 from app.db.enums import ContentStatus, DigestFrequency, ReportStatus, UserRole
 from app.db.models import (
     Attachment,
@@ -154,24 +155,6 @@ async def purge_unverified_users(db: AsyncSession, *, cutoff: datetime) -> int:
     return len((await db.execute(stmt)).all())
 
 
-def _referenced_in_body(model: type) -> Exists:
-    """A row of ``model`` whose ``body_html`` contains the attachment's main or thumbnail path
-    (plain substring match: ``strpos`` has no wildcards)."""
-    return (
-        select(literal(1))
-        .where(
-            or_(
-                func.strpos(model.body_html, Attachment.storage_path) > 0,
-                and_(
-                    Attachment.thumb_path.is_not(None),
-                    func.strpos(model.body_html, Attachment.thumb_path) > 0,
-                ),
-            )
-        )
-        .exists()
-    )
-
-
 async def delete_orphan_attachments(
     db: AsyncSession, *, cutoff: datetime
 ) -> list[tuple[str, str | None]]:
@@ -183,9 +166,7 @@ async def delete_orphan_attachments(
         delete(Attachment)
         .where(
             Attachment.created_at < cutoff,
-            ~select(literal(1)).where(Post.cover_attachment_id == Attachment.id).exists(),
-            ~select(literal(1)).where(User.avatar_attachment_id == Attachment.id).exists(),
-            *(~_referenced_in_body(model) for model in (Post, Thread, Reply, Comment)),
+            *unused_attachment_conditions(),
         )
         .returning(Attachment.storage_path, Attachment.thumb_path)
         .execution_options(synchronize_session=False)

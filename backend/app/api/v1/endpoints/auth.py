@@ -12,20 +12,29 @@ import secrets
 import uuid
 from datetime import UTC, datetime
 from functools import cache
-from typing import Any
+from typing import Any, TypeVar
 
 import structlog
-from fastapi import APIRouter, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.schemas.auth import (
+from app.api.v1.schemas.account_export import (
+    FORMAT_VERSION,
     AccountExport,
+    ExportContent,
+    ExportedAttachment,
+    ExportedComment,
+    ExportedPost,
+    ExportedReply,
+    ExportedReport,
+    ExportedThread,
+)
+from app.api.v1.schemas.auth import (
     ChangeEmailRequest,
     ChangePasswordRequest,
     ConfirmEmailRequest,
     DeleteAccountRequest,
     ExportAuditEntry,
-    ExportContent,
     ExportSession,
     ExportUser,
     ForgotPasswordRequest,
@@ -42,6 +51,7 @@ from app.api.v1.schemas.auth import (
     UserMe,
     VerifyEmailRequest,
 )
+from app.api.v1.schemas.post import KnowbaseLinkOut
 from app.core.config import settings
 from app.core.deps import AuthUser, CurrentUser, DbTx, client_ip
 from app.core.exceptions import AppError, error_body, validation_error
@@ -51,12 +61,14 @@ from app.core.security import (
     session_cookie_params,
     verify_password,
 )
+from app.crud import attachment as crud_attachment
 from app.crud import audit as crud_audit
 from app.crud import session as crud_session
 from app.crud import token as crud_token
 from app.crud import user as crud_user
-from app.db.enums import TokenPurpose, UserRole
-from app.db.models import User
+from app.db.enums import ContentType, TokenPurpose, UserRole
+from app.db.models import KnowbaseLink, User
+from app.services import images
 from app.services.email import send_email
 from app.services.turnstile import TurnstileError, verify_turnstile
 
@@ -686,7 +698,22 @@ async def replace_my_notifications(
 
 # --- GDPR: data export and account deletion ---------------------------------------------------
 
-EXPORT_FORMAT_VERSION = 1
+
+_Topic = TypeVar("_Topic", ExportedPost, ExportedThread)
+
+
+def _with_links(
+    schema: type[_Topic],
+    row: Any,
+    kind: ContentType,
+    links: dict[tuple[ContentType, int], list[KnowbaseLink]],
+) -> _Topic:
+    """``row`` as ``schema`` with its KNOWBASE links attached."""
+    item = schema.model_validate(row)
+    item.knowbase_links = [
+        KnowbaseLinkOut.model_validate(link) for link in links.get((kind, row.id), [])
+    ]
+    return item
 
 
 @router.get(
@@ -703,9 +730,10 @@ async def export_my_data(response: Response, user: AuthUser, db: DbTx) -> Accoun
     data = await crud_user.export_user_data(db, user=user)
     now = datetime.now(UTC)
     preferences = data.user.notification_preferences
+
     export = AccountExport(
         exported_at=now,
-        format_version=EXPORT_FORMAT_VERSION,
+        format_version=FORMAT_VERSION,
         licence_note=settings.CONTENT_LICENSE_URL,
         user=ExportUser.model_validate(data.user),
         notification_preferences=(
@@ -713,8 +741,20 @@ async def export_my_data(response: Response, user: AuthUser, db: DbTx) -> Accoun
         ),
         sessions=[ExportSession.model_validate(session) for session in data.sessions],
         audit_log=[ExportAuditEntry.model_validate(entry) for entry in data.audit_entries],
-        # Placeholders until posts (M2) and the forum (M3) exist.
-        content=ExportContent(),
+        content=ExportContent(
+            posts=[
+                _with_links(ExportedPost, post, ContentType.POST, data.knowbase_links)
+                for post in data.posts
+            ],
+            threads=[
+                _with_links(ExportedThread, thread, ContentType.THREAD, data.knowbase_links)
+                for thread in data.threads
+            ],
+            replies=[ExportedReply.model_validate(reply) for reply in data.replies],
+            comments=[ExportedComment.model_validate(comment) for comment in data.comments],
+        ),
+        attachments=[ExportedAttachment.model_validate(item) for item in data.attachments],
+        reports_made=[ExportedReport.model_validate(report) for report in data.reports],
     )
     await crud_audit.log_action(
         db, actor_id=user.id, action="auth.data_exported", target_type="user", target_id=user.id
@@ -732,11 +772,18 @@ async def export_my_data(response: Response, user: AuthUser, db: DbTx) -> Accoun
     responses=_error_responses(400, 401, 409, 422),
 )
 async def delete_me(
-    body: DeleteAccountRequest, response: Response, user: AuthUser, db: DbTx
+    body: DeleteAccountRequest,
+    response: Response,
+    user: AuthUser,
+    db: DbTx,
+    background: BackgroundTasks,
 ) -> None:
     """Delete the account (current password required): personal data is erased and the account
-    disabled; published content stays, attributed to "Deleted user". Every session ends and the
-    cookie is cleared. The last superadmin cannot delete their account."""
+    disabled; published content stays, attributed to "Deleted user". The member's own uploads
+    that no content uses (not a cover, not in any body), the avatar included, are deleted with
+    their files; images used by contributions stay with them, and an avatar someone else
+    uploaded is only unlinked. Every session ends and the cookie is cleared.
+    The last superadmin cannot delete their account."""
     await _check_current_password(
         db, user=user, password=body.current_password, failed_action="auth.delete_failed"
     )
@@ -744,14 +791,20 @@ async def delete_me(
         raise AppError(
             409, "admin.last_superadmin", "The last superadmin cannot delete their account."
         )
-    # Audit first, while the row still describes the account it is about.
+    role = user.role
+    # Anonymise first: it clears the avatar link, so an own-upload avatar counts as unused below.
+    await crud_user.anonymise_user(db, user=user)
+    removed = await crud_attachment.delete_unreferenced_uploads(db, user_id=user.id)
     await crud_audit.log_action(
         db,
         actor_id=user.id,
         action="auth.account_deleted",
         target_type="user",
         target_id=user.id,
-        metadata={"role": user.role},
+        metadata={"role": role, "attachments_deleted": len(removed)},
     )
-    await crud_user.anonymise_user(db, user=user)
+    # Files go only after the response, so after the commit (as in endpoints/uploads.py).
+    paths = [path for pair in removed for path in pair if path]
+    if paths:
+        background.add_task(images.delete_files, settings.UPLOAD_DIR, *paths)
     _clear_session_cookie(response)

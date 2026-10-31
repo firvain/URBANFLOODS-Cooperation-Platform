@@ -9,6 +9,7 @@ before storage, and a warning naming the dropped keys (never the values) is logg
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from typing import Any
 
 import structlog
@@ -29,18 +30,26 @@ def _is_sensitive(key: Any) -> bool:
     return any(part in SENSITIVE_KEY_PARTS for part in parts)
 
 
-def _strip_sensitive(value: Any, dropped: list[str]) -> Any:
-    """Return a copy of ``value`` without sensitive dict keys (recursing into dicts and lists)."""
+def strip_keys(
+    value: Any,
+    dropped: list[str] | None = None,
+    *,
+    drop: Callable[[Any], bool] = _is_sensitive,
+) -> Any:
+    """Return a copy of ``value`` without the dict keys for which ``drop(key)`` is true
+    (recursing into dicts and lists). Dropped key names are appended to ``dropped`` if given.
+    The default predicate drops sensitive keys (see the module docstring)."""
     if isinstance(value, dict):
         cleaned: dict[str, Any] = {}
         for key, item in value.items():
-            if _is_sensitive(key):
-                dropped.append(str(key))
+            if drop(key):
+                if dropped is not None:
+                    dropped.append(str(key))
                 continue
-            cleaned[key] = _strip_sensitive(item, dropped)
+            cleaned[key] = strip_keys(item, dropped, drop=drop)
         return cleaned
     if isinstance(value, list | tuple):
-        return [_strip_sensitive(item, dropped) for item in value]
+        return [strip_keys(item, dropped, drop=drop) for item in value]
     return value
 
 
@@ -55,7 +64,7 @@ async def log_action(
 ) -> AuditLog:
     """Add an audit row and flush. Sensitive metadata keys are stripped (see module docstring)."""
     dropped: list[str] = []
-    cleaned = _strip_sensitive(metadata or {}, dropped)
+    cleaned = strip_keys(metadata or {}, dropped)
     if dropped:
         log.warning("audit_metadata_sensitive_keys_dropped", action=action, keys=sorted(dropped))
 

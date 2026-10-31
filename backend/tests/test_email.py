@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 from email.message import EmailMessage
 from unittest.mock import AsyncMock
@@ -215,16 +216,52 @@ def test_get_backend_is_logging_when_disabled_outside_test(fresh_backend, monkey
     assert isinstance(get_backend(), LoggingBackend)
 
 
-async def test_logging_backend_logs_subject_and_to_but_never_bodies() -> None:
+async def test_logging_backend_never_logs_the_address_subject_or_bodies() -> None:
     msg = OutgoingEmail(
-        to="m@example.org", subject="Hello", text="SECRET-TOKEN", html="SECRET-TOKEN", locale="en"
+        to="m@example.org",
+        subject="Maria commented on your post",
+        text="SECRET-TOKEN",
+        html="SECRET-TOKEN",
+        locale="en",
+        template="verify_email",
     )
     with structlog.testing.capture_logs() as logs:
         await LoggingBackend().send(msg)
     assert len(logs) == 1
-    assert logs[0]["to"] == "m@example.org"
-    assert logs[0]["subject"] == "Hello"
-    assert "SECRET-TOKEN" not in repr(logs)
+    line = repr(logs)
+    assert "@" not in line
+    assert "m@example.org" not in line
+    assert "Maria" not in line
+    assert "SECRET-TOKEN" not in line
+    assert "to" not in logs[0]
+    assert logs[0]["template"] == "verify_email"
+    assert "recipients" not in logs[0]
+    assert re.fullmatch(r"[0-9a-f]{12}", logs[0]["to_hash"])
+
+
+async def test_logging_backend_address_hash_is_stable_and_distinct() -> None:
+    def _msg(to: str) -> OutgoingEmail:
+        return OutgoingEmail(to=to, subject="S", text="t", html="h", locale="en")
+
+    with structlog.testing.capture_logs() as logs:
+        await LoggingBackend().send(_msg("a@example.org"))
+        await LoggingBackend().send(_msg("a@example.org"))
+        await LoggingBackend().send(_msg("b@example.org"))
+    assert logs[0]["to_hash"] == logs[1]["to_hash"]
+    assert logs[0]["to_hash"] != logs[2]["to_hash"]
+
+
+async def test_send_email_passes_the_template_name_to_the_backend() -> None:
+    outbox = OutboxBackend()
+    sent = await send_email(
+        to="m@example.org",
+        template="verify_email",
+        locale="en",
+        context=_ctx(),
+        backend=outbox,
+    )
+    assert sent.template == "verify_email"
+    assert outbox.messages[0].template == "verify_email"
 
 
 # --- SMTP --------------------------------------------------------------------------------

@@ -30,6 +30,7 @@ from pydantic_core import PydanticCustomError
 from app.api.v1.schemas.expertise import ExpertiseTagOut
 from app.api.v1.schemas.upload import upload_url
 from app.core.security import PASSWORD_MAX_LENGTH
+from app.crud.audit import strip_keys
 from app.db.enums import DigestFrequency, OrganisationType, UserRole
 
 # The 9 interface locales (same as the KNOWBASE frontend).
@@ -306,6 +307,16 @@ class ExportUser(BaseModel):
     show_in_directory: bool
 
 
+# Metadata keys that could name the admin who acted (any key ending in ``_by`` too). The export
+# never reveals which admin acted (privacy policy, section 3.3).
+ADMIN_IDENTITY_KEYS = frozenset({"actor_id", "admin_id", "moderator_id"})
+
+
+def is_admin_identity_key(key: Any) -> bool:
+    name = str(key)
+    return name in ADMIN_IDENTITY_KEYS or name.endswith("_by")
+
+
 class ExportSession(BaseModel):
     """Every session of the account, including revoked and expired ones (never the token)."""
 
@@ -320,8 +331,9 @@ class ExportSession(BaseModel):
 
 
 class ExportAuditEntry(BaseModel):
-    """An audit row by or about the account. The actor is left out on purpose (it may be an
-    admin)."""
+    """An audit row by or about the account or its content. The actor is left out on purpose
+    (it may be an admin), and the metadata validator below removes admin-identifying keys at any
+    depth (returning a copy: the ORM row is never mutated)."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -331,24 +343,7 @@ class ExportAuditEntry(BaseModel):
     metadata: dict[str, Any] = Field(validation_alias="metadata_")
     created_at: datetime
 
-
-class ExportContent(BaseModel):
-    """The user's own content. Empty until posts (M2) and the forum (M3) exist."""
-
-    posts: list[dict[str, Any]] = Field(default_factory=list)
-    threads: list[dict[str, Any]] = Field(default_factory=list)
-    replies: list[dict[str, Any]] = Field(default_factory=list)
-    comments: list[dict[str, Any]] = Field(default_factory=list)
-
-
-class AccountExport(BaseModel):
-    """``GET /me/export``: everything stored about the signed-in user (GDPR art. 15/20)."""
-
-    exported_at: datetime
-    format_version: int
-    licence_note: str
-    user: ExportUser
-    notification_preferences: NotificationPreferences | None
-    sessions: list[ExportSession]
-    audit_log: list[ExportAuditEntry]
-    content: ExportContent
+    @field_validator("metadata")
+    @classmethod
+    def _without_admin_identity(cls, value: dict[str, Any]) -> dict[str, Any]:
+        return strip_keys(value, drop=is_admin_identity_key)

@@ -18,13 +18,20 @@ from app.core.security import hash_password, password_needs_rehash, validate_pas
 from app.crud import expertise as crud_expertise
 from app.crud import session as crud_session
 from app.crud import token as crud_token
-from app.db.enums import TokenPurpose, UserRole
+from app.db.enums import ContentType, TokenPurpose, UserRole
 from app.db.models import (
+    Attachment,
     AuditLog,
+    Comment,
     ExpertiseTag,
+    KnowbaseLink,
     NotificationPreference,
     Organisation,
+    Post,
+    Reply,
+    Report,
     Session,
+    Thread,
     User,
 )
 
@@ -374,34 +381,121 @@ class UserDataExport:
     user: User
     sessions: list[Session]
     audit_entries: list[AuditLog]
+    posts: list[Post]
+    threads: list[Thread]
+    replies: list[Reply]
+    comments: list[Comment]
+    attachments: list[Attachment]
+    reports: list[Report]
+    # ``(content_type, content_id)`` -> the content's KNOWBASE links in display order.
+    knowbase_links: dict[tuple[ContentType, int], list[KnowbaseLink]]
+
+
+async def _all(db: AsyncSession, stmt: Any) -> list[Any]:
+    return list((await db.scalars(stmt)).all())
 
 
 async def export_user_data(db: AsyncSession, *, user: User) -> UserDataExport:
-    """The user (``organisation``, ``notification_preferences`` and ``expertise`` loaded), every
-    session of theirs (revoked and expired too), oldest first, and every audit row they made or
-    that is about them, oldest first.
+    """The user (``organisation``, ``notification_preferences`` and ``expertise`` loaded), and,
+    oldest first: every session of theirs (revoked and expired too); their posts, threads,
+    replies and comments in every status (posts and threads with category and tags loaded);
+    their uploads (soft-deleted ones too); the reports they made; the KNOWBASE links of their
+    posts and threads; and every audit row they made or that is about them or their content
+    (posts, threads, replies, comments, uploads, reports).
 
-    Content (posts, threads, replies, comments) joins the export when it exists (M2/M3).
+    One query per kind: a member's own rows are few, so nothing is paginated.
     """
     loaded = await get_user_by_id(db, user_id=user.id)
     assert loaded is not None
-    sessions_stmt = (
-        select(Session).where(Session.user_id == user.id).order_by(Session.created_at, Session.id)
+    uid = user.id
+    posts = await _all(
+        db,
+        select(Post)
+        .where(Post.author_id == uid)
+        .options(joinedload(Post.category), selectinload(Post.tags))
+        .order_by(Post.created_at, Post.id),
     )
+    threads = await _all(
+        db,
+        select(Thread)
+        .where(Thread.author_id == uid)
+        .options(joinedload(Thread.category), selectinload(Thread.tags))
+        .order_by(Thread.created_at, Thread.id),
+    )
+    replies = await _all(
+        db, select(Reply).where(Reply.author_id == uid).order_by(Reply.created_at, Reply.id)
+    )
+    comments = await _all(
+        db,
+        select(Comment).where(Comment.author_id == uid).order_by(Comment.created_at, Comment.id),
+    )
+    attachments = await _all(
+        db,
+        select(Attachment)
+        .where(Attachment.uploader_id == uid)
+        .order_by(Attachment.created_at, Attachment.id),
+    )
+    reports = await _all(
+        db,
+        select(Report).where(Report.reporter_id == uid).order_by(Report.created_at, Report.id),
+    )
+
+    links: dict[tuple[ContentType, int], list[KnowbaseLink]] = {}
+    owned_topics = [
+        (ContentType.POST, [post.id for post in posts]),
+        (ContentType.THREAD, [thread.id for thread in threads]),
+    ]
+    link_filters = [
+        and_(KnowbaseLink.content_type == kind, KnowbaseLink.content_id.in_(ids))
+        for kind, ids in owned_topics
+        if ids
+    ]
+    if link_filters:
+        link_stmt = (
+            select(KnowbaseLink)
+            .where(or_(*link_filters))
+            .order_by(KnowbaseLink.sort_order, KnowbaseLink.id)
+        )
+        for link in await _all(db, link_stmt):
+            links.setdefault((link.content_type, link.content_id), []).append(link)
+
+    # Audit rows about the member's content: matched by subquery, so deleted content counts too.
+    owned_targets = [
+        ("post", select(Post.id).where(Post.author_id == uid)),
+        ("thread", select(Thread.id).where(Thread.author_id == uid)),
+        ("reply", select(Reply.id).where(Reply.author_id == uid)),
+        ("comment", select(Comment.id).where(Comment.author_id == uid)),
+        ("attachment", select(Attachment.id).where(Attachment.uploader_id == uid)),
+        ("report", select(Report.id).where(Report.reporter_id == uid)),
+    ]
     audit_stmt = (
         select(AuditLog)
         .where(
             or_(
-                AuditLog.actor_id == user.id,
-                and_(AuditLog.target_type == "user", AuditLog.target_id == user.id),
+                AuditLog.actor_id == uid,
+                and_(AuditLog.target_type == "user", AuditLog.target_id == uid),
+                *(
+                    and_(AuditLog.target_type == kind, AuditLog.target_id.in_(ids))
+                    for kind, ids in owned_targets
+                ),
             )
         )
         .order_by(AuditLog.created_at, AuditLog.id)
     )
+    sessions_stmt = (
+        select(Session).where(Session.user_id == uid).order_by(Session.created_at, Session.id)
+    )
     return UserDataExport(
         user=loaded,
-        sessions=list((await db.scalars(sessions_stmt)).all()),
-        audit_entries=list((await db.scalars(audit_stmt)).all()),
+        sessions=await _all(db, sessions_stmt),
+        audit_entries=await _all(db, audit_stmt),
+        posts=posts,
+        threads=threads,
+        replies=replies,
+        comments=comments,
+        attachments=attachments,
+        reports=reports,
+        knowbase_links=links,
     )
 
 
