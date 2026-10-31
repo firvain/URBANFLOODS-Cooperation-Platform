@@ -5,7 +5,9 @@ import { extractLink, waitForEmailTo } from './helpers/mailpit'
 
 /**
  * M1 auth flow against the real dev stack: register → Mailpit → verify → account → change
- * password → log out → log in → partnership (/partners → /about#partnership); plus wrong-password and forgot-password flows.
+ * password → change the email address (link sent to the new address) → log out → log in with
+ * the new address → partnership (/partners → /about#partnership); plus wrong-password and
+ * forgot-password flows.
  * The tests share one page (and so one session cookie) and run in order.
  */
 test.describe.configure({ mode: 'serial' })
@@ -15,6 +17,10 @@ const VERIFY_SUBJECT = 'Verify your email address'
 const RESET_SUBJECT = 'Reset your password'
 
 const email = uniqueEmail('auth')
+/** The address test 3b switches the account to. */
+const newEmail = uniqueEmail('auth-new')
+/** The account's address: `email` until test 3b confirms the change, `newEmail` after. */
+let accountEmail = email
 const displayName = `E2E Tester ${Date.now().toString(36)}`
 const firstPassword = strongPassword()
 const secondPassword = strongPassword()
@@ -90,10 +96,11 @@ test('3. account page: change the password', async () => {
   await expect(page).toHaveURL(/\/account$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Account' })).toBeVisible()
 
-  await page.getByRole('tab', { name: 'Password' }).click()
+  await page.getByRole('tab', { name: 'Password & email' }).click()
   await expect(page).toHaveURL(/\/account\?tab=password$/)
 
-  const panel = page.getByRole('tabpanel')
+  // The tab has two sections (password, email address), each with a "Current password" field.
+  const panel = page.getByRole('region', { name: 'Password', exact: true })
   await panel.getByLabel('Current password').fill(firstPassword)
   await panel.getByLabel('New password', { exact: true }).fill(secondPassword)
   await panel.getByLabel('Confirm new password').fill(secondPassword)
@@ -101,6 +108,38 @@ test('3. account page: change the password', async () => {
 
   await expect(panel.getByText('Password changed')).toBeVisible()
   await expect(panel.getByLabel('Current password')).toHaveValue('')
+})
+
+test('3b. account page: change the email address through the confirmation link', async () => {
+  await page.goto('/account?tab=password')
+  const section = page.getByRole('region', { name: 'Email address' })
+  await expect(section.getByText(email, { exact: true })).toBeVisible()
+
+  const requestedAt = new Date()
+  await section.getByLabel('New email address').fill(newEmail)
+  await section.getByLabel('Current password').fill(secondPassword)
+  await section.getByRole('button', { name: 'Send confirmation link' }).click()
+  await expect(
+    section.getByText(`We sent a confirmation link to ${newEmail}.`, { exact: false }),
+  ).toBeVisible()
+
+  // The link goes to the new address; the account keeps the old one until it is opened.
+  const message = await waitForEmailTo(newEmail, { since: requestedAt })
+  await page.goto(extractLink(message, '/confirm-email?token='))
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Confirm your new email address' }),
+  ).toBeVisible()
+  await expect(page.getByText('Your email address has been changed')).toBeVisible()
+  await expect(page.getByText(`Your account now uses ${newEmail}.`)).toBeVisible()
+  accountEmail = newEmail
+
+  // The session survives the change (the page offers the account, not the login), and a reload
+  // (a fresh GET /auth/me) shows the new address.
+  await expect(page.getByRole('link', { name: 'Go to your account' })).toBeVisible()
+  await page.goto('/account?tab=password')
+  await expect(
+    page.getByRole('region', { name: 'Email address' }).getByText(newEmail, { exact: true }),
+  ).toBeVisible()
 })
 
 test('4. log out via the user menu', async () => {
@@ -114,7 +153,7 @@ test('4. log out via the user menu', async () => {
 })
 
 test('5. log in with the new password', async () => {
-  await login(page, email, secondPassword)
+  await login(page, accountEmail, secondPassword)
 
   await page.waitForURL('/')
   await expect(userMenu(page)).toBeVisible()
@@ -139,7 +178,7 @@ test('6. /partners opens the partnership section of About with the live organisa
 test('7. a wrong password shows the inline invalid-credentials error', async ({ browser }) => {
   const guest = await freshPage(browser)
   try {
-    await login(guest, email, `${secondPassword}-wrong`)
+    await login(guest, accountEmail, `${secondPassword}-wrong`)
 
     await expect(
       guest.getByRole('alert').filter({ hasText: 'Incorrect email or password.' }),
@@ -161,11 +200,11 @@ test('8. forgot password: email link → new password → logged in', async ({ b
     ).toBeVisible()
 
     const requestedAt = new Date()
-    await guest.getByLabel('Email').fill(email)
+    await guest.getByLabel('Email').fill(accountEmail)
     await guest.getByRole('button', { name: 'Send reset link' }).click()
     await expect(guest.getByText(/If an account exists for that address/)).toBeVisible()
 
-    const message = await waitForEmailTo(email, {
+    const message = await waitForEmailTo(accountEmail, {
       subjectIncludes: RESET_SUBJECT,
       since: requestedAt,
     })

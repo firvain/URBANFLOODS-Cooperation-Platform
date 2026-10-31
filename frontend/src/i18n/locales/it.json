@@ -655,6 +655,16 @@
       "resend": "Invia un nuovo link",
       "redirectingProfile": "Ti stiamo portando alla home page… Puoi aggiungere le tue aree di competenza dal tuo account in qualsiasi momento."
     },
+    "confirmEmail": {
+      "title": "Conferma il tuo nuovo indirizzo email",
+      "confirming": "Conferma del tuo nuovo indirizzo email in corso…",
+      "success": "Il tuo indirizzo email è stato modificato",
+      "nowUsing": "Il tuo account ora usa {email}.",
+      "failed": "Non è stato possibile modificare il tuo indirizzo email",
+      "retryHint": "Accedi e richiedi di nuovo la modifica dalla pagina del tuo account.",
+      "goToAccount": "Vai al tuo account",
+      "signIn": "Accedi"
+    },
     "forgot": {
       "title": "Password dimenticata",
       "intro": "Inserisci l'indirizzo email del tuo account e ti invieremo un link per scegliere una nuova password.",
@@ -687,7 +697,7 @@
     "intro": "Gestisci il tuo profilo, la password, i dispositivi su cui hai effettuato l'accesso, le notifiche via email e i tuoi dati.",
     "tabs": {
       "profile": "Profilo",
-      "password": "Password",
+      "password": "Password ed email",
       "sessions": "Sessioni",
       "notifications": "Notifiche",
       "uploads": "Caricamenti",
@@ -711,11 +721,21 @@
       "noChanges": "Non ci sono modifiche da salvare."
     },
     "password": {
+      "title": "Password",
       "intro": "Cambiando la password verrai disconnesso da tutti gli altri dispositivi.",
       "current": "Password attuale",
       "submit": "Cambia la password",
       "changed": "Password modificata",
       "wrongCurrent": "La password attuale non è corretta."
+    },
+    "email": {
+      "title": "Indirizzo email",
+      "intro": "Inviamo un link di conferma al nuovo indirizzo. Il tuo indirizzo cambia solo quando lo apri.",
+      "current": "Indirizzo attuale:",
+      "newEmail": "Nuovo indirizzo email",
+      "submit": "Invia il link di conferma",
+      "sent": "Abbiamo inviato un link di conferma a {email}. Aprilo per passare il tuo account al nuovo indirizzo.",
+      "same": "Questo è già l'indirizzo del tuo account."
     },
     "sessions": {
       "intro": "I dispositivi su cui hai effettuato l'accesso. Disconnetti quelli che non riconosci.",

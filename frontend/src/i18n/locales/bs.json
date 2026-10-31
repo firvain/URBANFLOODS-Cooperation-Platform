@@ -655,6 +655,16 @@
       "resend": "Pošalji novi link",
       "redirectingProfile": "Preusmjeravamo Vas na početnu stranicu… Oblasti stručnosti možete u bilo kojem trenutku dodati u svom računu."
     },
+    "confirmEmail": {
+      "title": "Potvrdite svoju novu e-mail adresu",
+      "confirming": "Potvrđivanje Vaše nove e-mail adrese…",
+      "success": "Vaša e-mail adresa je promijenjena",
+      "nowUsing": "Vaš račun sada koristi adresu {email}.",
+      "failed": "Nismo mogli promijeniti Vašu e-mail adresu",
+      "retryHint": "Prijavite se i ponovo zatražite promjenu na stranici svog računa.",
+      "goToAccount": "Idi na svoj račun",
+      "signIn": "Prijava"
+    },
     "forgot": {
       "title": "Zaboravljena lozinka",
       "intro": "Unesite e-mail adresu svog računa i poslat ćemo Vam link za odabir nove lozinke.",
@@ -687,7 +697,7 @@
     "intro": "Upravljajte svojim profilom, lozinkom, uređajima na kojima ste prijavljeni, e-mail obavještenjima i svojim podacima.",
     "tabs": {
       "profile": "Profil",
-      "password": "Lozinka",
+      "password": "Lozinka i e-mail",
       "sessions": "Sesije",
       "notifications": "Obavještenja",
       "uploads": "Otpremljene slike",
@@ -711,11 +721,21 @@
       "noChanges": "Nema izmjena za čuvanje."
     },
     "password": {
+      "title": "Lozinka",
       "intro": "Promjenom lozinke bit ćete odjavljeni na svim ostalim uređajima.",
       "current": "Trenutna lozinka",
       "submit": "Promijeni lozinku",
       "changed": "Lozinka je promijenjena",
       "wrongCurrent": "Trenutna lozinka nije ispravna."
+    },
+    "email": {
+      "title": "E-mail adresa",
+      "intro": "Na novu adresu šaljemo link za potvrdu. Vaša adresa se mijenja tek kada ga otvorite.",
+      "current": "Trenutna adresa:",
+      "newEmail": "Nova e-mail adresa",
+      "submit": "Pošalji link za potvrdu",
+      "sent": "Poslali smo link za potvrdu na {email}. Otvorite ga da biste svoj račun prebacili na novu adresu.",
+      "same": "Ovo je već adresa Vašeg računa."
     },
     "sessions": {
       "intro": "Uređaji na kojima ste prijavljeni. Odjavite sve koje ne prepoznajete.",

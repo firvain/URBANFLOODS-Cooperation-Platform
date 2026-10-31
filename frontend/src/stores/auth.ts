@@ -114,6 +114,21 @@ export const useAuthStore = defineStore('auth', () => {
     return authService.changePassword(currentPassword, newPassword)
   }
 
+  function requestEmailChange(newEmail: string, currentPassword: string) {
+    return authService.requestEmailChange(newEmail, currentPassword)
+  }
+
+  /**
+   * Confirm an email change from the emailed link. The endpoint needs no session, so its answer
+   * replaces the store's user only when that same account is signed in here; otherwise the store
+   * stays as it is (taking the answer would fake a session).
+   */
+  async function confirmEmailChange(token: string): Promise<UserMe> {
+    const updated = await authService.confirmEmailChange(token)
+    if (isAuthenticated.value && user.value!.id === updated.id) setUser(updated)
+    return updated
+  }
+
   /** Delete the account (throws the `ApiError`); on success the user is signed out here too. */
   async function deleteAccount(currentPassword: string): Promise<void> {
     await authService.deleteMe(currentPassword)
@@ -152,6 +167,8 @@ export const useAuthStore = defineStore('auth', () => {
     resetPassword,
     updateProfile,
     changePassword,
+    requestEmailChange,
+    confirmEmailChange,
     deleteAccount,
     clear,
   }

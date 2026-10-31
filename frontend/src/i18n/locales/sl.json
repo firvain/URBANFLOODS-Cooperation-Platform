@@ -655,6 +655,16 @@
       "resend": "Pošlji novo povezavo",
       "redirectingProfile": "Preusmerjanje na domačo stran … Svoja strokovna področja lahko kadar koli dodate v svojem računu."
     },
+    "confirmEmail": {
+      "title": "Potrdite svoj novi e-poštni naslov",
+      "confirming": "Potrjevanje novega e-poštnega naslova …",
+      "success": "Vaš e-poštni naslov je spremenjen",
+      "nowUsing": "Vaš račun zdaj uporablja naslov {email}.",
+      "failed": "Vašega e-poštnega naslova ni bilo mogoče spremeniti",
+      "retryHint": "Prijavite se in spremembo znova zahtevajte na strani svojega računa.",
+      "goToAccount": "Pojdi v svoj račun",
+      "signIn": "Prijava"
+    },
     "forgot": {
       "title": "Pozabljeno geslo",
       "intro": "Vnesite e-poštni naslov svojega računa in poslali vam bomo povezavo za izbiro novega gesla.",
@@ -687,7 +697,7 @@
     "intro": "Upravljajte svoj profil, geslo, naprave, na katerih ste prijavljeni, e-poštna obvestila in svoje podatke.",
     "tabs": {
       "profile": "Profil",
-      "password": "Geslo",
+      "password": "Geslo in e-pošta",
       "sessions": "Seje",
       "notifications": "Obvestila",
       "uploads": "Naložene slike",
@@ -711,11 +721,21 @@
       "noChanges": "Ni sprememb za shranjevanje."
     },
     "password": {
+      "title": "Geslo",
       "intro": "Ko spremenite geslo, boste odjavljeni na vseh drugih napravah.",
       "current": "Trenutno geslo",
       "submit": "Spremeni geslo",
       "changed": "Geslo je spremenjeno",
       "wrongCurrent": "Trenutno geslo ni pravilno."
+    },
+    "email": {
+      "title": "E-poštni naslov",
+      "intro": "Na novi naslov pošljemo povezavo za potrditev. Vaš naslov se spremeni šele, ko jo odprete.",
+      "current": "Trenutni naslov:",
+      "newEmail": "Novi e-poštni naslov",
+      "submit": "Pošlji povezavo za potrditev",
+      "sent": "Na naslov {email} smo poslali povezavo za potrditev. Odprite jo, da svoj račun preklopite na novi naslov.",
+      "same": "To je že naslov vašega računa."
     },
     "sessions": {
       "intro": "Naprave, na katerih ste prijavljeni. Odjavite tiste, ki jih ne prepoznate.",

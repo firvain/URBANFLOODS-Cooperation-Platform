@@ -111,13 +111,13 @@ Targets can be overridden with `E2E_BASE_URL`, `E2E_API_URL`, `E2E_MAILPIT_URL` 
 
 | Spec | Tests | Verifies |
 |---|---|---|
-| `auth.spec.ts` | 8 | register → verification link read from the Mailpit API → verified and signed in; change password; log out; log in; `/partners` opens the partnership section of About with the live organisations; wrong-password error; forgot/reset password via email |
+| `auth.spec.ts` | 9 | register → verification link read from the Mailpit API → verified and signed in; change password; change the email address through the link sent to the new address; log out; log in with the new address; `/partners` opens the partnership section of About with the live organisations; wrong-password error; forgot/reset password via email |
 | `blog.spec.ts` | 7 | public list, filters and post page with KNOWBASE links; trusted member writes a post with formatting, tags, cover image and a KNOWBASE link, edits and deletes it; untrusted member's post stays pending and private; unsaved-changes guard |
 | `forum.spec.ts` | 8 | reply notification email; trusted member's thread published; reply, nested reply, edit, delete; admin pin/lock; untrusted member's thread pending; comments on posts; notification preferences persist |
 | `moderation.spec.ts` | 8 | first post pending → approve → author trusted; reject with reason in the audit log; three distinct reports auto-hide, dismiss and unhide; dashboard numbers, KNOWBASE state and CSV download; digest email via `docker compose exec backend python -m app.cli digest --force` (skipped when the compose backend is not running); trust toggle and role-menu gating; Moderate menu on a post: hide with a reason, unhide, delete permanently; Uploads tab: an image used by a post cannot be deleted, purging the post removes it |
 | `a11y.spec.ts` | 4 | axe WCAG 2.1 AA, one `h1` and `lang="en"` on 23 pages: 11 public pages, the forum list and a thread, 3 member pages (account, network, editor) and the 7 admin pages; skipped unless `E2E_A11Y=1` |
 
-A full `npm run e2e` therefore runs 31 tests (auth 8, blog 7, forum 8, moderation 8) and skips the
+A full `npm run e2e` therefore runs 32 tests (auth 9, blog 7, forum 8, moderation 8) and skips the
 4 accessibility tests.
 
 Each spec creates titles with a per-run suffix and cleans up after itself (deletes what it
@@ -134,6 +134,7 @@ The dev backend enforces the real limits, keyed by client IP, in memory:
 | `auth.password_forgot` | 3 per hour | 1 (auth) |
 | `auth.password_reset` | 10 per hour | 1 (auth) |
 | `auth.me_password` | 10 per hour | 1 (auth) |
+| `auth.me_email` | 5 per hour | 1 (auth) |
 
 Counted from the specs: auth logs in through the form in tests 5 and 7 (the wrong password counts
 too; the verification link and the password reset sign in without `auth.login`); blog logs in the

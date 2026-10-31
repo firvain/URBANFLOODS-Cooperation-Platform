@@ -655,6 +655,16 @@
       "resend": "Dërgo një lidhje të re",
       "redirectingProfile": "Po ju drejtojmë te faqja kryesore… Mund të shtoni fushat tuaja të ekspertizës nga llogaria juaj në çdo kohë."
     },
+    "confirmEmail": {
+      "title": "Konfirmoni adresën tuaj të re të email-it",
+      "confirming": "Po konfirmohet adresa juaj e re e email-it…",
+      "success": "Adresa juaj e email-it u ndryshua",
+      "nowUsing": "Llogaria juaj tani përdor {email}.",
+      "failed": "Nuk mundëm ta ndryshonim adresën tuaj të email-it",
+      "retryHint": "Hyni në llogari dhe kërkojeni sërish ndryshimin nga faqja e llogarisë suaj.",
+      "goToAccount": "Shko te llogaria juaj",
+      "signIn": "Hyr"
+    },
     "forgot": {
       "title": "Keni harruar fjalëkalimin",
       "intro": "Shkruani adresën e email-it të llogarisë suaj dhe do t'ju dërgojmë një lidhje për të zgjedhur një fjalëkalim të ri.",
@@ -687,7 +697,7 @@
     "intro": "Menaxhoni profilin, fjalëkalimin, pajisjet ku keni hyrë, njoftimet me email dhe të dhënat tuaja.",
     "tabs": {
       "profile": "Profili",
-      "password": "Fjalëkalimi",
+      "password": "Fjalëkalimi dhe email-i",
       "sessions": "Sesionet",
       "notifications": "Njoftimet",
       "uploads": "Ngarkimet",
@@ -711,11 +721,21 @@
       "noChanges": "Nuk ka ndryshime për t'u ruajtur."
     },
     "password": {
+      "title": "Fjalëkalimi",
       "intro": "Ndryshimi i fjalëkalimit ju nxjerr nga llogaria në të gjitha pajisjet e tjera.",
       "current": "Fjalëkalimi aktual",
       "submit": "Ndrysho fjalëkalimin",
       "changed": "Fjalëkalimi u ndryshua",
       "wrongCurrent": "Fjalëkalimi aktual është i pasaktë."
+    },
+    "email": {
+      "title": "Adresa e email-it",
+      "intro": "Një lidhje konfirmimi dërgohet në adresën e re. Adresa juaj ndryshon vetëm kur e hapni atë.",
+      "current": "Adresa aktuale:",
+      "newEmail": "Adresa e re e email-it",
+      "submit": "Dërgo lidhjen e konfirmimit",
+      "sent": "Dërguam një lidhje konfirmimi në {email}. Hapeni për ta kaluar llogarinë tuaj në adresën e re.",
+      "same": "Kjo është tashmë adresa e llogarisë suaj."
     },
     "sessions": {
       "intro": "Pajisjet ku keni hyrë. Dilni nga ato që nuk i njihni.",

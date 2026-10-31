@@ -228,6 +228,58 @@ describe('other actions', () => {
   })
 })
 
+describe('email change', () => {
+  it('requestEmailChange posts the new address and the password', async () => {
+    const fetchMock = mockApi({
+      'POST /api/v1/auth/me/email': reply(202, { code: 'auth.email_change_sent', message: 'ok' }),
+    })
+    const auth = useAuthStore()
+    const result = await auth.requestEmailChange('new@example.org', 'pw 1234567890')
+    expect(result.code).toBe('auth.email_change_sent')
+    expect(callsTo(fetchMock, 'POST /api/v1/auth/me/email')[0]!.body).toEqual({
+      new_email: 'new@example.org',
+      current_password: 'pw 1234567890',
+    })
+  })
+
+  it('confirmEmailChange replaces the signed-in user when it is the same account', async () => {
+    const fetchMock = mockApi({
+      'GET /api/v1/auth/me': reply(200, makeUser({ id: 1 })),
+      'POST /api/v1/auth/email/confirm': reply(200, makeUser({ id: 1, email: 'new@example.org' })),
+    })
+    const auth = useAuthStore()
+    await auth.fetchMe()
+    const result = await auth.confirmEmailChange('tok')
+    expect(callsTo(fetchMock, 'POST /api/v1/auth/email/confirm')[0]!.body).toEqual({ token: 'tok' })
+    expect(result.email).toBe('new@example.org')
+    expect(auth.user?.email).toBe('new@example.org')
+  })
+
+  it('confirmEmailChange does not sign anyone in', async () => {
+    mockApi({
+      'POST /api/v1/auth/email/confirm': reply(200, makeUser({ email: 'new@example.org' })),
+    })
+    const auth = useAuthStore()
+    await auth.fetchMe()
+    const result = await auth.confirmEmailChange('tok')
+    expect(result.email).toBe('new@example.org')
+    expect(auth.user).toBeNull()
+    expect(auth.isAuthenticated).toBe(false)
+  })
+
+  it('confirmEmailChange leaves a different signed-in user alone', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': reply(200, makeUser({ id: 2, email: 'other@example.org' })),
+      'POST /api/v1/auth/email/confirm': reply(200, makeUser({ id: 1, email: 'new@example.org' })),
+    })
+    const auth = useAuthStore()
+    await auth.fetchMe()
+    await auth.confirmEmailChange('tok')
+    expect(auth.user?.id).toBe(2)
+    expect(auth.user?.email).toBe('other@example.org')
+  })
+})
+
 describe('session expiry hook', () => {
   it('a 401 from another endpoint clears the store', async () => {
     mockApi({

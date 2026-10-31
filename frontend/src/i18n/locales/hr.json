@@ -655,6 +655,16 @@
       "resend": "Pošalji novu poveznicu",
       "redirectingProfile": "Preusmjeravanje na početnu stranicu… Područja stručnosti možete u bilo kojem trenutku dodati u svom korisničkom računu."
     },
+    "confirmEmail": {
+      "title": "Potvrda nove adrese e-pošte",
+      "confirming": "Potvrđivanje Vaše nove adrese e-pošte…",
+      "success": "Vaša je adresa e-pošte promijenjena",
+      "nowUsing": "Vaš korisnički račun sada koristi adresu {email}.",
+      "failed": "Nismo uspjeli promijeniti Vašu adresu e-pošte",
+      "retryHint": "Prijavite se i ponovno zatražite promjenu na stranici svog korisničkog računa.",
+      "goToAccount": "Idi na svoj korisnički račun",
+      "signIn": "Prijava"
+    },
     "forgot": {
       "title": "Zaboravljena lozinka",
       "intro": "Unesite adresu e-pošte svojeg korisničkog računa i poslat ćemo Vam poveznicu za odabir nove lozinke.",
@@ -687,7 +697,7 @@
     "intro": "Upravljajte svojim profilom, lozinkom, uređajima na kojima ste prijavljeni, obavijestima e-poštom i svojim podacima.",
     "tabs": {
       "profile": "Profil",
-      "password": "Lozinka",
+      "password": "Lozinka i e-pošta",
       "sessions": "Sesije",
       "notifications": "Obavijesti",
       "uploads": "Prenesene slike",
@@ -711,11 +721,21 @@
       "noChanges": "Nema promjena za spremanje."
     },
     "password": {
+      "title": "Lozinka",
       "intro": "Promjenom lozinke odjavit ćete se na svim ostalim uređajima.",
       "current": "Trenutačna lozinka",
       "submit": "Promijeni lozinku",
       "changed": "Lozinka je promijenjena",
       "wrongCurrent": "Trenutačna lozinka nije ispravna."
+    },
+    "email": {
+      "title": "Adresa e-pošte",
+      "intro": "Na novu adresu šaljemo poveznicu za potvrdu. Vaša se adresa mijenja tek kada je otvorite.",
+      "current": "Trenutačna adresa:",
+      "newEmail": "Nova adresa e-pošte",
+      "submit": "Pošalji poveznicu za potvrdu",
+      "sent": "Poslali smo poveznicu za potvrdu na {email}. Otvorite je kako biste svoj korisnički račun prebacili na novu adresu.",
+      "same": "To je već adresa Vašeg korisničkog računa."
     },
     "sessions": {
       "intro": "Uređaji na kojima ste prijavljeni. Odjavite svaki uređaj koji ne prepoznajete.",

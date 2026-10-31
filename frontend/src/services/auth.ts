@@ -155,6 +155,20 @@ export const authService = {
       body: { current_password: currentPassword, new_password: newPassword },
     }),
 
+  /**
+   * 202; a confirmation link goes to the new address (the same 202 when it belongs to someone
+   * else). 400 `auth.invalid_credentials` for a wrong password, 422 `new_email: auth.email_same`.
+   */
+  requestEmailChange: (newEmail: string, currentPassword: string) =>
+    api<AcceptedResponse>(`${BASE}/me/email`, {
+      method: 'POST',
+      body: { new_email: newEmail, current_password: currentPassword },
+    }),
+
+  /** The emailed link: switches the account to the new address. No session needed or created. */
+  confirmEmailChange: (token: string) =>
+    api<UserMe>(`${BASE}/email/confirm`, { method: 'POST', body: { token } }),
+
   listSessions: () => api<SessionList>(`${BASE}/me/sessions`),
 
   revokeSession: (id: string) =>

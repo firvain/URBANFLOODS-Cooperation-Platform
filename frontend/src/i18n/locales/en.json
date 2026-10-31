@@ -655,6 +655,16 @@
       "resend": "Send a new link",
       "redirectingProfile": "Taking you to the home page… You can add your areas of expertise from your account at any time."
     },
+    "confirmEmail": {
+      "title": "Confirm your new email address",
+      "confirming": "Confirming your new email address…",
+      "success": "Your email address has been changed",
+      "nowUsing": "Your account now uses {email}.",
+      "failed": "We could not change your email address",
+      "retryHint": "Sign in and request the change again from your account page.",
+      "goToAccount": "Go to your account",
+      "signIn": "Log in"
+    },
     "forgot": {
       "title": "Forgot your password",
       "intro": "Enter the email address of your account and we will send you a link to choose a new password.",
@@ -687,7 +697,7 @@
     "intro": "Manage your profile, your password, the devices where you are signed in, your email notifications and your data.",
     "tabs": {
       "profile": "Profile",
-      "password": "Password",
+      "password": "Password & email",
       "sessions": "Sessions",
       "notifications": "Notifications",
       "uploads": "Uploads",
@@ -711,11 +721,21 @@
       "noChanges": "There are no changes to save."
     },
     "password": {
+      "title": "Password",
       "intro": "Changing your password signs you out on all other devices.",
       "current": "Current password",
       "submit": "Change password",
       "changed": "Password changed",
       "wrongCurrent": "The current password is incorrect."
+    },
+    "email": {
+      "title": "Email address",
+      "intro": "A confirmation link is sent to the new address. Your address changes only when you open it.",
+      "current": "Current address:",
+      "newEmail": "New email address",
+      "submit": "Send confirmation link",
+      "sent": "We sent a confirmation link to {email}. Open it to switch your account to the new address.",
+      "same": "This is already the address of your account."
     },
     "sessions": {
       "intro": "The devices where you are signed in. Sign out any you do not recognise.",

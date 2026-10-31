@@ -197,6 +197,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'auth.verify.title' },
   },
   {
+    path: '/confirm-email',
+    name: 'confirm-email',
+    component: () => import('@/views/ConfirmEmailView.vue'),
+    meta: { title: 'auth.confirmEmail.title' },
+  },
+  {
     path: '/forgot-password',
     name: 'forgot-password',
     component: () => import('@/views/ForgotPasswordView.vue'),

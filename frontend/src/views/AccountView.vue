@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import type { TabsItem } from '@nuxt/ui'
 
 import DataPanel from '@/components/account/DataPanel.vue'
+import EmailForm from '@/components/account/EmailForm.vue'
 import NotificationsForm from '@/components/account/NotificationsForm.vue'
 import PasswordForm from '@/components/account/PasswordForm.vue'
 import ProfileForm from '@/components/account/ProfileForm.vue'
@@ -69,7 +70,21 @@ const activeTab = computed<string>({
         <ProfileForm />
       </template>
       <template #password>
-        <PasswordForm />
+        <div class="space-y-8">
+          <section aria-labelledby="account-password-heading" class="space-y-3">
+            <h2 id="account-password-heading" class="text-lg font-semibold text-highlighted">
+              {{ t('account.password.title') }}
+            </h2>
+            <PasswordForm />
+          </section>
+          <USeparator />
+          <section aria-labelledby="account-email-heading" class="space-y-3">
+            <h2 id="account-email-heading" class="text-lg font-semibold text-highlighted">
+              {{ t('account.email.title') }}
+            </h2>
+            <EmailForm />
+          </section>
+        </div>
       </template>
       <template #sessions>
         <SessionList />

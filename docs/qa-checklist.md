@@ -127,7 +127,7 @@ Run all of them on a clean tree with the seed freshly reset. Expected counts as 
 | Coverage | `cd backend && uv run pytest --cov=app --cov-report=term-missing` | ≥ 80 % on `crud/` and `services/` |
 | Frontend unit | `cd frontend && npm run test` | **1017 passed, 60 files** (re-run 2026-10-31) |
 | Frontend static | `cd frontend && npm run lint:check && npm run type-check && npm run build-only` | clean |
-| E2E | `cd frontend && npx playwright install chromium && npm run e2e` | **31 passed** (auth 8, blog 7, forum 8, moderation 8); the 4 a11y tests skipped |
+| E2E | `cd frontend && npx playwright install chromium && npm run e2e` | **32 passed** (auth 9, blog 7, forum 8, moderation 8); the 4 a11y tests skipped |
 | E2E a11y | `cd frontend && E2E_A11Y=1 npm run e2e -- a11y` | 4 passed, 0 axe violations (23 page scans per PROGRESS 5d) |
 | CI | GitHub Actions on `main` | green |
 
@@ -178,7 +178,7 @@ banned, anonymised, directory-hidden), account deletion in the UI, and anything 
 | V-11 | Switch the language to each of en, el, it, sl, hr, sr, mk, sq, bs | The UI changes at once. sr and mk are in Cyrillic. `<html lang>` follows. The choice survives a reload. Admin texts stay English by design | M-11 |
 | V-12 | Open the open-data URLs: `http://localhost:8000/api/v1/export/posts.json`, `/api/v1/export/threads.json`, `/api/v1/export/posts.csv`, `/api/v1/export/datapackage.json`, `http://localhost:8000/feeds/posts.atom`, `/feeds/threads.atom`, `/sitemap.xml`, `/robots.txt` | JSON and CSV contain published items only (no pending, hidden or deleted; no emails). The data package declares CC BY 4.0. The Atom feeds parse (open them in a feed reader or run them through the W3C validator). The sitemap lists public routes and items, and the partners section of About. The links on `/open-data` point at working URLs in dev [CHECK] | AF-8, M-6 |
 | V-13 | View the page source/head of a post and a thread | `<title>`, description, canonical, og tags, and JSON-LD (`Article` / `DiscussionForumPosting`; `WebSite` with `SearchAction` on home) | M-5 |
-| V-14 | Open `/blog/new`, `/account`, `/admin`, `/admin/users` | The first two go to login with `?next=`. The admin URLs show the 404 page at the same address (they do not confirm that admin pages exist) | AF-1 |
+| V-14 | Open `/blog/new`, `/account`, `/admin`, `/admin/users`; then the admin URLs again as Giulia | Signed out, all four go to login with `?next=`. Signed in as a member, the admin URLs show the 404 page at the same address (they do not confirm that admin pages exist) | AF-1 |
 | V-15 | Open a non-existent URL and a non-existent post slug | Friendly 404 / "not found" pages with one `h1` | AF-7 |
 
 ### 3.2 New member (register with a fresh address)
@@ -317,7 +317,7 @@ For each of en, el, it, sl, hr, sr, mk, sq, bs, at 390 px and 1280 px:
 
 Collect one of each from Mailpit (or a real inbox, section 1.3): verify_email, welcome,
 reset_password, reply_to_thread, reply_to_reply, comment_on_post, content_approved,
-content_rejected, admin_digest (change_email has an API but no UI [CHECK]).
+content_rejected, admin_digest (change_email from Account → Password & email).
 
 - [ ] subject and sender name are correct; `From: noreply@…`, `Reply-To: urbanfloods@uowm.gr`;
 - [ ] every link is absolute, points at `FRONTEND_URL` and works (token links single-use);
@@ -452,7 +452,6 @@ decision or an increment before launch).
 | Orphan-upload and usage detection by substring scan (fine at current scale) | | |
 | Public categories list cached per browser session | | |
 | Home suggested-collaborator cards lack the admin badge | | |
-| Change email has an API but no UI | | |
 | Hover contrast of solid success/warning buttons ~4.1:1 | | |
 | Greek email templates only for two messages; others English | | |
 | Single backend worker (in-memory rate limits, cache, scheduler) | | |
