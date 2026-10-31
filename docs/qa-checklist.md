@@ -55,7 +55,7 @@ docker compose exec -T backend python -m scripts.seed_dev --reset   # wipe demo 
 Seeded content you will need (from `backend/scripts/seed_dev.py`):
 
 - the post "Green roofs and retention basins: what two years of pilot data show" (Giulia), which
-  links to KNOWBASE measures 1 and 2;
+  links to KNOWBASE measures 14 (green roofs) and 17 (detention basins);
 - the post "Reading guide: the Floods Directive and national flood risk management plans" (Resources,
   admin only, Aleksandar), which links to KNOWBASE document 1;
 - a Greek post "Λύσεις βασισμένες στη φύση για την αντιπλημμυρική προστασία της Κοζάνης" (Eleni);
@@ -168,8 +168,8 @@ banned, anonymised, directory-hidden), account deletion in the UI, and anything 
 | V-01 | Open `/` | Hero "URBANFLOODS COOPERATION PLATFORM", the "Project at a Glance" card, cards for Blog, Forum, URBANFLOODS KNOWBASE (links out to knowbase.urbanfloods.app) and URBANFLOODS DSS (links out to https://urbanfloods.finki.ukim.mk/), latest content. Nav: Home · Blog · Forum · KNOWBASE · Network · Unified DSS · About. No suggested-collaborators widget for visitors | AF-4, AF-5, M-2 |
 | V-02 | Open `/about`, then `/partners` | About shows the project facts and the `#partnership` section: lead-partner card, partner tiles, associated partners, logos and flags. `/partners` redirects to `/about#partnership` and scrolls below the sticky header | AF-6 |
 | V-03 | `/blog`: use the category chips, a tag link (`/blog/tag/<slug>`), a category URL (`/blog/category/news`), the search box and pagination | Only published posts appear. Amra's pending post is absent. The filters update the URL and survive a reload. The Events order shows upcoming events | AF-4, M-4 |
-| V-04 | Open the green-roofs post | Body, cover, tags, author card, comments (read only) and KNOWBASE link cards for measures 1 and 2. No comment form; a prompt to sign in instead. Report button absent or asks you to sign in [CHECK] | AF-2, AF-4 |
-| V-05 | Click a KNOWBASE link card → `/knowbase/measures/1`. Check its "Mentioned in" list and "Open in the KNOWBASE". Repeat for `/knowbase/documents/1` (from the Reading guide post) | The item page renders the proxied measure/document fields. "Mentioned in" lists the platform posts that link to it. "Open in the KNOWBASE" goes to knowbase.urbanfloods.app. `/knowbase/measures/999999` shows "Measure not found" with a hint | AF-2, AF-3 |
+| V-04 | Open the green-roofs post | Body, cover, tags, author card, comments (read only) and KNOWBASE link cards for measures 14 and 17. No comment form; a prompt to sign in instead. Report button absent or asks you to sign in [CHECK] | AF-2, AF-4 |
+| V-05 | Click a KNOWBASE link card → `/knowbase/measures/14`. Check its "Mentioned in" list and "Open in the KNOWBASE". Repeat for `/knowbase/documents/1` (from the Reading guide post) | The item page renders the proxied measure/document fields. "Mentioned in" lists the platform posts that link to it. "Open in the KNOWBASE" goes to knowbase.urbanfloods.app. `/knowbase/measures/999999` shows "Measure not found" with a hint | AF-2, AF-3 |
 | V-06 | Open the Greek post | The article has `lang="el"` (check in devtools). The rest of the UI stays in the current locale | AF-11 |
 | V-07 | `/forum`, a category (`/forum/c/general`), the pinned thread, a thread with a nested reply | The pinned thread is first. Replies nest one level. No reply form for visitors | AF-5 |
 | V-08 | `/search?q=flood`; try a typo in a title word (e.g. `drainige`); filter posts / threads | Results with highlighted `<mark>` snippets. The typo still finds the title. The result count is announced. The filters are in the URL | M-12 |
@@ -381,7 +381,7 @@ curl -s -c /tmp/uf.jar -H 'Content-Type: application/json' -H 'X-Requested-With:
 
   Run `docker compose up -d backend`. This also empties the cache. Then check:
   - [ ] posts with KNOWBASE links still render, using the stored link titles;
-  - [ ] `/knowbase/measures/1` shows a load error with "Try again", not a blank page or a crash;
+  - [ ] `/knowbase/measures/14` shows a load error with "Try again", not a blank page or a crash;
   - [ ] saving a post with a new KNOWBASE link shows "The KNOWBASE cannot be reached…";
   - [ ] the admin dashboard shows the KNOWBASE as not reachable, with the last error;
   - [ ] the rest of the site works and is not slowed. With the timeout address, only

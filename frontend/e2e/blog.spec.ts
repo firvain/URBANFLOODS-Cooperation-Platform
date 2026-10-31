@@ -44,8 +44,8 @@ const GREEN_ROOFS = {
   slug: 'green-roofs-and-retention-basins-what-two-years-of-pilot-data-show',
   title: 'Green roofs and retention basins: what two years of pilot data show',
 }
-/** The live KNOWBASE title of measure 2, linked from the green-roofs post. */
-const MEASURE_2_TITLE = 'floodplain reconnection'
+/** The live KNOWBASE title of measure 14, linked from the green-roofs post. */
+const MEASURE_14_TITLE = 'green roofs'
 
 const RUN = `${Date.now().toString(36)}`
 const memberTitle = `E2E trusted post ${RUN}`
@@ -268,9 +268,9 @@ test('2. anonymous: a post shows its content, and its KNOWBASE links lead back t
   await expect(anon.getByRole('heading', { level: 2, name: 'From the KNOWBASE' })).toBeVisible()
   const linkCards = anon.getByTestId('kb-link-card')
   await expect(linkCards).toHaveCount(2)
-  await linkCards.getByRole('link', { name: MEASURE_2_TITLE }).click()
+  await linkCards.getByRole('link', { name: MEASURE_14_TITLE }).click()
 
-  await expect(anon).toHaveURL('/knowbase/measures/2')
+  await expect(anon).toHaveURL('/knowbase/measures/14')
   const mentions = anon.getByTestId('kb-mentions')
   await expect(mentions.getByRole('heading', { level: 2, name: 'Mentioned in' })).toBeVisible()
   await mentions.getByRole('link', { name: GREEN_ROOFS.title }).click()

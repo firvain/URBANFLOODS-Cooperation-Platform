@@ -296,7 +296,7 @@ data</em>.</p>
         category="best-practices",
         title="Green roofs and retention basins: what two years of pilot data show",
         tags=("NBS", "urban-drainage"),
-        knowbase_links=(("measure", 1), ("measure", 2)),
+        knowbase_links=(("measure", 14), ("measure", 17)),
         body_html="""
 <p>Two years ago the Sarajevo pilot, run by our partners at the Hydro-Engineering Institute,
 combined green roofs on public buildings with a small retention basin at the lowest point of the
