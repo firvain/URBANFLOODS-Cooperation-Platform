@@ -356,7 +356,7 @@ curl -s -c /tmp/uf.jar -H 'Content-Type: application/json' -H 'X-Requested-With:
   email (except opted-in), role or IP. The backend log (`docker logs urbanfloods-cooperation-backend`)
   has no passwords, tokens or bodies. With `EMAIL_ENABLED=false` the `email.not_sent` line has a
   keyed hash, not the address (1i-b).
-- [ ] X-S8 Production-only headers (HSTS, CSP allowing `challenges.cloudflare.com` and KNOWBASE
+- [x] X-S8 Production-only headers (HSTS, CSP allowing `challenges.cloudflare.com` and KNOWBASE
   images, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy) and Turnstile come from M6
   nginx and env. Check them after deployment with `curl -sI https://cooperation.urbanfloods.app`.
 
@@ -511,8 +511,9 @@ only with explicit permission for each step. The KNOWBASE is never touched.
   `VITE_API_BASE_URL=""`, `VITE_DSS_URL`.
 - [ ] Turnstile site created for `cooperation.urbanfloods.app` in Cloudflare.
 - [ ] Brevo: domain still authenticated (DKIM, DMARC); the existing key is reused by decision (2026-10-31).
-- [ ] `scripts/backup.sh`: pg_dump + uploads archive, 14-day retention, user crontab, **one test
-  restore done**.
+- [x] `scripts/backup.sh`: pg_dump + uploads archive, 14-day retention, user crontab (03:15 nightly), **one test
+  restore done** (2026-10-31: dump restored into a throwaway database, 21 tables, 22 organisations,
+  migration 0008, identical to the live database; dropped afterwards).
 - [ ] `deploy.sh` reviewed; migrations run in the backend entrypoint.
 
 **Host (6b; the owner runs the sudo steps)**
