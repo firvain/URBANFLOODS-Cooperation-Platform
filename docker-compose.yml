@@ -68,10 +68,14 @@ services:
       FRONTEND_URL: http://localhost:5173
       COOKIE_SECURE: "false"
       EMAIL_ENABLED: "true"
-      SMTP_HOST: mailpit
-      SMTP_PORT: 1025
-      SMTP_USER: ""
-      SMTP_PASSWORD: ""
+      # Mailpit by default; set SMTP_* in .env to send real mail from the dev stack (e.g. a Brevo
+      # SMTP key) and remove them again afterwards.
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@cooperation.localhost}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-URBANFLOODS Cooperation Platform (dev)}
       TURNSTILE_ENABLED: "false"
       RATE_LIMIT_ENABLED: "true"
       ENABLE_SCHEDULER: "false"
