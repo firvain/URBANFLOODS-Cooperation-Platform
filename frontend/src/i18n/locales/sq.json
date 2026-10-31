@@ -48,5 +48,9 @@
   },
   "knowbase": {
     "title": "Biblioteka KNOWBASE"
+  },
+  "admin": {
+    "title": "Administrimi",
+    "menu": "Administrimi"
   }
 }

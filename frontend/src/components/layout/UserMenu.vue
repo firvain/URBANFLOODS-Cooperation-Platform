@@ -9,8 +9,8 @@ import { useAuthStore } from '@/stores/auth'
 
 /**
  * Header account controls. Logged out: "Log in" / "Register". Logged in: a dropdown with the
- * display name, "Account" and "Log out" (or, with `mobile`, the same actions as plain buttons for
- * the header's mobile menu).
+ * display name, "Account", "Admin" (administrators only) and "Log out" (or, with `mobile`, the
+ * same actions as plain buttons for the header's mobile menu).
  */
 defineProps<{ mobile?: boolean }>()
 
@@ -37,7 +37,10 @@ async function logout() {
 
 const items = computed<DropdownMenuItem[][]>(() => [
   [{ type: 'label', label: signedInAs.value }],
-  [{ label: t('nav.account'), icon: 'i-lucide-user-round', to: '/account' }],
+  [
+    { label: t('nav.account'), icon: 'i-lucide-user-round', to: '/account' },
+    ...(auth.isAdmin ? [{ label: t('admin.menu'), icon: 'i-lucide-shield', to: '/admin' }] : []),
+  ],
   [{ label: t('auth.logout'), icon: 'i-lucide-log-out', onSelect: logout }],
 ])
 </script>
@@ -73,6 +76,17 @@ const items = computed<DropdownMenuItem[][]>(() => [
       class="justify-start"
     >
       {{ t('nav.account') }}
+    </UButton>
+    <UButton
+      v-if="auth.isAdmin"
+      to="/admin"
+      color="neutral"
+      variant="ghost"
+      icon="i-lucide-shield"
+      block
+      class="justify-start"
+    >
+      {{ t('admin.menu') }}
     </UButton>
     <UButton
       color="neutral"

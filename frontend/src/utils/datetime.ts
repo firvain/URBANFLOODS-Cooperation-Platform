@@ -69,3 +69,8 @@ export function formatRelative(iso: string, locale: string, now: number = Date.n
   }
   return format.format(Math.round(value), 'year')
 }
+
+/** `date` as an `<input type="date">` value (`YYYY-MM-DD`) in local time. */
+export function localDateInput(date: Date = new Date()): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}

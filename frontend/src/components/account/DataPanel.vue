@@ -9,6 +9,7 @@ import { useApiErrors } from '@/composables/useApiErrors'
 import { ApiError } from '@/services/api'
 import { authService } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
+import { saveFile } from '@/utils/download'
 
 /**
  * The member's data (GDPR): download everything stored about them as a JSON file, or delete
@@ -24,19 +25,6 @@ const { errorMessage, fieldMessage } = useApiErrors()
 
 const exporting = ref(false)
 const exportError = ref('')
-
-/** Save a blob as a file: a temporary object URL behind a clicked `download` link. */
-function saveFile(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  link.hidden = true
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 0)
-}
 
 async function download() {
   exporting.value = true

@@ -210,6 +210,56 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.account', auth: 'user' },
   },
   {
+    // Admin area: every child inherits `auth: 'admin'` (route meta is merged parent → child).
+    path: '/admin',
+    component: () => import('@/views/admin/AdminLayout.vue'),
+    meta: { title: 'admin.title', auth: 'admin' },
+    children: [
+      {
+        path: '',
+        name: 'admin-dashboard',
+        component: () => import('@/views/admin/AdminDashboardView.vue'),
+        meta: { title: 'admin.dashboard.title' },
+      },
+      {
+        path: 'queue',
+        name: 'admin-queue',
+        component: () => import('@/views/admin/AdminQueueView.vue'),
+        meta: { title: 'admin.queue.title' },
+      },
+      {
+        path: 'reports',
+        name: 'admin-reports',
+        component: () => import('@/views/admin/AdminReportsView.vue'),
+        meta: { title: 'admin.reports.title' },
+      },
+      {
+        path: 'users',
+        name: 'admin-users',
+        component: () => import('@/views/admin/AdminUsersView.vue'),
+        meta: { title: 'admin.users.title' },
+      },
+      {
+        path: 'categories',
+        name: 'admin-categories',
+        component: () => import('@/views/admin/AdminCategoriesView.vue'),
+        meta: { title: 'admin.categories.title' },
+      },
+      {
+        path: 'tags',
+        name: 'admin-tags',
+        component: () => import('@/views/admin/AdminTagsView.vue'),
+        meta: { title: 'admin.tags.title' },
+      },
+      {
+        path: 'log',
+        name: 'admin-log',
+        component: () => import('@/views/admin/AdminLogView.vue'),
+        meta: { title: 'admin.log.title' },
+      },
+    ],
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFoundView.vue'),

@@ -102,8 +102,8 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 4c | reports endpoint + auto-hide | done | 89d39a1 | 62 pytest | POST /reports/ (20/day) + admin GET/resolve/dismiss under /reports/ (PLAN updated); content locked FOR UPDATE, content-before-report lock order; int-range guard in get_content | | | |
 | 4d | moderation + admin endpoints incl. stats CSV export | done | 4ab2184 + 0a7fa8d | 88 pytest (1360 total) | /moderation/queue, /{type}/{id}/<action>, /log (prefix filter); /admin/stats (KnowbaseStatus reused), /admin/knowbase/cache/clear, /admin/stats/export.csv (users by country/org, content, contributors, sign-ins from audit rows, RCO87 incl. free-text orgs) | | | |
 | 4e | digest + scheduler (+ AUTO_APPROVE_AFTER_DAYS sweep) + `cli digest` | done | | 84 pytest (1369 total) | APScheduler 3.11 AsyncIOScheduler (one worker); admin digest per frequency (daily window since last run, weekly 7 days), run not recorded if every send fails; maintenance: expired sessions/tokens, unverified purge (UNVERIFIED_PURGE_DAYS), orphan uploads (files deleted after commit), auto-approve sweep; `cli digest [--force]`, `cli maintenance` | | | |
-| 4f | FE report/status components | done | | 47 vitest | ReportButton/ReportDialog (session-remembered, code-mapped toasts), StatusBadge replaces PostStatusBadge, PendingBanner with reasons + contact; placed on posts, threads, replies, comments | | | |
-| 4g | FE admin views | todo | | | |
+| 4f | FE report/status components | done | 0f3c724 | 47 vitest | ReportButton/ReportDialog (session-remembered, code-mapped toasts), StatusBadge replaces PostStatusBadge, PendingBanner with reasons + contact; placed on posts, threads, replies, comments | | | |
+| 4g | FE admin views | done | | 96 vitest (732 total) | /admin dashboard (stats, cache clear, CSV export), queue, reports (row menu with content actions), users (role-rule gating), categories, tags (merge/delete), log; stores admin + moderation; UserMenu Admin link; admin en.json keys landed in 0f3c724 | | | |
 | 4h | Playwright `moderation.spec.ts` | todo | | | |
 
 ### M5 — Search, i18n, a11y, FAIR, docs
@@ -159,7 +159,9 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - 3h done → **M3 complete** (23 e2e). a11y findings carried to 5d: avatar initials fallback contrast (blog post, thread), earlier /partners, /about, /register items.
 - 4c (89d39a1), 4d (4ab2184; 0a7fa8d fixes a main.py that carried 4e's scheduler lines early), 4e done after review rounds (5, 8 and 7 fixes respectively) → **M4 backend complete**, 1369 tests. Lesson: never put a heredoc in the middle of a `&&` chain; the commands after it run unconditionally.
 - Deferred (low risk, noted): auto-approve staleness measured from created_at; per-row round trips in the sweeps; `_error_responses` helper duplicated across endpoint modules (chore); report_count not recounted when a reporter is anonymised; orphan sweep uses substring scans over all bodies nightly.
-- **Next:** rebuild the dev backend image (apscheduler), `npm run gen:types`, then 4f (FE ReportButton/StatusBadge/pending banner) and 4g (FE admin views) in parallel, then 4h e2e.
+- Dev backend image rebuilt (apscheduler); API types regenerated (9a52ed2). 4f (0f3c724) and 4g done in parallel.
+- Follow-ups noted: public categories store caches per session (edits show after reload); admin ContentStatusBadge could merge into StatusBadge; KNOWBASE live `/docs` is served as the SPA (only `/api/` is proxied), spec at /api/v1/openapi.json.
+- **Next:** 4h Playwright `e2e/moderation.spec.ts` (first post pending → approve → trusted → second post immediate; 3 reports hide; digest via `cli digest --force` in Mailpit; admin views) → M4 complete. Then M5: 5a search endpoint + 5c SearchView, 5d a11y pass, 5e remaining static pages, 5b exports/feeds, 5f translations, 5g docs.
 
 ## 4. Open questions / decisions pending
 - Terms of Use draft v1 in `docs/legal/terms-of-use.md` needs UOWM legal review: age threshold (15/16), KNOWBASE data licence, jurisdiction. Contact for everything (incl. data requests): louta@uowm.gr (user, 2026-10-31). Privacy Policy draft v1 in `docs/legal/privacy-policy.md` (2026-10-31): review DPO naming, audit-log retention per subsidy contract, hosting description, Cloudflare/Google DPAs, age threshold.

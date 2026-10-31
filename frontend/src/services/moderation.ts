@@ -1,0 +1,57 @@
+/**
+ * Moderation endpoints for admins: the approval queue, content actions
+ * (`/api/v1/moderation/{type}/{id}/<action>`), the audit log, and the admin side of reports
+ * (list, resolve, dismiss). Members file reports through `services/reports.ts`.
+ */
+import type { components, operations } from '@/types/api-schema'
+import { api } from './api'
+
+export type ContentType = components['schemas']['ContentType']
+export type ContentStatus = components['schemas']['ContentStatus']
+export type QueueItem = components['schemas']['QueueItem']
+export type ModerationQueue = components['schemas']['ModerationQueue']
+export type ModerationResult = components['schemas']['ModerationResult']
+export type AuditLogEntry = components['schemas']['AuditLogEntry']
+export type AuditLogPage = components['schemas']['AuditLogPage']
+export type ReportDetail = components['schemas']['ReportDetail']
+export type PaginatedReports = components['schemas']['PaginatedReports']
+export type ReportStatus = components['schemas']['ReportStatus']
+export type ReportReason = components['schemas']['ReportReason']
+
+export type QueueParams = NonNullable<
+  operations['moderation_queue_api_v1_moderation_queue__get']['parameters']['query']
+>
+export type LogParams = NonNullable<
+  operations['moderation_log_api_v1_moderation_log__get']['parameters']['query']
+>
+export type ReportListParams = NonNullable<
+  operations['list_reports_api_v1_reports__get']['parameters']['query']
+>
+
+export type ModerationAction = 'approve' | 'reject' | 'hide' | 'unhide' | 'delete' | 'restore'
+/** The actions whose (optional) reason goes into the audit row. */
+const WITH_REASON: readonly ModerationAction[] = ['reject', 'hide']
+
+const BASE = '/api/v1/moderation'
+const REPORTS = '/api/v1/reports'
+
+export const moderationService = {
+  queue: (params: QueueParams = {}) =>
+    api<ModerationQueue>(`${BASE}/queue/`, { query: { ...params } }),
+
+  log: (params: LogParams = {}) => api<AuditLogPage>(`${BASE}/log/`, { query: { ...params } }),
+
+  /** `reason` is sent (as `null` when blank) for reject and hide only. */
+  act: (type: ContentType, id: number, action: ModerationAction, reason?: string | null) =>
+    api<ModerationResult>(`${BASE}/${type}/${id}/${action}`, {
+      method: 'POST',
+      body: WITH_REASON.includes(action) ? { reason: reason?.trim() || null } : undefined,
+    }),
+
+  listReports: (params: ReportListParams = {}) =>
+    api<PaginatedReports>(`${REPORTS}/`, { query: { ...params } }),
+
+  resolveReport: (id: number) => api<ReportDetail>(`${REPORTS}/${id}/resolve`, { method: 'POST' }),
+
+  dismissReport: (id: number) => api<ReportDetail>(`${REPORTS}/${id}/dismiss`, { method: 'POST' }),
+}

@@ -48,5 +48,9 @@
   },
   "knowbase": {
     "title": "Biblioteca KNOWBASE"
+  },
+  "admin": {
+    "title": "Amministrazione",
+    "menu": "Amministrazione"
   }
 }

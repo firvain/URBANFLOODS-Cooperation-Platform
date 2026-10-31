@@ -48,5 +48,9 @@
   },
   "knowbase": {
     "title": "Βιβλιοθήκη KNOWBASE"
+  },
+  "admin": {
+    "title": "Διαχείριση",
+    "menu": "Διαχείριση"
   }
 }
