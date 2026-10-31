@@ -345,3 +345,32 @@ async def create_comment(
     db.add(comment)
     await db.flush()
     return comment
+
+
+async def create_thread_knowbase_link(
+    db: AsyncSession,
+    *,
+    thread_id: int,
+    kb_type: str = "measure",
+    kb_id: int = 7,
+    title_en: str = "Linked KNOWBASE item",
+    title_local: str | None = None,
+    order: int = 0,
+) -> Any:
+    """Insert a ``knowbase_links`` row for a thread (no KNOWBASE call) and flush. The rows go
+    away with ``cleanup_threads`` / ``cleanup_forum_categories``."""
+    from app.db.enums import ContentType, KbType
+    from app.db.models import KnowbaseLink
+
+    link = KnowbaseLink(
+        content_type=ContentType.THREAD,
+        content_id=thread_id,
+        kb_type=KbType(kb_type),
+        kb_id=kb_id,
+        cached_title_en=title_en,
+        cached_title_local=title_local,
+        sort_order=order,
+    )
+    db.add(link)
+    await db.flush()
+    return link

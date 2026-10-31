@@ -434,3 +434,40 @@ async def cleanup_comments(database_url: str) -> AsyncIterator[set[int]]:
         return
     async with AsyncSessionLocal() as session, session.begin():
         await session.execute(delete(Comment).where(Comment.id.in_(ids)))
+
+
+@pytest.fixture
+async def cleanup_forum_categories(cleanup_categories: set[int]) -> AsyncIterator[set[int]]:
+    """``cleanup_categories`` for forum tests: the same set of category ids, but every thread in
+    those categories (with its ``knowbase_links`` rows and the audit rows about it) is deleted
+    first, so threads created through the API need no separate registration. Replies and
+    ``thread_tags`` rows cascade. Tears down before ``cleanup_categories`` (it depends on it)."""
+    from sqlalchemy import delete, select
+
+    from app.db.enums import ContentType
+    from app.db.models import AuditLog, KnowbaseLink, Thread
+    from app.db.session import AsyncSessionLocal
+
+    yield cleanup_categories
+    if not cleanup_categories:
+        return
+    async with AsyncSessionLocal() as session, session.begin():
+        ids = list(
+            (
+                await session.scalars(
+                    select(Thread.id).where(Thread.category_id.in_(cleanup_categories))
+                )
+            ).all()
+        )
+        if not ids:
+            return
+        await session.execute(
+            delete(KnowbaseLink).where(
+                KnowbaseLink.content_type == ContentType.THREAD,
+                KnowbaseLink.content_id.in_(ids),
+            )
+        )
+        await session.execute(
+            delete(AuditLog).where((AuditLog.target_type == "thread") & AuditLog.target_id.in_(ids))
+        )
+        await session.execute(delete(Thread).where(Thread.id.in_(ids)))
