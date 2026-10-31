@@ -65,6 +65,22 @@ describe('HomeView section cards', () => {
     expect(card.text()).not.toContain(t('home.comingSoon'))
   })
 
+  it('the KNOWBASE card has an Open button to the live KNOWBASE, styled like the DSS one', async () => {
+    mockApi()
+    const { wrapper } = await mountWithApp(HomeView)
+    const card = wrapper.find('[data-testid="home-card-knowbase"]')
+    const open = card.find('a[href="https://knowbase.urbanfloods.app"]')
+    expect(open.exists()).toBe(true)
+    expect(open.attributes('target')).toBe('_blank')
+    expect(open.attributes('rel')).toContain('noopener')
+    expect(open.text()).toContain(t('home.cards.knowbase.open'))
+    expect(t('home.cards.knowbase.open')).toBe('Open the KNOWBASE')
+    expect(open.text()).toContain(t('a11y.opensInNewTab'))
+    expect(wrapper.find('[data-testid="home-card-blog"]').find('a[target="_blank"]').exists()).toBe(
+      false,
+    )
+  })
+
   it('the Forum card links to /forum without a "coming soon" badge', async () => {
     mockApi()
     const { wrapper } = await mountWithApp(HomeView)

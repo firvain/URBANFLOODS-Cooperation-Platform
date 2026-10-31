@@ -5,7 +5,7 @@ import { storeToRefs } from 'pinia'
 import CompleteProfileBanner from '@/components/account/CompleteProfileBanner.vue'
 import SuggestedCollaborators from '@/components/network/SuggestedCollaborators.vue'
 import { absoluteUrl, usePageHead } from '@/composables/usePageHead'
-import { dssUrl } from '@/constants/links'
+import { dssUrl, EXTERNAL_LINKS } from '@/constants/links'
 import { useAuthStore } from '@/stores/auth'
 
 const { t, locale } = useI18n()
@@ -15,10 +15,11 @@ const { isVerified } = storeToRefs(useAuthStore())
 const dss = dssUrl()
 
 /** Sections of the platform. */
-const sections: { key: string; icon: string; to: string }[] = [
+const sections: { key: string; icon: string; to: string; external?: string }[] = [
   { key: 'blog', icon: 'i-lucide-newspaper', to: '/blog' },
   { key: 'forum', icon: 'i-lucide-messages-square', to: '/forum' },
-  { key: 'knowbase', icon: 'i-lucide-library', to: '/knowbase' },
+  // The title links to the library inside the platform; the button opens the KNOWBASE itself.
+  { key: 'knowbase', icon: 'i-lucide-library', to: '/knowbase', external: EXTERNAL_LINKS.knowbase },
 ]
 
 // The site's schema.org WebSite entry, with the search box search engines may offer.
@@ -70,7 +71,20 @@ usePageHead(() => ({
               </ULink>
             </h2>
           </template>
-          <p class="text-muted">{{ t(`home.cards.${section.key}.description`) }}</p>
+          <div class="flex h-full flex-col gap-4">
+            <p class="text-muted">{{ t(`home.cards.${section.key}.description`) }}</p>
+            <UButton
+              v-if="section.external"
+              :to="section.external"
+              target="_blank"
+              rel="noopener noreferrer"
+              trailing-icon="i-lucide-arrow-up-right"
+              class="self-start"
+            >
+              {{ t(`home.cards.${section.key}.open`) }}
+              <span class="sr-only">{{ ` ${t('a11y.opensInNewTab')}` }}</span>
+            </UButton>
+          </div>
         </UCard>
       </li>
 

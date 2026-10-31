@@ -38,7 +38,8 @@
       },
       "knowbase": {
         "title": "KNOWBASE",
-        "description": "Browse legislation, policies and flood-protection measures."
+        "description": "Browse legislation, policies and flood-protection measures.",
+        "open": "Open the KNOWBASE"
       }
     },
     "dss": {
