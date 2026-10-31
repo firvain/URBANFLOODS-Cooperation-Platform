@@ -86,6 +86,20 @@ describe('NetworkView', () => {
     expect(cards(wrapper)[2]!.text()).toContain('Civil Protection Unit 3')
   })
 
+  it('shows an Admin badge only on admins’ cards', async () => {
+    const members = {
+      total: 2,
+      items: [makeMember(1, { is_admin: true }), makeMember(2, { is_admin: false })],
+    }
+    mockApi(routes(reply(200, members)))
+    const { wrapper } = await mountNetwork()
+    const badge = cards(wrapper)[0]!.find('[data-testid="member-admin-badge"]')
+    expect(badge.exists()).toBe(true)
+    expect(badge.text()).toBe(t('profile.adminBadge'))
+    expect(cards(wrapper)[0]!.find('a[href="/u/1"]').text()).toBe('Member 1')
+    expect(cards(wrapper)[1]!.find('[data-testid="member-admin-badge"]').exists()).toBe(false)
+  })
+
   it('shows an Email link only for members who share their address', async () => {
     mockApi(routes())
     const { wrapper } = await mountNetwork()

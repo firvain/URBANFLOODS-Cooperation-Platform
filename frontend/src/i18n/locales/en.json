@@ -401,6 +401,7 @@
   },
   "profile": {
     "title": "Member profile",
+    "adminBadge": "Admin",
     "organisation": "Organisation",
     "country": "Country",
     "bio": "About",

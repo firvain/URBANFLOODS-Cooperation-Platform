@@ -401,6 +401,7 @@
   },
   "profile": {
     "title": "Profil člana",
+    "adminBadge": "Administrator",
     "organisation": "Organizacija",
     "country": "Država",
     "bio": "O meni",

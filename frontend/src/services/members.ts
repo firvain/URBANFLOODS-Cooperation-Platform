@@ -1,34 +1,16 @@
 /** Members directory of the Collaboration Network (`/api/v1/members/*`). */
 import { api } from './api'
-import type { ExpertiseTag } from './expertise'
-import type { OrganisationSummary } from './organisations'
+import type { components } from '@/types/api-schema'
 
-// TODO(gen:types): replace with components['schemas'][...] once generated (`npm run gen:types`).
-// Hand-written only because the backend contract is being built concurrently (increment 1n).
-
-/** A member as the directory lists them. `email` is null unless they chose to show it. */
-export interface Member {
-  id: number
-  display_name: string
-  organisation: OrganisationSummary | null
-  organisation_other: string | null
-  /** ISO 3166-1 alpha-2. */
-  country: string | null
-  bio_excerpt: string | null
-  expertise: ExpertiseTag[]
-  email: string | null
-  created_at: string
-}
+/** A member as the directory lists them. `email` is null unless they chose to show it;
+ * `is_admin` (admin or superadmin) is the only role signal the API exposes. */
+export type Member = components['schemas']['MemberOut']
 
 /** `GET /members/{id}`: the full bio as plain text. */
-export interface MemberDetail extends Member {
-  bio: string | null
-}
+export type MemberDetail = components['schemas']['MemberDetail']
 
 /** `GET /members/suggested`: members ranked by expertise they share with the current user. */
-export interface SuggestedMember extends Member {
-  shared_expertise: number
-}
+export type SuggestedMember = components['schemas']['SuggestedMember']
 
 export interface Page<T> {
   total: number

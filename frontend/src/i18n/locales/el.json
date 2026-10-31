@@ -401,6 +401,7 @@
   },
   "profile": {
     "title": "Προφίλ μέλους",
+    "adminBadge": "Διαχειριστής",
     "organisation": "Οργανισμός",
     "country": "Χώρα",
     "bio": "Σχετικά",

@@ -401,6 +401,7 @@
   },
   "profile": {
     "title": "Profilo del membro",
+    "adminBadge": "Amministratore",
     "organisation": "Organizzazione",
     "country": "Paese",
     "bio": "Presentazione",

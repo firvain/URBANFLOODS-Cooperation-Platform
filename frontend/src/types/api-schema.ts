@@ -498,7 +498,7 @@ export interface paths {
         };
         /**
          * Get Member
-         * @description One directory member's public profile.
+         * @description One directory member's profile.
          */
         get: operations["get_member_api_v1_members__member_id__get"];
         put?: never;
@@ -3170,6 +3170,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Is Admin */
+            is_admin: boolean;
             /** Bio */
             bio: string | null;
         };
@@ -3202,6 +3204,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Is Admin */
+            is_admin: boolean;
         };
         /** MessageResponse */
         MessageResponse: {
@@ -3885,6 +3889,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Is Admin */
+            is_admin: boolean;
             /** Shared Expertise */
             shared_expertise: number;
         };
@@ -5756,6 +5762,40 @@ export interface operations {
                 };
             };
             /** @description Error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -5846,6 +5886,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemberDetail"];
+                };
+            };
+            /** @description Error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
                 };
             };
             /** @description Error */

@@ -204,9 +204,20 @@ describe('ProfileView', () => {
     })
   })
 
-  it('shows no admin badge: the member API exposes no role', async () => {
-    mockApi({ [MEMBER]: reply(200, makeMemberDetail(5)) })
+  it('shows an Admin badge next to the name for an admin, outside the h1', async () => {
+    mockApi({ [MEMBER]: reply(200, makeMemberDetail(5, { is_admin: true })) })
     const { wrapper } = await mountWithApp(ProfileView, { path: '/u/5' })
+    const badge = wrapper.find('[data-testid="profile-admin-badge"]')
+    expect(badge.exists()).toBe(true)
+    expect(badge.text()).toBe(t('profile.adminBadge'))
+    expect(t('profile.adminBadge')).toBe('Admin')
+    expect(wrapper.find('h1').text()).toBe('Member 5')
+  })
+
+  it('shows no admin badge for a member who is not an admin', async () => {
+    mockApi({ [MEMBER]: reply(200, makeMemberDetail(5, { is_admin: false })) })
+    const { wrapper } = await mountWithApp(ProfileView, { path: '/u/5' })
+    expect(wrapper.find('h1').text()).toBe('Member 5')
     expect(wrapper.find('[data-testid="profile-admin-badge"]').exists()).toBe(false)
   })
 

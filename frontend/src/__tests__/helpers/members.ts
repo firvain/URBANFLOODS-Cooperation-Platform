@@ -45,6 +45,7 @@ export function makeMember(id: number, overrides: Partial<Member> = {}): Member 
     expertise: EXPERTISE.slice(0, 2),
     email: id % 2 ? `member${id}@example.org` : null,
     created_at: '2026-10-01T10:00:00Z',
+    is_admin: false,
     ...overrides,
   }
 }

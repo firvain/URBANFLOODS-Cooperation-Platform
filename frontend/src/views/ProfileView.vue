@@ -18,7 +18,8 @@ import NotFoundView from './NotFoundView.vue'
 /**
  * A member's profile (`/u/:id`). An unknown or unlisted member shows the 404 content. Below the
  * details: their published posts and discussions (10 newest of each, with "See all" links to the
- * blog and forum filtered by `author_id`). The member API exposes no role, so no admin badge.
+ * blog and forum filtered by `author_id`). An admin or superadmin gets an "Admin" badge next to
+ * the name (`is_admin`; the API never exposes the exact role).
  * Profiles are for verified users (route meta `auth: 'verified'`); an unverified user, or a
  * 401/403 from the API, gets the sign-in/verify notice instead of an error.
  */
@@ -192,9 +193,20 @@ const dateOf = (item: { published_at: string | null; created_at: string }) =>
 
       <article v-else-if="member">
         <div class="mb-8">
-          <h1 tabindex="-1" class="mb-4 text-4xl font-bold text-primary-600 focus:outline-none">
-            {{ member.display_name }}
-          </h1>
+          <div class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h1 tabindex="-1" class="text-4xl font-bold text-primary-600 focus:outline-none">
+              {{ member.display_name }}
+            </h1>
+            <UBadge
+              v-if="member.is_admin"
+              data-testid="profile-admin-badge"
+              color="primary"
+              variant="subtle"
+              icon="i-lucide-shield-check"
+            >
+              {{ t('profile.adminBadge') }}
+            </UBadge>
+          </div>
           <div class="h-1 w-20 rounded bg-secondary-500" />
           <p class="mt-4 text-sm text-muted">{{ memberSince }}</p>
         </div>

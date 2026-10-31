@@ -17,7 +17,14 @@ from sqlalchemy import insert, select
 
 from app.core.config import settings
 from app.db.models import ExpertiseTag, User, user_expertise
-from tests.factories import create_organisation, create_user, create_verified_user, login_as
+from tests.factories import (
+    create_admin,
+    create_organisation,
+    create_superadmin,
+    create_user,
+    create_verified_user,
+    login_as,
+)
 
 API = settings.API_V1_PREFIX
 MEMBERS = f"{API}/members/"
@@ -32,6 +39,7 @@ MEMBER_KEYS = {
     "expertise",
     "email",
     "created_at",
+    "is_admin",
 }
 
 
@@ -349,6 +357,27 @@ async def test_bio_excerpt_truncated(client, db_session, cleanup_users):
     assert "bio" not in item
 
 
+@pytest.mark.usefixtures("signed_in")
+async def test_is_admin_flag_in_list(client, db_session, cleanup_users):
+    """``is_admin`` is the only role signal: true for admins and superadmins, false otherwise;
+    the exact role is never exposed."""
+    token = _token()
+    plain = await _member(db_session, cleanup_users, display_name=f"Plain {token}")
+    admin = await _member(
+        db_session, cleanup_users, factory=create_admin, display_name=f"Admin {token}"
+    )
+    superadmin = await _member(
+        db_session, cleanup_users, factory=create_superadmin, display_name=f"Super {token}"
+    )
+
+    items = {item["id"]: item for item in (await _list(client, q=token))["items"]}
+
+    assert items[plain.id]["is_admin"] is False
+    assert items[admin.id]["is_admin"] is True
+    assert items[superadmin.id]["is_admin"] is True
+    assert all("role" not in item for item in items.values())
+
+
 # --- detail -----------------------------------------------------------------------------------
 
 
@@ -366,6 +395,19 @@ async def test_detail(client, db_session, cleanup_users):
     assert len(body["bio_excerpt"]) <= 200
     assert body["email"] == user.email
     assert [tag["slug"] for tag in body["expertise"]] == ["hydrology"]
+
+
+@pytest.mark.usefixtures("signed_in")
+async def test_detail_is_admin_flag(client, db_session, cleanup_users):
+    plain = await _member(db_session, cleanup_users)
+    admin = await _member(db_session, cleanup_users, factory=create_admin)
+
+    plain_body = (await client.get(f"{MEMBERS}{plain.id}")).json()
+    admin_body = (await client.get(f"{MEMBERS}{admin.id}")).json()
+
+    assert plain_body["is_admin"] is False
+    assert admin_body["is_admin"] is True
+    assert "role" not in admin_body
 
 
 @pytest.mark.usefixtures("signed_in")
@@ -483,3 +525,24 @@ async def test_suggested_without_own_expertise_lists_newest(client, db_session, 
     assert _ids(body)[:3] == [user.id for user in newest]
     assert me.id not in _ids(body)
     assert all(item["shared_expertise"] == 0 for item in body["items"])
+
+
+async def test_suggested_is_admin_flag(client, db_session, cleanup_users):
+    now = datetime.now(UTC) + timedelta(days=1)  # newer than anything else in the database
+    me = await _member(db_session, cleanup_users, tags=("hydrology",))
+    admin = await _member(
+        db_session,
+        cleanup_users,
+        factory=create_admin,
+        tags=("hydrology",),
+        created_at=now - timedelta(hours=1),
+    )
+    plain = await _member(
+        db_session, cleanup_users, tags=("hydrology",), created_at=now - timedelta(hours=2)
+    )
+    await login_as(client, me)
+
+    items = {item["id"]: item for item in (await client.get(SUGGESTED)).json()["items"]}
+
+    assert items[admin.id]["is_admin"] is True
+    assert items[plain.id]["is_admin"] is False

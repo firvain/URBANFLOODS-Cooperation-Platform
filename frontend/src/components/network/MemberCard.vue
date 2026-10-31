@@ -26,15 +26,27 @@ const addOwnExpertise = computed(
     data-testid="member-card"
     class="flex h-full flex-col gap-2 rounded border border-secondary-200 bg-secondary-50 p-3"
   >
-    <h2 class="text-base leading-snug font-semibold">
-      <ULink
-        :to="`/u/${member.id}`"
-        raw
-        class="text-primary-700 underline-offset-2 hover:underline focus-visible:underline"
+    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <h2 class="text-base leading-snug font-semibold">
+        <ULink
+          :to="`/u/${member.id}`"
+          raw
+          class="text-primary-700 underline-offset-2 hover:underline focus-visible:underline"
+        >
+          {{ member.display_name }}
+        </ULink>
+      </h2>
+      <UBadge
+        v-if="member.is_admin"
+        data-testid="member-admin-badge"
+        color="primary"
+        variant="subtle"
+        size="sm"
+        icon="i-lucide-shield-check"
       >
-        {{ member.display_name }}
-      </ULink>
-    </h2>
+        {{ t('profile.adminBadge') }}
+      </UBadge>
+    </div>
     <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-700">
       <span v-if="organisation">{{ organisation }}</span>
       <PartnerCountry v-if="member.country" :code="member.country" />

@@ -1,7 +1,8 @@
 """Members directory schemas: the public profile of a directory member.
 
-Never exposes role, trust, login times or locale. ``email`` is set only when the member opted in
-(``show_email``); the endpoint builds it with :func:`member_fields`.
+Never exposes the exact role, trust, login times or locale; ``is_admin`` (admin or superadmin) is
+the only role signal, for the profile's Admin badge. ``email`` is set only when the member opted
+in (``show_email``); the endpoint builds it with :func:`member_fields`.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ from pydantic import BaseModel
 
 from app.api.v1.schemas.auth import OrganisationSummary
 from app.api.v1.schemas.expertise import ExpertiseTagOut
+from app.core.deps import ADMIN_ROLES
 from app.db.models import User
 
 BIO_EXCERPT_LENGTH = 200
@@ -44,6 +46,7 @@ def member_fields(user: User) -> dict[str, Any]:
         "expertise": [ExpertiseTagOut.model_validate(tag) for tag in user.expertise],
         "email": user.email if user.show_email else None,
         "created_at": user.created_at,
+        "is_admin": user.role in ADMIN_ROLES,
     }
 
 
@@ -58,6 +61,8 @@ class MemberOut(BaseModel):
     # Only when the member chose to show it.
     email: str | None
     created_at: datetime
+    # Admin or superadmin; the exact role is never exposed.
+    is_admin: bool
 
 
 class MemberDetail(MemberOut):

@@ -401,6 +401,7 @@
   },
   "profile": {
     "title": "Profil člana",
+    "adminBadge": "Skrbnik",
     "organisation": "Organizacija",
     "country": "Država",
     "bio": "Predstavitev",

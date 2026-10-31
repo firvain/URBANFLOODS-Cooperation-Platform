@@ -401,6 +401,7 @@
   },
   "profile": {
     "title": "Profili i anëtarit",
+    "adminBadge": "Administrator",
     "organisation": "Organizata",
     "country": "Vendi",
     "bio": "Biografia",
