@@ -98,7 +98,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
 | 4a | Models Report/DigestRun + migration | done | a8e88b5 | 15 pytest (1044 total) | migration 0006 | | | |
-| 4b | `crud/moderation.py` state machine + audit | in progress | | | |
+| 4b | `crud/moderation.py` state machine + audit | done | | 91 pytest (1135 total) | transition table; approve/unhide-rejected trust author via set_trusted; restore dismisses reports; get_content(for_update) | | | |
 | 4c | reports endpoint + auto-hide | todo | | | |
 | 4d | moderation + admin endpoints incl. stats CSV export | todo | | | |
 | 4e | digest + scheduler (+ AUTO_APPROVE_AFTER_DAYS sweep) + `cli digest` | todo | | | |
@@ -149,6 +149,15 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - 1g, 1i, 1l done → **M1 core complete** (473 backend tests, 211 vitest, 8 e2e). Footer restyled like the KNOWBASE footer; Partners page compact; About = project only.
 - 1m, 1n done → **M1 fully complete** incl. 3rd-meeting additions. Terms of Use + Privacy Policy drafts in docs/legal. M2 deps committed (068adb3).
 - **Next:** M2 in parallel: 2a (blog models + migration 0004), 2b (sanitize + slugs), 2c (KNOWBASE proxy); frontend 5e-a (legal pages /terms, /privacy from docs/legal markdown).
+
+### 2026-10-31
+- M2 complete (2a–2k): blog models + migration 0004, nh3 sanitiser, KNOWBASE proxy with TTL/stale cache, categories/tags, posts, image uploads, dev seed (`scripts/seed_dev.py`, demo accounts in backend/README.md), KNOWBASE library views, Tiptap editor, blog views, `e2e/blog.spec.ts` (15 e2e total). 5e-a legal pages (/terms, /privacy) built from docs/legal markdown.
+- 1o (expertise at sign-up) done. Privacy Policy draft v1 added to docs/legal.
+- M3 3a–3g complete: thread/reply/comment models + migration 0005 (one-level trigger, counters), threads/replies/comments endpoints, notification emails honouring preferences, forum views and stores, comments under posts, Account Notifications + Data tabs (3g, 75480d9; 589 vitest).
+- 4a done (a8e88b5): Report + DigestRun models, migration 0006; 1044 backend tests.
+- 4b implemented (crud/moderation.py, 83 tests); `/code-review medium` found six fixes (threshold-0 off switch, no trust for deleted/banned authors, reuse set_trusted, restore dismisses reports, unhide of rejected = approval, row lock option); sent back to the implementer. Accepted as low risk and deferred: auto-approve staleness measured from `created_at` (a restored never-approved item is swept at once), per-row round trips in the sweep.
+- 3h (`e2e/forum.spec.ts`) running against the dev stack.
+- **Next:** commit 3h (M3 complete) and 4b, then 4c (reports endpoint + auto-hide) and 4d (moderation/admin endpoints + stats CSV) in parallel.
 
 ## 4. Open questions / decisions pending
 - Terms of Use draft v1 in `docs/legal/terms-of-use.md` needs UOWM legal review: age threshold (15/16), KNOWBASE data licence, jurisdiction. Contact for everything (incl. data requests): louta@uowm.gr (user, 2026-10-31). Privacy Policy draft v1 in `docs/legal/privacy-policy.md` (2026-10-31): review DPO naming, audit-log retention per subsidy contract, hosting description, Cloudflare/Google DPAs, age threshold.
