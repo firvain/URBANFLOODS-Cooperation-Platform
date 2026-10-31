@@ -4,6 +4,7 @@ import { flushPromises } from '@vue/test-utils'
 import i18n from '@/i18n'
 import type { UserMe } from '@/services/auth'
 import type { ContentStatus } from '@/services/moderation'
+import type { PostDetail } from '@/services/posts'
 import { callsTo, makeUser, mockApi, reply, replyError, type Handler } from './helpers/api'
 import { findButton, menuItemTexts, openMenu } from './helpers/admin'
 import { makePostDetail } from './helpers/blog'
@@ -38,11 +39,12 @@ async function mountPost(
   status: ContentStatus = 'published',
   user: UserMe | null = ADMIN,
   extra: Record<string, Handler> = {},
+  post: Partial<PostDetail> = {},
 ) {
   const fetchMock = mockApi({
     [GET_POST]: reply(
       200,
-      makePostDetail({ status, hidden_reason: status === 'hidden' ? 'admin' : null }),
+      makePostDetail({ status, hidden_reason: status === 'hidden' ? 'admin' : null, ...post }),
     ),
     'GET /api/v1/posts/42/comments/': reply(200, { total: 0, items: [] }),
     ...(user ? { [ME]: reply(200, user) } : {}),
@@ -307,5 +309,57 @@ describe('ModerationMenu permanent delete', () => {
     await flushPromises()
     expect(callsTo(fetchMock, route)).toHaveLength(1)
     await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/forum'))
+  })
+})
+
+describe('ModerationMenu page update', () => {
+  const postDate = () =>
+    document.querySelector('[data-testid="post-author"] time')?.getAttribute('datetime')
+  const deletedAt = () => document.querySelector('[data-testid="deleted-at"]')
+
+  it('restoring a never-approved post shows it pending, without a publication date', async () => {
+    const route = `POST ${MOD}/post/42/restore`
+    await mountPost(
+      'deleted',
+      ADMIN,
+      {
+        [route]: reply(200, {
+          ...result('pending'),
+          published_at: null,
+          deleted_at: null,
+        }),
+      },
+      { created_at: '2026-10-18T08:00:00Z', published_at: '2026-10-20T09:00:00Z' },
+    )
+    expect(postDate()).toBe('2026-10-20T09:00:00Z')
+    await choose(t('moderation.restore'))
+    expect(badge()).toBe(t('post.status.pending'))
+    expect(postDate()).toBe('2026-10-18T08:00:00Z')
+  })
+
+  it('shows the deletion date after a delete and clears it on restore', async () => {
+    await mountPost('published', ADMIN, {
+      [`POST ${MOD}/post/42/delete`]: reply(200, result('deleted')),
+      [`POST ${MOD}/post/42/restore`]: reply(200, result('published')),
+    })
+    expect(deletedAt()).toBeNull()
+    await choose(t('moderation.delete'))
+    buttonIn(dialog(), t('moderation.delete')).click()
+    await flushPromises()
+    expect(deletedAt()?.getAttribute('datetime')).toBe('2026-10-31T09:00:00Z')
+    await choose(t('moderation.restore'))
+    expect(badge()).toBeUndefined()
+    expect(deletedAt()).toBeNull()
+  })
+
+  it('applies the thread result as returned, deletion date included', async () => {
+    await mountThread('published', {
+      [`POST ${MOD}/thread/42/delete`]: reply(200, result('deleted', 'thread')),
+    })
+    await choose(t('moderation.delete'))
+    buttonIn(dialog(), t('moderation.delete')).click()
+    await flushPromises()
+    expect(badge()).toBe(t('post.status.deleted'))
+    expect(deletedAt()?.getAttribute('datetime')).toBe('2026-10-31T09:00:00Z')
   })
 })

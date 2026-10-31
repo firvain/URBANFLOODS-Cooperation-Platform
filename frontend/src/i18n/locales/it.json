@@ -736,6 +736,7 @@
       "usedIn": "Usata in:",
       "notUsed": "Non usata in alcun contenuto.",
       "inUse": "In uso: rimuovila prima dal contenuto.",
+      "onlyDeleted": "Usata solo in contenuti eliminati: se vengono ripristinati, appariranno senza questa immagine.",
       "delete": "Elimina",
       "deleteLabel": "Elimina immagine: {alt}",
       "deleteTitle": "Eliminare questa immagine?",

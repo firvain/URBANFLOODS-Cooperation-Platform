@@ -736,6 +736,7 @@
       "usedIn": "Uporabljeno v:",
       "notUsed": "Ni uporabljena v nobeni vsebini.",
       "inUse": "V uporabi: najprej jo odstranite iz vsebine.",
+      "onlyDeleted": "Uporabljena je samo v izbrisani vsebini: če bo ta obnovljena, bo prikazana brez te slike.",
       "delete": "Izbriši",
       "deleteLabel": "Izbriši sliko: {alt}",
       "deleteTitle": "Želite izbrisati to sliko?",

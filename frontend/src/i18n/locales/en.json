@@ -736,6 +736,7 @@
       "usedIn": "Used in:",
       "notUsed": "Not used in any content.",
       "inUse": "In use: remove it from the content first.",
+      "onlyDeleted": "Used only by deleted content: if it is restored, it will show without this image.",
       "delete": "Delete",
       "deleteLabel": "Delete image: {alt}",
       "deleteTitle": "Delete this image?",

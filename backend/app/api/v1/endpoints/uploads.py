@@ -37,7 +37,6 @@ from app.api.v1.schemas.upload import (
     UploadKind,
     UploadList,
     UploadOut,
-    UploadUsage,
 )
 from app.core.config import settings
 from app.core.deps import ADMIN_ROLES, AuthUser, DbTx, VerifiedUser
@@ -238,10 +237,12 @@ async def list_my_uploads(
     return UploadList(
         total=total,
         items=[
-            MyUploadOut.model_validate(item).model_copy(
-                update={
-                    "used_in": [UploadUsage.model_validate(used) for used in usage.get(item.id, [])]
-                }
+            MyUploadOut.model_validate(
+                {
+                    **{name: getattr(item, name) for name in UploadOut.model_fields},
+                    "used_in": usage.get(item.id, []),
+                },
+                from_attributes=True,
             )
             for item in items
         ],
@@ -258,14 +259,21 @@ async def delete_upload(
 ) -> None:
     """Delete an upload (its uploader, or an admin). If it is someone's avatar, the avatar is
     cleared. Someone else's upload answers 404 to a member, as if it did not exist. An upload
-    still used by content (a post cover or an image in any body, whatever its status) is 409
-    ``uploads.in_use`` for everyone: deleting it would break the content (admins remove such
-    images by editing or purging the content)."""
+    still used by content (a post cover or an image in a body) is 409 ``uploads.in_use``:
+    deleting it would break the content (admins remove such images by editing or purging the
+    content).
+
+    For the uploader's own delete, content whose status is ``deleted`` does not count, so a
+    member can free an image that only their deleted posts still show; if such content is
+    restored later, the image is missing from it. For anyone else's upload (an admin), every
+    status counts. The orphan sweep stays stricter: it never removes an image that any content,
+    deleted or not, references."""
     attachment = await crud_attachment.get_attachment(db, attachment_id=attachment_id)
     is_admin = user.role in ADMIN_ROLES and user.is_verified
-    if attachment is None or (attachment.uploader_id != user.id and not is_admin):
+    own = attachment is not None and attachment.uploader_id == user.id
+    if attachment is None or (not own and not is_admin):
         raise _not_found()
-    if await crud_attachment.is_used_in_content(db, attachment_id=attachment.id):
+    if await crud_attachment.is_used_in_content(db, attachment_id=attachment.id, live_only=own):
         raise AppError(409, "uploads.in_use", "The image is still used by a post or discussion.")
     await crud_attachment.soft_delete_attachment(db, attachment=attachment)
     await crud_audit.log_action(

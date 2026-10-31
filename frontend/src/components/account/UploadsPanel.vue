@@ -11,8 +11,9 @@ import { formatDate } from '@/utils/datetime'
 
 /**
  * The member's own uploads (`GET /uploads/mine/`): thumbnail, alt text, size, date and the content
- * that uses each image. An image still in use cannot be deleted (the button is disabled and says
- * why; the server answers 409 `uploads.in_use` anyway); the others are deleted after confirming.
+ * that uses each image. An image still used by content that is not deleted cannot be deleted (the
+ * button is disabled, with the reason as visible text next to it; the server answers 409
+ * `uploads.in_use` anyway); the others are deleted after confirming.
  */
 const PAGE_SIZE = 50
 
@@ -70,6 +71,9 @@ function formatSize(bytes: number): string {
 
 const usageLink = (usage: UploadUsage) =>
   contentLink(usage.content_type, usage.id, usage.slug) ?? undefined
+/** Live content still uses it. Content in status `deleted` does not block the owner's delete
+ * (the server agrees); the hint then says a restore would show it without the image. */
+const blocked = (upload: MyUpload) => upload.used_in.some((usage) => usage.status !== 'deleted')
 const usageTitle = (usage: UploadUsage) =>
   usage.title || t(`account.uploads.types.${usage.content_type}`)
 
@@ -186,29 +190,27 @@ async function confirmDelete() {
             </div>
             <p v-else class="text-sm text-muted">{{ t('account.uploads.notUsed') }}</p>
           </div>
-          <div class="flex flex-col items-end gap-1">
-            <UTooltip :text="t('account.uploads.inUse')" :disabled="!upload.used_in.length">
-              <!-- A disabled button gets no pointer events: the wrapper shows the tooltip. -->
-              <span :tabindex="upload.used_in.length ? 0 : undefined" class="inline-flex">
-                <UButton
-                  color="error"
-                  variant="outline"
-                  size="sm"
-                  icon="i-lucide-trash-2"
-                  :disabled="upload.used_in.length > 0"
-                  :aria-label="t('account.uploads.deleteLabel', { alt: upload.alt_text })"
-                  :aria-describedby="
-                    upload.used_in.length ? `upload-in-use-${upload.id}` : undefined
-                  "
-                  @click="askDelete(upload)"
-                >
-                  {{ t('account.uploads.delete') }}
-                </UButton>
-              </span>
-            </UTooltip>
-            <span v-if="upload.used_in.length" :id="`upload-in-use-${upload.id}`" class="sr-only">
-              {{ t('account.uploads.inUse') }}
-            </span>
+          <div class="flex max-w-56 flex-col items-end gap-1 text-end">
+            <UButton
+              color="error"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-trash-2"
+              :disabled="blocked(upload)"
+              :aria-label="t('account.uploads.deleteLabel', { alt: upload.alt_text })"
+              :aria-describedby="upload.used_in.length ? `upload-hint-${upload.id}` : undefined"
+              @click="askDelete(upload)"
+            >
+              {{ t('account.uploads.delete') }}
+            </UButton>
+            <p
+              v-if="upload.used_in.length"
+              :id="`upload-hint-${upload.id}`"
+              data-testid="upload-hint"
+              class="text-xs text-muted"
+            >
+              {{ blocked(upload) ? t('account.uploads.inUse') : t('account.uploads.onlyDeleted') }}
+            </p>
           </div>
         </li>
       </ul>

@@ -41,9 +41,12 @@ const { errorMessage } = useApiErrors()
 const slug = computed(() => String(route.params.slug ?? ''))
 const thread = ref<ThreadDetail | null>(null)
 const state = ref<'loading' | 'ready' | 'not-found' | 'failed'>('loading')
+/** When an admin deleted it from the menu (the detail response has no such field). */
+const deletedAt = ref<string | null>(null)
 
 async function load() {
   thread.value = null
+  deletedAt.value = null
   state.value = 'loading'
   try {
     thread.value = await threadsService.get(slug.value)
@@ -135,7 +138,8 @@ async function moderate(action: ThreadAdminAction) {
 
 // --- Admin: moderation menu -------------------------------------------------------------------
 
-/** A moderation action from the menu: the page shows the new status (badge, banner) at once. */
+/** A moderation action from the menu: the page shows the result as returned (badge, banner,
+ * dates; a restore of never-approved content has no publication date). */
 function applyModeration(result: ModerationResult) {
   const value = thread.value
   if (!value) return
@@ -143,8 +147,9 @@ function applyModeration(result: ModerationResult) {
     ...value,
     status: result.status,
     hidden_reason: result.hidden_reason,
-    published_at: result.published_at ?? value.published_at,
+    published_at: result.published_at,
   }
+  deletedAt.value = result.deleted_at
 }
 
 // --- Delete -----------------------------------------------------------------------------------
@@ -230,6 +235,14 @@ async function confirmDelete() {
               {{ thread.category.name }}
             </ULink>
             <StatusBadge :status="thread.status" :hidden-reason="thread.hidden_reason" />
+            <time
+              v-if="thread.status === 'deleted' && deletedAt"
+              data-testid="deleted-at"
+              :datetime="deletedAt"
+              class="text-sm text-gray-700"
+            >
+              {{ formatDate(deletedAt, locale) }}
+            </time>
           </div>
 
           <h1

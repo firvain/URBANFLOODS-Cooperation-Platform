@@ -736,6 +736,7 @@
       "usedIn": "Përdoret në:",
       "notUsed": "Nuk përdoret në asnjë përmbajtje.",
       "inUse": "Në përdorim: hiqeni fillimisht nga përmbajtja.",
+      "onlyDeleted": "Përdoret vetëm në përmbajtje të fshirë: nëse rikthehet, do të shfaqet pa këtë imazh.",
       "delete": "Fshi",
       "deleteLabel": "Fshi imazhin: {alt}",
       "deleteTitle": "Ta fshini këtë imazh?",

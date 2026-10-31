@@ -247,10 +247,4 @@ async def purge_content(
     for storage_path, thumb_path in result.files:
         # After the response, so after the commit (``get_db_tx``).
         background.add_task(images.delete_files, settings.UPLOAD_DIR, storage_path, thumb_path)
-    return PurgeResultOut(
-        content_type=result.content_type,
-        id=result.id,
-        children_deleted=result.children_deleted,
-        attachments_deleted=result.attachments_deleted,
-        reports_resolved=result.reports_resolved,
-    )
+    return PurgeResultOut.model_validate(result)

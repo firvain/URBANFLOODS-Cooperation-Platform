@@ -91,14 +91,57 @@ describe('Account uploads tab', () => {
     expect(used.textContent).toContain(t('post.status.deleted'))
   })
 
-  it('disables Delete for a used image and says why', async () => {
+  it('disables Delete for a used image and says why in visible text', async () => {
     await mountUploads()
     const used = rows()[1]!
     const button = deleteButton(used)
     expect(button.disabled).toBe(true)
-    const describedBy = button.getAttribute('aria-describedby')!
-    expect(document.getElementById(describedBy)?.textContent).toContain(t('account.uploads.inUse'))
+    const hint = document.getElementById(button.getAttribute('aria-describedby')!)!
+    expect(hint.textContent).toContain(t('account.uploads.inUse'))
+    expect(hint.classList.contains('sr-only')).toBe(false)
+    expect(used.contains(hint)).toBe(true)
     expect(deleteButton(rows()[0]!).disabled).toBe(false)
+  })
+
+  it('has no focusable element without a name', async () => {
+    await mountUploads()
+    for (const row of rows()) {
+      for (const el of row.querySelectorAll<HTMLElement>('[tabindex]')) {
+        const name = el.getAttribute('aria-label') || el.textContent?.trim()
+        expect(name, el.outerHTML).toBeTruthy()
+      }
+      expect(row.querySelector('span[tabindex="0"]')).toBeNull()
+    }
+  })
+
+  it('lets the owner delete an image used only by deleted content, with a note', async () => {
+    const onlyDeleted = makeUpload(9, {
+      used_in: [
+        {
+          content_type: 'post',
+          id: 43,
+          title: 'An old post',
+          slug: 'an-old-post',
+          status: 'deleted',
+        },
+      ],
+    })
+    const route = 'DELETE /api/v1/uploads/9'
+    const { fetchMock } = await mountUploads({
+      [MINE]: reply(200, { total: 1, items: [onlyDeleted] }),
+      [route]: reply(204),
+    })
+    const row = rows()[0]!
+    const button = deleteButton(row)
+    expect(button.disabled).toBe(false)
+    const hint = document.getElementById(button.getAttribute('aria-describedby')!)!
+    expect(hint.textContent).toContain(t('account.uploads.onlyDeleted'))
+    button.click()
+    await flushPromises()
+    buttonIn(dialog(), t('account.uploads.deleteConfirm')).click()
+    await flushPromises()
+    expect(callsTo(fetchMock, route)).toHaveLength(1)
+    expect(rows()).toHaveLength(0)
   })
 
   it('shows an empty state', async () => {

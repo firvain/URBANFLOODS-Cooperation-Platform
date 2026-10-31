@@ -140,11 +140,20 @@ def _is_cover(*where: ColumnElement[bool]) -> Exists:
     return select(literal(1)).where(Post.cover_attachment_id == Attachment.id, *where).exists()
 
 
-def content_usage_conditions() -> list[ColumnElement[bool]]:
+def content_usage_conditions(*, live_only: bool = False) -> list[ColumnElement[bool]]:
     """WHERE clauses (correlated on ``attachments``), any of which is true when content uses the
     attachment: a post cover, or a path in the body of a post, thread, reply or comment, whatever
-    its status (deleted content can be restored)."""
-    return [_is_cover(), *(_referenced_in_body(model) for model in _BODY_MODELS)]
+    its status (deleted content can be restored). ``live_only`` leaves out content whose status
+    is ``deleted``."""
+    if not live_only:
+        return [_is_cover(), *(_referenced_in_body(model) for model in _BODY_MODELS)]
+    return [
+        _is_cover(Post.status != ContentStatus.DELETED),
+        *(
+            _referenced_in_body(model, model.status != ContentStatus.DELETED)
+            for model in _BODY_MODELS
+        ),
+    ]
 
 
 def unused_attachment_conditions() -> list[ColumnElement[bool]]:
@@ -157,11 +166,14 @@ def unused_attachment_conditions() -> list[ColumnElement[bool]]:
     ]
 
 
-async def is_used_in_content(db: AsyncSession, *, attachment_id: int) -> bool:
-    """True when a post cover or any content body (any status) uses the attachment. Being an
-    avatar does not count (deleting an avatar clears it)."""
+async def is_used_in_content(
+    db: AsyncSession, *, attachment_id: int, live_only: bool = False
+) -> bool:
+    """True when a post cover or any content body uses the attachment (any status, or with
+    ``live_only`` any status but ``deleted``). Being an avatar does not count (deleting an
+    avatar clears it)."""
     stmt = select(Attachment.id).where(
-        Attachment.id == attachment_id, or_(*content_usage_conditions())
+        Attachment.id == attachment_id, or_(*content_usage_conditions(live_only=live_only))
     )
     return (await db.scalar(stmt)) is not None
 
@@ -235,38 +247,60 @@ async def usage_by_attachment(
 async def referenced_attachment_ids(
     db: AsyncSession,
     *,
-    bodies: Sequence[tuple[type, Sequence[int]]],
-    cover_post_ids: Sequence[int] = (),
+    bodies: Sequence[tuple[type, ColumnElement[bool]]],
+    cover_of: ColumnElement[bool] | None = None,
 ) -> set[int]:
     """Ids of the attachments (any uploader, deleted ones too) used by the given rows: as the
-    cover of one of ``cover_post_ids``, or by path in the body of a ``(model, ids)`` row."""
-    conditions: list[ColumnElement[bool]] = []
-    if cover_post_ids:
-        conditions.append(_is_cover(Post.id.in_(list(cover_post_ids))))
-    for model, ids in bodies:
-        if ids:
-            conditions.append(_referenced_in_body(model, model.id.in_(list(ids))))
+    cover of a post matching ``cover_of``, or by path in the body of a row of ``model`` matching
+    its condition, for each ``(model, condition)`` in ``bodies``."""
+    conditions: list[ColumnElement[bool]] = [
+        _referenced_in_body(model, where) for model, where in bodies
+    ]
+    if cover_of is not None:
+        conditions.append(_is_cover(cover_of))
     if not conditions:
         return set()
     return set((await db.scalars(select(Attachment.id).where(or_(*conditions)))).all())
 
 
+@dataclass(frozen=True)
+class DeletedAttachment:
+    id: int
+    uploader_id: int | None
+    storage_path: str
+    thumb_path: str | None
+
+
 async def delete_unused_attachments(
     db: AsyncSession, *, attachment_ids: Iterable[int]
-) -> list[tuple[str, str | None]]:
+) -> list[DeletedAttachment]:
     """Hard-delete those of the given attachments (any uploader) that nothing uses any more
-    (see :func:`unused_attachment_conditions`). Returns the ``(storage_path, thumb_path)`` of
-    each deleted row; the caller removes the files once the transaction has committed."""
+    (see :func:`unused_attachment_conditions`) and return them, ordered by id; the caller
+    removes the files once the transaction has committed."""
     ids = list(set(attachment_ids))
     if not ids:
         return []
     stmt = (
         delete(Attachment)
         .where(Attachment.id.in_(ids), *unused_attachment_conditions())
-        .returning(Attachment.storage_path, Attachment.thumb_path)
+        .returning(
+            Attachment.id, Attachment.uploader_id, Attachment.storage_path, Attachment.thumb_path
+        )
         .execution_options(synchronize_session=False)
     )
-    return [(row.storage_path, row.thumb_path) for row in (await db.execute(stmt)).all()]
+    rows = (await db.execute(stmt)).all()
+    return sorted(
+        (
+            DeletedAttachment(
+                id=row.id,
+                uploader_id=row.uploader_id,
+                storage_path=row.storage_path,
+                thumb_path=row.thumb_path,
+            )
+            for row in rows
+        ),
+        key=lambda a: a.id,
+    )
 
 
 async def delete_unreferenced_uploads(

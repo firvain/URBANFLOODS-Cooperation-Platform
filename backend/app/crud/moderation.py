@@ -24,8 +24,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from sqlalchemy import ColumnElement, func, literal, or_, select, union_all, update
 from sqlalchemy import delete as sql_delete
-from sqlalchemy import func, literal, or_, select, union_all, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -466,21 +466,37 @@ class PurgeResult:
     files: list[tuple[str, str | None]]
 
 
-async def _child_ids(db: AsyncSession, content: ContentModel) -> tuple[type[Any] | None, list[int]]:
-    """The model and ids of the rows that go with ``content``: a post's comments, a thread's
-    replies (all levels), a top-level reply's children; a comment has none."""
+def _children(content: ContentModel) -> tuple[type[Any], ColumnElement[bool]] | None:
+    """The model and parent condition of the rows that go with ``content``: a post's comments, a
+    thread's replies (all levels), a reply's own children; a comment has none."""
     if isinstance(content, Post):
-        model: type[Any] = Comment
-        stmt = select(Comment.id).where(Comment.post_id == content.id)
-    elif isinstance(content, Thread):
-        model = Reply
-        stmt = select(Reply.id).where(Reply.thread_id == content.id)
-    elif isinstance(content, Reply):
-        model = Reply
-        stmt = select(Reply.id).where(Reply.parent_reply_id == content.id)
-    else:
-        return None, []
-    return model, list((await db.scalars(stmt)).all())
+        return Comment, Comment.post_id == content.id
+    if isinstance(content, Thread):
+        return Reply, Reply.thread_id == content.id
+    if isinstance(content, Reply):
+        return Reply, Reply.parent_reply_id == content.id
+    return None
+
+
+async def _delete_children(
+    db: AsyncSession, *, model: type[Any], parent: ColumnElement[bool]
+) -> list[int]:
+    """``DELETE ... WHERE <parent> RETURNING id``: every child at the moment of the delete, also
+    one added after an earlier read. Second-level replies go first, so their parent's
+    ``ON DELETE SET NULL`` has nothing left to touch."""
+    deleted: list[int] = []
+    steps = [parent]
+    if model is Reply:
+        steps = [parent & Reply.parent_reply_id.is_not(None), parent]
+    for where in steps:
+        stmt = (
+            sql_delete(model)
+            .where(where)
+            .returning(model.id)
+            .execution_options(synchronize_session=False)
+        )
+        deleted.extend((await db.scalars(stmt)).all())
+    return deleted
 
 
 async def _tag_ids(db: AsyncSession, content: ContentModel) -> list[int]:
@@ -500,8 +516,10 @@ async def _resolve_open_reports(
     actor: User,
     now: datetime,
 ) -> int:
-    """Resolve (by ``actor``) every open report on the given items; closed ones stay as they
-    are. The rows are kept: they are part of the moderation trail. Returns how many."""
+    """Resolve (by ``actor``) every open report on the given items, each with its
+    ``report.resolve`` audit row (``purge: true`` in the metadata), as closing a report from the
+    reports page does; closed ones stay as they are. The rows are kept: they are part of the
+    moderation trail. Returns how many."""
     conditions = [
         (Report.content_type == content_type) & Report.content_id.in_(ids)
         for content_type, ids in targets
@@ -513,25 +531,44 @@ async def _resolve_open_reports(
         update(Report)
         .where(or_(*conditions), Report.status == ReportStatus.OPEN)
         .values(status=ReportStatus.RESOLVED, resolved_by=actor.id, resolved_at=now)
-        .returning(Report.id)
+        .returning(Report.id, Report.content_type, Report.content_id)
         .execution_options(synchronize_session=False)
     )
-    return len((await db.execute(stmt)).all())
+    rows = sorted((await db.execute(stmt)).all(), key=lambda row: row.id)
+    for row in rows:
+        await log_action(
+            db,
+            actor_id=actor.id,
+            action="report.resolve",
+            target_type="report",
+            target_id=row.id,
+            metadata={
+                "content_type": ContentType(row.content_type).value,
+                "content_id": row.content_id,
+                "purge": True,
+            },
+        )
+    return len(rows)
 
 
 async def purge(
     db: AsyncSession, *, content: ContentModel, actor: User, now: datetime | None = None
 ) -> PurgeResult:
-    """Hard-delete ``content`` (any status) with what belongs to it:
+    """Hard-delete ``content`` (any status; the caller has loaded it ``FOR UPDATE``) with what
+    belongs to it:
 
     - a post's comments, tag rows and KNOWBASE links; a thread's replies (all levels), tag rows
-      and links; a top-level reply's child replies; a comment alone;
-    - open reports on all of them are resolved by ``actor`` (the rows stay);
+      and links; a top-level reply's child replies; a comment alone. Children are deleted by
+      their parent's id with ``RETURNING`` (the locked parent row also makes a concurrent insert
+      wait: its foreign-key check needs a key-share lock on it);
+    - open reports on all of them are resolved by ``actor``, each with its ``report.resolve``
+      audit row (the reports stay);
     - attachments the deleted rows used (a post's cover, paths in any deleted body) are
       hard-deleted when nothing else uses them any more (any uploader); their files are the
       caller's to remove after commit (:attr:`PurgeResult.files`);
     - tag usage is recounted; the reply/comment counters follow by trigger;
-    - audit ``moderation.purge`` with counts only (and a post's/thread's title), never a body.
+    - audit ``moderation.purge`` with counts, the deleted attachments' ids and uploaders, and a
+      post's/thread's title; never a body, a path or a file name.
     """
     now = now or datetime.now(UTC)
     content_type = content_type_of(content)
@@ -539,21 +576,15 @@ async def purge(
     content_id = content.id
     from_status = content.status
     title = getattr(content, "title", None)
+    children = _children(content)
 
-    child_model, child_ids = await _child_ids(db, content)
-    child_type = _TYPES[child_model] if child_model is not None else None
-    targets = [(content_type, [content_id])]
-    if child_type is not None:
-        targets.append((child_type, child_ids))
-
-    reports_resolved = await _resolve_open_reports(db, targets=targets, actor=actor, now=now)
-    bodies: list[tuple[type[Any], list[int]]] = [(model, [content_id])]
-    if child_model is not None:
-        bodies.append((child_model, child_ids))
+    bodies: list[tuple[type[Any], ColumnElement[bool]]] = [(model, model.id == content_id)]
+    if children is not None:
+        bodies.append(children)
     attachment_ids = await crud_attachment.referenced_attachment_ids(
         db,
         bodies=bodies,
-        cover_post_ids=[content_id] if content_type == ContentType.POST else [],
+        cover_of=Post.id == content_id if content_type == ContentType.POST else None,
     )
     tag_ids = await _tag_ids(db, content)
 
@@ -563,25 +594,18 @@ async def purge(
             .where(KnowbaseLink.content_type == content_type, KnowbaseLink.content_id == content_id)
             .execution_options(synchronize_session=False)
         )
-    if child_model is not None and child_ids:
-        if child_model is Reply:
-            # Second-level replies first: their parent's ON DELETE SET NULL has nothing left
-            # to touch.
-            await db.execute(
-                sql_delete(Reply)
-                .where(Reply.id.in_(child_ids), Reply.parent_reply_id.is_not(None))
-                .execution_options(synchronize_session=False)
-            )
-        await db.execute(
-            sql_delete(child_model)
-            .where(child_model.id.in_(child_ids))
-            .execution_options(synchronize_session=False)
-        )
+    child_ids: list[int] = []
+    targets = [(content_type, [content_id])]
+    if children is not None:
+        child_model, parent = children
+        child_ids = await _delete_children(db, model=child_model, parent=parent)
+        targets.append((_TYPES[child_model], child_ids))
     await db.delete(content)
     await db.flush()
 
+    reports_resolved = await _resolve_open_reports(db, targets=targets, actor=actor, now=now)
     await recount_tag_usage(db, tag_ids=tag_ids)
-    files = await crud_attachment.delete_unused_attachments(db, attachment_ids=attachment_ids)
+    deleted = await crud_attachment.delete_unused_attachments(db, attachment_ids=attachment_ids)
 
     metadata: dict[str, Any] = {
         "from": from_status.value,
@@ -592,8 +616,9 @@ async def purge(
         metadata["title"] = title[:PURGE_TITLE_MAX]
     metadata.update(
         children_deleted=len(child_ids),
-        attachments_deleted=len(files),
+        attachments_deleted=len(deleted),
         reports_resolved=reports_resolved,
+        attachments=[{"id": a.id, "uploader_id": a.uploader_id} for a in deleted],
     )
     await log_action(
         db,
@@ -607,9 +632,9 @@ async def purge(
         content_type=content_type,
         id=content_id,
         children_deleted=len(child_ids),
-        attachments_deleted=len(files),
+        attachments_deleted=len(deleted),
         reports_resolved=reports_resolved,
-        files=files,
+        files=[(a.storage_path, a.thumb_path) for a in deleted],
     )
 
 

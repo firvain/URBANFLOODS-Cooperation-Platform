@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import event, func, select
 
 from app.core.config import settings
 from app.db.enums import CategoryKind, ContentStatus, ContentType, HiddenReason, ReportStatus
@@ -657,6 +657,7 @@ async def test_purge_audit_row_counts_and_no_body(client, env):
         "children_deleted": 1,
         "attachments_deleted": 1,
         "reports_resolved": 1,
+        "attachments": [{"id": image.id, "uploader_id": None}],
     }
     assert "SECRET-BODY-TEXT" not in str(entry.metadata_)
 
@@ -783,12 +784,12 @@ async def test_delete_upload_used_as_cover_is_409(client, env):
     assert _files_exist(env, stored) == (True, True)
 
 
-async def test_delete_upload_used_inline_in_a_reply_is_409(client, env):
+async def test_delete_upload_used_inline_in_a_hidden_reply_is_409(client, env):
     db = env.db
     member = await _signed_in(client, env, factory=create_verified_user)
     stored = await _file(env, uploader_id=member.id)
     thread = await _thread(env)
-    reply = await create_reply(db, thread_id=thread.id, status=D, deleted_at=datetime.now(UTC))
+    reply = await create_reply(db, thread_id=thread.id, status=H, hidden_reason=HiddenReason.ADMIN)
     reply.body_html = _img(stored, thumb=True)
     await db.commit()
 
@@ -833,3 +834,160 @@ async def test_after_purge_the_members_upload_is_gone_from_mine(client, other_cl
 
     body = (await client.get(MINE)).json()
     assert all(item["id"] != stored.id for item in body["items"])
+
+
+# --- review follow-ups ------------------------------------------------------------------------
+
+
+async def test_purge_writes_a_report_resolve_audit_row_per_report(client, env):
+    db = env.db
+    post = await _post(env)
+    comment = await create_comment(db, post_id=post.id)
+    reports = [
+        await _report(env, content_type="post", content_id=post.id),
+        await _report(env, content_type="post", content_id=post.id),
+        await _report(env, content_type="comment", content_id=comment.id),
+    ]
+    closed = await _report(
+        env, content_type="post", content_id=post.id, status=ReportStatus.DISMISSED
+    )
+    expected = {
+        r.id: {"content_type": r.content_type.value, "content_id": r.content_id, "purge": True}
+        for r in reports
+    }
+    closed_id = closed.id
+    await db.commit()
+    admin = await _signed_in(client, env)
+
+    assert (await _purge(client, "post", post.id)).status_code == 200
+
+    rows = (
+        await db.scalars(
+            select(AuditLog)
+            .where(AuditLog.action == "report.resolve", AuditLog.target_type == "report")
+            .where(AuditLog.target_id.in_([*expected, closed_id]))
+            .execution_options(populate_existing=True)
+        )
+    ).all()
+    assert {row.target_id: row.metadata_ for row in rows} == expected
+    assert all(row.actor_id == admin.id for row in rows)
+
+
+async def test_purge_audit_lists_deleted_attachments_by_id_and_uploader(client, env):
+    db = env.db
+    alice = await _user(env)
+    cover = await _file(env, uploader_id=alice.id)
+    inline = await _file(env, uploader_id=None)
+    post = await _post(env, cover_attachment_id=cover.id)
+    post.body_html = _img(inline)
+    await db.commit()
+    await _signed_in(client, env)
+
+    assert (await _purge(client, "post", post.id)).status_code == 200
+
+    entry = await _purge_audit(db, ContentType.POST, post.id)
+    assert sorted(entry.metadata_["attachments"], key=lambda a: a["id"]) == sorted(
+        [{"id": cover.id, "uploader_id": alice.id}, {"id": inline.id, "uploader_id": None}],
+        key=lambda a: a["id"],
+    )
+    assert cover.storage_path not in str(entry.metadata_)
+
+
+async def test_purge_audit_has_an_empty_attachment_list_when_none_go(client, env):
+    post = await _post(env)
+    await env.db.commit()
+    await _signed_in(client, env)
+
+    assert (await _purge(client, "post", post.id)).status_code == 200
+
+    entry = await _purge_audit(env.db, ContentType.POST, post.id)
+    assert entry.metadata_["attachments"] == []
+
+
+@pytest.mark.parametrize(
+    ("content_type", "table", "column"),
+    [
+        (ContentType.POST, "comments", "post_id"),
+        (ContentType.THREAD, "replies", "thread_id"),
+        (ContentType.REPLY, "replies", "parent_reply_id"),
+    ],
+)
+async def test_purge_deletes_children_by_parent_with_returning(
+    client, env, content_type, table, column
+):
+    """Children go by their parent's id (``DELETE ... WHERE <parent> = :id RETURNING id``), with
+    the parent row locked, so a child added after any earlier read is deleted and counted too."""
+    from app.db.session import engine
+
+    db = env.db
+    if content_type == ContentType.POST:
+        target = await _post(env)
+        await create_comment(db, post_id=target.id)
+    else:
+        thread = await _thread(env)
+        top = await create_reply(db, thread_id=thread.id)
+        await create_reply(db, thread_id=thread.id, parent_reply_id=top.id)
+        target = thread if content_type == ContentType.THREAD else top
+    target_id = target.id
+    await db.commit()
+    await _signed_in(client, env)
+
+    statements: list[str] = []
+
+    def capture(conn, cursor, statement, parameters, context, executemany):
+        statements.append(" ".join(statement.split()))
+
+    event.listen(engine.sync_engine, "before_cursor_execute", capture)
+    try:
+        response = await _purge(client, content_type, target_id)
+    finally:
+        event.remove(engine.sync_engine, "before_cursor_execute", capture)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["children_deleted"] >= 1
+    deletes = [s for s in statements if s.startswith(f"DELETE FROM {table}")]
+    assert deletes, statements
+    assert any(f"{table}.{column} =" in s and "RETURNING" in s for s in deletes), deletes
+    locks = [s for s in statements if "FOR UPDATE" in s]
+    assert locks, "the purged row is loaded FOR UPDATE"
+
+
+async def test_owner_deletes_an_image_used_only_by_their_deleted_post(client, env):
+    db = env.db
+    member = await _signed_in(client, env, factory=create_verified_user)
+    stored = await _file(env, uploader_id=member.id)
+    gone = await _post(env, D, author_id=member.id, cover_attachment_id=stored.id)
+    gone.body_html = _img(stored)
+    await db.commit()
+
+    response = await client.delete(f"{API}/uploads/{stored.id}")
+
+    assert response.status_code == 204, response.text
+    assert (await _reload(db, Attachment, stored.id)).deleted_at is not None
+    assert _files_exist(env, stored) == (False, False)
+
+
+async def test_owner_still_cannot_delete_an_image_also_used_by_a_live_post(client, env):
+    db = env.db
+    member = await _signed_in(client, env, factory=create_verified_user)
+    stored = await _file(env, uploader_id=member.id)
+    gone = await _post(env, D, author_id=member.id)
+    gone.body_html = _img(stored)
+    live = await _post(env, author_id=member.id)
+    live.body_html = _img(stored)
+    await db.commit()
+
+    _assert_error(await client.delete(f"{API}/uploads/{stored.id}"), 409, "uploads.in_use")
+    assert _files_exist(env, stored) == (True, True)
+
+
+async def test_admin_cannot_delete_someone_elses_image_used_by_deleted_content(client, env):
+    db = env.db
+    member = await _user(env)
+    stored = await _file(env, uploader_id=member.id)
+    gone = await _post(env, D, author_id=member.id)
+    gone.body_html = _img(stored)
+    await db.commit()
+    await _signed_in(client, env)
+
+    _assert_error(await client.delete(f"{API}/uploads/{stored.id}"), 409, "uploads.in_use")

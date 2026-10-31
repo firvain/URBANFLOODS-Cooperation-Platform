@@ -76,6 +76,8 @@ class ModerationResult(BaseModel):
 class PurgeResultOut(BaseModel):
     """Response of ``purge``: the item is gone; counts of what went with it."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     content_type: ContentType
     id: int
     purged: Literal[True] = True
