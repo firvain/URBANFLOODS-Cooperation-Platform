@@ -44,7 +44,7 @@
     },
     "dss": {
       "title": "URBANFLOODS DSS",
-      "description": "Decision Support System developed by URBANFLOODS for flood management.",
+      "description": "Decision Support System for flood management.",
       "open": "Open the DSS"
     }
   },
