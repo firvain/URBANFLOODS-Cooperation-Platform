@@ -3,7 +3,12 @@
     "title": "Piattaforma di cooperazione URBANFLOODS",
     "skipToContent": "Vai al contenuto principale",
     "language": "Lingua",
-    "mainNavigation": "Navigazione principale"
+    "mainNavigation": "Navigazione principale",
+    "logoAlt": "Interreg IPA ADRION, cofinanziato dall'Unione europea: URBANFLOODS",
+    "projectLogoAlt": "Logo del progetto URBANFLOODS"
+  },
+  "a11y": {
+    "opensInNewTab": "(si apre in una nuova scheda)"
   },
   "nav": {
     "home": "Home",
@@ -12,44 +17,960 @@
     "knowbase": "KNOWBASE",
     "partners": "Partner",
     "network": "Rete",
-    "dss": "DSS unificato",
-    "about": "Informazioni",
+    "dss": "Unified DSS",
+    "about": "Il progetto",
     "login": "Accedi",
     "register": "Registrati",
     "account": "Account"
   },
+  "home": {
+    "title": "Piattaforma di cooperazione",
+    "intro": "Un punto d'incontro per i portatori di interesse della gestione delle alluvioni nella regione adriatico-ionica: condividi esperienze nel blog, partecipa alle discussioni nel forum.",
+    "comingSoon": "Prossimamente",
+    "cards": {
+      "blog": {
+        "title": "Blog",
+        "description": "Articoli, casi di studio e buone pratiche."
+      },
+      "forum": {
+        "title": "Forum",
+        "description": "Fai domande e discuti di gestione delle alluvioni."
+      },
+      "knowbase": {
+        "title": "KNOWBASE",
+        "description": "Consulta normativa, politiche e misure di protezione dalle alluvioni.",
+        "open": "Apri KNOWBASE"
+      }
+    },
+    "dss": {
+      "title": "Unified DSS",
+      "description": "Consulta il sistema di supporto alle decisioni sviluppato da URBANFLOODS per la gestione delle alluvioni.",
+      "open": "Apri il DSS"
+    }
+  },
   "blog": {
-    "title": "Blog"
+    "title": "Blog",
+    "write": "Scrivi un articolo",
+    "loading": "Caricamento degli articoli…",
+    "count": "Nessun articolo | 1 articolo | {count} articoli",
+    "empty": "Nessun articolo corrisponde a questi filtri.",
+    "emptyAll": "Non ci sono ancora articoli.",
+    "loadError": "Non è stato possibile caricare gli articoli.",
+    "retry": "Riprova",
+    "clearFilters": "Azzera i filtri",
+    "pagination": "Pagine del blog",
+    "filters": {
+      "title": "Filtra gli articoli",
+      "category": "Categoria",
+      "allCategories": "Tutte",
+      "search": "Cerca",
+      "searchPlaceholder": "Titolo o testo",
+      "locale": "Lingua",
+      "allLocales": "Tutte le lingue",
+      "sort": "Ordine",
+      "sortNewest": "Prima i più recenti",
+      "sortOldest": "Prima i meno recenti",
+      "sortEvents": "Prossimi eventi",
+      "tag": "Tag",
+      "removeTag": "Rimuovi il filtro per tag {tag}",
+      "popularTags": "Tag più usati:"
+    }
+  },
+  "post": {
+    "pageTitle": "Articolo del blog",
+    "back": "Torna al blog",
+    "notFound": "Articolo non trovato",
+    "notFoundHint": "L'articolo non esiste, è stato rimosso o non è visibile per te.",
+    "loadError": "Non è stato possibile caricare l'articolo.",
+    "formerMember": "Ex membro",
+    "updated": "aggiornato",
+    "tags": "Tag",
+    "comments": "Nessun commento | 1 commento | {count} commenti",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "deleted": "L'articolo è stato eliminato.",
+    "deleteConfirm": {
+      "title": "Eliminare questo articolo?",
+      "description": "L'articolo non sarà più visibile sulla piattaforma.",
+      "confirm": "Elimina l'articolo",
+      "cancel": "Annulla"
+    },
+    "status": {
+      "pending": "In attesa di approvazione",
+      "hidden": "Nascosto",
+      "deleted": "Eliminato",
+      "published": "Pubblicato"
+    },
+    "statusHint": {
+      "pending": "In attesa di approvazione da parte di un amministratore. Fino all'approvazione, solo tu e gli amministratori potete vedere questo articolo.",
+      "rejected": "Un amministratore non ha approvato questo articolo. Solo tu e gli amministratori potete vederlo.",
+      "hidden": "Questo articolo è nascosto. Solo l'autore e gli amministratori possono vederlo.",
+      "deleted": "Questo articolo è stato eliminato."
+    },
+    "event": {
+      "label": "Evento",
+      "link": "Pagina dell'evento"
+    },
+    "knowbase": {
+      "title": "Da KNOWBASE",
+      "measure": "Misura",
+      "document": "Documento"
+    }
   },
   "forum": {
-    "title": "Forum"
+    "title": "Forum",
+    "start": "Avvia una discussione",
+    "loading": "Caricamento delle discussioni…",
+    "count": "Nessuna discussione | 1 discussione | {count} discussioni",
+    "empty": "Nessuna discussione corrisponde a questi filtri.",
+    "emptyAll": "Non ci sono ancora discussioni.",
+    "loadError": "Non è stato possibile caricare le discussioni.",
+    "retry": "Riprova",
+    "clearFilters": "Azzera i filtri",
+    "pagination": "Pagine del forum",
+    "filters": {
+      "title": "Filtra le discussioni",
+      "category": "Categoria",
+      "allCategories": "Tutte",
+      "search": "Cerca",
+      "searchPlaceholder": "Titolo o testo",
+      "locale": "Lingua",
+      "allLocales": "Tutte le lingue",
+      "sort": "Ordine",
+      "sortActivity": "Attività più recente",
+      "sortNewest": "Più recenti",
+      "tag": "Tag",
+      "removeTag": "Rimuovi il filtro per tag {tag}"
+    }
   },
-  "auth": {
-    "login": "Accedi",
-    "register": "Registrati",
-    "logout": "Esci"
+  "thread": {
+    "pageTitle": "Discussione",
+    "back": "Torna al forum",
+    "notFound": "Discussione non trovata",
+    "notFoundHint": "La discussione non esiste, è stata rimossa o non è visibile per te.",
+    "loadError": "Non è stato possibile caricare la discussione.",
+    "pinned": "In evidenza",
+    "locked": "Chiusa",
+    "replies": "Nessuna risposta | 1 risposta | {count} risposte",
+    "lastActivity": "Ultima attività",
+    "started": "Avviata",
+    "tags": "Tag",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "deleted": "La discussione è stata eliminata.",
+    "deleteConfirm": {
+      "title": "Eliminare questa discussione?",
+      "description": "La discussione e le sue risposte non saranno più visibili sulla piattaforma.",
+      "confirm": "Elimina la discussione",
+      "cancel": "Annulla"
+    },
+    "statusHint": {
+      "pending": "In attesa di approvazione da parte di un amministratore. Fino all'approvazione, solo tu e gli amministratori potete vedere questa discussione.",
+      "rejected": "Un amministratore non ha approvato questa discussione. Solo tu e gli amministratori potete vederla.",
+      "hidden": "Questa discussione è nascosta. Solo l'autore e gli amministratori possono vederla.",
+      "deleted": "Questa discussione è stata eliminata."
+    },
+    "admin": {
+      "label": "Moderazione",
+      "pin": "Metti in evidenza",
+      "unpin": "Togli dall'evidenza",
+      "lock": "Chiudi",
+      "unlock": "Riapri",
+      "pinned": "La discussione è in evidenza.",
+      "unpinned": "La discussione non è più in evidenza.",
+      "locked": "La discussione è chiusa.",
+      "unlocked": "La discussione è stata riaperta."
+    },
+    "form": {
+      "titleNew": "Avvia una discussione",
+      "titleEdit": "Modifica la discussione",
+      "backToThread": "Torna alla discussione",
+      "title": "Titolo",
+      "titleHint": "Una domanda o un argomento, in poche parole.",
+      "category": "Categoria",
+      "categoryPlaceholder": "Scegli una categoria",
+      "locale": "Lingua della discussione",
+      "localeHint": "La lingua in cui è scritta la discussione.",
+      "body": "Testo",
+      "tags": "Tag",
+      "tagsPlaceholder": "Aggiungi un tag",
+      "untrustedNote": "La tua prima discussione sarà esaminata da un amministratore prima della pubblicazione.",
+      "submitCreate": "Pubblica",
+      "submitReview": "Invia per l'approvazione",
+      "submitEdit": "Salva le modifiche",
+      "cancel": "Annulla",
+      "created": "La discussione è stata pubblicata.",
+      "createdPending": "La discussione è stata inviata. Sarà pubblicata dopo l'approvazione di un amministratore.",
+      "saved": "Le modifiche sono state salvate.",
+      "unverified": "Verifica il tuo indirizzo email per avviare discussioni.",
+      "forbidden": "Non puoi modificare questa discussione.",
+      "errors": {
+        "bodyRequired": "Scrivi il testo della discussione."
+      },
+      "leave": {
+        "title": "Uscire senza salvare?",
+        "description": "Le modifiche a questa discussione non sono salvate e andranno perse.",
+        "confirm": "Esci",
+        "stay": "Continua a modificare"
+      },
+      "draft": {
+        "found": "Hai una bozza non salvata di questa discussione."
+      }
+    }
+  },
+  "reply": {
+    "title": "Risposte",
+    "loading": "Caricamento delle risposte…",
+    "loadError": "Non è stato possibile caricare le risposte.",
+    "empty": "Non ci sono ancora risposte. Rispondi per primo.",
+    "loadMore": "Carica altre risposte",
+    "reply": "Rispondi",
+    "replyTo": "Rispondi a {name}",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "edited": "modificata",
+    "deleted": "[eliminata]",
+    "sending": "Invio in corso…",
+    "formerMember": "Ex membro",
+    "label": "La tua risposta",
+    "labelEdit": "Modifica la tua risposta",
+    "placeholder": "Scrivi una risposta…",
+    "submit": "Pubblica la risposta",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "posted": "La tua risposta è stata pubblicata.",
+    "saved": "La risposta è stata salvata.",
+    "removed": "La risposta è stata eliminata.",
+    "lockedNotice": "Questa discussione è chiusa. Non si accettano nuove risposte.",
+    "unverified": "Verifica il tuo indirizzo email per rispondere.",
+    "loginToReply": "Accedi per rispondere",
+    "notPublished": "Le risposte saranno aperte quando la discussione sarà pubblicata.",
+    "deleteConfirm": {
+      "title": "Eliminare questa risposta?",
+      "description": "La risposta non sarà più visibile. Le risposte a essa restano.",
+      "confirm": "Elimina la risposta",
+      "cancel": "Annulla"
+    },
+    "errors": {
+      "empty": "Scrivi qualcosa prima di pubblicare.",
+      "tooLong": "La risposta è troppo lunga. Accorciala prima di pubblicarla.",
+      "parentInvalid": "La risposta a cui stai rispondendo non è più disponibile."
+    }
+  },
+  "comments": {
+    "title": "Nessun commento | 1 commento | {count} commenti",
+    "loading": "Caricamento dei commenti…",
+    "loadError": "Non è stato possibile caricare i commenti.",
+    "retry": "Riprova",
+    "empty": "Non ci sono ancora commenti. Commenta per primo.",
+    "loadMore": "Carica altri commenti",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "edited": "modificato",
+    "sending": "Invio in corso…",
+    "formerMember": "Ex membro",
+    "label": "Il tuo commento",
+    "labelEdit": "Modifica il tuo commento",
+    "placeholder": "Scrivi un commento…",
+    "submit": "Pubblica il commento",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "removed": "Il commento è stato eliminato.",
+    "unverified": "Verifica il tuo indirizzo email per commentare.",
+    "loginToComment": "Accedi per commentare",
+    "notPublished": "I commenti saranno aperti quando l'articolo sarà pubblicato.",
+    "closed": "Questo articolo non è pubblico, quindi non accetta nuovi commenti.",
+    "deleteConfirm": {
+      "title": "Eliminare questo commento?",
+      "description": "Il commento non sarà più visibile.",
+      "confirm": "Elimina il commento",
+      "cancel": "Annulla"
+    },
+    "errors": {
+      "empty": "Scrivi qualcosa prima di pubblicare.",
+      "tooLong": "Il commento è troppo lungo. Accorcialo prima di pubblicarlo."
+    }
+  },
+  "partners": {
+    "title": "Partner",
+    "partnershipTitle": "Partenariato",
+    "leadPartner": "Partner capofila",
+    "leadBadge": "CAPOFILA",
+    "projectPartners": "Partner di progetto",
+    "associatedPartners": "Partner associati",
+    "logoAlt": "Logo di {name}",
+    "shortName": "Nome breve",
+    "loading": "Caricamento dei partner…",
+    "loadError": "Non è stato possibile caricare l'elenco dei partner.",
+    "retry": "Riprova",
+    "empty": "Non ci sono ancora partner in elenco."
+  },
+  "network": {
+    "title": "Rete di collaborazione",
+    "intro": "Trova chi si occupa di gestione delle alluvioni nella regione adriatico-ionica per competenza, paese o organizzazione.",
+    "filters": {
+      "title": "Filtra i membri",
+      "search": "Cerca",
+      "searchPlaceholder": "Nome, organizzazione o biografia",
+      "expertise": "Competenze",
+      "expertisePlaceholder": "Qualsiasi competenza",
+      "country": "Paese",
+      "allCountries": "Tutti i paesi",
+      "organisation": "Organizzazione",
+      "allOrganisations": "Tutte le organizzazioni"
+    },
+    "count": "Nessun membro | {count} membro | {count} membri",
+    "loading": "Caricamento dei membri…",
+    "loadError": "Non è stato possibile caricare l'elenco dei membri.",
+    "retry": "Riprova",
+    "empty": "Nessun membro corrisponde a questi filtri.",
+    "emptyAll": "Non ci sono ancora membri in elenco.",
+    "clearFilters": "Azzera i filtri",
+    "pagination": "Pagine dell'elenco dei membri",
+    "card": {
+      "email": "Email",
+      "expertise": "Competenze",
+      "moreExpertise": "+{count}",
+      "moreExpertiseLabel": "Altre {count}: {labels}"
+    },
+    "suggested": {
+      "title": "Collaboratori suggeriti",
+      "intro": "Membri che si occupano dei tuoi stessi temi.",
+      "shared": "condivide {count} area di competenza | condivide {count} aree di competenza",
+      "seeAll": "Vedi tutti i membri della Rete di collaborazione",
+      "empty": "Ancora nessun suggerimento. Aggiungi le tue aree di competenza al profilo per trovare membri con interessi simili.",
+      "editProfile": "Modifica il tuo profilo",
+      "loadError": "Non è stato possibile caricare i suggerimenti."
+    }
+  },
+  "knowbase": {
+    "openInKnowbase": "Apri in KNOWBASE",
+    "loading": "Caricamento…",
+    "retry": "Riprova",
+    "notFoundHint": "Potrebbe essere stato rimosso da KNOWBASE, oppure il link è errato.",
+    "fields": {
+      "description": "Descrizione",
+      "descriptionLocal": "Descrizione (lingua originale)",
+      "keywords": "Parole chiave"
+    },
+    "mentions": {
+      "title": "Citato in"
+    },
+    "measures": {
+      "detailTitle": "Misura di gestione delle alluvioni",
+      "untitled": "Misura senza titolo",
+      "back": "Tutte le misure",
+      "detailError": "Non è stato possibile caricare la misura.",
+      "notFound": "Misura non trovata",
+      "photoCredit": "Foto: {source}",
+      "fields": {
+        "category": "Categoria",
+        "level": "Livello di applicazione",
+        "scale": "Scala",
+        "resources": "Risorse necessarie",
+        "benefits": "Benefici",
+        "constraints": "Vincoli"
+      }
+    },
+    "documents": {
+      "detailTitle": "Documento normativo o politico",
+      "untitled": "Documento senza titolo",
+      "back": "Tutta la normativa e le politiche",
+      "detailError": "Non è stato possibile caricare il documento.",
+      "notFound": "Documento non trovato",
+      "fields": {
+        "level": "Livello di governo",
+        "subject": "Oggetto",
+        "number": "Numero",
+        "gazette": "Riferimento alla Gazzetta Ufficiale",
+        "webLinks": "Link web",
+        "comments": "Note"
+      }
+    }
+  },
+  "profile": {
+    "title": "Profilo del membro",
+    "organisation": "Organizzazione",
+    "country": "Paese",
+    "bio": "Presentazione",
+    "expertise": "Competenze",
+    "email": "Email",
+    "memberSince": "Membro dal {date}",
+    "loading": "Caricamento del profilo…",
+    "loadError": "Non è stato possibile caricare questo profilo.",
+    "retry": "Riprova",
+    "backToNetwork": "Torna alla Rete di collaborazione"
+  },
+  "about": {
+    "title": "Il progetto URBANFLOODS",
+    "informationTitle": "Informazioni",
+    "facts": {
+      "acronym": "Acronimo del progetto",
+      "fullTitle": "Titolo completo del progetto",
+      "programme": "Programma",
+      "priority": "Priorità del programma",
+      "call": "Bando",
+      "specificObjective": "Obiettivo specifico",
+      "dates": "Data di inizio – fine",
+      "totalBudget": "Budget totale",
+      "interregFunds": "Fondi Interreg"
+    },
+    "values": {
+      "acronym": "URBANFLOODS",
+      "fullTitle": "Promoting Urban Resilience Through an Integrated Advanced Decision Support System for Flood Control",
+      "programme": "Interreg IPA ADRION 2021–2027",
+      "priority": "2. Sostenere una regione adriatico-ionica più verde e resiliente ai cambiamenti climatici",
+      "call": "IPA ADRION – Primo invito a presentare proposte",
+      "specificObjective": "SO2.1. Promuovere l'adattamento ai cambiamenti climatici, la prevenzione dei rischi di catastrofe e la resilienza, prendendo in considerazione approcci ecosistemici",
+      "dates": "01/09/2024 – 31/08/2027",
+      "totalBudget": "EUR 1.747.583,17",
+      "interregFunds": "EUR 1.485.445,68"
+    },
+    "priorityIconAlt": "Icona della Priorità 2 di Interreg IPA ADRION",
+    "partnersTitle": "Partner",
+    "leadPartner": {
+      "name": "Università della Macedonia Occidentale",
+      "address": "Zona di urbanizzazione attiva (ZEP) I, 50100 Kozani, Grecia",
+      "coordinatorName": "Prof.ssa Malamati Louta",
+      "coordinatorRole": "Coordinatrice scientifica"
+    },
+    "summary": {
+      "title": "Sintesi del progetto",
+      "paragraphs": [
+        "La regione adriatico-ionica, con le sue particolari condizioni geografiche e climatiche, è sempre più esposta a gravi eventi alluvionali dovuti alla combinazione dei cambiamenti climatici e dei cambiamenti di uso del suolo. Questi eventi hanno prodotto significativi adeguamenti geomorfologici degli alvei fluviali e, storicamente, hanno causato ingenti danni a vite umane, beni, agricoltura e infrastrutture turistiche. Inoltre, il Mediterraneo e in particolare la regione adriatico-ionica sono considerati un punto critico (hotspot) della crisi climatica.",
+        "Il progetto URBANFLOODS riconosce che un'efficace gestione delle alluvioni richiede una conoscenza approfondita a livello locale e regionale per elaborare strategie di prevenzione e mitigazione adeguate. Il progetto si impegna a rafforzare la resilienza e la preparazione delle aree urbane sviluppando in modo collaborativo un sistema di supporto alle decisioni (DSS) avanzato e integrato, con l'obiettivo di proporre ai portatori di interesse locali azioni, misure e raccomandazioni politiche di breve, medio e lungo periodo per un efficace controllo delle alluvioni. Il progetto sottolinea l'importanza di sensibilizzare sulle strategie di adattamento ai cambiamenti climatici, promuovendo così un approccio proattivo alla resilienza climatica.",
+        "L'obiettivo generale del progetto è lo sviluppo congiunto di soluzioni innovative per la gestione delle alluvioni, basate su un sistema informativo avanzato, e l'attuazione di azioni pilota per ridurre i rischi di alluvione. URBANFLOODS si rivolge in particolare a fiumi e torrenti che attraversano aree urbane, poiché spesso rappresentano un rischio di alluvione significativo per le comunità urbane, una situazione aggravata dalla rapida urbanizzazione e dall'evoluzione del clima.",
+        "Le soluzioni innovative congiunte saranno perfezionate tenendo conto dei requisiti, dei vincoli e delle caratteristiche locali di diversi siti pilota nell'area adriatico-ionica, dello scambio di esperienze e della formazione pratica derivante dalle iniziative pilota del progetto. Ciò ne garantisce l'applicabilità e l'efficacia in una varietà di contesti e condizioni."
+      ],
+      "outputsIntro": "Tra i risultati specifici (output) del progetto figurano:",
+      "outputs": [
+        {
+          "title": "Sviluppo congiunto di soluzioni",
+          "text": "e in particolare di un DSS avanzato e basato sui dati, che offre soluzioni olistiche per la gestione delle alluvioni, compresi sistemi di allerta precoce e una base di conoscenza di azioni, misure e raccomandazioni politiche transnazionali di breve, medio e lungo periodo. Queste soluzioni serviranno a rafforzare i meccanismi di protezione civile migliorando i relativi piani."
+        },
+        {
+          "title": "Attuazione congiunta di azioni pilota",
+          "text": "in più siti pilota, per un uso condiviso e coordinato dei dati, la modellazione e la progettazione di sistemi di allerta precoce volti a ridurre i rischi legati ai cambiamenti climatici, la sperimentazione e la validazione del DSS in più siti della regione adriatico-ionica e il rafforzamento del coinvolgimento dei portatori di interesse nella gestione delle alluvioni, attraverso la sensibilizzazione, la promozione dell'accettazione del DSS e l'innovazione grazie a un accesso condiviso, coordinato e di facile utilizzo in tutti i siti pilota."
+        },
+        {
+          "title": "Sviluppo e attuazione congiunti di strategie e piani d'azione transnazionali integrati",
+          "text": "per coordinare le misure di gestione delle alluvioni dando priorità alle soluzioni basate sulla natura. Questi piani d'azione potranno servire da riferimento per altre regioni che affrontano sfide simili."
+        },
+        {
+          "title": "Rafforzamento della cooperazione transfrontaliera tra organizzazioni",
+          "text": "poiché in URBANFLOODS 11 partner di 8 paesi diversi e 11 partner associati coopereranno per raggiungere gli obiettivi del progetto."
+        }
+      ],
+      "closing": "I principali risultati del progetto comprendono soluzioni innovative sviluppate congiuntamente, nonché una strategia e piani d'azione transnazionali congiunti e armonizzati, rispondenti alle esigenze territoriali per una gestione delle alluvioni efficiente ed efficace, che saranno adottati e/o presi in considerazione e valutati dalle organizzazioni. Sarà inoltre promossa la sostenibilità delle soluzioni sviluppate congiuntamente: tutti i partner sono impegnati per il buon esito del progetto e disposti a proseguire una cooperazione attiva anche dopo la sua conclusione. Il progetto favorirà inoltre una maggiore consapevolezza delle strategie di adattamento ai cambiamenti climatici, incoraggiando così un atteggiamento proattivo verso la resilienza climatica."
+    },
+    "links": {
+      "title": "Per saperne di più",
+      "project": "Sito web del progetto URBANFLOODS",
+      "knowbase": "URBANFLOODS KNOWBASE"
+    },
+    "partnersLink": "Vedi i partner del progetto"
   },
   "legal": {
     "termsTitle": "Condizioni d'uso",
     "privacyTitle": "Informativa sulla privacy",
     "accessibilityTitle": "Dichiarazione di accessibilità",
     "openDataTitle": "Dati aperti",
+    "version": "Versione {version} – {date}",
+    "contents": "Indice",
     "englishOnly": "Questo documento è disponibile solo in inglese."
   },
   "footer": {
-    "statement": "Il progetto è cofinanziato dall'Unione europea attraverso il programma Interreg IPA ADRION."
-  },
-  "account": {
-    "nudge": {
-      "title": "Dite ai membri di cosa vi occupate"
+    "statement": "Il progetto è cofinanziato dall'Unione europea attraverso il programma Interreg IPA ADRION.",
+    "disclaimer": "Il presente sito web è stato realizzato con l'assistenza finanziaria dell'Unione europea. Il contenuto del sito web è di esclusiva responsabilità dell'Università della Macedonia Occidentale e non può in alcun caso essere considerato come riflesso della posizione dell'Unione europea e/o delle autorità del programma IPA ADRION.",
+    "columns": {
+      "platform": "Piattaforma",
+      "project": "Progetto",
+      "follow": "Seguici"
     },
-    "tabs": {
-      "notifications": "Notifiche",
-      "data": "I tuoi dati"
+    "links": {
+      "programme": "Programma Interreg IPA ADRION",
+      "project": "Sito web del progetto URBANFLOODS",
+      "knowbase": "URBANFLOODS KNOWBASE",
+      "linkedin": "URBANFLOODS su LinkedIn"
+    },
+    "copyright": "© {year} URBANFLOODS",
+    "navLabel": "Link del progetto"
+  },
+  "errors": {
+    "notFound": "Pagina non trovata",
+    "notFoundDescription": "La pagina che cerchi non esiste o è stata spostata.",
+    "backHome": "Torna alla home page",
+    "generic": "Si è verificato un errore. Riprova.",
+    "tooManyRequests": "Troppe richieste. Attendi un momento e riprova.",
+    "api": {
+      "auth": {
+        "invalid_credentials": "Email o password non corretti.",
+        "account_disabled": "Questo account è stato disattivato. Se pensi che si tratti di un errore, contatta gli amministratori della piattaforma.",
+        "email_taken": "Esiste già un account con questo indirizzo email.",
+        "token_invalid": "Questo link non è valido o è scaduto.",
+        "captcha_failed": "Il controllo antispam non è riuscito. Riprova."
+      },
+      "validation": {
+        "failed": "Correggi i campi evidenziati."
+      },
+      "uploads": {
+        "too_large": "L'immagine è troppo grande. Scegli un file di massimo 5 MB.",
+        "unsupported_type": "Sono accettate solo immagini JPEG, PNG e WebP.",
+        "invalid_image": "Il file non è un'immagine valida.",
+        "animated": "Le immagini animate non sono accettate.",
+        "too_large_pixels": "L'immagine ha troppi pixel. Ridimensionala e riprova.",
+        "daily_limit": "Hai raggiunto il limite giornaliero di caricamenti. Riprova domani."
+      },
+      "posts": {
+        "not_found": "L'articolo non esiste o non è visibile per te.",
+        "forbidden": "Non puoi modificare questo articolo.",
+        "category_admin_only": "Solo gli amministratori possono pubblicare in questa categoria.",
+        "slug_taken": "Un altro articolo usa già questo indirizzo."
+      },
+      "knowbase": {
+        "unavailable": "KNOWBASE non è raggiungibile, quindi non è stato possibile verificare gli elementi collegati. Riprova più tardi."
+      },
+      "threads": {
+        "not_found": "La discussione non esiste o non è visibile per te.",
+        "forbidden": "Non puoi modificare questa discussione.",
+        "category_admin_only": "Solo gli amministratori possono avviare discussioni in questa categoria.",
+        "locked": "Questa discussione è chiusa. Non si accettano nuove risposte.",
+        "slug_taken": "Un'altra discussione usa già questo indirizzo."
+      },
+      "replies": {
+        "not_found": "La risposta non esiste o è stata eliminata.",
+        "forbidden": "Non puoi modificare questa risposta."
+      },
+      "comments": {
+        "not_found": "Il commento non esiste o è stato eliminato.",
+        "forbidden": "Non puoi modificare questo commento.",
+        "post_not_published": "I commenti sono aperti solo sugli articoli pubblicati."
+      }
+    },
+    "fields": {
+      "required": "Questo campo è obbligatorio.",
+      "invalid": "Questo valore non è valido.",
+      "value_error": "Questo valore non è valido.",
+      "must_accept": "Per continuare devi accettare le condizioni d'uso e l'informativa sulla privacy.",
+      "password_mismatch": "Le password non coincidono.",
+      "auth": {
+        "password_too_short": "Usa almeno {min} caratteri.",
+        "password_too_long": "Usa al massimo {max} caratteri.",
+        "password_too_common": "Questa password è troppo comune. Scegline una meno prevedibile.",
+        "email_taken": "Esiste già un account con questo indirizzo email.",
+        "password_same": "La nuova password deve essere diversa da quella attuale."
+      },
+      "missing": "Questo campo è obbligatorio.",
+      "empty": "Questo campo non può essere vuoto.",
+      "string_too_short": "Questo testo è troppo breve.",
+      "string_too_long": "Questo testo è troppo lungo.",
+      "archived": "Questa categoria è archiviata. Scegline un'altra.",
+      "too_many": "Ci sono troppi elementi.",
+      "too_long": "Questo testo è troppo lungo."
     }
   },
-  "admin": {
-    "title": "Amministrazione",
-    "menu": "Amministrazione"
+  "auth": {
+    "login": "Accedi",
+    "register": "Registrati",
+    "logout": "Esci",
+    "loggedOut": "Sei uscito dalla piattaforma.",
+    "resent": "Se l'indirizzo appartiene a un account ancora da verificare, ti stiamo inviando un nuovo link.",
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "newPassword": "Nuova password",
+      "confirmPassword": "Conferma la nuova password",
+      "passwordHint": "Almeno {min} caratteri. Una frase lunga è più facile da ricordare di una parola complessa.",
+      "showPassword": "Mostra la password",
+      "hidePassword": "Nascondi la password",
+      "displayName": "Nome visualizzato",
+      "displayNameHint": "Compare accanto ai tuoi articoli e alle tue risposte.",
+      "organisation": "Organizzazione",
+      "organisationPlaceholder": "Seleziona la tua organizzazione (facoltativo)",
+      "organisationOtherOption": "Altra…",
+      "organisationOther": "Nome dell'organizzazione",
+      "country": "Paese",
+      "countryPlaceholder": "Seleziona il tuo paese (facoltativo)",
+      "countryOther": "Altro",
+      "locale": "Lingua preferita",
+      "localeHint": "Usata per le email che ti inviamo.",
+      "acceptTerms": "Accetto le {terms} e l'{privacy}.",
+      "terms": "condizioni d'uso",
+      "privacy": "informativa sulla privacy",
+      "optional": "Facoltativo"
+    },
+    "loginPage": {
+      "intro": "Accedi per scrivere articoli, partecipare al forum e segnalare contenuti.",
+      "submit": "Accedi",
+      "noAccount": "Non hai ancora un account?",
+      "forgot": "Hai dimenticato la password?"
+    },
+    "registerPage": {
+      "title": "Crea un account",
+      "intro": "La registrazione è gratuita. Per leggere i contenuti della piattaforma non serve un account; per pubblicare sì.",
+      "submit": "Crea l'account",
+      "haveAccount": "Hai già un account?"
+    },
+    "registerSuccess": {
+      "title": "Controlla la tua email",
+      "body": "Abbiamo inviato un link di verifica a {email}. Aprilo per attivare il tuo account. Il link è valido per 48 ore.",
+      "noEmail": "Non hai ricevuto l'email? Controlla la cartella spam o inviala di nuovo.",
+      "resend": "Invia di nuovo il link"
+    },
+    "verify": {
+      "title": "Verifica la tua email",
+      "verifying": "Verifica del tuo indirizzo email in corso…",
+      "success": "Il tuo indirizzo email è verificato e hai effettuato l'accesso. Benvenuto!",
+      "redirecting": "Ti stiamo portando alla home page…",
+      "continue": "Vai alla home page",
+      "failed": "Non è stato possibile verificare il tuo indirizzo email",
+      "resendIntro": "Inserisci il tuo indirizzo email e ti invieremo un nuovo link.",
+      "resend": "Invia un nuovo link",
+      "redirectingProfile": "Ti stiamo portando alla home page… Puoi aggiungere le tue aree di competenza dal tuo account in qualsiasi momento."
+    },
+    "forgot": {
+      "title": "Password dimenticata",
+      "intro": "Inserisci l'indirizzo email del tuo account e ti invieremo un link per scegliere una nuova password.",
+      "submit": "Invia il link di reimpostazione",
+      "sent": "Se esiste un account con questo indirizzo, ti abbiamo inviato un link per reimpostare la password. Il link è valido per un'ora.",
+      "backToLogin": "Torna all'accesso"
+    },
+    "reset": {
+      "title": "Scegli una nuova password",
+      "intro": "Scegliendo una nuova password verrai disconnesso da tutti gli altri dispositivi.",
+      "submit": "Salva la nuova password",
+      "success": "La tua password è stata modificata e hai effettuato l'accesso.",
+      "requestNew": "Richiedi un nuovo link"
+    },
+    "unverified": {
+      "title": "Verifica il tuo indirizzo email",
+      "description": "Abbiamo inviato un link a {email}. Finché non lo apri puoi leggere tutti i contenuti, ma non puoi pubblicare, rispondere o segnalare.",
+      "resend": "Invia di nuovo l'email di verifica"
+    },
+    "menu": {
+      "signedInAs": "Accesso effettuato come {name}"
+    },
+    "expertiseToggle": "Aggiungi le tue aree di competenza",
+    "expertiseSelected": "{count} selezionate",
+    "expertiseLabel": "Aree di competenza (facoltativo, fino a {max})",
+    "expertiseHint": "Aiuta i membri che si occupano degli stessi temi di gestione delle alluvioni a trovarti. Puoi modificarle in seguito nel tuo profilo.",
+    "expertisePlaceholder": "Seleziona le tue aree di competenza"
+  },
+  "account": {
+    "intro": "Gestisci il tuo profilo, la password, i dispositivi su cui hai effettuato l'accesso, le notifiche via email e i tuoi dati.",
+    "tabs": {
+      "profile": "Profilo",
+      "password": "Password",
+      "sessions": "Sessioni",
+      "notifications": "Notifiche",
+      "data": "I tuoi dati"
+    },
+    "profile": {
+      "bio": "Presentati",
+      "bioHint": "Facoltativo. Qualche parola sul tuo lavoro e sui tuoi interessi.",
+      "bioCount": "{count}/{max}",
+      "expertise": "Aree di competenza",
+      "expertiseHint": "Fino a {max}. Servono a suggerire collaboratori e a filtrare la Rete di collaborazione.",
+      "expertisePlaceholder": "Seleziona le tue aree di competenza",
+      "expertiseMax": "Scegli al massimo {max} aree di competenza.",
+      "networkTitle": "Rete di collaborazione",
+      "showEmail": "Mostra il mio indirizzo email agli altri membri",
+      "showEmailHint": "Compare sul tuo profilo e sulla tua scheda membro, così gli altri possono contattarti direttamente.",
+      "showInDirectory": "Includimi nella Rete di collaborazione",
+      "showInDirectoryHint": "Gli altri possono trovarti per competenza, paese e organizzazione, e potrai essere suggerito come collaboratore.",
+      "submit": "Salva il profilo",
+      "saved": "Il tuo profilo è stato salvato.",
+      "noChanges": "Non ci sono modifiche da salvare."
+    },
+    "password": {
+      "intro": "Cambiando la password verrai disconnesso da tutti gli altri dispositivi.",
+      "current": "Password attuale",
+      "submit": "Cambia la password",
+      "changed": "Password modificata",
+      "wrongCurrent": "La password attuale non è corretta."
+    },
+    "sessions": {
+      "intro": "I dispositivi su cui hai effettuato l'accesso. Disconnetti quelli che non riconosci.",
+      "current": "Questo dispositivo",
+      "device": "{browser} su {os}",
+      "unknownDevice": "Dispositivo sconosciuto",
+      "signedIn": "Accesso: {date}",
+      "lastSeen": "Ultima attività: {date}",
+      "expires": "Scadenza: {date}",
+      "signOut": "Disconnetti questo dispositivo",
+      "signedOut": "Il dispositivo è stato disconnesso.",
+      "loading": "Caricamento delle sessioni…",
+      "loadError": "Non è stato possibile caricare le tue sessioni.",
+      "retry": "Riprova",
+      "empty": "Nessuna sessione attiva."
+    },
+    "notifications": {
+      "intro": "Scegli quali email ti invia la piattaforma. Le email relative all'account (verifica, reimpostazione della password) vengono sempre inviate.",
+      "contentTitle": "Attività sui tuoi contenuti",
+      "replyToMyThread": "Risposte alle mie discussioni",
+      "replyToMyThreadHint": "Un'email quando qualcuno risponde a una discussione che hai avviato.",
+      "commentOnMyPost": "Commenti ai miei articoli",
+      "commentOnMyPostHint": "Un'email quando qualcuno commenta uno dei tuoi articoli del blog.",
+      "replyToMyReply": "Risposte alle mie risposte",
+      "replyToMyReplyHint": "Un'email quando qualcuno risponde a una delle tue risposte.",
+      "adminTitle": "Amministrazione",
+      "adminDigest": "Riepilogo di moderazione",
+      "adminDigestHint": "Un riepilogo dei contenuti in attesa di approvazione e delle segnalazioni aperte.",
+      "frequency": "Frequenza del riepilogo",
+      "daily": "Giornaliera",
+      "weekly": "Settimanale",
+      "submit": "Salva le preferenze",
+      "saved": "Le tue preferenze di notifica sono state salvate.",
+      "loading": "Caricamento delle preferenze di notifica…",
+      "loadError": "Non è stato possibile caricare le tue preferenze di notifica.",
+      "retry": "Riprova"
+    },
+    "data": {
+      "intro": "Scarica una copia di tutti i dati conservati su di te, oppure elimina il tuo account.",
+      "export": {
+        "title": "Scarica i tuoi dati",
+        "description": "Un file JSON con il tuo profilo, le preferenze, le sessioni e la cronologia dell'account.",
+        "button": "Scarica i miei dati",
+        "failed": "Non è stato possibile scaricare i tuoi dati. Riprova."
+      },
+      "delete": {
+        "title": "Elimina il tuo account",
+        "description": "I tuoi dati personali vengono cancellati e vieni disconnesso ovunque. Ciò che hai pubblicato resta, attribuito a “Utente eliminato”. L'operazione è irreversibile.",
+        "button": "Elimina il mio account",
+        "dialogTitle": "Eliminare il tuo account?",
+        "dialogDescription": "Inserisci la tua password attuale per confermare. L'operazione è irreversibile.",
+        "password": "Password attuale",
+        "confirm": "Elimina definitivamente",
+        "cancel": "Annulla",
+        "wrongPassword": "La password attuale non è corretta.",
+        "lastSuperadmin": "Sei l'unico superamministratore. Nomina superamministratore un altro membro prima di eliminare il tuo account.",
+        "done": "Il tuo account è stato eliminato."
+      }
+    },
+    "nudge": {
+      "title": "Fai sapere agli altri membri di cosa ti occupi",
+      "description": "Aggiungi le tue aree di competenza, così le persone giuste potranno trovarti.",
+      "action": "Aggiungi le tue competenze",
+      "dismiss": "Ignora questo promemoria",
+      "ownCard": "Aggiungi le tue competenze"
+    }
+  },
+  "editor": {
+    "toolbar": "Formattazione",
+    "placeholder": "Scrivi qui…",
+    "actions": {
+      "bold": "Grassetto",
+      "italic": "Corsivo",
+      "underline": "Sottolineato",
+      "strike": "Barrato",
+      "heading2": "Titolo",
+      "heading3": "Sottotitolo",
+      "bulletList": "Elenco puntato",
+      "orderedList": "Elenco numerato",
+      "blockquote": "Citazione",
+      "codeBlock": "Blocco di codice",
+      "link": "Link",
+      "image": "Inserisci immagine",
+      "undo": "Annulla",
+      "redo": "Ripeti"
+    },
+    "counter": "{count} / {max}",
+    "counterLabel": "{count} caratteri usati su {max}",
+    "overLimit": "Il testo supera il limite di un carattere. | Il testo supera il limite di {count} caratteri.",
+    "link": {
+      "title": "Link",
+      "description": "Collega il testo selezionato a una pagina web o a un indirizzo email.",
+      "url": "Indirizzo web",
+      "urlHint": "Inizia con https://, http:// o mailto:",
+      "invalid": "Inserisci un indirizzo che inizi con https://, http:// o mailto:.",
+      "newTab": "Apri in una nuova scheda",
+      "apply": "Applica",
+      "remove": "Rimuovi il link",
+      "cancel": "Annulla"
+    },
+    "image": {
+      "title": "Inserisci immagine",
+      "description": "Carica un'immagine e descrivila per chi non può vederla.",
+      "file": "File immagine",
+      "fileHint": "JPEG, PNG o WebP, massimo 5 MB.",
+      "unsupported": "Scegli un'immagine JPEG, PNG o WebP.",
+      "alt": "Testo alternativo",
+      "altHint": "Descrivi ciò che mostra l'immagine (obbligatorio, massimo 300 caratteri).",
+      "preview": "Anteprima",
+      "upload": "Carica e inserisci",
+      "uploading": "Caricamento dell'immagine…",
+      "cancel": "Annulla"
+    },
+    "kb": {
+      "label": "Collegamenti a KNOWBASE",
+      "hint": "Collega le misure o i documenti di KNOWBASE di cui tratta questo testo.",
+      "type": "Cerca in",
+      "measures": "Misure",
+      "documents": "Documenti",
+      "search": "Cerca in KNOWBASE",
+      "searchPlaceholder": "Titolo o parola chiave",
+      "searching": "Ricerca in corso…",
+      "noResults": "Nessun risultato.",
+      "searchError": "Non è stato possibile effettuare la ricerca in KNOWBASE. Riprova.",
+      "results": "Risultati della ricerca",
+      "add": "Aggiungi",
+      "addItem": "Aggiungi {title}",
+      "added": "Aggiunto",
+      "selected": "Elementi collegati",
+      "none": "Ancora nessun elemento di KNOWBASE collegato.",
+      "remove": "Rimuovi {title}",
+      "measure": "Misura",
+      "document": "Documento",
+      "limit": "Puoi collegare al massimo {max} elementi di KNOWBASE."
+    },
+    "form": {
+      "titleNew": "Scrivi un articolo",
+      "titleEdit": "Modifica l'articolo",
+      "backToPost": "Torna all'articolo",
+      "title": "Titolo",
+      "category": "Categoria",
+      "categoryPlaceholder": "Scegli una categoria",
+      "locale": "Lingua dell'articolo",
+      "localeHint": "La lingua in cui è scritto l'articolo.",
+      "excerpt": "Sintesi",
+      "excerptHint": "Facoltativo. Compare nell'elenco del blog; in sua assenza viene usato l'inizio del testo.",
+      "cover": "Immagine di copertina",
+      "coverHint": "Facoltativo. Compare nell'elenco del blog e in cima all'articolo.",
+      "coverAdd": "Aggiungi un'immagine di copertina",
+      "coverRemove": "Rimuovi l'immagine di copertina",
+      "body": "Testo",
+      "tags": "Tag",
+      "tagsHint": "Premi Invio o digita una virgola dopo ogni tag. Massimo {max} tag.",
+      "tagsPlaceholder": "Aggiungi un tag",
+      "event": {
+        "title": "Evento",
+        "toggle": "Questo articolo annuncia un evento",
+        "at": "Data e ora",
+        "url": "Pagina web dell'evento",
+        "urlHint": "Facoltativo. Inizia con https:// o http://"
+      },
+      "untrustedNote": "Il tuo primo articolo sarà esaminato da un amministratore prima della pubblicazione.",
+      "submitCreate": "Pubblica",
+      "submitReview": "Invia per l'approvazione",
+      "submitEdit": "Salva le modifiche",
+      "cancel": "Annulla",
+      "created": "L'articolo è stato pubblicato.",
+      "createdPending": "L'articolo è stato inviato. Sarà pubblicato dopo l'approvazione di un amministratore.",
+      "saved": "Le modifiche sono state salvate.",
+      "unverified": "Verifica il tuo indirizzo email per scrivere articoli.",
+      "forbidden": "Non puoi modificare questo articolo.",
+      "errors": {
+        "titleRequired": "Inserisci un titolo.",
+        "titleTooShort": "Usa almeno {min} caratteri.",
+        "categoryRequired": "Scegli una categoria.",
+        "bodyRequired": "Scrivi il testo dell'articolo.",
+        "bodyTooLong": "Il testo è troppo lungo. Accorcialo prima di salvare.",
+        "eventAtRequired": "Inserisci la data e l'ora dell'evento.",
+        "eventUrlInvalid": "Inserisci un indirizzo che inizi con https:// o http://.",
+        "knowbaseNotFound": "Uno degli elementi di KNOWBASE collegati non è stato trovato. Rimuovilo e riprova.",
+        "coverInvalid": "L'immagine di copertina non è più disponibile. Rimuovila o caricane un'altra."
+      },
+      "leave": {
+        "title": "Uscire senza salvare?",
+        "description": "Le modifiche a questo articolo non sono salvate e andranno perse.",
+        "confirm": "Esci",
+        "stay": "Continua a modificare"
+      },
+      "draft": {
+        "found": "Hai una bozza non salvata di questo articolo.",
+        "savedAt": "Salvata alle {time}.",
+        "restore": "Ripristina la bozza",
+        "discard": "Scartala"
+      }
+    }
+  },
+  "common": {
+    "cancel": "Annulla"
+  },
+  "report": {
+    "button": "Segnala",
+    "reported": "Segnalato",
+    "title": {
+      "post": "Segnala questo articolo",
+      "thread": "Segnala questa discussione",
+      "reply": "Segnala questa risposta",
+      "comment": "Segnala questo commento"
+    },
+    "description": "Spiega agli amministratori qual è il problema. Esamineranno la tua segnalazione.",
+    "reason": "Motivo",
+    "reasonRequired": "Scegli un motivo.",
+    "reasons": {
+      "spam": "Spam o pubblicità",
+      "abuse": "Offensivo o inappropriato",
+      "off_topic": "Fuori tema",
+      "misinformation": "Informazioni fuorvianti o false",
+      "other": "Altro"
+    },
+    "details": "Dettagli (facoltativo)",
+    "detailsHint": "Qualsiasi informazione che aiuti gli amministratori a capire il problema.",
+    "submit": "Invia la segnalazione",
+    "cancel": "Annulla",
+    "sent": "Grazie, esamineremo la segnalazione.",
+    "autoHidden": "Questo contenuto è stato nascosto in attesa di verifica.",
+    "alreadyReported": "Hai già segnalato questo contenuto.",
+    "errors": {
+      "ownContent": "Non puoi segnalare i tuoi contenuti.",
+      "contentNotFound": "Questo contenuto non è più disponibile.",
+      "rateLimited": "Oggi hai inviato molte segnalazioni. Riprova domani."
+    }
+  },
+  "status": {
+    "title": {
+      "pending": "In attesa di approvazione da parte di un amministratore. Solo l'autore e gli amministratori possono vederlo.",
+      "hidden": "Nascosto agli altri membri. Solo l'autore e gli amministratori possono vederlo.",
+      "deleted": "Eliminato. Gli altri membri non possono più vederlo."
+    },
+    "reason": {
+      "auto_reports": "È stato nascosto automaticamente dopo le segnalazioni di più membri; un amministratore lo esaminerà.",
+      "admin": "È stato nascosto da un amministratore.",
+      "rejected": "Un amministratore non lo ha approvato."
+    },
+    "banner": {
+      "firstApproval": "Dopo la tua prima approvazione, ciò che pubblichi comparirà subito.",
+      "contact": "Se pensi che si tratti di un errore, scrivi a {email}."
+    }
+  },
+  "search": {
+    "title": "Ricerca",
+    "titleWithQuery": "Ricerca: “{query}”",
+    "intro": "Trova articoli del blog e discussioni del forum in tutta la piattaforma. Risposte e commenti non sono inclusi nella ricerca.",
+    "formLabel": "Ricerca nel sito",
+    "inputLabel": "Cerca articoli del blog e discussioni",
+    "placeholder": "Cerca articoli e discussioni…",
+    "submit": "Cerca",
+    "typeLabel": "Mostra",
+    "types": {
+      "all": "Tutto",
+      "posts": "Articoli del blog",
+      "threads": "Discussioni"
+    },
+    "badge": {
+      "post": "Articolo del blog",
+      "thread": "Discussione"
+    },
+    "locale": "Lingua",
+    "allLocales": "Tutte le lingue",
+    "prompt": "Digita almeno 2 caratteri e premi Cerca per trovare articoli del blog e discussioni.",
+    "tooShort": "Digita almeno {min} caratteri per cercare.",
+    "count": "Nessun risultato per “{query}” | 1 risultato per “{query}” | {count} risultati per “{query}”",
+    "empty": "Nessun risultato per “{query}”.",
+    "emptyHint": "Prova con parole diverse o meno numerose, controlla l'ortografia oppure cerca in tutti i tipi di contenuto e in tutte le lingue.",
+    "error": "La ricerca non è riuscita. Riprova.",
+    "retry": "Riprova",
+    "loading": "Ricerca in corso…",
+    "pagination": "Pagine dei risultati di ricerca",
+    "author": "Autore",
+    "category": "Categoria",
+    "published": "Pubblicato",
+    "formerMember": "Ex membro"
+  },
+  "head": {
+    "homeDescription": "Piattaforma di cooperazione URBANFLOODS: blog e forum per i portatori di interesse della gestione delle alluvioni nella regione adriatico-ionica.",
+    "searchDescription": "Cerca negli articoli del blog e nelle discussioni del forum della Piattaforma di cooperazione URBANFLOODS."
   }
 }

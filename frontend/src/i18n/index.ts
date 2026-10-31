@@ -1,8 +1,8 @@
 /**
  * vue-i18n setup (Composition API mode).
  *
- * Nine UI locales. `en.json` is complete; the others translate what they can and fall back to
- * English for the rest. The initial locale comes from the user's stored choice, then the browser
+ * Nine UI locales. `en.json` is complete; the other eight translate everything except the admin
+ * area (`admin.*`), which stays English and falls back to `en`. The initial locale comes from the user's stored choice, then the browser
  * languages, then English.
  */
 import { createI18n } from 'vue-i18n'
@@ -16,6 +16,7 @@ import bs from './locales/bs.json'
 import sl from './locales/sl.json'
 import hr from './locales/hr.json'
 import it from './locales/it.json'
+import { pluralRules } from './plural'
 
 export const SUPPORTED_LOCALES = [
   { code: 'en', name: 'English', nativeName: 'English' },
@@ -65,6 +66,8 @@ const i18n = createI18n({
   locale: resolveInitialLocale(),
   fallbackLocale: DEFAULT_LOCALE,
   messages: { en, el, sq, mk, sr, bs, sl, hr, it },
+  // CLDR plural categories (sr/hr/bs: one|few|other, sl: one|two|few|other, mk: 21 is "one").
+  pluralRules,
   missingWarn: false,
   fallbackWarn: false,
 })

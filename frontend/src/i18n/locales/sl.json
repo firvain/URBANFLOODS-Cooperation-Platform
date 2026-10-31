@@ -3,7 +3,12 @@
     "title": "Platforma za sodelovanje URBANFLOODS",
     "skipToContent": "Preskoči na glavno vsebino",
     "language": "Jezik",
-    "mainNavigation": "Glavna navigacija"
+    "mainNavigation": "Glavna navigacija",
+    "logoAlt": "Interreg IPA ADRION, sofinancira Evropska unija: URBANFLOODS",
+    "projectLogoAlt": "Logotip projekta URBANFLOODS"
+  },
+  "a11y": {
+    "opensInNewTab": "(odpre se v novem zavihku)"
   },
   "nav": {
     "home": "Domov",
@@ -12,44 +17,960 @@
     "knowbase": "KNOWBASE",
     "partners": "Partnerji",
     "network": "Mreža",
-    "dss": "Enotni DSS",
+    "dss": "Unified DSS",
     "about": "O projektu",
     "login": "Prijava",
     "register": "Registracija",
     "account": "Račun"
   },
+  "home": {
+    "title": "Platforma za sodelovanje",
+    "intro": "Stičišče deležnikov na področju upravljanja poplav v jadransko-jonski regiji: delite izkušnje v blogu in razpravljajte v forumu.",
+    "comingSoon": "Kmalu",
+    "cards": {
+      "blog": {
+        "title": "Blog",
+        "description": "Članki, študije primerov in dobre prakse."
+      },
+      "forum": {
+        "title": "Forum",
+        "description": "Postavljajte vprašanja in razpravljajte o upravljanju poplav."
+      },
+      "knowbase": {
+        "title": "KNOWBASE",
+        "description": "Brskajte po zakonodaji, politikah in ukrepih za zaščito pred poplavami.",
+        "open": "Odpri zbirko KNOWBASE"
+      }
+    },
+    "dss": {
+      "title": "Unified DSS",
+      "description": "Dostop do sistema za podporo odločanju, ki ga je za upravljanje poplav razvil projekt URBANFLOODS.",
+      "open": "Odpri DSS"
+    }
+  },
   "blog": {
-    "title": "Blog"
+    "title": "Blog",
+    "write": "Napiši objavo",
+    "loading": "Nalaganje objav …",
+    "count": "Ni objav | {count} objava | {count} objavi | {count} objave | {count} objav",
+    "empty": "Nobena objava ne ustreza tem filtrom.",
+    "emptyAll": "Objav še ni.",
+    "loadError": "Objav ni bilo mogoče naložiti.",
+    "retry": "Poskusi znova",
+    "clearFilters": "Počisti filtre",
+    "pagination": "Strani bloga",
+    "filters": {
+      "title": "Filtriraj objave",
+      "category": "Kategorija",
+      "allCategories": "Vse",
+      "search": "Iskanje",
+      "searchPlaceholder": "Naslov ali besedilo",
+      "locale": "Jezik",
+      "allLocales": "Vsi jeziki",
+      "sort": "Razvrstitev",
+      "sortNewest": "Najprej najnovejše",
+      "sortOldest": "Najprej najstarejše",
+      "sortEvents": "Prihajajoči dogodki",
+      "tag": "Oznaka",
+      "removeTag": "Odstrani filter oznake {tag}",
+      "popularTags": "Priljubljene oznake:"
+    }
+  },
+  "post": {
+    "pageTitle": "Objava v blogu",
+    "back": "Nazaj na blog",
+    "notFound": "Objave ni mogoče najti",
+    "notFoundHint": "Objava ne obstaja, je bila odstranjena ali za vas ni vidna.",
+    "loadError": "Objave ni bilo mogoče naložiti.",
+    "formerMember": "Nekdanji član",
+    "updated": "posodobljeno",
+    "tags": "Oznake",
+    "comments": "Ni komentarjev | {count} komentar | {count} komentarja | {count} komentarji | {count} komentarjev",
+    "edit": "Uredi",
+    "delete": "Izbriši",
+    "deleted": "Objava je bila izbrisana.",
+    "deleteConfirm": {
+      "title": "Želite izbrisati to objavo?",
+      "description": "Objava na platformi ne bo več vidna.",
+      "confirm": "Izbriši objavo",
+      "cancel": "Prekliči"
+    },
+    "status": {
+      "pending": "Čaka na odobritev",
+      "hidden": "Skrito",
+      "deleted": "Izbrisano",
+      "published": "Objavljeno"
+    },
+    "statusHint": {
+      "pending": "Čaka na odobritev skrbnika. Dokler objava ni odobrena, jo vidite samo vi in skrbniki.",
+      "rejected": "Skrbnik te objave ni odobril. Vidite jo samo vi in skrbniki.",
+      "hidden": "Ta objava je skrita. Vidijo jo samo njen avtor in skrbniki.",
+      "deleted": "Ta objava je bila izbrisana."
+    },
+    "event": {
+      "label": "Dogodek",
+      "link": "Spletna stran dogodka"
+    },
+    "knowbase": {
+      "title": "Iz zbirke KNOWBASE",
+      "measure": "Ukrep",
+      "document": "Dokument"
+    }
   },
   "forum": {
-    "title": "Forum"
+    "title": "Forum",
+    "start": "Začni razpravo",
+    "loading": "Nalaganje razprav …",
+    "count": "Ni razprav | {count} razprava | {count} razpravi | {count} razprave | {count} razprav",
+    "empty": "Nobena razprava ne ustreza tem filtrom.",
+    "emptyAll": "Razprav še ni.",
+    "loadError": "Razprav ni bilo mogoče naložiti.",
+    "retry": "Poskusi znova",
+    "clearFilters": "Počisti filtre",
+    "pagination": "Strani foruma",
+    "filters": {
+      "title": "Filtriraj razprave",
+      "category": "Kategorija",
+      "allCategories": "Vse",
+      "search": "Iskanje",
+      "searchPlaceholder": "Naslov ali besedilo",
+      "locale": "Jezik",
+      "allLocales": "Vsi jeziki",
+      "sort": "Razvrstitev",
+      "sortActivity": "Zadnja dejavnost",
+      "sortNewest": "Najnovejše",
+      "tag": "Oznaka",
+      "removeTag": "Odstrani filter oznake {tag}"
+    }
   },
-  "auth": {
-    "login": "Prijava",
-    "register": "Registracija",
-    "logout": "Odjava"
+  "thread": {
+    "pageTitle": "Razprava",
+    "back": "Nazaj na forum",
+    "notFound": "Razprave ni mogoče najti",
+    "notFoundHint": "Razprava ne obstaja, je bila odstranjena ali za vas ni vidna.",
+    "loadError": "Razprave ni bilo mogoče naložiti.",
+    "pinned": "Pripeto",
+    "locked": "Zaklenjeno",
+    "replies": "Ni odgovorov | {count} odgovor | {count} odgovora | {count} odgovori | {count} odgovorov",
+    "lastActivity": "Zadnja dejavnost",
+    "started": "Začeto",
+    "tags": "Oznake",
+    "edit": "Uredi",
+    "delete": "Izbriši",
+    "deleted": "Razprava je bila izbrisana.",
+    "deleteConfirm": {
+      "title": "Želite izbrisati to razpravo?",
+      "description": "Razprava in odgovori nanjo na platformi ne bodo več vidni.",
+      "confirm": "Izbriši razpravo",
+      "cancel": "Prekliči"
+    },
+    "statusHint": {
+      "pending": "Čaka na odobritev skrbnika. Dokler razprava ni odobrena, jo vidite samo vi in skrbniki.",
+      "rejected": "Skrbnik te razprave ni odobril. Vidite jo samo vi in skrbniki.",
+      "hidden": "Ta razprava je skrita. Vidijo jo samo njen avtor in skrbniki.",
+      "deleted": "Ta razprava je bila izbrisana."
+    },
+    "admin": {
+      "label": "Moderiranje",
+      "pin": "Pripni",
+      "unpin": "Odpni",
+      "lock": "Zakleni",
+      "unlock": "Odkleni",
+      "pinned": "Razprava je pripeta.",
+      "unpinned": "Razprava ni več pripeta.",
+      "locked": "Razprava je zaklenjena.",
+      "unlocked": "Razprava je odklenjena."
+    },
+    "form": {
+      "titleNew": "Začni razpravo",
+      "titleEdit": "Uredi razpravo",
+      "backToThread": "Nazaj na razpravo",
+      "title": "Naslov",
+      "titleHint": "Vprašanje ali tema v nekaj besedah.",
+      "category": "Kategorija",
+      "categoryPlaceholder": "Izberite kategorijo",
+      "locale": "Jezik razprave",
+      "localeHint": "Jezik, v katerem je razprava napisana.",
+      "body": "Besedilo",
+      "tags": "Oznake",
+      "tagsPlaceholder": "Dodajte oznako",
+      "untrustedNote": "Vašo prvo razpravo bo pred objavo pregledal skrbnik.",
+      "submitCreate": "Objavi",
+      "submitReview": "Pošlji v pregled",
+      "submitEdit": "Shrani spremembe",
+      "cancel": "Prekliči",
+      "created": "Razprava je objavljena.",
+      "createdPending": "Razprava je bila poslana. Objavljena bo, ko jo odobri skrbnik.",
+      "saved": "Spremembe so shranjene.",
+      "unverified": "Za začenjanje razprav potrdite svoj e-poštni naslov.",
+      "forbidden": "Te razprave ne morete urejati.",
+      "errors": {
+        "bodyRequired": "Napišite besedilo razprave."
+      },
+      "leave": {
+        "title": "Želite oditi brez shranjevanja?",
+        "description": "Vaše spremembe te razprave niso shranjene in bodo izgubljene.",
+        "confirm": "Zapusti",
+        "stay": "Nadaljuj z urejanjem"
+      },
+      "draft": {
+        "found": "Imate neshranjen osnutek te razprave."
+      }
+    }
+  },
+  "reply": {
+    "title": "Odgovori",
+    "loading": "Nalaganje odgovorov …",
+    "loadError": "Odgovorov ni bilo mogoče naložiti.",
+    "empty": "Odgovorov še ni. Odgovorite prvi.",
+    "loadMore": "Naloži več odgovorov",
+    "reply": "Odgovori",
+    "replyTo": "Odgovori uporabniku {name}",
+    "edit": "Uredi",
+    "delete": "Izbriši",
+    "edited": "urejeno",
+    "deleted": "[izbrisano]",
+    "sending": "Pošiljanje …",
+    "formerMember": "Nekdanji član",
+    "label": "Vaš odgovor",
+    "labelEdit": "Uredite svoj odgovor",
+    "placeholder": "Napišite odgovor …",
+    "submit": "Objavi odgovor",
+    "save": "Shrani",
+    "cancel": "Prekliči",
+    "posted": "Vaš odgovor je objavljen.",
+    "saved": "Odgovor je shranjen.",
+    "removed": "Odgovor je bil izbrisan.",
+    "lockedNotice": "Ta razprava je zaklenjena. Novi odgovori niso mogoči.",
+    "unverified": "Za odgovarjanje potrdite svoj e-poštni naslov.",
+    "loginToReply": "Prijavite se, da lahko odgovorite",
+    "notPublished": "Odgovarjanje bo mogoče, ko bo razprava objavljena.",
+    "deleteConfirm": {
+      "title": "Želite izbrisati ta odgovor?",
+      "description": "Odgovor ne bo več viden. Odgovori nanj ostanejo.",
+      "confirm": "Izbriši odgovor",
+      "cancel": "Prekliči"
+    },
+    "errors": {
+      "empty": "Pred objavo nekaj napišite.",
+      "tooLong": "Odgovor je predolg. Pred objavo ga skrajšajte.",
+      "parentInvalid": "Odgovor, na katerega odgovarjate, ni več na voljo."
+    }
+  },
+  "comments": {
+    "title": "Ni komentarjev | {count} komentar | {count} komentarja | {count} komentarji | {count} komentarjev",
+    "loading": "Nalaganje komentarjev …",
+    "loadError": "Komentarjev ni bilo mogoče naložiti.",
+    "retry": "Poskusi znova",
+    "empty": "Komentarjev še ni. Komentirajte prvi.",
+    "loadMore": "Naloži več komentarjev",
+    "edit": "Uredi",
+    "delete": "Izbriši",
+    "edited": "urejeno",
+    "sending": "Pošiljanje …",
+    "formerMember": "Nekdanji član",
+    "label": "Vaš komentar",
+    "labelEdit": "Uredite svoj komentar",
+    "placeholder": "Napišite komentar …",
+    "submit": "Objavi komentar",
+    "save": "Shrani",
+    "cancel": "Prekliči",
+    "removed": "Komentar je bil izbrisan.",
+    "unverified": "Za komentiranje potrdite svoj e-poštni naslov.",
+    "loginToComment": "Prijavite se, da lahko komentirate",
+    "notPublished": "Komentiranje bo mogoče, ko bo objava objavljena.",
+    "closed": "Ta objava ni javna, zato novi komentarji niso mogoči.",
+    "deleteConfirm": {
+      "title": "Želite izbrisati ta komentar?",
+      "description": "Komentar ne bo več viden.",
+      "confirm": "Izbriši komentar",
+      "cancel": "Prekliči"
+    },
+    "errors": {
+      "empty": "Pred objavo nekaj napišite.",
+      "tooLong": "Komentar je predolg. Pred objavo ga skrajšajte."
+    }
+  },
+  "partners": {
+    "title": "Partnerji",
+    "partnershipTitle": "Partnerstvo",
+    "leadPartner": "Vodilni partner",
+    "leadBadge": "VODILNI",
+    "projectPartners": "Projektni partnerji",
+    "associatedPartners": "Pridruženi partnerji",
+    "logoAlt": "Logotip: {name}",
+    "shortName": "Kratko ime",
+    "loading": "Nalaganje partnerjev …",
+    "loadError": "Seznama partnerjev ni bilo mogoče naložiti.",
+    "retry": "Poskusi znova",
+    "empty": "Partnerji še niso navedeni."
+  },
+  "network": {
+    "title": "Mreža za sodelovanje",
+    "intro": "Poiščite ljudi, ki se v jadransko-jonski regiji ukvarjajo z upravljanjem poplav, glede na strokovno področje, državo ali organizacijo.",
+    "filters": {
+      "title": "Filtriraj člane",
+      "search": "Iskanje",
+      "searchPlaceholder": "Ime, organizacija ali predstavitev",
+      "expertise": "Strokovno področje",
+      "expertisePlaceholder": "Katero koli strokovno področje",
+      "country": "Država",
+      "allCountries": "Vse države",
+      "organisation": "Organizacija",
+      "allOrganisations": "Vse organizacije"
+    },
+    "count": "Ni članov | {count} član | {count} člana | {count} člani | {count} članov",
+    "loading": "Nalaganje članov …",
+    "loadError": "Seznama članov ni bilo mogoče naložiti.",
+    "retry": "Poskusi znova",
+    "empty": "Noben član ne ustreza tem filtrom.",
+    "emptyAll": "Člani še niso navedeni.",
+    "clearFilters": "Počisti filtre",
+    "pagination": "Strani seznama članov",
+    "card": {
+      "email": "E-pošta",
+      "expertise": "Strokovna področja",
+      "moreExpertise": "+{count}",
+      "moreExpertiseLabel": "Še {count}: {labels}"
+    },
+    "suggested": {
+      "title": "Predlagani sodelavci",
+      "intro": "Člani, ki se ukvarjajo z istimi temami kot vi.",
+      "shared": "ima {count} skupno strokovno področje | ima {count} skupni strokovni področji | ima {count} skupna strokovna področja | ima {count} skupnih strokovnih področij",
+      "seeAll": "Prikaži vse člane Mreže za sodelovanje",
+      "empty": "Predlogov še ni. V profil dodajte svoja strokovna področja, da boste našli člane s podobnimi interesi.",
+      "editProfile": "Uredite svoj profil",
+      "loadError": "Predlogov ni bilo mogoče naložiti."
+    }
+  },
+  "knowbase": {
+    "openInKnowbase": "Odpri v zbirki KNOWBASE",
+    "loading": "Nalaganje …",
+    "retry": "Poskusi znova",
+    "notFoundHint": "Morda je bil odstranjen iz zbirke KNOWBASE ali pa je povezava napačna.",
+    "fields": {
+      "description": "Opis",
+      "descriptionLocal": "Opis (izvirni jezik)",
+      "keywords": "Ključne besede"
+    },
+    "mentions": {
+      "title": "Omenjeno v"
+    },
+    "measures": {
+      "detailTitle": "Ukrep za upravljanje poplav",
+      "untitled": "Ukrep brez naslova",
+      "back": "Vsi ukrepi",
+      "detailError": "Ukrepa ni bilo mogoče naložiti.",
+      "notFound": "Ukrepa ni mogoče najti",
+      "photoCredit": "Fotografija: {source}",
+      "fields": {
+        "category": "Kategorija",
+        "level": "Raven uporabe",
+        "scale": "Obseg",
+        "resources": "Potrebni viri",
+        "benefits": "Koristi",
+        "constraints": "Omejitve"
+      }
+    },
+    "documents": {
+      "detailTitle": "Zakonodajni ali politični dokument",
+      "untitled": "Dokument brez naslova",
+      "back": "Vsa zakonodaja in politike",
+      "detailError": "Dokumenta ni bilo mogoče naložiti.",
+      "notFound": "Dokumenta ni mogoče najti",
+      "fields": {
+        "level": "Raven upravljanja",
+        "subject": "Predmet",
+        "number": "Številka",
+        "gazette": "Sklic na uradni list",
+        "webLinks": "Spletne povezave",
+        "comments": "Opombe"
+      }
+    }
+  },
+  "profile": {
+    "title": "Profil člana",
+    "organisation": "Organizacija",
+    "country": "Država",
+    "bio": "Predstavitev",
+    "expertise": "Strokovna področja",
+    "email": "E-pošta",
+    "memberSince": "Član od {date}",
+    "loading": "Nalaganje profila …",
+    "loadError": "Tega profila ni bilo mogoče naložiti.",
+    "retry": "Poskusi znova",
+    "backToNetwork": "Nazaj na Mrežo za sodelovanje"
+  },
+  "about": {
+    "title": "O projektu URBANFLOODS",
+    "informationTitle": "Informacije",
+    "facts": {
+      "acronym": "Akronim projekta",
+      "fullTitle": "Polni naslov projekta",
+      "programme": "Program",
+      "priority": "Prednostna naloga programa",
+      "call": "Razpis",
+      "specificObjective": "Specifični cilj",
+      "dates": "Datum začetka – konca",
+      "totalBudget": "Skupni proračun",
+      "interregFunds": "Sredstva Interreg"
+    },
+    "values": {
+      "acronym": "URBANFLOODS",
+      "fullTitle": "Promoting Urban Resilience Through an Integrated Advanced Decision Support System for Flood Control",
+      "programme": "Interreg IPA ADRION 2021–2027",
+      "priority": "2. Podpora bolj zeleni in podnebno odporni jadransko-jonski regiji",
+      "call": "1. razpis za zbiranje predlogov programa IPA ADRION",
+      "specificObjective": "SO2.1. Spodbujanje prilagajanja podnebnim spremembam, preprečevanja tveganja nesreč in odpornosti ob upoštevanju ekosistemskih pristopov",
+      "dates": "01/09/2024 – 31/08/2027",
+      "totalBudget": "EUR 1.747.583,17",
+      "interregFunds": "EUR 1.485.445,68"
+    },
+    "priorityIconAlt": "Ikona prednostne naloge 2 programa Interreg IPA ADRION",
+    "partnersTitle": "Partnerji",
+    "leadPartner": {
+      "name": "Univerza Zahodne Makedonije",
+      "address": "Območje aktivnega urbanističnega načrtovanja (ZEP) I, 50100 Kozani, Grčija",
+      "coordinatorName": "Prof. Malamati Louta",
+      "coordinatorRole": "Znanstvena koordinatorica"
+    },
+    "summary": {
+      "title": "Povzetek projekta",
+      "paragraphs": [
+        "Jadransko-jonska regija je zaradi svojih edinstvenih geografskih in podnebnih razmer ter zaradi prepletanja podnebnih sprememb in sprememb rabe tal vse bolj izpostavljena hudim poplavam. Ti dogodki so povzročili znatne geomorfne prilagoditve rečnih strug, v preteklosti pa tudi veliko škodo na življenjih, premoženju, kmetijstvu in turistični infrastrukturi. Poleg tega Sredozemlje, zlasti jadransko-jonska regija, velja za žarišče podnebne krize.",
+        "Projekt URBANFLOODS izhaja iz spoznanja, da učinkovito upravljanje poplav zahteva celovito razumevanje razmer na lokalni in regionalni ravni, ki omogoča oblikovanje ustreznih strategij preprečevanja in blaženja. Projekt si prizadeva krepiti odpornost in pripravljenost mest s skupnim razvojem naprednega, celostnega sistema za podporo odločanju (DSS), katerega namen je lokalnim deležnikom predlagati kratkoročne, srednjeročne in dolgoročne aktivnosti, ukrepe in priporočila za politike za učinkovito obvladovanje poplav. Projekt poudarja pomen ozaveščanja o strategijah prilagajanja podnebnim spremembam in s tem spodbuja proaktiven pristop k podnebni odpornosti.",
+        "Splošni cilj projekta je skupni razvoj inovativnih rešitev za upravljanje poplav, ki temeljijo na naprednem informacijskem sistemu, ter izvedba pilotnih aktivnosti za zmanjšanje poplavne ogroženosti. Projekt URBANFLOODS se osredotoča zlasti na reke in potoke, ki tečejo skozi urbana območja, saj pogosto pomenijo veliko poplavno ogroženost za mestne skupnosti, to pa še zaostrujeta hitra urbanizacija in spreminjanje podnebnih vzorcev.",
+        "Skupne inovativne rešitve bodo dodelane ob upoštevanju zahtev, omejitev in lokalnih značilnosti več pilotnih območij v jadransko-jonskem prostoru, izmenjave izkušenj ter praktičnega usposabljanja, ki izhaja iz pilotnih pobud projekta. Tako bosta zagotovljeni njihova uporabnost in učinkovitost v različnih okoliščinah in razmerah."
+      ],
+      "outputsIntro": "Med posebne izložke projekta spadajo:",
+      "outputs": [
+        {
+          "title": "Skupni razvoj rešitev,",
+          "text": "zlasti naprednega, na podatkih temelječega sistema DSS, ki ponuja celostne rešitve za upravljanje poplav, vključno s sistemi zgodnjega opozarjanja in bazo znanja nadnacionalnih kratkoročnih, srednjeročnih in dolgoročnih aktivnosti, ukrepov in priporočil za politike. Uporabljeni bodo za krepitev mehanizmov civilne zaščite z izboljšanjem z njimi povezanih načrtov."
+        },
+        {
+          "title": "Skupna izvedba pilotnih aktivnosti",
+          "text": "na več pilotnih območjih za skupno in usklajeno rabo podatkov, modeliranje in zasnovo sistemov zgodnjega opozarjanja za zmanjšanje tveganj, povezanih s podnebnimi spremembami, preskušanje in potrjevanje sistema DSS na več lokacijah v jadransko-jonski regiji ter krepitev vključenosti deležnikov v upravljanje poplav z ozaveščanjem, spodbujanjem sprejemanja sistema DSS in spodbujanjem inovacij prek uporabniku prijaznega, skupnega in usklajenega dostopa na vseh pilotnih območjih."
+        },
+        {
+          "title": "Skupni razvoj in izvajanje celostnih nadnacionalnih strategij in akcijskih načrtov",
+          "text": "za usklajevanje ukrepov upravljanja poplav s prednostnim obravnavanjem sonaravnih rešitev. Ti akcijski načrti so lahko zgled drugim regijam, ki se soočajo s podobnimi izzivi."
+        },
+        {
+          "title": "Krepitev čezmejnega sodelovanja med organizacijami,",
+          "text": "saj bo v projektu URBANFLOODS za doseganje njegovih ciljev sodelovalo 11 partnerjev iz 8 različnih držav in 11 pridruženih partnerjev."
+        }
+      ],
+      "closing": "Glavni rezultati projekta vključujejo skupno razvite inovativne rešitve ter usklajeno skupno nadnacionalno strategijo in akcijske načrte, ki odražajo teritorialne potrebe po uspešnem in učinkovitem upravljanju poplav ter jih bodo organizacije prevzele oziroma obravnavale in ovrednotile. Spodbujala se bo trajnost skupno razvitih rešitev, vsi partnerji pa so zavezani uspešnemu zaključku projekta in pripravljeni nadaljevati dejavno sodelovanje tudi po njegovem zaključku. Poleg tega bo projekt prispeval k večji ozaveščenosti o strategijah prilagajanja podnebnim spremembam in s tem spodbujal proaktiven odnos do podnebne odpornosti."
+    },
+    "links": {
+      "title": "Več informacij",
+      "project": "Spletna stran projekta URBANFLOODS",
+      "knowbase": "URBANFLOODS KNOWBASE"
+    },
+    "partnersLink": "Oglejte si projektne partnerje"
   },
   "legal": {
     "termsTitle": "Pogoji uporabe",
     "privacyTitle": "Politika zasebnosti",
     "accessibilityTitle": "Izjava o dostopnosti",
     "openDataTitle": "Odprti podatki",
+    "version": "Različica {version} – {date}",
+    "contents": "Vsebina",
     "englishOnly": "Ta dokument je na voljo samo v angleščini."
   },
   "footer": {
-    "statement": "Projekt sofinancira Evropska unija prek programa Interreg IPA ADRION."
-  },
-  "account": {
-    "nudge": {
-      "title": "Povejte članom, s čim se ukvarjate"
+    "statement": "Projekt sofinancira Evropska unija prek programa Interreg IPA ADRION.",
+    "disclaimer": "Ta spletna stran je bila izdelana s finančno pomočjo Evropske unije. Za vsebino spletne strani je odgovorna izključno Univerza Zahodne Makedonije in v nobenem primeru ne odraža stališča Evropske unije in/ali organov programa IPA ADRION.",
+    "columns": {
+      "platform": "Platforma",
+      "project": "Projekt",
+      "follow": "Spremljajte nas"
     },
-    "tabs": {
-      "notifications": "Obvestila",
-      "data": "Vaši podatki"
+    "links": {
+      "programme": "Program Interreg IPA ADRION",
+      "project": "Spletna stran projekta URBANFLOODS",
+      "knowbase": "URBANFLOODS KNOWBASE",
+      "linkedin": "URBANFLOODS na LinkedInu"
+    },
+    "copyright": "© {year} URBANFLOODS",
+    "navLabel": "Povezave projekta"
+  },
+  "errors": {
+    "notFound": "Strani ni mogoče najti",
+    "notFoundDescription": "Stran, ki jo iščete, ne obstaja ali je bila premaknjena.",
+    "backHome": "Nazaj na domačo stran",
+    "generic": "Prišlo je do napake. Poskusite znova.",
+    "tooManyRequests": "Preveč zahtev. Počakajte trenutek in poskusite znova.",
+    "api": {
+      "auth": {
+        "invalid_credentials": "Napačen e-poštni naslov ali geslo.",
+        "account_disabled": "Ta račun je onemogočen. Če menite, da gre za napako, se obrnite na skrbnike platforme.",
+        "email_taken": "Račun s tem e-poštnim naslovom že obstaja.",
+        "token_invalid": "Ta povezava je neveljavna ali je potekla.",
+        "captcha_failed": "Preverjanje proti neželeni pošti ni uspelo. Poskusite znova."
+      },
+      "validation": {
+        "failed": "Popravite označena polja."
+      },
+      "uploads": {
+        "too_large": "Slika je prevelika. Izberite datoteko velikosti največ 5 MB.",
+        "unsupported_type": "Sprejemljive so samo slike JPEG, PNG in WebP.",
+        "invalid_image": "Datoteka ni veljavna slika.",
+        "animated": "Animirane slike niso sprejemljive.",
+        "too_large_pixels": "Slika ima preveč slikovnih pik. Zmanjšajte jo in poskusite znova.",
+        "daily_limit": "Dosegli ste današnjo omejitev nalaganja. Poskusite znova jutri."
+      },
+      "posts": {
+        "not_found": "Objava ne obstaja ali za vas ni vidna.",
+        "forbidden": "Te objave ne morete spreminjati.",
+        "category_admin_only": "V tej kategoriji lahko objavljajo samo skrbniki.",
+        "slug_taken": "Ta naslov že uporablja druga objava."
+      },
+      "knowbase": {
+        "unavailable": "Zbirka KNOWBASE ni dosegljiva, zato povezanih elementov ni bilo mogoče preveriti. Poskusite znova pozneje."
+      },
+      "threads": {
+        "not_found": "Razprava ne obstaja ali za vas ni vidna.",
+        "forbidden": "Te razprave ne morete spreminjati.",
+        "category_admin_only": "V tej kategoriji lahko razprave začenjajo samo skrbniki.",
+        "locked": "Ta razprava je zaklenjena. Novi odgovori niso mogoči.",
+        "slug_taken": "Ta naslov že uporablja druga razprava."
+      },
+      "replies": {
+        "not_found": "Odgovor ne obstaja ali je bil izbrisan.",
+        "forbidden": "Tega odgovora ne morete spreminjati."
+      },
+      "comments": {
+        "not_found": "Komentar ne obstaja ali je bil izbrisan.",
+        "forbidden": "Tega komentarja ne morete spreminjati.",
+        "post_not_published": "Komentiranje je mogoče samo pri objavljenih objavah."
+      }
+    },
+    "fields": {
+      "required": "To polje je obvezno.",
+      "invalid": "Ta vrednost ni veljavna.",
+      "value_error": "Ta vrednost ni veljavna.",
+      "must_accept": "Za nadaljevanje morate sprejeti pogoje uporabe in politiko zasebnosti.",
+      "password_mismatch": "Gesli se ne ujemata.",
+      "auth": {
+        "password_too_short": "Uporabite vsaj {min} znakov.",
+        "password_too_long": "Uporabite največ {max} znakov.",
+        "password_too_common": "To geslo je preveč pogosto. Izberite manj predvidljivo.",
+        "email_taken": "Račun s tem e-poštnim naslovom že obstaja.",
+        "password_same": "Novo geslo se mora razlikovati od trenutnega."
+      },
+      "missing": "To polje je obvezno.",
+      "empty": "To polje ne sme biti prazno.",
+      "string_too_short": "To besedilo je prekratko.",
+      "string_too_long": "To besedilo je predolgo.",
+      "archived": "Ta kategorija je arhivirana. Izberite drugo.",
+      "too_many": "Elementov je preveč.",
+      "too_long": "To besedilo je predolgo."
     }
   },
-  "admin": {
-    "title": "Administracija",
-    "menu": "Administracija"
+  "auth": {
+    "login": "Prijava",
+    "register": "Registracija",
+    "logout": "Odjava",
+    "loggedOut": "Odjavljeni ste.",
+    "resent": "Če naslov pripada računu, ki še čaka na potrditev, je nova povezava že na poti.",
+    "fields": {
+      "email": "E-pošta",
+      "password": "Geslo",
+      "newPassword": "Novo geslo",
+      "confirmPassword": "Potrdite novo geslo",
+      "passwordHint": "Vsaj {min} znakov. Dolgo frazo si je lažje zapomniti kot zapleteno besedo.",
+      "showPassword": "Pokaži geslo",
+      "hidePassword": "Skrij geslo",
+      "displayName": "Prikazno ime",
+      "displayNameHint": "Prikazano ob vaših objavah in odgovorih.",
+      "organisation": "Organizacija",
+      "organisationPlaceholder": "Izberite svojo organizacijo (neobvezno)",
+      "organisationOtherOption": "Drugo …",
+      "organisationOther": "Ime organizacije",
+      "country": "Država",
+      "countryPlaceholder": "Izberite svojo državo (neobvezno)",
+      "countryOther": "Drugo",
+      "locale": "Želeni jezik",
+      "localeHint": "Uporablja se za e-poštna sporočila, ki vam jih pošiljamo.",
+      "acceptTerms": "Sprejemam {terms} in {privacy}.",
+      "terms": "pogoje uporabe",
+      "privacy": "politiko zasebnosti",
+      "optional": "Neobvezno"
+    },
+    "loginPage": {
+      "intro": "Prijavite se, če želite pisati objave, sodelovati v forumu in prijavljati neprimerno vsebino.",
+      "submit": "Prijava",
+      "noAccount": "Še nimate računa?",
+      "forgot": "Ste pozabili geslo?"
+    },
+    "registerPage": {
+      "title": "Ustvarite račun",
+      "intro": "Registracija je brezplačna. Za branje platforme račun ni potreben, za objavljanje pa je.",
+      "submit": "Ustvari račun",
+      "haveAccount": "Že imate račun?"
+    },
+    "registerSuccess": {
+      "title": "Preverite svojo e-pošto",
+      "body": "Na naslov {email} smo poslali povezavo za potrditev. Odprite jo, da aktivirate svoj račun. Povezava je veljavna 48 ur.",
+      "noEmail": "Niste prejeli sporočila? Preverite mapo z neželeno pošto ali ga pošljite znova.",
+      "resend": "Znova pošlji povezavo"
+    },
+    "verify": {
+      "title": "Potrdite svoj e-poštni naslov",
+      "verifying": "Potrjevanje e-poštnega naslova …",
+      "success": "Vaš e-poštni naslov je potrjen in prijavljeni ste. Dobrodošli!",
+      "redirecting": "Preusmerjanje na domačo stran …",
+      "continue": "Pojdi na domačo stran",
+      "failed": "Vašega e-poštnega naslova ni bilo mogoče potrditi",
+      "resendIntro": "Vnesite svoj e-poštni naslov in poslali vam bomo novo povezavo.",
+      "resend": "Pošlji novo povezavo",
+      "redirectingProfile": "Preusmerjanje na domačo stran … Svoja strokovna področja lahko kadar koli dodate v svojem računu."
+    },
+    "forgot": {
+      "title": "Pozabljeno geslo",
+      "intro": "Vnesite e-poštni naslov svojega računa in poslali vam bomo povezavo za izbiro novega gesla.",
+      "submit": "Pošlji povezavo za ponastavitev",
+      "sent": "Če za ta naslov obstaja račun, smo nanj poslali povezavo za ponastavitev gesla. Povezava je veljavna eno uro.",
+      "backToLogin": "Nazaj na prijavo"
+    },
+    "reset": {
+      "title": "Izberite novo geslo",
+      "intro": "Z izbiro novega gesla boste odjavljeni na vseh drugih napravah.",
+      "submit": "Shrani novo geslo",
+      "success": "Vaše geslo je spremenjeno in prijavljeni ste.",
+      "requestNew": "Zahtevaj novo povezavo"
+    },
+    "unverified": {
+      "title": "Potrdite svoj e-poštni naslov",
+      "description": "Na naslov {email} smo poslali povezavo. Dokler je ne odprete, lahko berete vse vsebine, ne morete pa objavljati, odgovarjati ali prijavljati vsebine.",
+      "resend": "Znova pošlji potrditveno sporočilo"
+    },
+    "menu": {
+      "signedInAs": "Prijavljeni ste kot {name}"
+    },
+    "expertiseToggle": "Dodajte svoja strokovna področja",
+    "expertiseSelected": "Izbrano: {count}",
+    "expertiseLabel": "Strokovna področja (neobvezno, največ {max})",
+    "expertiseHint": "Članom, ki se ukvarjajo z istimi temami upravljanja poplav, pomaga, da vas najdejo. Pozneje jih lahko spremenite v svojem profilu.",
+    "expertisePlaceholder": "Izberite svoja strokovna področja"
+  },
+  "account": {
+    "intro": "Upravljajte svoj profil, geslo, naprave, na katerih ste prijavljeni, e-poštna obvestila in svoje podatke.",
+    "tabs": {
+      "profile": "Profil",
+      "password": "Geslo",
+      "sessions": "Seje",
+      "notifications": "Obvestila",
+      "data": "Vaši podatki"
+    },
+    "profile": {
+      "bio": "O vas",
+      "bioHint": "Neobvezno. Nekaj besed o vašem delu in interesih.",
+      "bioCount": "{count}/{max}",
+      "expertise": "Strokovna področja",
+      "expertiseHint": "Največ {max}. Uporabljajo se za predlaganje sodelavcev in filtriranje Mreže za sodelovanje.",
+      "expertisePlaceholder": "Izberite svoja strokovna področja",
+      "expertiseMax": "Izberite največ {max} strokovnih področij.",
+      "networkTitle": "Mreža za sodelovanje",
+      "showEmail": "Pokaži moj e-poštni naslov drugim članom",
+      "showEmailHint": "Prikazan je na vašem profilu in kartici člana, da vas lahko drugi neposredno kontaktirajo.",
+      "showInDirectory": "Uvrsti me v Mrežo za sodelovanje",
+      "showInDirectoryHint": "Drugi vas lahko najdejo glede na strokovno področje, državo in organizacijo, vi pa ste lahko predlagani kot sodelavec.",
+      "submit": "Shrani profil",
+      "saved": "Vaš profil je shranjen.",
+      "noChanges": "Ni sprememb za shranjevanje."
+    },
+    "password": {
+      "intro": "Ko spremenite geslo, boste odjavljeni na vseh drugih napravah.",
+      "current": "Trenutno geslo",
+      "submit": "Spremeni geslo",
+      "changed": "Geslo je spremenjeno",
+      "wrongCurrent": "Trenutno geslo ni pravilno."
+    },
+    "sessions": {
+      "intro": "Naprave, na katerih ste prijavljeni. Odjavite tiste, ki jih ne prepoznate.",
+      "current": "Ta naprava",
+      "device": "{browser} v sistemu {os}",
+      "unknownDevice": "Neznana naprava",
+      "signedIn": "Prijava: {date}",
+      "lastSeen": "Nazadnje dejavno: {date}",
+      "expires": "Poteče: {date}",
+      "signOut": "Odjavi to napravo",
+      "signedOut": "Naprava je odjavljena.",
+      "loading": "Nalaganje sej …",
+      "loadError": "Vaših sej ni bilo mogoče naložiti.",
+      "retry": "Poskusi znova",
+      "empty": "Ni aktivnih sej."
+    },
+    "notifications": {
+      "intro": "Izberite, katera e-poštna sporočila vam pošilja platforma. Sporočila v zvezi z računom (potrditev, ponastavitev gesla) se pošiljajo vedno.",
+      "contentTitle": "Dejavnost v zvezi z vašo vsebino",
+      "replyToMyThread": "Odgovori na moje razprave",
+      "replyToMyThreadHint": "Sporočilo, ko nekdo odgovori v razpravi, ki ste jo začeli.",
+      "commentOnMyPost": "Komentarji na moje objave",
+      "commentOnMyPostHint": "Sporočilo, ko nekdo komentira katero od vaših objav v blogu.",
+      "replyToMyReply": "Odgovori na moje odgovore",
+      "replyToMyReplyHint": "Sporočilo, ko nekdo odgovori na katerega od vaših odgovorov.",
+      "adminTitle": "Administracija",
+      "adminDigest": "Povzetek moderiranja",
+      "adminDigestHint": "Povzetek vsebin, ki čakajo na odobritev, in odprtih prijav.",
+      "frequency": "Pogostost povzetka",
+      "daily": "Dnevno",
+      "weekly": "Tedensko",
+      "submit": "Shrani nastavitve",
+      "saved": "Vaše nastavitve obveščanja so shranjene.",
+      "loading": "Nalaganje nastavitev obveščanja …",
+      "loadError": "Vaših nastavitev obveščanja ni bilo mogoče naložiti.",
+      "retry": "Poskusi znova"
+    },
+    "data": {
+      "intro": "Prenesite kopijo vseh podatkov, ki jih hranimo o vas, ali izbrišite svoj račun.",
+      "export": {
+        "title": "Prenesite svoje podatke",
+        "description": "Datoteka JSON z vašim profilom, nastavitvami, sejami in zgodovino računa.",
+        "button": "Prenesi moje podatke",
+        "failed": "Vaših podatkov ni bilo mogoče prenesti. Poskusite znova."
+      },
+      "delete": {
+        "title": "Izbrišite svoj račun",
+        "description": "Vaši osebni podatki bodo izbrisani in odjavljeni boste povsod. Kar ste objavili, ostane in bo pripisano „izbrisanemu uporabniku“. Tega ni mogoče razveljaviti.",
+        "button": "Izbriši moj račun",
+        "dialogTitle": "Želite izbrisati svoj račun?",
+        "dialogDescription": "Za potrditev vnesite trenutno geslo. Tega ni mogoče razveljaviti.",
+        "password": "Trenutno geslo",
+        "confirm": "Trajno izbriši",
+        "cancel": "Prekliči",
+        "wrongPassword": "Trenutno geslo ni pravilno.",
+        "lastSuperadmin": "Ste edini glavni skrbnik. Preden izbrišete svoj račun, dodelite vlogo glavnega skrbnika drugemu članu.",
+        "done": "Vaš račun je izbrisan."
+      }
+    },
+    "nudge": {
+      "title": "Povejte članom, s čim se ukvarjate",
+      "description": "Dodajte svoja strokovna področja, da vas bodo lahko našli pravi ljudje.",
+      "action": "Dodajte strokovna področja",
+      "dismiss": "Opusti ta opomnik",
+      "ownCard": "Dodajte strokovna področja"
+    }
+  },
+  "editor": {
+    "toolbar": "Oblikovanje",
+    "placeholder": "Pišite tukaj …",
+    "actions": {
+      "bold": "Krepko",
+      "italic": "Ležeče",
+      "underline": "Podčrtano",
+      "strike": "Prečrtano",
+      "heading2": "Naslov",
+      "heading3": "Podnaslov",
+      "bulletList": "Označeni seznam",
+      "orderedList": "Oštevilčeni seznam",
+      "blockquote": "Citat",
+      "codeBlock": "Blok kode",
+      "link": "Povezava",
+      "image": "Vstavi sliko",
+      "undo": "Razveljavi",
+      "redo": "Uveljavi znova"
+    },
+    "counter": "{count} / {max}",
+    "counterLabel": "Uporabljenih znakov: {count} od {max}",
+    "overLimit": "Besedilo je predolgo za {count} znak. | Besedilo je predolgo za {count} znaka. | Besedilo je predolgo za {count} znake. | Besedilo je predolgo za {count} znakov.",
+    "link": {
+      "title": "Povezava",
+      "description": "Povežite izbrano besedilo s spletno stranjo ali e-poštnim naslovom.",
+      "url": "Spletni naslov",
+      "urlHint": "Začne se s https://, http:// ali mailto:",
+      "invalid": "Vnesite naslov, ki se začne s https://, http:// ali mailto:.",
+      "newTab": "Odpri v novem zavihku",
+      "apply": "Uporabi",
+      "remove": "Odstrani povezavo",
+      "cancel": "Prekliči"
+    },
+    "image": {
+      "title": "Vstavi sliko",
+      "description": "Naložite sliko in jo opišite za ljudi, ki je ne morejo videti.",
+      "file": "Slikovna datoteka",
+      "fileHint": "JPEG, PNG ali WebP, največ 5 MB.",
+      "unsupported": "Izberite sliko JPEG, PNG ali WebP.",
+      "alt": "Nadomestno besedilo",
+      "altHint": "Opišite, kaj prikazuje slika (obvezno, največ 300 znakov).",
+      "preview": "Predogled",
+      "upload": "Naloži in vstavi",
+      "uploading": "Nalaganje slike …",
+      "cancel": "Prekliči"
+    },
+    "kb": {
+      "label": "Povezave na zbirko KNOWBASE",
+      "hint": "Povežite ukrepe ali dokumente iz zbirke KNOWBASE, o katerih govori to besedilo.",
+      "type": "Išči v",
+      "measures": "Ukrepi",
+      "documents": "Dokumenti",
+      "search": "Iskanje po zbirki KNOWBASE",
+      "searchPlaceholder": "Naslov ali ključna beseda",
+      "searching": "Iskanje …",
+      "noResults": "Ni rezultatov.",
+      "searchError": "Iskanje po zbirki KNOWBASE ni uspelo. Poskusite znova.",
+      "results": "Rezultati iskanja",
+      "add": "Dodaj",
+      "addItem": "Dodaj {title}",
+      "added": "Dodano",
+      "selected": "Povezani elementi",
+      "none": "Povezanih elementov iz zbirke KNOWBASE še ni.",
+      "remove": "Odstrani {title}",
+      "measure": "Ukrep",
+      "document": "Dokument",
+      "limit": "Povežete lahko največ {max} elementov iz zbirke KNOWBASE."
+    },
+    "form": {
+      "titleNew": "Napiši objavo",
+      "titleEdit": "Uredi objavo",
+      "backToPost": "Nazaj na objavo",
+      "title": "Naslov",
+      "category": "Kategorija",
+      "categoryPlaceholder": "Izberite kategorijo",
+      "locale": "Jezik objave",
+      "localeHint": "Jezik, v katerem je objava napisana.",
+      "excerpt": "Povzetek",
+      "excerptHint": "Neobvezno. Prikazan je na seznamu bloga; če ga ni, se uporabi začetek besedila.",
+      "cover": "Naslovna slika",
+      "coverHint": "Neobvezno. Prikazana je na seznamu bloga in na vrhu objave.",
+      "coverAdd": "Dodaj naslovno sliko",
+      "coverRemove": "Odstrani naslovno sliko",
+      "body": "Besedilo",
+      "tags": "Oznake",
+      "tagsHint": "Za vsako oznako pritisnite Enter ali vnesite vejico. Največ {max} oznak.",
+      "tagsPlaceholder": "Dodajte oznako",
+      "event": {
+        "title": "Dogodek",
+        "toggle": "Ta objava napoveduje dogodek",
+        "at": "Datum in ura",
+        "url": "Spletna stran dogodka",
+        "urlHint": "Neobvezno. Začne se s https:// ali http://"
+      },
+      "untrustedNote": "Vašo prvo objavo bo pred objavo pregledal skrbnik.",
+      "submitCreate": "Objavi",
+      "submitReview": "Pošlji v pregled",
+      "submitEdit": "Shrani spremembe",
+      "cancel": "Prekliči",
+      "created": "Objava je objavljena.",
+      "createdPending": "Objava je bila poslana. Objavljena bo, ko jo odobri skrbnik.",
+      "saved": "Spremembe so shranjene.",
+      "unverified": "Za pisanje objav potrdite svoj e-poštni naslov.",
+      "forbidden": "Te objave ne morete urejati.",
+      "errors": {
+        "titleRequired": "Vnesite naslov.",
+        "titleTooShort": "Uporabite vsaj {min} znakov.",
+        "categoryRequired": "Izberite kategorijo.",
+        "bodyRequired": "Napišite besedilo objave.",
+        "bodyTooLong": "Besedilo je predolgo. Pred shranjevanjem ga skrajšajte.",
+        "eventAtRequired": "Vnesite datum in uro dogodka.",
+        "eventUrlInvalid": "Vnesite naslov, ki se začne s https:// ali http://.",
+        "knowbaseNotFound": "Enega od povezanih elementov iz zbirke KNOWBASE ni bilo mogoče najti. Odstranite ga in poskusite znova.",
+        "coverInvalid": "Naslovna slika ni več na voljo. Odstranite jo ali naložite drugo."
+      },
+      "leave": {
+        "title": "Želite oditi brez shranjevanja?",
+        "description": "Vaše spremembe te objave niso shranjene in bodo izgubljene.",
+        "confirm": "Zapusti",
+        "stay": "Nadaljuj z urejanjem"
+      },
+      "draft": {
+        "found": "Imate neshranjen osnutek te objave.",
+        "savedAt": "Shranjeno ob {time}.",
+        "restore": "Obnovi osnutek",
+        "discard": "Zavrzi ga"
+      }
+    }
+  },
+  "common": {
+    "cancel": "Prekliči"
+  },
+  "report": {
+    "button": "Prijavi",
+    "reported": "Prijavljeno",
+    "title": {
+      "post": "Prijavi to objavo",
+      "thread": "Prijavi to razpravo",
+      "reply": "Prijavi ta odgovor",
+      "comment": "Prijavi ta komentar"
+    },
+    "description": "Sporočite skrbnikom, kaj je narobe. Vašo prijavo bodo pregledali.",
+    "reason": "Razlog",
+    "reasonRequired": "Izberite razlog.",
+    "reasons": {
+      "spam": "Neželena vsebina ali oglaševanje",
+      "abuse": "Žaljivo ali neprimerno",
+      "off_topic": "Ni povezano s temo",
+      "misinformation": "Zavajajoče ali napačne informacije",
+      "other": "Drugo"
+    },
+    "details": "Podrobnosti (neobvezno)",
+    "detailsHint": "Vse, kar skrbnikom pomaga razumeti težavo.",
+    "submit": "Pošlji prijavo",
+    "cancel": "Prekliči",
+    "sent": "Hvala, preverili bomo.",
+    "autoHidden": "Ta vsebina je do pregleda skrita.",
+    "alreadyReported": "To vsebino ste že prijavili.",
+    "errors": {
+      "ownContent": "Svoje vsebine ne morete prijaviti.",
+      "contentNotFound": "Ta vsebina ni več na voljo.",
+      "rateLimited": "Danes ste poslali veliko prijav. Poskusite znova jutri."
+    }
+  },
+  "status": {
+    "title": {
+      "pending": "Vsebina čaka na odobritev skrbnika. Vidijo jo samo avtor in skrbniki.",
+      "hidden": "Vsebina je skrita pred drugimi člani. Vidijo jo samo avtor in skrbniki.",
+      "deleted": "Vsebina je izbrisana. Drugi člani je ne vidijo več."
+    },
+    "reason": {
+      "auto_reports": "Vsebina je bila samodejno skrita po prijavah več članov; pregledal jo bo skrbnik.",
+      "admin": "Vsebino je skril skrbnik.",
+      "rejected": "Skrbnik vsebine ni odobril."
+    },
+    "banner": {
+      "firstApproval": "Po prvi odobritvi bo vse, kar objavite, objavljeno takoj.",
+      "contact": "Če menite, da gre za napako, pišite na {email}."
+    }
+  },
+  "search": {
+    "title": "Iskanje",
+    "titleWithQuery": "Iskanje: „{query}“",
+    "intro": "Poiščite objave v blogu in razprave v forumu na celotni platformi. Odgovori in komentarji niso vključeni v iskanje.",
+    "formLabel": "Iskanje po spletnem mestu",
+    "inputLabel": "Iskanje po objavah v blogu in razpravah",
+    "placeholder": "Iščite po objavah in razpravah …",
+    "submit": "Išči",
+    "typeLabel": "Prikaži",
+    "types": {
+      "all": "Vse",
+      "posts": "Objave v blogu",
+      "threads": "Razprave"
+    },
+    "badge": {
+      "post": "Objava v blogu",
+      "thread": "Razprava"
+    },
+    "locale": "Jezik",
+    "allLocales": "Vsi jeziki",
+    "prompt": "Vnesite vsaj 2 znaka in pritisnite Išči, da poiščete objave v blogu in razprave.",
+    "tooShort": "Za iskanje vnesite vsaj {min} znakov.",
+    "count": "Ni rezultatov za „{query}“ | {count} rezultat za „{query}“ | {count} rezultata za „{query}“ | {count} rezultati za „{query}“ | {count} rezultatov za „{query}“",
+    "empty": "Nič ne ustreza iskalnemu nizu „{query}“.",
+    "emptyHint": "Poskusite z drugimi ali manj besedami, preverite črkovanje ali iščite po vseh vrstah vsebin in jezikih.",
+    "error": "Iskanje ni uspelo. Poskusite znova.",
+    "retry": "Poskusi znova",
+    "loading": "Iskanje …",
+    "pagination": "Strani z rezultati iskanja",
+    "author": "Avtor",
+    "category": "Kategorija",
+    "published": "Objavljeno",
+    "formerMember": "Nekdanji član"
+  },
+  "head": {
+    "homeDescription": "Platforma za sodelovanje URBANFLOODS: blog in forum za deležnike na področju upravljanja poplav v jadransko-jonski regiji.",
+    "searchDescription": "Iskanje po objavah v blogu in razpravah v forumu Platforme za sodelovanje URBANFLOODS."
   }
 }

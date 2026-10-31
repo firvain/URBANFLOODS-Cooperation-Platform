@@ -24,7 +24,8 @@ Work Package 5, Activity 5.1. Lead partner: University of Western Macedonia (UOW
   an admin, after which they publish freely. Reports hide abusive content automatically.
 - **Open data**: everything published is readable without an account and exported under
   CC BY 4.0 (JSON, CSV, data package, Atom, sitemap).
-- **Accessible** (WCAG 2.1 AA target); UI in the 9 project languages (English complete).
+- **Accessible** (WCAG 2.1 AA target); UI in the 9 project languages (CLDR plural rules); the
+  admin area is English-only (it is used by project partners).
 
 ## Documentation
 

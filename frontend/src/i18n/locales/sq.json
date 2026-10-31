@@ -3,7 +3,12 @@
     "title": "Platforma e Bashkëpunimit URBANFLOODS",
     "skipToContent": "Kalo te përmbajtja kryesore",
     "language": "Gjuha",
-    "mainNavigation": "Navigimi kryesor"
+    "mainNavigation": "Navigimi kryesor",
+    "logoAlt": "Interreg IPA ADRION, bashkëfinancuar nga Bashkimi Evropian: URBANFLOODS",
+    "projectLogoAlt": "Logoja e projektit URBANFLOODS"
+  },
+  "a11y": {
+    "opensInNewTab": "(hapet në skedë të re)"
   },
   "nav": {
     "home": "Kreu",
@@ -12,44 +17,960 @@
     "knowbase": "KNOWBASE",
     "partners": "Partnerët",
     "network": "Rrjeti",
-    "dss": "DSS i unifikuar",
+    "dss": "Unified DSS",
     "about": "Rreth nesh",
     "login": "Hyr",
     "register": "Regjistrohu",
     "account": "Llogaria"
   },
+  "home": {
+    "title": "Platforma e Bashkëpunimit",
+    "intro": "Një vend takimi për palët e interesuara në menaxhimin e përmbytjeve në të gjithë rajonin Adriatik-Jonian: ndani përvojat në blog, diskutoni në forum.",
+    "comingSoon": "Së shpejti",
+    "cards": {
+      "blog": {
+        "title": "Blogu",
+        "description": "Artikuj, studime rastesh dhe praktika të mira."
+      },
+      "forum": {
+        "title": "Forumi",
+        "description": "Bëni pyetje dhe diskutoni për menaxhimin e përmbytjeve."
+      },
+      "knowbase": {
+        "title": "KNOWBASE",
+        "description": "Shfletoni legjislacionin, politikat dhe masat për mbrojtjen nga përmbytjet.",
+        "open": "Hap KNOWBASE"
+      }
+    },
+    "dss": {
+      "title": "Unified DSS",
+      "description": "Qasuni në Sistemin e Mbështetjes së Vendimmarrjes të zhvilluar nga URBANFLOODS për menaxhimin e përmbytjeve.",
+      "open": "Hap DSS"
+    }
+  },
   "blog": {
-    "title": "Blogu"
+    "title": "Blogu",
+    "write": "Shkruaj një postim",
+    "loading": "Po ngarkohen postimet…",
+    "count": "Asnjë postim | 1 postim | {count} postime",
+    "empty": "Asnjë postim nuk përputhet me këto filtra.",
+    "emptyAll": "Ende nuk ka postime.",
+    "loadError": "Postimet nuk mund të ngarkoheshin.",
+    "retry": "Provo përsëri",
+    "clearFilters": "Pastro filtrat",
+    "pagination": "Faqet e blogut",
+    "filters": {
+      "title": "Filtro postimet",
+      "category": "Kategoria",
+      "allCategories": "Të gjitha",
+      "search": "Kërko",
+      "searchPlaceholder": "Titulli ose teksti",
+      "locale": "Gjuha",
+      "allLocales": "Të gjitha gjuhët",
+      "sort": "Renditja",
+      "sortNewest": "Më të rejat së pari",
+      "sortOldest": "Më të vjetrat së pari",
+      "sortEvents": "Ngjarjet e ardhshme",
+      "tag": "Etiketa",
+      "removeTag": "Hiq filtrin e etiketës {tag}",
+      "popularTags": "Etiketat më të përdorura:"
+    }
+  },
+  "post": {
+    "pageTitle": "Postim blogu",
+    "back": "Kthehu te blogu",
+    "notFound": "Postimi nuk u gjet",
+    "notFoundHint": "Postimi nuk ekziston, është hequr ose nuk është i dukshëm për ju.",
+    "loadError": "Postimi nuk mund të ngarkohej.",
+    "formerMember": "Ish-anëtar",
+    "updated": "përditësuar",
+    "tags": "Etiketat",
+    "comments": "Asnjë koment | 1 koment | {count} komente",
+    "edit": "Redakto",
+    "delete": "Fshi",
+    "deleted": "Postimi u fshi.",
+    "deleteConfirm": {
+      "title": "Ta fshini këtë postim?",
+      "description": "Postimi nuk do të jetë më i dukshëm në platformë.",
+      "confirm": "Fshi postimin",
+      "cancel": "Anulo"
+    },
+    "status": {
+      "pending": "Në pritje të miratimit",
+      "hidden": "I fshehur",
+      "deleted": "I fshirë",
+      "published": "I publikuar"
+    },
+    "statusHint": {
+      "pending": "Në pritje të miratimit nga një administrator. Deri në miratim, këtë postim mund ta shihni vetëm ju dhe administratorët.",
+      "rejected": "Një administrator nuk e miratoi këtë postim. Mund ta shihni vetëm ju dhe administratorët.",
+      "hidden": "Ky postim është i fshehur. Mund ta shohin vetëm autori i tij dhe administratorët.",
+      "deleted": "Ky postim është fshirë."
+    },
+    "event": {
+      "label": "Ngjarje",
+      "link": "Faqja e ngjarjes"
+    },
+    "knowbase": {
+      "title": "Nga KNOWBASE",
+      "measure": "Masë",
+      "document": "Dokument"
+    }
   },
   "forum": {
-    "title": "Forumi"
+    "title": "Forumi",
+    "start": "Fillo një diskutim",
+    "loading": "Po ngarkohen diskutimet…",
+    "count": "Asnjë diskutim | 1 diskutim | {count} diskutime",
+    "empty": "Asnjë diskutim nuk përputhet me këto filtra.",
+    "emptyAll": "Ende nuk ka diskutime.",
+    "loadError": "Diskutimet nuk mund të ngarkoheshin.",
+    "retry": "Provo përsëri",
+    "clearFilters": "Pastro filtrat",
+    "pagination": "Faqet e forumit",
+    "filters": {
+      "title": "Filtro diskutimet",
+      "category": "Kategoria",
+      "allCategories": "Të gjitha",
+      "search": "Kërko",
+      "searchPlaceholder": "Titulli ose teksti",
+      "locale": "Gjuha",
+      "allLocales": "Të gjitha gjuhët",
+      "sort": "Renditja",
+      "sortActivity": "Aktiviteti më i fundit",
+      "sortNewest": "Më të rejat",
+      "tag": "Etiketa",
+      "removeTag": "Hiq filtrin e etiketës {tag}"
+    }
   },
-  "auth": {
-    "login": "Hyr",
-    "register": "Regjistrohu",
-    "logout": "Dil"
+  "thread": {
+    "pageTitle": "Diskutim",
+    "back": "Kthehu te forumi",
+    "notFound": "Diskutimi nuk u gjet",
+    "notFoundHint": "Diskutimi nuk ekziston, është hequr ose nuk është i dukshëm për ju.",
+    "loadError": "Diskutimi nuk mund të ngarkohej.",
+    "pinned": "I fiksuar",
+    "locked": "I kyçur",
+    "replies": "Asnjë përgjigje | 1 përgjigje | {count} përgjigje",
+    "lastActivity": "Aktiviteti i fundit",
+    "started": "Filloi",
+    "tags": "Etiketat",
+    "edit": "Redakto",
+    "delete": "Fshi",
+    "deleted": "Diskutimi u fshi.",
+    "deleteConfirm": {
+      "title": "Ta fshini këtë diskutim?",
+      "description": "Diskutimi dhe përgjigjet e tij nuk do të jenë më të dukshme në platformë.",
+      "confirm": "Fshi diskutimin",
+      "cancel": "Anulo"
+    },
+    "statusHint": {
+      "pending": "Në pritje të miratimit nga një administrator. Deri në miratim, këtë diskutim mund ta shihni vetëm ju dhe administratorët.",
+      "rejected": "Një administrator nuk e miratoi këtë diskutim. Mund ta shihni vetëm ju dhe administratorët.",
+      "hidden": "Ky diskutim është i fshehur. Mund ta shohin vetëm autori i tij dhe administratorët.",
+      "deleted": "Ky diskutim është fshirë."
+    },
+    "admin": {
+      "label": "Moderimi",
+      "pin": "Fikso",
+      "unpin": "Hiq fiksimin",
+      "lock": "Kyç",
+      "unlock": "Shkyç",
+      "pinned": "Diskutimi u fiksua.",
+      "unpinned": "Diskutimi nuk është më i fiksuar.",
+      "locked": "Diskutimi u kyç.",
+      "unlocked": "Diskutimi u shkyç."
+    },
+    "form": {
+      "titleNew": "Fillo një diskutim",
+      "titleEdit": "Redakto diskutimin",
+      "backToThread": "Kthehu te diskutimi",
+      "title": "Titulli",
+      "titleHint": "Një pyetje ose temë, me pak fjalë.",
+      "category": "Kategoria",
+      "categoryPlaceholder": "Zgjidhni një kategori",
+      "locale": "Gjuha e diskutimit",
+      "localeHint": "Gjuha në të cilën është shkruar diskutimi.",
+      "body": "Teksti",
+      "tags": "Etiketat",
+      "tagsPlaceholder": "Shtoni një etiketë",
+      "untrustedNote": "Diskutimi juaj i parë do të shqyrtohet nga një administrator përpara se të publikohet.",
+      "submitCreate": "Publiko",
+      "submitReview": "Dërgo për shqyrtim",
+      "submitEdit": "Ruaj ndryshimet",
+      "cancel": "Anulo",
+      "created": "Diskutimi u publikua.",
+      "createdPending": "Diskutimi u dërgua. Do të publikohet sapo ta miratojë një administrator.",
+      "saved": "Ndryshimet u ruajtën.",
+      "unverified": "Verifikoni adresën tuaj të email-it për të filluar diskutime.",
+      "forbidden": "Nuk mund ta redaktoni këtë diskutim.",
+      "errors": {
+        "bodyRequired": "Shkruani tekstin e diskutimit."
+      },
+      "leave": {
+        "title": "Të largoheni pa ruajtur?",
+        "description": "Ndryshimet tuaja në këtë diskutim nuk janë ruajtur dhe do të humbasin.",
+        "confirm": "Largohu",
+        "stay": "Vazhdo redaktimin"
+      },
+      "draft": {
+        "found": "Keni një draft të paruajtur të këtij diskutimi."
+      }
+    }
+  },
+  "reply": {
+    "title": "Përgjigjet",
+    "loading": "Po ngarkohen përgjigjet…",
+    "loadError": "Përgjigjet nuk mund të ngarkoheshin.",
+    "empty": "Ende nuk ka përgjigje. Bëhuni të parët që përgjigjeni.",
+    "loadMore": "Ngarko më shumë përgjigje",
+    "reply": "Përgjigju",
+    "replyTo": "Përgjigje për {name}",
+    "edit": "Redakto",
+    "delete": "Fshi",
+    "edited": "redaktuar",
+    "deleted": "[fshirë]",
+    "sending": "Po dërgohet…",
+    "formerMember": "Ish-anëtar",
+    "label": "Përgjigja juaj",
+    "labelEdit": "Redaktoni përgjigjen tuaj",
+    "placeholder": "Shkruani një përgjigje…",
+    "submit": "Publiko përgjigjen",
+    "save": "Ruaj",
+    "cancel": "Anulo",
+    "posted": "Përgjigja juaj u publikua.",
+    "saved": "Përgjigja u ruajt.",
+    "removed": "Përgjigja u fshi.",
+    "lockedNotice": "Ky diskutim është i kyçur. Nuk pranohen përgjigje të reja.",
+    "unverified": "Verifikoni adresën tuaj të email-it për t'u përgjigjur.",
+    "loginToReply": "Hyr për t'u përgjigjur",
+    "notPublished": "Përgjigjet hapen sapo të publikohet diskutimi.",
+    "deleteConfirm": {
+      "title": "Ta fshini këtë përgjigje?",
+      "description": "Përgjigja nuk do të jetë më e dukshme. Përgjigjet ndaj saj mbeten.",
+      "confirm": "Fshi përgjigjen",
+      "cancel": "Anulo"
+    },
+    "errors": {
+      "empty": "Shkruani diçka përpara se ta publikoni.",
+      "tooLong": "Përgjigja është shumë e gjatë. Shkurtojeni përpara se ta publikoni.",
+      "parentInvalid": "Përgjigja së cilës po i përgjigjeni nuk është më e disponueshme."
+    }
+  },
+  "comments": {
+    "title": "Asnjë koment | 1 koment | {count} komente",
+    "loading": "Po ngarkohen komentet…",
+    "loadError": "Komentet nuk mund të ngarkoheshin.",
+    "retry": "Provo përsëri",
+    "empty": "Ende nuk ka komente. Bëhuni të parët që komentoni.",
+    "loadMore": "Ngarko më shumë komente",
+    "edit": "Redakto",
+    "delete": "Fshi",
+    "edited": "redaktuar",
+    "sending": "Po dërgohet…",
+    "formerMember": "Ish-anëtar",
+    "label": "Komenti juaj",
+    "labelEdit": "Redaktoni komentin tuaj",
+    "placeholder": "Shkruani një koment…",
+    "submit": "Publiko komentin",
+    "save": "Ruaj",
+    "cancel": "Anulo",
+    "removed": "Komenti u fshi.",
+    "unverified": "Verifikoni adresën tuaj të email-it për të komentuar.",
+    "loginToComment": "Hyr për të komentuar",
+    "notPublished": "Komentet hapen sapo të publikohet postimi.",
+    "closed": "Ky postim nuk është publik, prandaj nuk pranon komente të reja.",
+    "deleteConfirm": {
+      "title": "Ta fshini këtë koment?",
+      "description": "Komenti nuk do të jetë më i dukshëm.",
+      "confirm": "Fshi komentin",
+      "cancel": "Anulo"
+    },
+    "errors": {
+      "empty": "Shkruani diçka përpara se ta publikoni.",
+      "tooLong": "Komenti është shumë i gjatë. Shkurtojeni përpara se ta publikoni."
+    }
+  },
+  "partners": {
+    "title": "Partnerët",
+    "partnershipTitle": "Partneriteti",
+    "leadPartner": "Partneri drejtues",
+    "leadBadge": "DREJTUES",
+    "projectPartners": "Partnerët e projektit",
+    "associatedPartners": "Partnerët e asociuar",
+    "logoAlt": "Logoja e {name}",
+    "shortName": "Emri i shkurtër",
+    "loading": "Po ngarkohen partnerët…",
+    "loadError": "Lista e partnerëve nuk mund të ngarkohej.",
+    "retry": "Provo përsëri",
+    "empty": "Ende nuk ka partnerë të listuar."
+  },
+  "network": {
+    "title": "Rrjeti i Bashkëpunimit",
+    "intro": "Gjeni persona që punojnë në menaxhimin e përmbytjeve në të gjithë rajonin Adriatik-Jonian sipas ekspertizës, vendit ose organizatës.",
+    "filters": {
+      "title": "Filtro anëtarët",
+      "search": "Kërko",
+      "searchPlaceholder": "Emri, organizata ose biografia",
+      "expertise": "Ekspertiza",
+      "expertisePlaceholder": "Çdo ekspertizë",
+      "country": "Vendi",
+      "allCountries": "Të gjitha vendet",
+      "organisation": "Organizata",
+      "allOrganisations": "Të gjitha organizatat"
+    },
+    "count": "Asnjë anëtar | {count} anëtar | {count} anëtarë",
+    "loading": "Po ngarkohen anëtarët…",
+    "loadError": "Lista e anëtarëve nuk mund të ngarkohej.",
+    "retry": "Provo përsëri",
+    "empty": "Asnjë anëtar nuk përputhet me këto filtra.",
+    "emptyAll": "Ende nuk ka anëtarë të listuar.",
+    "clearFilters": "Pastro filtrat",
+    "pagination": "Faqet e listës së anëtarëve",
+    "card": {
+      "email": "Email",
+      "expertise": "Ekspertiza",
+      "moreExpertise": "+{count}",
+      "moreExpertiseLabel": "{count} të tjera: {labels}"
+    },
+    "suggested": {
+      "title": "Bashkëpunëtorë të sugjeruar",
+      "intro": "Anëtarë që punojnë në të njëjtat tema si ju.",
+      "shared": "ka {count} fushë ekspertize të përbashkët | ka {count} fusha ekspertize të përbashkëta",
+      "seeAll": "Shihni të gjithë anëtarët në Rrjetin e Bashkëpunimit",
+      "empty": "Ende nuk ka sugjerime. Shtoni fushat tuaja të ekspertizës në profil për të gjetur anëtarë me interesa të ngjashme.",
+      "editProfile": "Redaktoni profilin tuaj",
+      "loadError": "Sugjerimet nuk mund të ngarkoheshin."
+    }
+  },
+  "knowbase": {
+    "openInKnowbase": "Hape në KNOWBASE",
+    "loading": "Po ngarkohet…",
+    "retry": "Provo përsëri",
+    "notFoundHint": "Mund të jetë hequr nga KNOWBASE ose lidhja është e gabuar.",
+    "fields": {
+      "description": "Përshkrimi",
+      "descriptionLocal": "Përshkrimi (gjuha origjinale)",
+      "keywords": "Fjalët kyçe"
+    },
+    "mentions": {
+      "title": "Përmendet në"
+    },
+    "measures": {
+      "detailTitle": "Masë për menaxhimin e përmbytjeve",
+      "untitled": "Masë pa titull",
+      "back": "Të gjitha masat",
+      "detailError": "Masa nuk mund të ngarkohej.",
+      "notFound": "Masa nuk u gjet",
+      "photoCredit": "Foto: {source}",
+      "fields": {
+        "category": "Kategoria",
+        "level": "Niveli i zbatimit",
+        "scale": "Shkalla",
+        "resources": "Burimet e nevojshme",
+        "benefits": "Përfitimet",
+        "constraints": "Kufizimet"
+      }
+    },
+    "documents": {
+      "detailTitle": "Dokument legjislacioni ose politike",
+      "untitled": "Dokument pa titull",
+      "back": "I gjithë legjislacioni dhe politikat",
+      "detailError": "Dokumenti nuk mund të ngarkohej.",
+      "notFound": "Dokumenti nuk u gjet",
+      "fields": {
+        "level": "Niveli i qeverisjes",
+        "subject": "Lënda",
+        "number": "Numri",
+        "gazette": "Referenca në Fletoren Zyrtare",
+        "webLinks": "Lidhjet në internet",
+        "comments": "Komente"
+      }
+    }
+  },
+  "profile": {
+    "title": "Profili i anëtarit",
+    "organisation": "Organizata",
+    "country": "Vendi",
+    "bio": "Biografia",
+    "expertise": "Ekspertiza",
+    "email": "Email",
+    "memberSince": "Anëtar që nga {date}",
+    "loading": "Po ngarkohet profili…",
+    "loadError": "Ky profil nuk mund të ngarkohej.",
+    "retry": "Provo përsëri",
+    "backToNetwork": "Kthehu te Rrjeti i Bashkëpunimit"
+  },
+  "about": {
+    "title": "Rreth URBANFLOODS",
+    "informationTitle": "Informacion",
+    "facts": {
+      "acronym": "Akronimi i projektit",
+      "fullTitle": "Titulli i plotë i projektit",
+      "programme": "Programi",
+      "priority": "Prioriteti i programit",
+      "call": "Thirrja",
+      "specificObjective": "Objektivi specifik",
+      "dates": "Data e fillimit – e përfundimit",
+      "totalBudget": "Buxheti total",
+      "interregFunds": "Fondet Interreg"
+    },
+    "values": {
+      "acronym": "URBANFLOODS",
+      "fullTitle": "Promoting Urban Resilience Through an Integrated Advanced Decision Support System for Flood Control",
+      "programme": "Interreg IPA ADRION 2021–2027",
+      "priority": "2. Mbështetja e një rajoni Adriatik-Jonian më të gjelbër dhe rezilient ndaj ndryshimeve klimatike",
+      "call": "Thirrja e parë për propozime e IPA ADRION",
+      "specificObjective": "SO2.1. Nxitja e përshtatjes ndaj ndryshimeve klimatike dhe e parandalimit të rrezikut nga fatkeqësitë, si dhe e rezilencës, duke marrë parasysh qasjet e bazuara në ekosisteme",
+      "dates": "01/09/2024 – 31/08/2027",
+      "totalBudget": "EUR 1.747.583,17",
+      "interregFunds": "EUR 1.485.445,68"
+    },
+    "priorityIconAlt": "Ikona e Prioritetit 2 të Interreg IPA ADRION",
+    "partnersTitle": "Partnerët",
+    "leadPartner": {
+      "name": "Universiteti i Maqedonisë Perëndimore",
+      "address": "Zona e Planifikimit Urban Aktiv (ZEP) I, 50100 Kozani, Greqi",
+      "coordinatorName": "Prof. Malamati Louta",
+      "coordinatorRole": "Koordinatore shkencore"
+    },
+    "summary": {
+      "title": "Përmbledhja e projektit",
+      "paragraphs": [
+        "Rajoni Adriatik-Jonian, me kushtet e tij unike gjeografike dhe klimatike, është bërë gjithnjë e më i prirur ndaj përmbytjeve të rënda si pasojë e kombinimit të ndryshimeve klimatike dhe të ndryshimeve në përdorimin e tokës. Këto ngjarje kanë sjellë ndryshime të konsiderueshme gjeomorfologjike të shtretërve të lumenjve dhe, historikisht, kanë shkaktuar dëme të mëdha në jetë njerëzish, prona, bujqësi dhe infrastrukturë turistike. Për më tepër, Mesdheu dhe në veçanti rajoni Adriatik-Jonian konsiderohen pikë e nxehtë e krizës klimatike.",
+        "Projekti URBANFLOODS pranon se menaxhimi efektiv i përmbytjeve kërkon një kuptim gjithëpërfshirës në nivel vendor dhe rajonal, në mënyrë që të hartohen strategji të përshtatshme parandalimi dhe zbutjeje. Projekti është i angazhuar të forcojë rezilencën dhe gatishmërinë urbane përmes zhvillimit të përbashkët të një Sistemi të avancuar dhe të integruar të Mbështetjes së Vendimmarrjes (DSS), me synimin për t'u propozuar palëve të interesuara vendore veprime/masa/rekomandime politikash afatshkurtra, afatmesme dhe afatgjata për kontroll efektiv të përmbytjeve. Projekti thekson rëndësinë e rritjes së ndërgjegjësimit për strategjitë e përshtatjes ndaj ndryshimeve klimatike, duke nxitur kështu një qasje proaktive ndaj rezilencës klimatike.",
+        "Objektivi i përgjithshëm i projektit është zhvillimi i përbashkët i zgjidhjeve inovative për menaxhimin e përmbytjeve, të bazuara në një sistem të sofistikuar informacioni, si dhe zbatimi i veprimeve pilot për uljen e rreziqeve nga përmbytjet. URBANFLOODS synon në veçanti lumenjtë dhe përrenjtë që përshkojnë zonat urbane, pasi ata shpesh përbëjnë rreziqe të konsiderueshme përmbytjeje për komunitetet urbane, një situatë që po rëndohet nga urbanizimi i shpejtë dhe ndryshimi i modeleve klimatike.",
+        "Zgjidhjet e përbashkëta inovative do të përshtaten duke marrë parasysh kërkesat/kufizimet dhe karakteristikat vendore në disa zona pilot në rajonin Adriatik-Jonian, shkëmbimin e përvojave dhe trajnimin praktik që rrjedh nga nismat pilot të projektit. Kjo siguron zbatueshmërinë dhe efikasitetin e tyre në një shumëllojshmëri kontekstesh dhe kushtesh."
+      ],
+      "outputsIntro": "Produktet specifike të projektit përfshijnë:",
+      "outputs": [
+        {
+          "title": "Zhvillimi i përbashkët i zgjidhjeve",
+          "text": "dhe në veçanti i një DSS të avancuar, të bazuar në të dhëna, që ofron zgjidhje holistike për menaxhimin e përmbytjeve, duke përfshirë sisteme të paralajmërimit të hershëm dhe një bazë njohurish me veprime/masa/rekomandime politikash transnacionale afatshkurtra/afatmesme/afatgjata. Ato do të përdoren për të forcuar mekanizmat e mbrojtjes civile përmes përmirësimit të planeve përkatëse."
+        },
+        {
+          "title": "Zbatimi i përbashkët i veprimeve pilot",
+          "text": "në disa zona pilot për një përdorim të përbashkët dhe të koordinuar të të dhënave, modelimin dhe projektimin e sistemeve të paralajmërimit të hershëm për uljen e rreziqeve nga ndryshimet klimatike, testimin dhe vlerësimin e DSS në disa zona të rajonit Adriatik-Jonian, si dhe rritjen e angazhimit të palëve të interesuara në menaxhimin e përmbytjeve përmes ndërgjegjësimit, nxitjes së pranimit të DSS dhe të inovacionit nëpërmjet një qasjeje të përbashkët, të koordinuar dhe të lehtë për përdoruesit në të gjitha zonat pilot."
+        },
+        {
+          "title": "Zhvillimi dhe zbatimi i përbashkët i Strategjive dhe Planeve të Veprimit transnacionale të integruara",
+          "text": "për të koordinuar masat e menaxhimit të përmbytjeve, duke u dhënë përparësi zgjidhjeve të bazuara në natyrë. Këto plane veprimi mund të shërbejnë si referencë për rajone të tjera që përballen me sfida të ngjashme."
+        },
+        {
+          "title": "Forcimi i bashkëpunimit ndërkufitar ndërmjet organizatave",
+          "text": "pasi në URBANFLOODS 11 partnerë nga 8 vende të ndryshme dhe 11 partnerë të asociuar do të bashkëpunojnë për arritjen e objektivave të projektit."
+        }
+      ],
+      "closing": "Rezultatet kryesore të projektit përfshijnë zgjidhje inovative të zhvilluara së bashku, si dhe një strategji dhe plane veprimi transnacionale të përbashkëta e të harmonizuara, që pasqyrojnë nevojat territoriale për një menaxhim efikas dhe efektiv të përmbytjeve dhe që do të përvetësohen dhe/ose do të merren në konsideratë e do të vlerësohen nga organizatat. Njëkohësisht do të nxitet qëndrueshmëria e zgjidhjeve të zhvilluara së bashku, me të gjithë partnerët të angazhuar për përfundimin me sukses të projektit dhe të gatshëm të vazhdojnë bashkëpunimin aktiv pas përfundimit të tij. Për më tepër, projekti do të nxisë rritjen e ndërgjegjësimit për strategjitë e përshtatjes ndaj ndryshimeve klimatike, duke inkurajuar kështu një qëndrim proaktiv ndaj rezilencës klimatike."
+    },
+    "links": {
+      "title": "Mësoni më shumë",
+      "project": "Faqja e internetit e projektit URBANFLOODS",
+      "knowbase": "URBANFLOODS KNOWBASE"
+    },
+    "partnersLink": "Shihni partnerët e projektit"
   },
   "legal": {
     "termsTitle": "Kushtet e përdorimit",
     "privacyTitle": "Politika e privatësisë",
     "accessibilityTitle": "Deklarata e aksesueshmërisë",
     "openDataTitle": "Të dhëna të hapura",
+    "version": "Versioni {version} – {date}",
+    "contents": "Përmbajtja",
     "englishOnly": "Ky dokument është i disponueshëm vetëm në anglisht."
   },
   "footer": {
-    "statement": "Projekti bashkëfinancohet nga Bashkimi Evropian përmes programit Interreg IPA ADRION."
-  },
-  "account": {
-    "nudge": {
-      "title": "Tregojuni anëtarëve me çfarë merreni"
+    "statement": "Projekti bashkëfinancohet nga Bashkimi Evropian përmes programit Interreg IPA ADRION.",
+    "disclaimer": "Kjo faqe interneti është realizuar me ndihmën financiare të Bashkimit Evropian. Përmbajtja e faqes është përgjegjësi e vetme e Universitetit të Maqedonisë Perëndimore dhe në asnjë rrethanë nuk mund të konsiderohet se pasqyron qëndrimin e Bashkimit Evropian dhe/ose të autoriteteve të programit IPA ADRION.",
+    "columns": {
+      "platform": "Platforma",
+      "project": "Projekti",
+      "follow": "Na ndiqni"
     },
-    "tabs": {
-      "notifications": "Njoftimet",
-      "data": "Të dhënat tuaja"
+    "links": {
+      "programme": "Programi Interreg IPA ADRION",
+      "project": "Faqja e internetit e projektit URBANFLOODS",
+      "knowbase": "URBANFLOODS KNOWBASE",
+      "linkedin": "URBANFLOODS në LinkedIn"
+    },
+    "copyright": "© {year} URBANFLOODS",
+    "navLabel": "Lidhjet e projektit"
+  },
+  "errors": {
+    "notFound": "Faqja nuk u gjet",
+    "notFoundDescription": "Faqja që po kërkoni nuk ekziston ose është zhvendosur.",
+    "backHome": "Kthehu në faqen kryesore",
+    "generic": "Diçka shkoi keq. Ju lutemi provoni përsëri.",
+    "tooManyRequests": "Shumë kërkesa. Ju lutemi prisni pak dhe provoni përsëri.",
+    "api": {
+      "auth": {
+        "invalid_credentials": "Email ose fjalëkalim i pasaktë.",
+        "account_disabled": "Kjo llogari është çaktivizuar. Kontaktoni administratorët e platformës nëse mendoni se bëhet fjalë për një gabim.",
+        "email_taken": "Ekziston tashmë një llogari me këtë adresë email-i.",
+        "token_invalid": "Kjo lidhje është e pavlefshme ose ka skaduar.",
+        "captcha_failed": "Kontrolli kundër spamit dështoi. Ju lutemi provoni përsëri."
+      },
+      "validation": {
+        "failed": "Ju lutemi korrigjoni fushat e theksuara."
+      },
+      "uploads": {
+        "too_large": "Imazhi është shumë i madh. Zgjidhni një skedar deri në 5 MB.",
+        "unsupported_type": "Pranohen vetëm imazhe JPEG, PNG dhe WebP.",
+        "invalid_image": "Skedari nuk është imazh i vlefshëm.",
+        "animated": "Imazhet e animuara nuk pranohen.",
+        "too_large_pixels": "Imazhi ka shumë piksela. Zvogëlojeni dhe provoni përsëri.",
+        "daily_limit": "Keni arritur kufirin e ngarkimeve për sot. Provoni përsëri nesër."
+      },
+      "posts": {
+        "not_found": "Postimi nuk ekziston ose nuk është i dukshëm për ju.",
+        "forbidden": "Nuk mund ta ndryshoni këtë postim.",
+        "category_admin_only": "Vetëm administratorët mund të publikojnë në këtë kategori.",
+        "slug_taken": "Një postim tjetër e përdor tashmë këtë adresë."
+      },
+      "knowbase": {
+        "unavailable": "KNOWBASE nuk është e arritshme, prandaj elementet e lidhura nuk mund të kontrolloheshin. Ju lutemi provoni përsëri më vonë."
+      },
+      "threads": {
+        "not_found": "Diskutimi nuk ekziston ose nuk është i dukshëm për ju.",
+        "forbidden": "Nuk mund ta ndryshoni këtë diskutim.",
+        "category_admin_only": "Vetëm administratorët mund të fillojnë diskutime në këtë kategori.",
+        "locked": "Ky diskutim është i kyçur. Nuk pranohen përgjigje të reja.",
+        "slug_taken": "Një diskutim tjetër e përdor tashmë këtë adresë."
+      },
+      "replies": {
+        "not_found": "Përgjigja nuk ekziston ose është fshirë.",
+        "forbidden": "Nuk mund ta ndryshoni këtë përgjigje."
+      },
+      "comments": {
+        "not_found": "Komenti nuk ekziston ose është fshirë.",
+        "forbidden": "Nuk mund ta ndryshoni këtë koment.",
+        "post_not_published": "Komentet janë të hapura vetëm për postimet e publikuara."
+      }
+    },
+    "fields": {
+      "required": "Kjo fushë është e detyrueshme.",
+      "invalid": "Kjo vlerë nuk është e vlefshme.",
+      "value_error": "Kjo vlerë nuk është e vlefshme.",
+      "must_accept": "Për të vazhduar, duhet të pranoni kushtet e përdorimit dhe politikën e privatësisë.",
+      "password_mismatch": "Fjalëkalimet nuk përputhen.",
+      "auth": {
+        "password_too_short": "Përdorni të paktën {min} karaktere.",
+        "password_too_long": "Përdorni jo më shumë se {max} karaktere.",
+        "password_too_common": "Ky fjalëkalim është shumë i zakonshëm. Zgjidhni një më pak të parashikueshëm.",
+        "email_taken": "Ekziston tashmë një llogari me këtë adresë email-i.",
+        "password_same": "Fjalëkalimi i ri duhet të jetë i ndryshëm nga ai aktual."
+      },
+      "missing": "Kjo fushë është e detyrueshme.",
+      "empty": "Kjo fushë nuk mund të jetë bosh.",
+      "string_too_short": "Ky tekst është shumë i shkurtër.",
+      "string_too_long": "Ky tekst është shumë i gjatë.",
+      "archived": "Kjo kategori është arkivuar. Zgjidhni një tjetër.",
+      "too_many": "Ka shumë elemente.",
+      "too_long": "Ky tekst është shumë i gjatë."
     }
   },
-  "admin": {
-    "title": "Administrimi",
-    "menu": "Administrimi"
+  "auth": {
+    "login": "Hyr",
+    "register": "Regjistrohu",
+    "logout": "Dil",
+    "loggedOut": "Keni dalë nga llogaria.",
+    "resent": "Nëse adresa i përket një llogarie që ende ka nevojë për verifikim, një lidhje e re është rrugës.",
+    "fields": {
+      "email": "Email",
+      "password": "Fjalëkalimi",
+      "newPassword": "Fjalëkalimi i ri",
+      "confirmPassword": "Konfirmoni fjalëkalimin e ri",
+      "passwordHint": "Të paktën {min} karaktere. Një frazë e gjatë mbahet mend më lehtë se një fjalë e ndërlikuar.",
+      "showPassword": "Shfaq fjalëkalimin",
+      "hidePassword": "Fshih fjalëkalimin",
+      "displayName": "Emri i shfaqur",
+      "displayNameHint": "Shfaqet pranë postimeve dhe përgjigjeve tuaja.",
+      "organisation": "Organizata",
+      "organisationPlaceholder": "Zgjidhni organizatën tuaj (opsionale)",
+      "organisationOtherOption": "Tjetër…",
+      "organisationOther": "Emri i organizatës",
+      "country": "Vendi",
+      "countryPlaceholder": "Zgjidhni vendin tuaj (opsionale)",
+      "countryOther": "Tjetër",
+      "locale": "Gjuha e preferuar",
+      "localeHint": "Përdoret për email-et që ju dërgojmë.",
+      "acceptTerms": "Pranoj {terms} dhe {privacy}.",
+      "terms": "kushtet e përdorimit",
+      "privacy": "politikën e privatësisë",
+      "optional": "Opsionale"
+    },
+    "loginPage": {
+      "intro": "Hyni për të shkruar postime, për të marrë pjesë në forum dhe për të raportuar përmbajtje.",
+      "submit": "Hyr",
+      "noAccount": "Nuk keni ende llogari?",
+      "forgot": "Keni harruar fjalëkalimin?"
+    },
+    "registerPage": {
+      "title": "Krijoni një llogari",
+      "intro": "Regjistrimi është falas. Për të lexuar platformën nuk nevojitet llogari; për të publikuar, po.",
+      "submit": "Krijo llogarinë",
+      "haveAccount": "Keni tashmë një llogari?"
+    },
+    "registerSuccess": {
+      "title": "Kontrolloni email-in tuaj",
+      "body": "Dërguam një lidhje verifikimi në {email}. Hapeni për të aktivizuar llogarinë tuaj. Lidhja është e vlefshme për 48 orë.",
+      "noEmail": "Nuk ju erdhi email-i? Kontrolloni dosjen e spamit ose dërgojeni përsëri.",
+      "resend": "Dërgo përsëri lidhjen"
+    },
+    "verify": {
+      "title": "Verifikoni email-in tuaj",
+      "verifying": "Po verifikohet adresa juaj e email-it…",
+      "success": "Adresa juaj e email-it u verifikua dhe keni hyrë në llogari. Mirë se vini!",
+      "redirecting": "Po ju drejtojmë te faqja kryesore…",
+      "continue": "Shko te faqja kryesore",
+      "failed": "Nuk mundëm ta verifikonim adresën tuaj të email-it",
+      "resendIntro": "Shkruani adresën tuaj të email-it dhe do t'ju dërgojmë një lidhje të re.",
+      "resend": "Dërgo një lidhje të re",
+      "redirectingProfile": "Po ju drejtojmë te faqja kryesore… Mund të shtoni fushat tuaja të ekspertizës nga llogaria juaj në çdo kohë."
+    },
+    "forgot": {
+      "title": "Keni harruar fjalëkalimin",
+      "intro": "Shkruani adresën e email-it të llogarisë suaj dhe do t'ju dërgojmë një lidhje për të zgjedhur një fjalëkalim të ri.",
+      "submit": "Dërgo lidhjen e rivendosjes",
+      "sent": "Nëse ekziston një llogari për atë adresë, ju kemi dërguar një lidhje për të rivendosur fjalëkalimin. Lidhja është e vlefshme për një orë.",
+      "backToLogin": "Kthehu te hyrja"
+    },
+    "reset": {
+      "title": "Zgjidhni një fjalëkalim të ri",
+      "intro": "Zgjedhja e një fjalëkalimi të ri ju nxjerr nga llogaria në të gjitha pajisjet e tjera.",
+      "submit": "Ruaj fjalëkalimin e ri",
+      "success": "Fjalëkalimi juaj u ndryshua dhe keni hyrë në llogari.",
+      "requestNew": "Kërko një lidhje të re"
+    },
+    "unverified": {
+      "title": "Ju lutemi verifikoni adresën tuaj të email-it",
+      "description": "Dërguam një lidhje në {email}. Derisa ta hapni, mund të lexoni gjithçka, por nuk mund të publikoni, të përgjigjeni ose të raportoni.",
+      "resend": "Ridërgo email-in e verifikimit"
+    },
+    "menu": {
+      "signedInAs": "Keni hyrë si {name}"
+    },
+    "expertiseToggle": "Shtoni fushat tuaja të ekspertizës",
+    "expertiseSelected": "{count} të zgjedhura",
+    "expertiseLabel": "Fushat e ekspertizës (opsionale, deri në {max})",
+    "expertiseHint": "U ndihmon anëtarëve që punojnë në të njëjtat tema të menaxhimit të përmbytjeve t'ju gjejnë. Mund t'i ndryshoni më vonë në profilin tuaj.",
+    "expertisePlaceholder": "Zgjidhni fushat tuaja të ekspertizës"
+  },
+  "account": {
+    "intro": "Menaxhoni profilin, fjalëkalimin, pajisjet ku keni hyrë, njoftimet me email dhe të dhënat tuaja.",
+    "tabs": {
+      "profile": "Profili",
+      "password": "Fjalëkalimi",
+      "sessions": "Sesionet",
+      "notifications": "Njoftimet",
+      "data": "Të dhënat tuaja"
+    },
+    "profile": {
+      "bio": "Rreth jush",
+      "bioHint": "Opsionale. Disa fjalë për punën dhe interesat tuaja.",
+      "bioCount": "{count}/{max}",
+      "expertise": "Fushat e ekspertizës",
+      "expertiseHint": "Deri në {max}. Përdoren për të sugjeruar bashkëpunëtorë dhe për të filtruar Rrjetin e Bashkëpunimit.",
+      "expertisePlaceholder": "Zgjidhni fushat tuaja të ekspertizës",
+      "expertiseMax": "Zgjidhni jo më shumë se {max} fusha ekspertize.",
+      "networkTitle": "Rrjeti i Bashkëpunimit",
+      "showEmail": "Shfaq adresën time të email-it për anëtarët e tjerë",
+      "showEmailHint": "Shfaqet në profilin dhe në kartën tuaj të anëtarit, që të tjerët t'ju kontaktojnë drejtpërdrejt.",
+      "showInDirectory": "Më listo në Rrjetin e Bashkëpunimit",
+      "showInDirectoryHint": "Të tjerët mund t'ju gjejnë sipas ekspertizës, vendit dhe organizatës, dhe mund të sugjeroheni si bashkëpunëtor.",
+      "submit": "Ruaj profilin",
+      "saved": "Profili juaj u ruajt.",
+      "noChanges": "Nuk ka ndryshime për t'u ruajtur."
+    },
+    "password": {
+      "intro": "Ndryshimi i fjalëkalimit ju nxjerr nga llogaria në të gjitha pajisjet e tjera.",
+      "current": "Fjalëkalimi aktual",
+      "submit": "Ndrysho fjalëkalimin",
+      "changed": "Fjalëkalimi u ndryshua",
+      "wrongCurrent": "Fjalëkalimi aktual është i pasaktë."
+    },
+    "sessions": {
+      "intro": "Pajisjet ku keni hyrë. Dilni nga ato që nuk i njihni.",
+      "current": "Kjo pajisje",
+      "device": "{browser} në {os}",
+      "unknownDevice": "Pajisje e panjohur",
+      "signedIn": "Hyrja: {date}",
+      "lastSeen": "Aktiviteti i fundit: {date}",
+      "expires": "Skadon: {date}",
+      "signOut": "Dil nga kjo pajisje",
+      "signedOut": "Pajisja u nxor nga llogaria.",
+      "loading": "Po ngarkohen sesionet tuaja…",
+      "loadError": "Sesionet tuaja nuk mund të ngarkoheshin.",
+      "retry": "Provo përsëri",
+      "empty": "Nuk ka sesione aktive."
+    },
+    "notifications": {
+      "intro": "Zgjidhni cilat email-e ju dërgon platforma. Email-et e llogarisë (verifikimi, rivendosja e fjalëkalimit) dërgohen gjithmonë.",
+      "contentTitle": "Aktiviteti në përmbajtjen tuaj",
+      "replyToMyThread": "Përgjigjet në diskutimet e mia",
+      "replyToMyThreadHint": "Një email kur dikush përgjigjet në një diskutim që keni filluar ju.",
+      "commentOnMyPost": "Komentet në postimet e mia",
+      "commentOnMyPostHint": "Një email kur dikush komenton në një nga postimet tuaja të blogut.",
+      "replyToMyReply": "Përgjigjet ndaj përgjigjeve të mia",
+      "replyToMyReplyHint": "Një email kur dikush i përgjigjet një prej përgjigjeve tuaja.",
+      "adminTitle": "Administrimi",
+      "adminDigest": "Përmbledhja e moderimit",
+      "adminDigestHint": "Një përmbledhje e përmbajtjes në pritje të miratimit dhe e raportimeve të hapura.",
+      "frequency": "Shpeshtësia e përmbledhjes",
+      "daily": "Çdo ditë",
+      "weekly": "Çdo javë",
+      "submit": "Ruaj preferencat",
+      "saved": "Preferencat tuaja të njoftimeve u ruajtën.",
+      "loading": "Po ngarkohen preferencat tuaja të njoftimeve…",
+      "loadError": "Preferencat tuaja të njoftimeve nuk mund të ngarkoheshin.",
+      "retry": "Provo përsëri"
+    },
+    "data": {
+      "intro": "Shkarkoni një kopje të gjithçkaje që ruhet për ju ose fshini llogarinë tuaj.",
+      "export": {
+        "title": "Shkarkoni të dhënat tuaja",
+        "description": "Një skedar JSON me profilin, preferencat, sesionet dhe historikun e llogarisë suaj.",
+        "button": "Shkarko të dhënat e mia",
+        "failed": "Të dhënat tuaja nuk mund të shkarkoheshin. Ju lutemi provoni përsëri."
+      },
+      "delete": {
+        "title": "Fshini llogarinë tuaj",
+        "description": "Të dhënat tuaja personale fshihen dhe dilni nga llogaria në të gjitha pajisjet. Ajo që keni publikuar mbetet, me autor «Përdorues i fshirë». Ky veprim nuk mund të zhbëhet.",
+        "button": "Fshi llogarinë time",
+        "dialogTitle": "Ta fshini llogarinë tuaj?",
+        "dialogDescription": "Shkruani fjalëkalimin aktual për ta konfirmuar. Ky veprim nuk mund të zhbëhet.",
+        "password": "Fjalëkalimi aktual",
+        "confirm": "Fshi përgjithmonë",
+        "cancel": "Anulo",
+        "wrongPassword": "Fjalëkalimi aktual është i pasaktë.",
+        "lastSuperadmin": "Jeni i vetmi superadministrator. Bëni superadministrator një anëtar tjetër përpara se të fshini llogarinë tuaj.",
+        "done": "Llogaria juaj u fshi."
+      }
+    },
+    "nudge": {
+      "title": "Tregojuni anëtarëve me çfarë merreni",
+      "description": "Shtoni fushat tuaja të ekspertizës që t'ju gjejnë njerëzit e duhur.",
+      "action": "Shtoni ekspertizën tuaj",
+      "dismiss": "Hiq këtë kujtesë",
+      "ownCard": "Shtoni ekspertizën tuaj"
+    }
+  },
+  "editor": {
+    "toolbar": "Formatimi",
+    "placeholder": "Shkruani këtu…",
+    "actions": {
+      "bold": "I trashë",
+      "italic": "I pjerrët",
+      "underline": "I nënvizuar",
+      "strike": "I vijëzuar",
+      "heading2": "Titull",
+      "heading3": "Nëntitull",
+      "bulletList": "Listë me pika",
+      "orderedList": "Listë e numëruar",
+      "blockquote": "Citim",
+      "codeBlock": "Bllok kodi",
+      "link": "Lidhje",
+      "image": "Fut imazh",
+      "undo": "Zhbëj",
+      "redo": "Ribëj"
+    },
+    "counter": "{count} / {max}",
+    "counterLabel": "{count} nga {max} karaktere të përdorura",
+    "overLimit": "Teksti e tejkalon kufirin me një karakter. | Teksti e tejkalon kufirin me {count} karaktere.",
+    "link": {
+      "title": "Lidhje",
+      "description": "Lidhni tekstin e përzgjedhur me një faqe interneti ose me një adresë email-i.",
+      "url": "Adresa e internetit",
+      "urlHint": "Fillon me https://, http:// ose mailto:",
+      "invalid": "Shkruani një adresë që fillon me https://, http:// ose mailto:.",
+      "newTab": "Hape në skedë të re",
+      "apply": "Zbato",
+      "remove": "Hiq lidhjen",
+      "cancel": "Anulo"
+    },
+    "image": {
+      "title": "Fut imazh",
+      "description": "Ngarkoni një imazh dhe përshkruajeni për personat që nuk mund ta shohin.",
+      "file": "Skedari i imazhit",
+      "fileHint": "JPEG, PNG ose WebP, deri në 5 MB.",
+      "unsupported": "Zgjidhni një imazh JPEG, PNG ose WebP.",
+      "alt": "Teksti alternativ",
+      "altHint": "Përshkruani çfarë tregon imazhi (i detyrueshëm, deri në 300 karaktere).",
+      "preview": "Pamja paraprake",
+      "upload": "Ngarko dhe fut",
+      "uploading": "Po ngarkohet imazhi…",
+      "cancel": "Anulo"
+    },
+    "kb": {
+      "label": "Lidhjet me KNOWBASE",
+      "hint": "Lidhni masat ose dokumentet e KNOWBASE për të cilat flet ky tekst.",
+      "type": "Kërko në",
+      "measures": "Masat",
+      "documents": "Dokumentet",
+      "search": "Kërko në KNOWBASE",
+      "searchPlaceholder": "Titull ose fjalë kyçe",
+      "searching": "Po kërkohet…",
+      "noResults": "Asnjë rezultat.",
+      "searchError": "Kërkimi në KNOWBASE nuk ishte i mundur. Ju lutemi provoni përsëri.",
+      "results": "Rezultatet e kërkimit",
+      "add": "Shto",
+      "addItem": "Shto {title}",
+      "added": "U shtua",
+      "selected": "Elementet e lidhura",
+      "none": "Ende nuk ka elemente të KNOWBASE të lidhura.",
+      "remove": "Hiq {title}",
+      "measure": "Masë",
+      "document": "Dokument",
+      "limit": "Mund të lidhni deri në {max} elemente të KNOWBASE."
+    },
+    "form": {
+      "titleNew": "Shkruaj një postim",
+      "titleEdit": "Redakto postimin",
+      "backToPost": "Kthehu te postimi",
+      "title": "Titulli",
+      "category": "Kategoria",
+      "categoryPlaceholder": "Zgjidhni një kategori",
+      "locale": "Gjuha e postimit",
+      "localeHint": "Gjuha në të cilën është shkruar postimi.",
+      "excerpt": "Përmbledhja",
+      "excerptHint": "Opsionale. Shfaqet në listën e blogut; nëse mungon, përdoret fillimi i tekstit.",
+      "cover": "Imazhi kryesor",
+      "coverHint": "Opsional. Shfaqet në listën e blogut dhe në krye të postimit.",
+      "coverAdd": "Shto imazh kryesor",
+      "coverRemove": "Hiq imazhin kryesor",
+      "body": "Teksti",
+      "tags": "Etiketat",
+      "tagsHint": "Shtypni Enter ose shkruani presje pas çdo etikete. Deri në {max} etiketa.",
+      "tagsPlaceholder": "Shtoni një etiketë",
+      "event": {
+        "title": "Ngjarje",
+        "toggle": "Ky postim njofton një ngjarje",
+        "at": "Data dhe ora",
+        "url": "Faqja e internetit e ngjarjes",
+        "urlHint": "Opsionale. Fillon me https:// ose http://"
+      },
+      "untrustedNote": "Postimi juaj i parë do të shqyrtohet nga një administrator përpara se të publikohet.",
+      "submitCreate": "Publiko",
+      "submitReview": "Dërgo për shqyrtim",
+      "submitEdit": "Ruaj ndryshimet",
+      "cancel": "Anulo",
+      "created": "Postimi u publikua.",
+      "createdPending": "Postimi u dërgua. Do të publikohet sapo ta miratojë një administrator.",
+      "saved": "Ndryshimet u ruajtën.",
+      "unverified": "Verifikoni adresën tuaj të email-it për të shkruar postime.",
+      "forbidden": "Nuk mund ta redaktoni këtë postim.",
+      "errors": {
+        "titleRequired": "Shkruani një titull.",
+        "titleTooShort": "Përdorni të paktën {min} karaktere.",
+        "categoryRequired": "Zgjidhni një kategori.",
+        "bodyRequired": "Shkruani tekstin e postimit.",
+        "bodyTooLong": "Teksti është shumë i gjatë. Shkurtojeni përpara se ta ruani.",
+        "eventAtRequired": "Shkruani datën dhe orën e ngjarjes.",
+        "eventUrlInvalid": "Shkruani një adresë që fillon me https:// ose http://.",
+        "knowbaseNotFound": "Një nga elementet e lidhura të KNOWBASE nuk u gjet. Hiqeni dhe provoni përsëri.",
+        "coverInvalid": "Imazhi kryesor nuk është më i disponueshëm. Hiqeni ose ngarkoni një tjetër."
+      },
+      "leave": {
+        "title": "Të largoheni pa ruajtur?",
+        "description": "Ndryshimet tuaja në këtë postim nuk janë ruajtur dhe do të humbasin.",
+        "confirm": "Largohu",
+        "stay": "Vazhdo redaktimin"
+      },
+      "draft": {
+        "found": "Keni një draft të paruajtur të këtij postimi.",
+        "savedAt": "U ruajt në {time}.",
+        "restore": "Rikthe draftin",
+        "discard": "Hidhe poshtë"
+      }
+    }
+  },
+  "common": {
+    "cancel": "Anulo"
+  },
+  "report": {
+    "button": "Raporto",
+    "reported": "U raportua",
+    "title": {
+      "post": "Raporto këtë postim",
+      "thread": "Raporto këtë diskutim",
+      "reply": "Raporto këtë përgjigje",
+      "comment": "Raporto këtë koment"
+    },
+    "description": "Tregojuni administratorëve se çfarë nuk shkon. Ata do ta shqyrtojnë raportimin tuaj.",
+    "reason": "Arsyeja",
+    "reasonRequired": "Zgjidhni një arsye.",
+    "reasons": {
+      "spam": "Spam ose reklamë",
+      "abuse": "Fyese ose abuzive",
+      "off_topic": "Jashtë teme",
+      "misinformation": "Informacion mashtrues ose i rremë",
+      "other": "Diçka tjetër"
+    },
+    "details": "Detaje (opsionale)",
+    "detailsHint": "Çdo gjë që i ndihmon administratorët ta kuptojnë problemin.",
+    "submit": "Dërgo raportimin",
+    "cancel": "Anulo",
+    "sent": "Faleminderit, do ta shqyrtojmë.",
+    "autoHidden": "Kjo përmbajtje është fshehur në pritje të shqyrtimit.",
+    "alreadyReported": "E keni raportuar tashmë këtë.",
+    "errors": {
+      "ownContent": "Nuk mund të raportoni përmbajtjen tuaj.",
+      "contentNotFound": "Kjo përmbajtje nuk është më e disponueshme.",
+      "rateLimited": "Keni dërguar shumë raportime sot. Ju lutemi provoni përsëri nesër."
+    }
+  },
+  "status": {
+    "title": {
+      "pending": "Në pritje të miratimit nga një administrator. Mund ta shohin vetëm autori dhe administratorët.",
+      "hidden": "E fshehur për anëtarët e tjerë. Mund ta shohin vetëm autori dhe administratorët.",
+      "deleted": "E fshirë. Anëtarët e tjerë nuk mund ta shohin më."
+    },
+    "reason": {
+      "auto_reports": "U fsheh automatikisht pas raportimeve nga disa anëtarë; një administrator do ta shqyrtojë.",
+      "admin": "Një administrator e fshehu.",
+      "rejected": "Një administrator nuk e miratoi."
+    },
+    "banner": {
+      "firstApproval": "Pas miratimit të parë, çdo gjë që publikoni shfaqet menjëherë.",
+      "contact": "Nëse mendoni se bëhet fjalë për një gabim, kontaktoni {email}."
+    }
+  },
+  "search": {
+    "title": "Kërkim",
+    "titleWithQuery": "Kërkim: «{query}»",
+    "intro": "Gjeni postime blogu dhe diskutime forumi në të gjithë platformën. Përgjigjet dhe komentet nuk përfshihen në kërkim.",
+    "formLabel": "Kërkim në faqe",
+    "inputLabel": "Kërkoni në postimet e blogut dhe në diskutime",
+    "placeholder": "Kërkoni postime dhe diskutime…",
+    "submit": "Kërko",
+    "typeLabel": "Shfaq",
+    "types": {
+      "all": "Të gjitha",
+      "posts": "Postime blogu",
+      "threads": "Diskutime"
+    },
+    "badge": {
+      "post": "Postim blogu",
+      "thread": "Diskutim"
+    },
+    "locale": "Gjuha",
+    "allLocales": "Të gjitha gjuhët",
+    "prompt": "Shkruani të paktën 2 karaktere dhe shtypni Kërko për të gjetur postime blogu dhe diskutime.",
+    "tooShort": "Shkruani të paktën {min} karaktere për të kërkuar.",
+    "count": "Asnjë rezultat për «{query}» | 1 rezultat për «{query}» | {count} rezultate për «{query}»",
+    "empty": "Asgjë nuk përputhet me «{query}».",
+    "emptyHint": "Provoni fjalë të tjera ose më pak fjalë, kontrolloni drejtshkrimin ose kërkoni në të gjitha llojet e përmbajtjes dhe në të gjitha gjuhët.",
+    "error": "Kërkimi dështoi. Ju lutemi provoni përsëri.",
+    "retry": "Provo përsëri",
+    "loading": "Po kërkohet…",
+    "pagination": "Faqet e rezultateve të kërkimit",
+    "author": "Autori",
+    "category": "Kategoria",
+    "published": "Publikuar",
+    "formerMember": "Ish-anëtar"
+  },
+  "head": {
+    "homeDescription": "Platforma e Bashkëpunimit URBANFLOODS: blog dhe forum për palët e interesuara në menaxhimin e përmbytjeve në rajonin Adriatik-Jonian.",
+    "searchDescription": "Kërkoni në postimet e blogut dhe diskutimet e forumit të Platformës së Bashkëpunimit URBANFLOODS."
   }
 }
