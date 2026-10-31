@@ -34,8 +34,25 @@ purifier.addHook('afterSanitizeAttributes', (node) => {
   }
 })
 
+export interface SanitizeOptions {
+  /**
+   * Keep only these elements, without any attribute (the text of every other element is kept;
+   * scripts and styles are dropped with their content). For text with light markup, such as
+   * search snippets (`['mark']`). Without it the rich-text configuration applies.
+   */
+  allowedTags?: readonly string[]
+}
+
 /** Sanitise an HTML string for `v-html`. Use through `components/common/SafeHtml.vue`. */
-export function sanitizeHtml(html: string): string {
+export function sanitizeHtml(html: string, options: SanitizeOptions = {}): string {
+  if (options.allowedTags) {
+    return purifier.sanitize(html, {
+      ALLOWED_TAGS: [...options.allowedTags],
+      ALLOWED_ATTR: [],
+      ALLOW_DATA_ATTR: false,
+      ALLOW_ARIA_ATTR: false,
+    })
+  }
   return purifier.sanitize(html, { ALLOWED_URI_REGEXP })
 }
 

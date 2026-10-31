@@ -13,7 +13,8 @@ import PendingBanner from '@/components/moderation/PendingBanner.vue'
 import ReportButton from '@/components/moderation/ReportButton.vue'
 import StatusBadge from '@/components/moderation/StatusBadge.vue'
 import { useApiErrors } from '@/composables/useApiErrors'
-import { usePageHead } from '@/composables/usePageHead'
+import { absoluteUrl, usePageHead } from '@/composables/usePageHead'
+import { CONTENT_LICENCE_URL } from '@/constants/links'
 import { ApiError } from '@/services/api'
 import { postsService, type PostDetail } from '@/services/posts'
 import { useAuthStore } from '@/stores/auth'
@@ -54,16 +55,39 @@ watch(
   { immediate: true },
 )
 
-usePageHead(() =>
-  post.value
-    ? {
-        title: post.value.title,
-        description: post.value.excerpt,
-        image: post.value.cover?.url ?? null,
-        type: 'article',
-      }
-    : null,
-)
+// Title, Open Graph and schema.org Article data (only for a published post: nobody else can
+// share or index the others).
+usePageHead(() => {
+  const value = post.value
+  if (!value) return null
+  const url = absoluteUrl(`/blog/${encodeURIComponent(value.slug)}`)
+  const image = value.cover?.url ? absoluteUrl(value.cover.url) : null
+  return {
+    title: value.title,
+    description: value.excerpt,
+    image,
+    type: 'article',
+    canonical: url,
+    jsonLd:
+      value.status === 'published'
+        ? {
+            '@context': 'https://schema.org',
+            '@type': 'Article',
+            headline: value.title,
+            description: value.excerpt || undefined,
+            datePublished: value.published_at ?? value.created_at,
+            dateModified: value.updated_at,
+            author: value.author
+              ? { '@type': 'Person', name: value.author.display_name }
+              : undefined,
+            inLanguage: value.locale,
+            license: CONTENT_LICENCE_URL,
+            url,
+            image: image ?? undefined,
+          }
+        : null,
+  }
+})
 
 const isAuthor = computed(
   () => !!post.value && auth.user !== null && auth.user.id === post.value.author?.id,

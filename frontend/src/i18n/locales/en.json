@@ -530,6 +530,8 @@
   "legal": {
     "termsTitle": "Terms of Use",
     "privacyTitle": "Privacy Policy",
+    "accessibilityTitle": "Accessibility statement",
+    "openDataTitle": "Open data",
     "version": "Version {version} – {date}",
     "contents": "Contents",
     "englishOnly": "This document is available in English only."
@@ -1329,5 +1331,44 @@
       "when": "When",
       "clear": "Clear filters"
     }
+  },
+  "search": {
+    "title": "Search",
+    "titleWithQuery": "Search: “{query}”",
+    "intro": "Find blog posts and forum discussions across the platform. Replies and comments are not searched.",
+    "formLabel": "Site search",
+    "inputLabel": "Search blog posts and discussions",
+    "placeholder": "Search posts and discussions…",
+    "headerPlaceholder": "Search…",
+    "submit": "Search",
+    "typeLabel": "Show",
+    "types": {
+      "all": "All",
+      "posts": "Blog posts",
+      "threads": "Discussions"
+    },
+    "badge": {
+      "post": "Blog post",
+      "thread": "Discussion"
+    },
+    "locale": "Language",
+    "allLocales": "All languages",
+    "prompt": "Type at least 2 characters and press Search to find blog posts and discussions.",
+    "tooShort": "Type at least {min} characters to search.",
+    "count": "No results for “{query}” | 1 result for “{query}” | {count} results for “{query}”",
+    "empty": "Nothing matches “{query}”.",
+    "emptyHint": "Try other or fewer words, check the spelling, or search all content types and languages.",
+    "error": "The search failed. Please try again.",
+    "retry": "Try again",
+    "loading": "Searching…",
+    "pagination": "Search result pages",
+    "author": "Author",
+    "category": "Category",
+    "published": "Published",
+    "formerMember": "Former member"
+  },
+  "head": {
+    "homeDescription": "URBANFLOODS Cooperation Platform: blog and forum for urban flood-management stakeholders in the Adriatic-Ionian region.",
+    "searchDescription": "Search the blog posts and forum discussions of the URBANFLOODS Cooperation Platform."
   }
 }

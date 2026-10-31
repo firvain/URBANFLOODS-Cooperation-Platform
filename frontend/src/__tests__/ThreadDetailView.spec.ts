@@ -343,10 +343,25 @@ describe('ThreadDetailView', () => {
     mockApi(routes())
     await mountApp(`/forum/t/${SLUG}`)
     await vi.waitFor(() =>
-      expect(document.title).toBe(`Sirens or SMS for flood warnings? | ${t('app.title')}`),
+      expect(document.title).toBe(`Sirens or SMS for flood warnings? · ${t('app.title')}`),
     )
     expect(document.head.querySelector('meta[name="description"]')?.getAttribute('content')).toBe(
       'Which channel reaches residents faster?',
     )
+  })
+
+  it('emits DiscussionForumPosting JSON-LD', async () => {
+    mockApi(routes())
+    await mountApp(`/forum/t/${SLUG}`)
+    const script = () => document.head.querySelector('script[type="application/ld+json"]')
+    await vi.waitFor(() =>
+      expect(JSON.parse(script()!.textContent!)['@type']).toBe('DiscussionForumPosting'),
+    )
+    const data = JSON.parse(script()!.textContent!)
+    expect(data.headline).toBe('Sirens or SMS for flood warnings?')
+    expect(data.url).toBe(`${window.location.origin}/forum/t/${SLUG}`)
+    expect(data.author['@type']).toBe('Person')
+    expect(data.inLanguage).toBe('en')
+    expect(data.interactionStatistic.userInteractionCount).toBe(3)
   })
 })

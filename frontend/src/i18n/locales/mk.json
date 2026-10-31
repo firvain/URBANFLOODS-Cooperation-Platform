@@ -32,6 +32,8 @@
   "legal": {
     "termsTitle": "Услови за користење",
     "privacyTitle": "Политика за приватност",
+    "accessibilityTitle": "Изјава за пристапност",
+    "openDataTitle": "Отворени податоци",
     "englishOnly": "Овој документ е достапен само на англиски јазик."
   },
   "footer": {

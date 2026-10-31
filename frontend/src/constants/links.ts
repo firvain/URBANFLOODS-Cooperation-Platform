@@ -14,3 +14,6 @@ export const EXTERNAL_LINKS = {
 export function dssUrl(): string {
   return (import.meta.env.VITE_DSS_URL ?? '').trim()
 }
+
+/** Licence of the content members contribute (Terms §8), named in the pages' JSON-LD. */
+export const CONTENT_LICENCE_URL = 'https://creativecommons.org/licenses/by/4.0/'

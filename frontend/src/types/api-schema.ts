@@ -1768,6 +1768,187 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/search/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search
+         * @description Posts and threads matching ``q`` (titles and bodies, stemmed, typo-tolerant on titles),
+         *     best match first. ``snippet`` is escaped text whose only markup is ``<mark>``.
+         */
+        get: operations["search_api_v1_search__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/export/posts.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Posts Json
+         * @description Every published post with its published comments and KNOWBASE links, oldest id first.
+         */
+        get: operations["export_posts_json_api_v1_export_posts_json_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/export/threads.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Threads Json
+         * @description Every published thread with its published replies and KNOWBASE links, oldest id first.
+         */
+        get: operations["export_threads_json_api_v1_export_threads_json_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/export/posts.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Posts Csv
+         * @description One row per published post, no bodies; columns as in the data package schema.
+         */
+        get: operations["export_posts_csv_api_v1_export_posts_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/export/datapackage.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Datapackage
+         * @description Frictionless Data Package (v2) descriptor of the three exports.
+         */
+        get: operations["datapackage_api_v1_export_datapackage_json_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/feeds/posts.atom": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Posts Feed
+         * @description The 20 newest published blog posts.
+         */
+        get: operations["posts_feed_feeds_posts_atom_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/feeds/threads.atom": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Threads Feed
+         * @description The 20 newest published forum threads.
+         */
+        get: operations["threads_feed_feeds_threads_atom_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sitemap.xml": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sitemap
+         * @description Static pages, then every published post and thread with its ``lastmod``.
+         */
+        get: operations["sitemap_sitemap_xml_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/robots.txt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Robots
+         * @description Crawl everything public (account and admin pages excluded); points at the sitemap.
+         */
+        get: operations["robots_robots_txt_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2134,6 +2315,109 @@ export interface components {
          * @enum {string}
          */
         ContentType: "post" | "thread" | "reply" | "comment";
+        /** CsvDialect */
+        CsvDialect: {
+            /**
+             * Delimiter
+             * @default ,
+             */
+            delimiter: string;
+            /**
+             * Header
+             * @default true
+             */
+            header: boolean;
+        };
+        /**
+         * DataPackage
+         * @description A Frictionless Data Package (v2) descriptor.
+         */
+        DataPackage: {
+            /**
+             * $Schema
+             * @default https://datapackage.org/profiles/2.0/datapackage.json
+             */
+            $schema: string;
+            /** Name */
+            name: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Homepage */
+            homepage: string;
+            /** Created */
+            created: string;
+            /** Keywords */
+            keywords: string[];
+            /** Licenses */
+            licenses: components["schemas"]["DataPackageLicense"][];
+            /** Sources */
+            sources: components["schemas"]["DataPackageSource"][];
+            /** Contributors */
+            contributors: components["schemas"]["DataPackageContributor"][];
+            /** Resources */
+            resources: components["schemas"]["DataResource"][];
+        };
+        /** DataPackageContributor */
+        DataPackageContributor: {
+            /** Title */
+            title: string;
+            /** Path */
+            path?: string | null;
+            /** Roles */
+            roles: string[];
+        };
+        /** DataPackageLicense */
+        DataPackageLicense: {
+            /** Name */
+            name: string;
+            /** Path */
+            path: string;
+            /** Title */
+            title: string;
+        };
+        /** DataPackageSource */
+        DataPackageSource: {
+            /** Title */
+            title: string;
+            /** Path */
+            path?: string | null;
+        };
+        /** DataResource */
+        DataResource: {
+            /**
+             * $Schema
+             * @default https://datapackage.org/profiles/2.0/dataresource.json
+             */
+            $schema: string;
+            /** Name */
+            name: string;
+            /** Path */
+            path: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "json" | "csv";
+            /** Mediatype */
+            mediatype: string;
+            /**
+             * Encoding
+             * @default utf-8
+             */
+            encoding: string;
+            /** Licenses */
+            licenses: components["schemas"]["DataPackageLicense"][];
+            /** Type */
+            type?: "table" | null;
+            dialect?: components["schemas"]["CsvDialect"] | null;
+            schema?: components["schemas"]["TableSchema"] | null;
+        };
         /** DeleteAccountRequest */
         DeleteAccountRequest: {
             /** Current Password */
@@ -2187,6 +2471,34 @@ export interface components {
              */
             created_at: string;
         };
+        /** ExportAuthor */
+        ExportAuthor: {
+            /** Id */
+            id: number | null;
+            /** Display Name */
+            display_name: string;
+            organisation: components["schemas"]["app__api__v1__schemas__export__ExportOrganisation"] | null;
+        };
+        /** ExportCategory */
+        ExportCategory: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+        };
+        /** ExportComment */
+        ExportComment: {
+            /** Id */
+            id: number;
+            author: components["schemas"]["ExportAuthor"];
+            /** Body Text */
+            body_text: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /**
          * ExportContent
          * @description The user's own content. Empty until posts (M2) and the forum (M3) exist.
@@ -2209,14 +2521,74 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
-        /** ExportOrganisation */
-        ExportOrganisation: {
+        /** ExportKnowbaseLink */
+        ExportKnowbaseLink: {
+            kb_type: components["schemas"]["KbType"];
+            /** Kb Id */
+            kb_id: number;
+            /** Title */
+            title: string;
+        };
+        /** ExportPost */
+        ExportPost: {
             /** Id */
             id: number;
-            /** Name */
-            name: string;
-            /** Short Name */
-            short_name: string;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+            /** Locale */
+            locale: string;
+            category: components["schemas"]["ExportCategory"];
+            /** Tags */
+            tags: components["schemas"]["ExportTag"][];
+            author: components["schemas"]["ExportAuthor"];
+            /** Published At */
+            published_at: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Body Text */
+            body_text: string;
+            /** Body Html */
+            body_html: string;
+            /** Url */
+            url: string;
+            /** Knowbase Links */
+            knowbase_links: components["schemas"]["ExportKnowbaseLink"][];
+            /**
+             * License
+             * @default CC-BY-4.0
+             * @constant
+             */
+            license: "CC-BY-4.0";
+            /** License Url */
+            license_url: string;
+            /** Excerpt */
+            excerpt: string | null;
+            /** Event At */
+            event_at: string | null;
+            /** Event Url */
+            event_url: string | null;
+            /** Comments */
+            comments: components["schemas"]["ExportComment"][];
+        };
+        /** ExportReply */
+        ExportReply: {
+            /** Id */
+            id: number;
+            /** Parent Reply Id */
+            parent_reply_id: number | null;
+            author: components["schemas"]["ExportAuthor"];
+            /** Body Text */
+            body_text: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /**
          * ExportSession
@@ -2248,6 +2620,53 @@ export interface components {
             /** Revoked At */
             revoked_at: string | null;
         };
+        /** ExportTag */
+        ExportTag: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+        };
+        /** ExportThread */
+        ExportThread: {
+            /** Id */
+            id: number;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+            /** Locale */
+            locale: string;
+            category: components["schemas"]["ExportCategory"];
+            /** Tags */
+            tags: components["schemas"]["ExportTag"][];
+            author: components["schemas"]["ExportAuthor"];
+            /** Published At */
+            published_at: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Body Text */
+            body_text: string;
+            /** Body Html */
+            body_html: string;
+            /** Url */
+            url: string;
+            /** Knowbase Links */
+            knowbase_links: components["schemas"]["ExportKnowbaseLink"][];
+            /**
+             * License
+             * @default CC-BY-4.0
+             * @constant
+             */
+            license: "CC-BY-4.0";
+            /** License Url */
+            license_url: string;
+            /** Replies */
+            replies: components["schemas"]["ExportReply"][];
+        };
         /** ExportUser */
         ExportUser: {
             /** Id */
@@ -2256,7 +2675,7 @@ export interface components {
             email: string;
             /** Display Name */
             display_name: string;
-            organisation: components["schemas"]["ExportOrganisation"] | null;
+            organisation: components["schemas"]["app__api__v1__schemas__auth__ExportOrganisation"] | null;
             /** Organisation Other */
             organisation_other: string | null;
             /** Country */
@@ -2731,6 +3150,13 @@ export interface components {
             /** Items */
             items: components["schemas"]["ReportDetail"][];
         };
+        /** PaginatedSearch */
+        PaginatedSearch: {
+            /** Total */
+            total: number;
+            /** Items */
+            items: components["schemas"]["SearchHit"][];
+        };
         /** PaginatedThreads */
         PaginatedThreads: {
             /** Total */
@@ -3089,6 +3515,46 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** SearchAuthor */
+        SearchAuthor: {
+            /** Id */
+            id: number;
+            /** Display Name */
+            display_name: string;
+        };
+        /** SearchCategory */
+        SearchCategory: {
+            /** Id */
+            id: number;
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+        };
+        /** SearchHit */
+        SearchHit: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "post" | "thread";
+            /** Id */
+            id: number;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+            /** Snippet */
+            snippet: string;
+            /** Locale */
+            locale: string;
+            author: components["schemas"]["SearchAuthor"] | null;
+            category: components["schemas"]["SearchCategory"];
+            /** Published At */
+            published_at: string | null;
+            /** Rank */
+            rank: number;
+        };
         /** SessionInfo */
         SessionInfo: {
             /**
@@ -3154,6 +3620,29 @@ export interface components {
             total: number;
             /** Items */
             items: components["schemas"]["SuggestedMember"][];
+        };
+        /** TableField */
+        TableField: {
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /** Format */
+            format?: string | null;
+            /** Description */
+            description: string;
+        };
+        /** TableSchema */
+        TableSchema: {
+            /**
+             * $Schema
+             * @default https://datapackage.org/profiles/2.0/tableschema.json
+             */
+            $schema: string;
+            /** Fields */
+            fields: components["schemas"]["TableField"][];
+            /** Primarykey */
+            primaryKey: string[];
         };
         /** TagList */
         TagList: {
@@ -3453,6 +3942,26 @@ export interface components {
         VerifyEmailRequest: {
             /** Token */
             token: string;
+        };
+        /** ExportOrganisation */
+        app__api__v1__schemas__auth__ExportOrganisation: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Short Name */
+            short_name: string;
+        };
+        /** ExportOrganisation */
+        app__api__v1__schemas__export__ExportOrganisation: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Short Name */
+            short_name: string;
+            /** Country */
+            country: string;
         };
     };
     responses: never;
@@ -11351,6 +11860,248 @@ export interface operations {
                      *     }
                      */
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    search_api_v1_search__get: {
+        parameters: {
+            query: {
+                /** @description 2-200 characters after trimming */
+                q: string;
+                type?: "all" | "posts" | "threads";
+                locale?: string | null;
+                skip?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedSearch"];
+                };
+            };
+            /** @description Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    export_posts_json_api_v1_export_posts_json_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportPost"][];
+                };
+            };
+            /** @description Not modified (If-None-Match) */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    export_threads_json_api_v1_export_threads_json_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportThread"][];
+                };
+            };
+            /** @description Not modified (If-None-Match) */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    export_posts_csv_api_v1_export_posts_csv_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One row per published post (no bodies) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Not modified (If-None-Match) */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    datapackage_api_v1_export_datapackage_json_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataPackage"];
+                };
+            };
+        };
+    };
+    posts_feed_feeds_posts_atom_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Atom 1.0 feed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/atom+xml": unknown;
+                };
+            };
+        };
+    };
+    threads_feed_feeds_threads_atom_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Atom 1.0 feed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/atom+xml": unknown;
+                };
+            };
+        };
+    };
+    sitemap_sitemap_xml_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sitemap */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/xml": unknown;
+                };
+            };
+        };
+    };
+    robots_robots_txt_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description robots.txt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": unknown;
                 };
             };
         };

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import i18n from '@/i18n'
 
@@ -83,5 +83,24 @@ describe('HomeView section cards', () => {
     expect(link.exists()).toBe(true)
     expect(link.text()).toContain(t('home.cards.blog.title'))
     expect(card.text()).not.toContain(t('home.comingSoon'))
+  })
+})
+
+describe('HomeView head', () => {
+  it('emits WebSite JSON-LD with a SearchAction targeting /search?q=', async () => {
+    mockApi()
+    await mountWithApp(HomeView)
+    const script = () => document.head.querySelector('script[type="application/ld+json"]')
+    await vi.waitFor(() => expect(script()).not.toBeNull())
+    const data = JSON.parse(script()!.textContent!)
+    expect(data['@type']).toBe('WebSite')
+    expect(data.name).toBe(i18n.global.t('app.title'))
+    expect(data.url).toBe(`${window.location.origin}/`)
+    expect(data.potentialAction['@type']).toBe('SearchAction')
+    expect(data.potentialAction.target.urlTemplate).toBe(
+      `${window.location.origin}/search?q={search_term_string}`,
+    )
+    expect(data.potentialAction['query-input']).toBe('required name=search_term_string')
+    expect(document.title).toBe(i18n.global.t('app.title'))
   })
 })

@@ -8,6 +8,7 @@ import {
 } from 'vue-router'
 
 import i18n from '@/i18n'
+import { formatPageTitle } from '@/composables/usePageHead'
 import { useAuthStore } from '@/stores/auth'
 import { safeRedirect } from './redirect'
 
@@ -106,6 +107,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'thread.form.titleEdit', auth: 'verified' },
   },
   {
+    path: '/search',
+    name: 'search',
+    component: () => import('@/views/SearchView.vue'),
+    meta: { title: 'search.title' },
+  },
+  {
     path: '/partners',
     name: 'partners',
     component: () => import('@/views/PartnersView.vue'),
@@ -172,6 +179,20 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/views/LegalView.vue'),
     props: { doc: 'privacy' },
     meta: { title: 'legal.privacyTitle' },
+  },
+  {
+    path: '/accessibility',
+    name: 'accessibility',
+    component: () => import('@/views/LegalView.vue'),
+    props: { doc: 'accessibility' },
+    meta: { title: 'legal.accessibilityTitle' },
+  },
+  {
+    path: '/open-data',
+    name: 'open-data',
+    component: () => import('@/views/LegalView.vue'),
+    props: { doc: 'openData' },
+    meta: { title: 'legal.openDataTitle' },
   },
   {
     path: '/login',
@@ -267,12 +288,13 @@ export const routes: RouteRecordRaw[] = [
   },
 ]
 
-/** Translated `document.title` for a route title key. */
+/**
+ * Translated page title for a route title key, in the `usePageHead` format. `App.vue` sets it as
+ * the fallback `<head>` title (usePageHead owns `document.title`); the route-change announcement
+ * reads it too.
+ */
 export function pageTitle(titleKey: string | undefined): string {
-  const { t } = i18n.global
-  const appTitle = t('app.title')
-  if (!titleKey || titleKey === 'app.title') return appTitle
-  return `${t(titleKey)} | ${appTitle}`
+  return formatPageTitle(titleKey ? i18n.global.t(titleKey) : '')
 }
 
 /** Render NotFound at the requested URL (no redirect, so the address bar keeps the path). */
@@ -330,10 +352,6 @@ export function createAppRouter(
   })
 
   router.beforeEach(authGuard)
-
-  router.afterEach((to) => {
-    document.title = pageTitle(to.meta.title)
-  })
 
   return router
 }

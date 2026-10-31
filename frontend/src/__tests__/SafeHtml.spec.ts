@@ -100,4 +100,27 @@ describe('SafeHtml', () => {
     await wrapper.setProps({ html: '<p>two</p>' })
     expect(wrapper.text()).toBe('two')
   })
+
+  it('with allowedTags keeps only those elements, without attributes, and the text of the rest', () => {
+    const wrapper = mount(SafeHtml, {
+      props: {
+        html: 'a <mark class="x" style="color:red" onclick="alert(1)">hit</mark> <b>bold</b> <a href="/x">link</a><script>window.hacked = 1</script>',
+        allowedTags: ['mark'],
+      },
+    })
+    mounted.push(wrapper)
+    const mark = wrapper.find('mark')
+    expect(mark.text()).toBe('hit')
+    expect(mark.element.attributes).toHaveLength(0)
+    expect(wrapper.find('b').exists()).toBe(false)
+    expect(wrapper.find('a').exists()).toBe(false)
+    expect(wrapper.find('script').exists()).toBe(false)
+    expect(wrapper.text()).toBe('a hit bold link')
+  })
+
+  it('without allowedTags keeps the default rich-text configuration', () => {
+    const wrapper = render('<p><b>bold</b> <mark>hit</mark></p>')
+    expect(wrapper.find('b').exists()).toBe(true)
+    expect(wrapper.find('p').exists()).toBe(true)
+  })
 })

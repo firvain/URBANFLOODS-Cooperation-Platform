@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, RouterView, type RouteLocationNormalized } from 'vue-router'
 import { createPinia } from 'pinia'
@@ -7,6 +7,7 @@ import { defineComponent, h } from 'vue'
 
 import i18n from '@/i18n'
 import { createAppRouter, scrollBehavior } from '@/router'
+import { mountApp, unmountAll } from './helpers/mount'
 
 const t = i18n.global.t
 
@@ -21,6 +22,8 @@ describe('routes', () => {
     ['/u/5', 'profile'],
     ['/terms', 'terms'],
     ['/privacy', 'privacy'],
+    ['/accessibility', 'accessibility'],
+    ['/open-data', 'open-data'],
     ['/knowbase', 'knowbase'],
     ['/knowbase/measures', 'knowbase-measures'],
     ['/knowbase/measures/12', 'knowbase-measure'],
@@ -37,6 +40,7 @@ describe('routes', () => {
     ['/forum/new', 'thread-new'],
     ['/forum/t/sirens-or-sms', 'thread'],
     ['/forum/t/sirens-or-sms/edit', 'thread-edit'],
+    ['/search', 'search'],
     ['/this/does/not/exist', 'not-found'],
   ])('%s resolves to %s with an i18n meta.title', (path, name) => {
     const resolved = router.resolve(path)
@@ -129,6 +133,14 @@ it('the legal routes are public, titled legal.* and pass the document to LegalVi
   expect(privacy.meta.auth).toBeUndefined()
   expect(terms.matched[0]!.props.default).toEqual({ doc: 'terms' })
   expect(privacy.matched[0]!.props.default).toEqual({ doc: 'privacy' })
+  const accessibility = router.resolve('/accessibility')
+  const openData = router.resolve('/open-data')
+  expect(accessibility.meta.title).toBe('legal.accessibilityTitle')
+  expect(openData.meta.title).toBe('legal.openDataTitle')
+  expect(accessibility.meta.auth).toBeUndefined()
+  expect(openData.meta.auth).toBeUndefined()
+  expect(accessibility.matched[0]!.props.default).toEqual({ doc: 'accessibility' })
+  expect(openData.matched[0]!.props.default).toEqual({ doc: 'openData' })
 })
 
 describe('scrollBehavior', () => {
@@ -161,6 +173,8 @@ describe('scrollBehavior', () => {
 })
 
 describe('navigation', () => {
+  afterEach(unmountAll)
+
   async function mountAt(path: string) {
     const router = createAppRouter(createMemoryHistory())
     const Root = defineComponent({ render: () => h(RouterView) })
@@ -179,25 +193,47 @@ describe('navigation', () => {
     expect(wrapper.find('a[href="/"]').exists()).toBe(true)
   })
 
+  // `document.title` is owned by `usePageHead` (App.vue keeps the route title as the fallback),
+  // so these mount the whole app; unhead writes the DOM after a tick.
   it('sets document.title from meta.title and the app title', async () => {
-    await mountAt('/about')
-    expect(document.title).toBe(`${t('nav.about')} | ${t('app.title')}`)
+    await mountApp('/about')
+    await vi.waitFor(() => expect(document.title).toBe(`${t('nav.about')} · ${t('app.title')}`))
   })
 
   it('sets the blog page title', async () => {
-    await mountAt('/blog')
-    expect(document.title).toBe(`${t('nav.blog')} | ${t('app.title')}`)
+    await mountApp('/blog')
+    await vi.waitFor(() => expect(document.title).toBe(`${t('nav.blog')} · ${t('app.title')}`))
   })
 
   it('sets the legal page titles', async () => {
-    await mountAt('/terms')
-    expect(document.title).toBe(`${t('legal.termsTitle')} | ${t('app.title')}`)
-    await mountAt('/privacy')
-    expect(document.title).toBe(`${t('legal.privacyTitle')} | ${t('app.title')}`)
+    const { router } = await mountApp('/terms')
+    await vi.waitFor(() =>
+      expect(document.title).toBe(`${t('legal.termsTitle')} · ${t('app.title')}`),
+    )
+    await router.push('/privacy')
+    await vi.waitFor(() =>
+      expect(document.title).toBe(`${t('legal.privacyTitle')} · ${t('app.title')}`),
+    )
+    await router.push('/accessibility')
+    await vi.waitFor(() =>
+      expect(document.title).toBe(`${t('legal.accessibilityTitle')} · ${t('app.title')}`),
+    )
+    await router.push('/open-data')
+    await vi.waitFor(() =>
+      expect(document.title).toBe(`${t('legal.openDataTitle')} · ${t('app.title')}`),
+    )
+  })
+
+  it('titles the search page', async () => {
+    await mountApp('/search')
+    await vi.waitFor(() => expect(document.title).toBe(`${t('search.title')} · ${t('app.title')}`))
   })
 
   it('uses the bare app title on the home page', async () => {
-    await mountAt('/')
-    expect(document.title).toBe(t('app.title'))
+    await mountApp('/about')
+    await vi.waitFor(() => expect(document.title).toContain(t('nav.about')))
+    unmountAll()
+    await mountApp('/')
+    await vi.waitFor(() => expect(document.title).toBe(t('app.title')))
   })
 })

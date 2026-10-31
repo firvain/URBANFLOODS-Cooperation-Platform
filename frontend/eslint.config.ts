@@ -14,6 +14,8 @@ export default defineConfigWithVueTs(
     '**/dist/**',
     '**/dist-ssr/**',
     '**/coverage/**',
+    '**/playwright-report/**',
+    '**/test-results/**',
     'auto-imports.d.ts',
     'components.d.ts',
     'src/types/api-schema.ts',

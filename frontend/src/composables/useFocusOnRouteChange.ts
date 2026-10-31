@@ -1,9 +1,11 @@
 import { nextTick, onBeforeUnmount, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { pageTitle } from '@/router'
+
 /**
  * After every client-side navigation (not the initial load), move focus to the page's
- * `h1[tabindex="-1"]` inside `<main>` and expose the new page title for an `aria-live` region,
+ * `h1[tabindex="-1"]` inside `<main>` and expose the new route's title for an `aria-live` region,
  * so screen-reader and keyboard users notice the page changed. A change of the `#hash` alone is
  * not a new page and leaves focus alone.
  */
@@ -23,7 +25,8 @@ export function useFocusOnRouteChange() {
     await nextTick()
     const heading = document.querySelector<HTMLElement>('main h1[tabindex="-1"]')
     heading?.focus()
-    announcement.value = document.title
+    // The route title, not `document.title`: unhead writes the `<head>` asynchronously.
+    announcement.value = pageTitle(to.meta.title)
   })
 
   onBeforeUnmount(removeHook)

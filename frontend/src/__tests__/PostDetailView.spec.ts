@@ -270,7 +270,7 @@ describe('PostDetailView', () => {
     mockApi(routes())
     await mountApp(`/blog/${SLUG}`)
     await vi.waitFor(() =>
-      expect(document.title).toBe(`Rain gardens in Kozani | ${t('app.title')}`),
+      expect(document.title).toBe(`Rain gardens in Kozani · ${t('app.title')}`),
     )
     expect(document.head.querySelector('meta[name="description"]')?.getAttribute('content')).toBe(
       'How Kozani reduces surface runoff with rain gardens.',
@@ -286,8 +286,27 @@ describe('PostDetailView', () => {
     await vi.waitFor(() => expect(document.title).toContain('Rain gardens in Kozani'))
     await router.push('/about')
     await flushPromises()
-    await vi.waitFor(() => expect(document.title).toBe(`${t('nav.about')} | ${t('app.title')}`))
+    await vi.waitFor(() => expect(document.title).toBe(`${t('nav.about')} · ${t('app.title')}`))
     await new Promise((resolve) => setTimeout(resolve, 50))
-    expect(document.title).toBe(`${t('nav.about')} | ${t('app.title')}`)
+    expect(document.title).toBe(`${t('nav.about')} · ${t('app.title')}`)
+  })
+
+  it('emits Article JSON-LD with headline, dates, author, language and the CC BY 4.0 licence', async () => {
+    mockApi(routes({ locale: 'el' }))
+    await mountApp(`/blog/${SLUG}`)
+    const script = () => document.head.querySelector('script[type="application/ld+json"]')
+    await vi.waitFor(() => expect(JSON.parse(script()!.textContent!)['@type']).toBe('Article'))
+    const data = JSON.parse(script()!.textContent!)
+    expect(data['@context']).toBe('https://schema.org')
+    expect(data.headline).toBe('Rain gardens in Kozani')
+    expect(data.datePublished).toBe('2026-10-20T09:00:00Z')
+    expect(data.author).toEqual({ '@type': 'Person', name: 'Eleni Papadopoulou' })
+    expect(data.inLanguage).toBe('el')
+    expect(data.license).toBe('https://creativecommons.org/licenses/by/4.0/')
+    expect(data.url).toBe(`${window.location.origin}/blog/${SLUG}`)
+    expect(document.head.querySelectorAll('script[type="application/ld+json"]')).toHaveLength(1)
+    expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(
+      `${window.location.origin}/blog/${SLUG}`,
+    )
   })
 })

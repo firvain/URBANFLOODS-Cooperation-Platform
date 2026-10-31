@@ -104,7 +104,13 @@ describe('locale files', () => {
     for (const [path, messages] of Object.entries(localeFiles)) {
       if (path.endsWith('/en.json')) continue
       const flat = flatten(messages)
-      for (const key of ['legal.termsTitle', 'legal.privacyTitle', 'legal.englishOnly']) {
+      for (const key of [
+        'legal.termsTitle',
+        'legal.privacyTitle',
+        'legal.accessibilityTitle',
+        'legal.openDataTitle',
+        'legal.englishOnly',
+      ]) {
         expect(flat[key], `${path} ${key}`).toBeTruthy()
         expect(flat[key], `${path} ${key} is translated`).not.toBe(enFlat[key])
       }

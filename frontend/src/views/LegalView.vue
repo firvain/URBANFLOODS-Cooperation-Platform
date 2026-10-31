@@ -7,7 +7,7 @@ import { LEGAL_TITLE_KEYS, type LegalDoc } from '@/constants/legal'
 import { LEGAL_DOCUMENTS } from '@/content/legal'
 import { renderMarkdown } from '@/utils/markdown'
 
-/** Terms of Use or Privacy Policy, rendered from `docs/legal/*.md` (English only). */
+/** Terms, privacy, accessibility or open data, rendered from `docs/legal/*.md` (English only). */
 const props = defineProps<{ doc: LegalDoc }>()
 
 const { t, locale } = useI18n()
@@ -128,6 +128,13 @@ const legal = computed(() => {
 
 .legal-prose :deep(a:hover) {
   color: var(--color-primary-800);
+}
+
+.legal-prose :deep(blockquote) {
+  margin: 1rem 0;
+  padding: 0.25rem 1rem;
+  border-inline-start: 4px solid var(--color-secondary-300);
+  background-color: var(--color-primary-50);
 }
 
 .legal-prose :deep(strong) {

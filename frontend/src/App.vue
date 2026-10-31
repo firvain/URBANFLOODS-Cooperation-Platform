@@ -1,21 +1,23 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useHead } from '@unhead/vue'
 
 import AppFooter from '@/components/layout/AppFooter.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import SkipLink from '@/components/layout/SkipLink.vue'
 import UnverifiedBanner from '@/components/auth/UnverifiedBanner.vue'
 import { useFocusOnRouteChange } from '@/composables/useFocusOnRouteChange'
-import { pageTitle } from '@/router'
+import { usePageHead } from '@/composables/usePageHead'
+import i18n from '@/i18n'
 
 const { announcement } = useFocusOnRouteChange()
 
 // The route title as the base `<head>` entry: pages that set their own (`usePageHead`) override
 // it, and it comes back when they unmount (unhead would otherwise restore an older title).
 const route = useRoute()
-useHead({ title: computed(() => pageTitle(route.meta.title)) })
+usePageHead(() => ({
+  title: route.meta.title ? i18n.global.t(route.meta.title) : null,
+  type: 'website',
+}))
 </script>
 
 <template>

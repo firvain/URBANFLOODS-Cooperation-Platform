@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import termsMd from '../../../docs/legal/terms-of-use.md?raw'
 import privacyMd from '../../../docs/legal/privacy-policy.md?raw'
+import accessibilityMd from '../../../docs/legal/accessibility-statement.md?raw'
+import openDataMd from '../../../docs/legal/open-data.md?raw'
+import type { LegalDoc } from '@/constants/legal'
 import { LEGAL_DOCUMENTS } from '@/content/legal'
 import i18n, { setLocale } from '@/i18n'
 import { prepareLegalDocument } from '@/utils/legalDocument'
@@ -16,7 +19,7 @@ afterEach(() => {
   unmountAll()
 })
 
-async function mountLegal(doc: 'terms' | 'privacy') {
+async function mountLegal(doc: LegalDoc) {
   const { wrapper } = await mountWithApp(LegalView, { path: `/${doc}`, props: { doc } })
   return wrapper
 }
@@ -78,8 +81,8 @@ describe('prepareLegalDocument', () => {
     expect(markdown).toContain('kept for 14 days.')
   })
 
-  it('removes the CHECK markers from both real documents', () => {
-    for (const raw of [termsMd, privacyMd]) {
+  it('removes the CHECK markers from every real document', () => {
+    for (const raw of [termsMd, privacyMd, accessibilityMd, openDataMd]) {
       const { markdown, version, date } = prepareLegalDocument(raw)
       expect(markdown).not.toMatch(/CHECK/)
       expect(markdown).not.toContain('Notes for the reviewer')
@@ -95,6 +98,8 @@ describe('LEGAL_DOCUMENTS (?legal imports, prepared at build time)', () => {
     for (const [doc, raw] of [
       ['terms', termsMd],
       ['privacy', privacyMd],
+      ['accessibility', accessibilityMd],
+      ['openData', openDataMd],
     ] as const) {
       expect(LEGAL_DOCUMENTS[doc]).toEqual(prepareLegalDocument(raw))
       expect(JSON.stringify(LEGAL_DOCUMENTS[doc])).not.toMatch(/CHECK|Notes for the reviewer/)
@@ -244,5 +249,59 @@ describe('LegalView: privacy', () => {
     expect(links.map((a) => a.text())).toEqual(sourceSections(privacyMd))
     const ids = wrapper.findAll('.legal-prose h2').map((h) => `#${h.attributes('id')}`)
     expect(links.map((a) => a.attributes('href'))).toEqual(ids)
+  })
+})
+
+describe('LegalView: accessibility statement', () => {
+  it('renders h1 "Accessibility statement" with the version caption', async () => {
+    const wrapper = await mountLegal('accessibility')
+    expect(wrapper.find('h1').text()).toBe('Accessibility statement')
+    expect(t('legal.accessibilityTitle')).toBe('Accessibility statement')
+    expect(wrapper.find('[data-testid="legal-version"]').text()).toContain('31 October 2026')
+  })
+
+  it('states WCAG 2.1 conformance and the feedback contact, without reviewer material', async () => {
+    const wrapper = await mountLegal('accessibility')
+    const text = wrapper.text().replace(/\s+/g, ' ')
+    expect(text).toContain('WCAG 2.1')
+    expect(text).toContain('louta@uowm.gr')
+    expect(wrapper.find('.legal-prose a[href="mailto:louta@uowm.gr"]').exists()).toBe(true)
+    expect(text).not.toContain('CHECK')
+    expect(text).not.toContain('Notes for the reviewer')
+    expect(text).not.toMatch(/increment/i)
+  })
+
+  it('lists the statement sections in the table of contents', async () => {
+    const wrapper = await mountLegal('accessibility')
+    const links = wrapper.findAll(`nav[aria-label="${t('legal.contents')}"] a`)
+    expect(links.map((a) => a.text())).toEqual(sourceSections(accessibilityMd))
+  })
+})
+
+describe('LegalView: open data', () => {
+  it('renders h1 "Open data" with the version caption', async () => {
+    const wrapper = await mountLegal('openData')
+    expect(wrapper.find('h1').text()).toBe('Open data')
+    expect(t('legal.openDataTitle')).toBe('Open data')
+    expect(wrapper.find('[data-testid="legal-version"]').text()).toContain('31 October 2026')
+  })
+
+  it('links the data package, the licence and the API description', async () => {
+    const wrapper = await mountLegal('openData')
+    const hrefs = wrapper.findAll('.legal-prose a').map((a) => a.attributes('href'))
+    expect(hrefs).toContain('https://cooperation.urbanfloods.app/api/v1/export/datapackage.json')
+    expect(hrefs).toContain('https://creativecommons.org/licenses/by/4.0/')
+    expect(hrefs).toContain('https://cooperation.urbanfloods.app/api/v1/openapi.json')
+    expect(hrefs).toContain('https://cooperation.urbanfloods.app/feeds/posts.atom')
+    const text = wrapper.text().replace(/\s+/g, ' ')
+    expect(text).toContain('CC BY 4.0')
+    expect(text).not.toContain('CHECK')
+    expect(text).not.toContain('Notes for the reviewer')
+  })
+
+  it('lists the open-data sections in the table of contents', async () => {
+    const wrapper = await mountLegal('openData')
+    const links = wrapper.findAll(`nav[aria-label="${t('legal.contents')}"] a`)
+    expect(links.map((a) => a.text())).toEqual(sourceSections(openDataMd))
   })
 })

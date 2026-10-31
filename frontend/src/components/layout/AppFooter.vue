@@ -15,6 +15,8 @@ const LEGAL_LINK_CLASS =
 const legalLinks = [
   { to: '/terms', labelKey: LEGAL_TITLE_KEYS.terms },
   { to: '/privacy', labelKey: LEGAL_TITLE_KEYS.privacy },
+  { to: '/accessibility', labelKey: LEGAL_TITLE_KEYS.accessibility },
+  { to: '/open-data', labelKey: LEGAL_TITLE_KEYS.openData },
 ] as const
 
 const externalLinks = [
@@ -61,7 +63,6 @@ const externalLinks = [
         </nav>
       </div>
 
-      <!-- A later increment adds the Accessibility statement and Open data links here. -->
       <div class="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-secondary-200 py-3">
         <p class="text-xs text-muted">{{ t('footer.copyright', { year }) }}</p>
         <ULink

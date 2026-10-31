@@ -170,7 +170,7 @@ describe('footer branding', () => {
     const internal = Array.from(footer().querySelectorAll('a'))
       .map((a) => a.getAttribute('href'))
       .filter((href) => href?.startsWith('/'))
-    expect(internal).toEqual(['/terms', '/privacy'])
+    expect(internal).toEqual(['/terms', '/privacy', '/accessibility', '/open-data'])
   })
 
   it('links to the project sites and LinkedIn in a new tab, announced, in one inline list', async () => {
@@ -241,17 +241,20 @@ describe('footer branding', () => {
     expect(copyright!.classList.contains('text-xs')).toBe(true)
   })
 
-  it('links the terms and privacy pages in the bottom bar, next to the copyright', async () => {
+  it('links the legal pages in the bottom bar, next to the copyright', async () => {
     await mountApp()
     const copyright = Array.from(footer().querySelectorAll('p')).find(
       (p) => p.textContent?.trim() === t('footer.copyright', { year: new Date().getFullYear() }),
     )!
     const bar = copyright.parentElement!
-    const terms = bar.querySelector<HTMLAnchorElement>('a[href="/terms"]')
-    const privacy = bar.querySelector<HTMLAnchorElement>('a[href="/privacy"]')
-    expect(terms?.textContent?.trim()).toBe(t('legal.termsTitle'))
-    expect(privacy?.textContent?.trim()).toBe(t('legal.privacyTitle'))
-    for (const link of [terms!, privacy!]) {
+    const links = Array.from(bar.querySelectorAll<HTMLAnchorElement>('a'))
+    expect(links.map((a) => [a.getAttribute('href'), a.textContent?.trim()])).toEqual([
+      ['/terms', t('legal.termsTitle')],
+      ['/privacy', t('legal.privacyTitle')],
+      ['/accessibility', t('legal.accessibilityTitle')],
+      ['/open-data', t('legal.openDataTitle')],
+    ])
+    for (const link of links) {
       expect(link.classList.contains('text-xs')).toBe(true)
       expect(link.hasAttribute('target')).toBe(false)
     }
@@ -283,7 +286,7 @@ describe('footer branding', () => {
 
 describe('language switcher', () => {
   async function openSwitcher() {
-    const trigger = document.querySelector<HTMLElement>(`[aria-label="${t('app.language')}"]`)
+    const trigger = document.querySelector<HTMLElement>('header [data-testid="locale-switcher"]')
     expect(trigger).not.toBeNull()
     trigger!.focus()
     trigger!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))

@@ -4,10 +4,11 @@ import { storeToRefs } from 'pinia'
 
 import CompleteProfileBanner from '@/components/account/CompleteProfileBanner.vue'
 import SuggestedCollaborators from '@/components/network/SuggestedCollaborators.vue'
+import { absoluteUrl, usePageHead } from '@/composables/usePageHead'
 import { dssUrl } from '@/constants/links'
 import { useAuthStore } from '@/stores/auth'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { isVerified } = storeToRefs(useAuthStore())
 
 /** The Unified DSS web app; the card is hidden when it is not configured. */
@@ -19,6 +20,29 @@ const sections: { key: string; icon: string; to: string }[] = [
   { key: 'forum', icon: 'i-lucide-messages-square', to: '/forum' },
   { key: 'knowbase', icon: 'i-lucide-library', to: '/knowbase' },
 ]
+
+// The site's schema.org WebSite entry, with the search box search engines may offer.
+usePageHead(() => ({
+  title: t('app.title'),
+  description: t('head.homeDescription'),
+  type: 'website',
+  canonical: '/',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: t('app.title'),
+    url: absoluteUrl('/'),
+    inLanguage: locale.value,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${absoluteUrl('/search')}?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  },
+}))
 </script>
 
 <template>

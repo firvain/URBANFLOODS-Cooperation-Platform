@@ -15,7 +15,8 @@ import PendingBanner from '@/components/moderation/PendingBanner.vue'
 import ReportButton from '@/components/moderation/ReportButton.vue'
 import StatusBadge from '@/components/moderation/StatusBadge.vue'
 import { useApiErrors } from '@/composables/useApiErrors'
-import { usePageHead } from '@/composables/usePageHead'
+import { absoluteUrl, usePageHead } from '@/composables/usePageHead'
+import { CONTENT_LICENCE_URL } from '@/constants/links'
 import { ApiError } from '@/services/api'
 import { threadsService, type ThreadAdminAction, type ThreadDetail } from '@/services/threads'
 import { useAuthStore } from '@/stores/auth'
@@ -59,12 +60,6 @@ watch(
   { immediate: true },
 )
 
-usePageHead(() =>
-  thread.value
-    ? { title: thread.value.title, description: thread.value.excerpt, type: 'article' }
-    : null,
-)
-
 const isAuthor = computed(
   () => !!thread.value && auth.user !== null && auth.user.id === thread.value.author?.id,
 )
@@ -79,6 +74,38 @@ const replyCount = computed(() =>
     : 0,
 )
 const loginTo = computed(() => ({ name: 'login', query: { next: route.fullPath } }))
+
+// Title, Open Graph and schema.org DiscussionForumPosting data (only for a published thread).
+usePageHead(() => {
+  const value = thread.value
+  if (!value) return null
+  const url = absoluteUrl(`/forum/t/${encodeURIComponent(value.slug)}`)
+  return {
+    title: value.title,
+    description: value.excerpt,
+    type: 'article',
+    canonical: url,
+    jsonLd: published.value
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'DiscussionForumPosting',
+          headline: value.title,
+          text: value.excerpt || undefined,
+          datePublished: value.published_at ?? value.created_at,
+          dateModified: value.updated_at,
+          author: value.author ? { '@type': 'Person', name: value.author.display_name } : undefined,
+          inLanguage: value.locale,
+          license: CONTENT_LICENCE_URL,
+          url,
+          interactionStatistic: {
+            '@type': 'InteractionCounter',
+            interactionType: 'https://schema.org/CommentAction',
+            userInteractionCount: replyCount.value,
+          },
+        }
+      : null,
+  }
+})
 
 // --- Admin: pin and lock ----------------------------------------------------------------------
 
