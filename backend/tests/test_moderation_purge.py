@@ -991,3 +991,83 @@ async def test_admin_cannot_delete_someone_elses_image_used_by_deleted_content(c
     await _signed_in(client, env)
 
     _assert_error(await client.delete(f"{API}/uploads/{stored.id}"), 409, "uploads.in_use")
+
+
+# --- 7a: purge without a person (the retention sweep) -----------------------------------------
+
+
+async def _locked(db, content_type: ContentType, content_id: int):
+    from app.crud import moderation
+
+    return await moderation.get_content(
+        db, content_type=content_type, content_id=content_id, for_update=True
+    )
+
+
+async def test_system_purge_resolves_reports_by_nobody(env):
+    from app.crud import moderation
+
+    db = env.db
+    post = await _post(env, D)
+    comment = await create_comment(db, post_id=post.id)
+    on_post = await _report(env, content_type="post", content_id=post.id)
+    on_comment = await _report(env, content_type="comment", content_id=comment.id)
+    await db.commit()
+
+    result = await moderation.purge(
+        db, content=await _locked(db, ContentType.POST, post.id), actor=None, reason="retention"
+    )
+    await db.commit()
+
+    assert result.reports_resolved == 2
+    for report_id in (on_post.id, on_comment.id):
+        report = await _reload_report(db, report_id)
+        assert report.status == ReportStatus.RESOLVED
+        assert report.resolved_by is None
+        assert report.resolved_at is not None
+    resolves = (
+        await db.scalars(
+            select(AuditLog).where(
+                AuditLog.action == "report.resolve",
+                AuditLog.target_id.in_([on_post.id, on_comment.id]),
+            )
+        )
+    ).all()
+    assert len(resolves) == 2
+    assert all(row.actor_id is None for row in resolves)
+
+
+async def test_system_purge_audit_has_no_actor_and_the_reason(env):
+    from app.crud import moderation
+
+    db = env.db
+    thread = await _thread(env, D)
+    await create_reply(db, thread_id=thread.id)
+    await db.commit()
+
+    await moderation.purge(
+        db,
+        content=await _locked(db, ContentType.THREAD, thread.id),
+        actor=None,
+        reason="retention",
+    )
+    await db.commit()
+
+    row = await _purge_audit(db, ContentType.THREAD, thread.id)
+    assert row.actor_id is None
+    assert row.metadata_["reason"] == "retention"
+    assert row.metadata_["children_deleted"] == 1
+    assert row.metadata_["from"] == "deleted"
+    assert not await _exists(db, Thread, thread.id)
+
+
+async def test_admin_purge_audit_has_no_reason(client, env):
+    post = await _post(env)
+    await env.db.commit()
+    admin = await _signed_in(client, env)
+
+    assert (await _purge(client, "post", post.id)).status_code == 200
+
+    row = await _purge_audit(env.db, ContentType.POST, post.id)
+    assert row.actor_id == admin.id
+    assert "reason" not in row.metadata_

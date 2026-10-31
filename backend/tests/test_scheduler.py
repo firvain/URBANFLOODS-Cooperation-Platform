@@ -199,7 +199,14 @@ async def test_cli_maintenance(cleanup_job_rows, capsys) -> None:
 
     assert code == 0
     out = capsys.readouterr().out
-    for key in ("sessions", "tokens", "unverified_users", "orphan_uploads", "auto_approved"):
+    for key in (
+        "sessions",
+        "tokens",
+        "unverified_users",
+        "orphan_uploads",
+        "auto_approved",
+        "deleted_content",
+    ):
         assert f"{key}=" in out
 
 

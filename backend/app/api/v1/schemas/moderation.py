@@ -1,4 +1,5 @@
-"""Admin moderation schemas: the pending queue, action bodies/results and the audit log."""
+"""Admin moderation schemas: the pending queue, the deleted items, action bodies/results and the
+audit log."""
 
 from __future__ import annotations
 
@@ -57,6 +58,36 @@ class ModerationQueue(BaseModel):
     items: list[QueueItem]
 
 
+# --- deleted items ----------------------------------------------------------------------------
+
+
+class DeletedUser(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    display_name: str
+
+
+class DeletedItem(BaseModel):
+    content_type: ContentType
+    id: int
+    title: str
+    slug: str
+    author: DeletedUser | None
+    category: QueueCategory
+    deleted_at: datetime
+    # The actor of the latest deletion's audit row (the author or an admin); null when unknown.
+    deleted_by: DeletedUser | None
+    # When the maintenance sweep removes it for good (``deleted_at`` plus
+    # ``DELETED_CONTENT_RETENTION_DAYS``); null when automatic removal is off.
+    purge_at: datetime | None
+
+
+class DeletedPage(BaseModel):
+    total: int
+    items: list[DeletedItem]
+
+
 # --- actions ----------------------------------------------------------------------------------
 
 
@@ -111,6 +142,9 @@ class AuditLogEntry(BaseModel):
     target_id: int | None
     metadata: dict[str, Any] = Field(validation_alias="metadata_")
     created_at: datetime
+    # The page of a post/thread target that still exists (any status): ``/blog/<slug>`` or
+    # ``/forum/t/<slug>``; null otherwise.
+    target_path: str | None = None
 
 
 class AuditLogPage(BaseModel):

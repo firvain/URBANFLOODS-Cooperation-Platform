@@ -31,8 +31,9 @@ from typing import Any, NamedTuple
 
 from sqlalchemy import ColumnElement, func, literal, or_, select, union_all, update
 from sqlalchemy import delete as sql_delete
+from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import aliased, joinedload
 
 from app.core.config import settings
 from app.core.exceptions import AppError
@@ -42,6 +43,7 @@ from app.crud.audit import log_action
 from app.crud.tag import recount_tag_usage
 from app.db.enums import ContentStatus, ContentType, HiddenReason, ReportStatus
 from app.db.models import (
+    AuditLog,
     Comment,
     KnowbaseLink,
     Post,
@@ -565,13 +567,13 @@ async def _resolve_open_reports(
     db: AsyncSession,
     *,
     targets: list[tuple[ContentType, list[int]]],
-    actor: User,
+    actor: User | None,
     now: datetime,
 ) -> int:
-    """Resolve (by ``actor``) every open report on the given items, each with its
-    ``report.resolve`` audit row (``purge: true`` in the metadata), as closing a report from the
-    reports page does; closed ones stay as they are. The rows are kept: they are part of the
-    moderation trail. Returns how many."""
+    """Resolve (by ``actor``; by nobody for the retention sweep) every open report on the given
+    items, each with its ``report.resolve`` audit row (``purge: true`` in the metadata), as
+    closing a report from the reports page does; closed ones stay as they are. The rows are
+    kept: they are part of the moderation trail. Returns how many."""
     conditions = [
         (Report.content_type == content_type) & Report.content_id.in_(ids)
         for content_type, ids in targets
@@ -579,10 +581,11 @@ async def _resolve_open_reports(
     ]
     if not conditions:
         return 0
+    actor_id = actor.id if actor is not None else None
     stmt = (
         update(Report)
         .where(or_(*conditions), Report.status == ReportStatus.OPEN)
-        .values(status=ReportStatus.RESOLVED, resolved_by=actor.id, resolved_at=now)
+        .values(status=ReportStatus.RESOLVED, resolved_by=actor_id, resolved_at=now)
         .returning(Report.id, Report.content_type, Report.content_id)
         .execution_options(synchronize_session=False)
     )
@@ -590,7 +593,7 @@ async def _resolve_open_reports(
     for row in rows:
         await log_action(
             db,
-            actor_id=actor.id,
+            actor_id=actor_id,
             action="report.resolve",
             target_type="report",
             target_id=row.id,
@@ -604,7 +607,12 @@ async def _resolve_open_reports(
 
 
 async def purge(
-    db: AsyncSession, *, content: ContentModel, actor: User, now: datetime | None = None
+    db: AsyncSession,
+    *,
+    content: ContentModel,
+    actor: User | None,
+    now: datetime | None = None,
+    reason: str | None = None,
 ) -> PurgeResult:
     """Hard-delete ``content`` (any status; the caller has loaded it ``FOR UPDATE``) with what
     belongs to it:
@@ -619,8 +627,11 @@ async def purge(
       hard-deleted when nothing else uses them any more (any uploader); their files are the
       caller's to remove after commit (:attr:`PurgeResult.files`);
     - tag usage is recounted; the reply/comment counters follow by trigger;
-    - audit ``moderation.purge`` with counts, the deleted attachments' ids and uploaders, and a
-      post's/thread's title; never a body, a path or a file name.
+    - audit ``moderation.purge`` with counts, the deleted attachments' ids and uploaders, a
+      post's/thread's title and ``reason`` when given; never a body, a path or a file name.
+
+    ``actor`` is None for the retention sweep (:func:`purge_expired_deleted`): the reports are
+    then resolved by nobody and the audit rows have no actor.
     """
     now = now or datetime.now(UTC)
     content_type = content_type_of(content)
@@ -672,9 +683,11 @@ async def purge(
         reports_resolved=reports_resolved,
         attachments=[{"id": a.id, "uploader_id": a.uploader_id} for a in deleted],
     )
+    if reason is not None:
+        metadata["reason"] = reason
     await log_action(
         db,
-        actor_id=actor.id,
+        actor_id=actor.id if actor is not None else None,
         action="moderation.purge",
         target_type=content_type.value,
         target_id=content_id,
@@ -688,6 +701,222 @@ async def purge(
         reports_resolved=reports_resolved,
         files=[(a.storage_path, a.thumb_path) for a in deleted],
     )
+
+
+# --- retention of deleted content -------------------------------------------------------------
+
+# The audit reason of a purge by the retention sweep.
+RETENTION_REASON = "retention"
+
+
+def _due(model: type[Any], cutoff: datetime) -> ColumnElement[bool]:
+    return (model.status == _D) & (model.deleted_at < cutoff)
+
+
+def _reply_holds_others(cutoff: datetime) -> ColumnElement[bool]:
+    """A reply has a child that is not deleted (or deleted after ``cutoff``): it is shown as a
+    placeholder holding those replies, and purging it would delete them with it."""
+    child = aliased(Reply)
+    return (
+        select(child.id)
+        .where(
+            child.parent_reply_id == Reply.id,
+            or_(child.status != _D, child.deleted_at.is_(None), child.deleted_at >= cutoff),
+        )
+        .exists()
+    )
+
+
+def _still_due(content: ContentModel | None, cutoff: datetime) -> bool:
+    return (
+        content is not None
+        and content.status == _D
+        and content.deleted_at is not None
+        and content.deleted_at < cutoff
+    )
+
+
+async def _due_rows(
+    db: AsyncSession, *, types: tuple[ContentType, ContentType], cutoff: datetime, limit: int
+) -> list[tuple[ContentType, int]]:
+    """``(type, id)`` of up to ``limit`` items of ``types`` deleted before ``cutoff``, oldest
+    deletion first."""
+    selects = []
+    for content_type in types:
+        model = MODELS[content_type]
+        conditions = [_due(model, cutoff)]
+        if model is Reply:
+            conditions.append(~_reply_holds_others(cutoff))
+        selects.append(
+            select(
+                literal(content_type.value).label("content_type"),
+                model.id.label("id"),
+                model.deleted_at.label("deleted_at"),
+            ).where(*conditions)
+        )
+    due = union_all(*selects).subquery()
+    rows = await db.execute(
+        select(due.c.content_type, due.c.id)
+        .order_by(due.c.deleted_at.asc(), due.c.content_type, due.c.id)
+        .limit(limit)
+    )
+    return [(ContentType(row.content_type), row.id) for row in rows]
+
+
+async def purge_expired_deleted(
+    db: AsyncSession, *, cutoff: datetime, limit: int, now: datetime | None = None
+) -> list[PurgeResult]:
+    """Purge (no actor, reason ``retention``) up to ``limit`` items soft-deleted before
+    ``cutoff``, oldest deletion first: posts and threads (with everything :func:`purge` takes
+    with them), then comments and replies.
+
+    A deleted reply is skipped while it still has a child that is not deleted, or deleted after
+    ``cutoff``: it is shown as a placeholder holding other members' replies, which its purge
+    would delete. It goes in a later run once all its children are due too.
+
+    Each item is loaded ``FOR UPDATE`` and checked again (it may have been restored or purged
+    meanwhile, also by this very run as a child of an earlier item); those are skipped.
+    """
+    now = now or datetime.now(UTC)
+    results: list[PurgeResult] = []
+    for types in (
+        (ContentType.POST, ContentType.THREAD),
+        (ContentType.COMMENT, ContentType.REPLY),
+    ):
+        remaining = limit - len(results)
+        if remaining <= 0:
+            break
+        for content_type, content_id in await _due_rows(
+            db, types=types, cutoff=cutoff, limit=remaining
+        ):
+            content = await get_content(
+                db, content_type=content_type, content_id=content_id, for_update=True
+            )
+            if not _still_due(content, cutoff):
+                continue
+            if isinstance(content, Reply):
+                holds_others = select(_reply_holds_others(cutoff)).where(Reply.id == content.id)
+                if await db.scalar(holds_others):
+                    continue
+            results.append(
+                await purge(db, content=content, actor=None, now=now, reason=RETENTION_REASON)
+            )
+    return results
+
+
+# --- the deleted items list (admins) ----------------------------------------------------------
+
+# The audit actions that soft-delete a post or thread: an admin's moderation action, or the
+# delete endpoint (its author, or an admin).
+DELETE_ACTIONS = ("moderation.delete", "post.deleted", "thread.deleted")
+
+
+@dataclass(frozen=True)
+class DeletedItem:
+    content_type: ContentType
+    content: Post | Thread
+    # Who deleted it (the latest deletion's audit row); None when unknown or the row has no actor.
+    deleted_by: User | None
+
+
+async def _deleters(
+    db: AsyncSession, *, targets: list[tuple[ContentType, int]]
+) -> dict[tuple[ContentType, int], User | None]:
+    """The actor of the latest delete audit row of each target, in one query."""
+    if not targets:
+        return {}
+    conditions = []
+    for content_type in REVIEWED_TYPES:
+        ids = [content_id for ct, content_id in targets if ct == content_type]
+        if ids:
+            conditions.append(
+                (AuditLog.target_type == content_type.value) & AuditLog.target_id.in_(ids)
+            )
+    rows = await db.scalars(
+        select(AuditLog)
+        .where(AuditLog.action.in_(DELETE_ACTIONS), or_(*conditions))
+        .ext(distinct_on(AuditLog.target_type, AuditLog.target_id))
+        .order_by(
+            AuditLog.target_type,
+            AuditLog.target_id,
+            AuditLog.created_at.desc(),
+            AuditLog.id.desc(),
+        )
+        .options(joinedload(AuditLog.actor))
+    )
+    return {(ContentType(row.target_type), row.target_id): row.actor for row in rows.unique().all()}
+
+
+async def list_deleted(
+    db: AsyncSession,
+    *,
+    content_type: ContentType | None = None,
+    skip: int = 0,
+    limit: int = 50,
+) -> tuple[int, list[DeletedItem]]:
+    """``(total, items)`` of deleted posts and threads (or only ``content_type``), newest
+    deletion first, each with its author and category loaded and who deleted it."""
+    types = [content_type] if content_type is not None else [ContentType.POST, ContentType.THREAD]
+    selects = [
+        select(
+            literal(ct.value).label("content_type"),
+            MODELS[ct].id.label("id"),
+            MODELS[ct].deleted_at.label("deleted_at"),
+        ).where(MODELS[ct].status == _D)
+        for ct in types
+    ]
+    deleted = (union_all(*selects) if len(selects) > 1 else selects[0]).subquery()
+    total = (await db.execute(select(func.count()).select_from(deleted))).scalar_one()
+    page = [
+        (ContentType(row.content_type), row.id)
+        for row in await db.execute(
+            select(deleted.c.content_type, deleted.c.id)
+            .order_by(
+                deleted.c.deleted_at.desc().nulls_last(),
+                deleted.c.content_type,
+                deleted.c.id.desc(),
+            )
+            .offset(skip)
+            .limit(limit)
+        )
+    ]
+
+    loaded: dict[tuple[ContentType, int], Post | Thread] = {}
+    for ct in REVIEWED_TYPES:
+        ids = [content_id for page_type, content_id in page if page_type == ct]
+        if not ids:
+            continue
+        model = MODELS[ct]
+        rows = await db.scalars(
+            select(model)
+            .where(model.id.in_(ids))
+            .options(joinedload(model.author), joinedload(model.category))
+        )
+        for obj in rows.unique():
+            loaded[(ct, obj.id)] = obj
+    deleters = await _deleters(db, targets=page)
+    items = [
+        DeletedItem(ct, loaded[(ct, content_id)], deleters.get((ct, content_id)))
+        for ct, content_id in page
+        if (ct, content_id) in loaded
+    ]
+    return total, items
+
+
+async def content_slugs(
+    db: AsyncSession, *, post_ids: set[int], thread_ids: set[int]
+) -> dict[tuple[ContentType, int], str]:
+    """``{(type, id): slug}`` of the posts and threads among the ids that still exist (any
+    status): one query per type. Ids beyond the INTEGER range cannot exist and are ignored."""
+    slugs: dict[tuple[ContentType, int], str] = {}
+    for content_type, ids in ((ContentType.POST, post_ids), (ContentType.THREAD, thread_ids)):
+        ids = {i for i in ids if 0 < i <= MAX_INT_ID}
+        if not ids:
+            continue
+        model = MODELS[content_type]
+        rows = await db.execute(select(model.id, model.slug).where(model.id.in_(ids)))
+        slugs.update({(content_type, row.id): row.slug for row in rows})
+    return slugs
 
 
 # --- automatic moderation ---------------------------------------------------------------------

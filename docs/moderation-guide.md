@@ -82,6 +82,8 @@ All actions are available through the API (`POST /api/v1/moderation/{type}/{id}/
   Delete or, once deleted, Restore, and **Delete permanently**;
 - the row menu of the **Reports** page offers Hide, Unhide, Delete and Restore for the reported
   post, discussion, reply or comment;
+- the **Deleted content** page (`/admin/deleted`) lists deleted posts and discussions with
+  Restore and Delete permanently (see [The 7-day bin](#the-7-day-bin));
 - admins can also edit or delete any post or thread, and pin or lock threads, from its own page.
 
 Every action writes an audit row.
@@ -103,13 +105,15 @@ Notes:
   audit log; a rejection's reason is also shown to the author as the admin's note. A hide reason
   is never shown: the author sees a generic "hidden" banner with the contact address.
 - Approve and reject apply to posts and threads only; replies and comments have no pending state.
-- Delete is soft: the row stays in the database with status `deleted` and can be restored.
-- **Restore**: a deleted post or discussion page cannot be opened again, not even by an admin. So
-  Restore in the Moderate menu is there only while the page on which you deleted the item is
-  still open. Later, restore a reported item from the row menu of the Reports page. For anything
-  else, take the id from the audit log (`moderation.delete`, `post.deleted`, …) and call
-  `POST /api/v1/moderation/{type}/{id}/restore` from the command line (see
-  [admin-handbook.md](admin-handbook.md#api-calls-from-the-command-line)).
+- Delete is soft: the row stays in the database with status `deleted` and can be restored for
+  7 days; after that the nightly maintenance removes it for good (see
+  [The 7-day bin](#the-7-day-bin)).
+- **Restore**: a deleted post or discussion is restored from the **Deleted content** page, from
+  the Moderate menu on its page (admins can still open it from that page or from the audit log)
+  or, for a reported item, from the row menu of the Reports page. A deleted reply or comment has
+  no page of its own: take the id from the audit log (`reply.deleted`, `comment.deleted`,
+  `moderation.delete`) and call `POST /api/v1/moderation/{type}/{id}/restore` from the command
+  line (see [admin-handbook.md](admin-handbook.md#api-calls-from-the-command-line)).
 - An action from a status where it does not apply (for example approving published content)
   answers "invalid transition" and changes nothing.
 
@@ -131,10 +135,36 @@ uploaders of the removed images and, for a post or discussion, its title (up to 
 It never holds the text, an image path or a file name.
 
 In the interface, Delete permanently is the last item of the Moderate menu on a post or discussion
-page: a dialog lists what will go and enables the button only after you type `DELETE` (the same
-word in every language). Afterwards you land on the blog or forum list. Replies, comments and
-items whose page can no longer be opened (soft-deleted ones) are purged through the API only:
-`POST /api/v1/moderation/{type}/{id}/purge`.
+page, and a button on each row of the **Deleted content** page: a dialog lists what will go and
+enables the button only after you type `DELETE` (the same word in every language). From the
+Moderate menu you land on the blog or forum list afterwards. Replies and comments are purged
+through the API only: `POST /api/v1/moderation/{type}/{id}/purge`.
+
+### The 7-day bin
+
+Deleting (by the author or by an admin) does not remove anything at once. Deleted posts,
+discussions, replies and comments are kept for **7 days** (`DELETED_CONTENT_RETENTION_DAYS`), so
+an admin can restore them; then the nightly maintenance removes them for good, exactly as
+**Delete permanently** does (with their comments or replies, the images nothing else uses, open
+reports resolved). Its audit rows are `moderation.purge` with no actor (shown as *System*) and
+`"reason": "retention"`, plus one `maintenance.deleted_content` row with the count.
+
+- A deleted reply that still holds other members' replies (it is shown as a *deleted reply*
+  placeholder above them) is kept until every reply under it is deleted and past its own 7
+  days; purging it earlier would delete those replies too.
+- At most 200 items go per night; any rest goes the next night.
+- With `DELETED_CONTENT_RETENTION_DAYS=0` nothing is removed automatically.
+
+The **Deleted content** page (`/admin/deleted`, in the admin menu after Reports) lists deleted
+posts and discussions, most recently deleted first, with a filter (All / Posts / Discussions).
+Each row shows the item (its title opens the page, which admins can still see), its author, when
+and by whom it was deleted (the author or an admin, from the audit log), and in how many days it
+will be removed (*today* when less than a day is left). **Restore** (after a confirmation)
+publishes it again, or sends it back to the approval queue if it was never approved; **Delete
+permanently** removes it at once. Deleted replies and comments are not listed there.
+
+In the audit log (`/admin/log`), the target of a row about a post or discussion that still exists
+(whatever its status) links to its page.
 
 ### Uploads
 
@@ -246,12 +276,14 @@ account deletion writes a row: when, action, actor (empty for system actions), t
 - Filter by action: an exact name (`moderation.approve`) or a prefix ending in a dot; quick chips
   for `moderation.`, `admin.`, `report.` and `auth.`.
 - Filter by actor id and target type (`post`, `thread`, `reply`, `comment`, `user`, `report`, …).
+- A `post #…` or `thread #…` target links to the item's page while it still exists (in any
+  status); after a permanent delete it is plain text.
 - Useful actions: `moderation.approve|reject|resubmit|hide|unhide|delete|restore|purge`,
   `moderation.auto_hidden`, `moderation.auto_approved`, `upload.deleted`, `user.trusted`, `admin.promote`,
   `admin.demote`, `admin.ban`, `admin.unban`, `admin.trust`, `admin.untrust`,
   `report.create|resolve|dismiss`, `post.created|updated|deleted` (and the same for threads,
   replies, comments), `auth.login`, `auth.consent`, `auth.account_deleted`,
-  `maintenance.purge_unverified`, `maintenance.orphan_uploads`.
+  `maintenance.purge_unverified`, `maintenance.orphan_uploads`, `maintenance.deleted_content`.
 
 Use it to answer "who hid this and why", to check a member's history before a ban, and as
 evidence when a decision is challenged.

@@ -1,5 +1,5 @@
 /**
- * Moderation endpoints for admins: the approval queue, content actions
+ * Moderation endpoints for admins: the approval queue, the deleted posts and threads, content actions
  * (`/api/v1/moderation/{type}/{id}/<action>`, `.../purge` for a permanent delete), the audit log, and the admin side of reports
  * (list, resolve, dismiss). Members file reports through `services/reports.ts`; an author resubmits
  * their rejected post or thread through `resubmit`.
@@ -11,6 +11,8 @@ export type ContentType = components['schemas']['ContentType']
 export type ContentStatus = components['schemas']['ContentStatus']
 export type QueueItem = components['schemas']['QueueItem']
 export type ModerationQueue = components['schemas']['ModerationQueue']
+export type DeletedItem = components['schemas']['DeletedItem']
+export type DeletedPage = components['schemas']['DeletedPage']
 export type ModerationResult = components['schemas']['ModerationResult']
 export type PurgeResult = components['schemas']['PurgeResultOut']
 export type AuditLogEntry = components['schemas']['AuditLogEntry']
@@ -22,6 +24,9 @@ export type ReportReason = components['schemas']['ReportReason']
 
 export type QueueParams = NonNullable<
   operations['moderation_queue_api_v1_moderation_queue__get']['parameters']['query']
+>
+export type DeletedParams = NonNullable<
+  operations['deleted_content_api_v1_moderation_deleted__get']['parameters']['query']
 >
 export type LogParams = NonNullable<
   operations['moderation_log_api_v1_moderation_log__get']['parameters']['query']
@@ -40,6 +45,10 @@ const REPORTS = '/api/v1/reports'
 export const moderationService = {
   queue: (params: QueueParams = {}) =>
     api<ModerationQueue>(`${BASE}/queue/`, { query: { ...params } }),
+
+  /** Deleted posts and threads, newest deletion first (restore or purge them with `act`/`purge`). */
+  listDeleted: (params: DeletedParams = {}) =>
+    api<DeletedPage>(`${BASE}/deleted/`, { query: { ...params } }),
 
   log: (params: LogParams = {}) => api<AuditLogPage>(`${BASE}/log/`, { query: { ...params } }),
 

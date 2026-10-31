@@ -835,6 +835,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/moderation/deleted/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Deleted Content
+         * @description Deleted posts and threads, newest deletion first, with who deleted them and when the
+         *     maintenance sweep removes them for good (``purge_at``, null when that is off). Admins can
+         *     restore or purge them with the content actions until then.
+         */
+        get: operations["deleted_content_api_v1_moderation_deleted__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/moderation/log/": {
         parameters: {
             query?: never;
@@ -845,7 +867,8 @@ export interface paths {
         /**
          * Moderation Log
          * @description Audit rows, newest first. ``action`` ending in ``.`` is a prefix (``moderation.``);
-         *     otherwise it is matched exactly. ``actor`` is null for automatic actions.
+         *     otherwise it is matched exactly. ``actor`` is null for automatic actions; ``target_path``
+         *     links a post/thread target that still exists.
          */
         get: operations["moderation_log_api_v1_moderation_log__get"];
         put?: never;
@@ -1790,6 +1813,27 @@ export interface paths {
         patch: operations["update_reply_api_v1_replies__reply_id__patch"];
         trace?: never;
     };
+    "/api/v1/notifications/unsubscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unsubscribe
+         * @description Switch off the one email preference named by the signed ``token`` (no session needed).
+         *     Audited as ``notifications.unsubscribed`` when the switch was on.
+         */
+        post: operations["unsubscribe_api_v1_notifications_unsubscribe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/": {
         parameters: {
             query?: never;
@@ -2195,6 +2239,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Target Path */
+            target_path?: string | null;
         };
         /** AuditLogPage */
         AuditLogPage: {
@@ -2539,6 +2585,40 @@ export interface components {
         DeleteAccountRequest: {
             /** Current Password */
             current_password: string;
+        };
+        /** DeletedItem */
+        DeletedItem: {
+            content_type: components["schemas"]["ContentType"];
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Slug */
+            slug: string;
+            author: components["schemas"]["DeletedUser"] | null;
+            category: components["schemas"]["QueueCategory"];
+            /**
+             * Deleted At
+             * Format: date-time
+             */
+            deleted_at: string;
+            deleted_by: components["schemas"]["DeletedUser"] | null;
+            /** Purge At */
+            purge_at: string | null;
+        };
+        /** DeletedPage */
+        DeletedPage: {
+            /** Total */
+            total: number;
+            /** Items */
+            items: components["schemas"]["DeletedItem"][];
+        };
+        /** DeletedUser */
+        DeletedUser: {
+            /** Id */
+            id: number;
+            /** Display Name */
+            display_name: string;
         };
         /**
          * DigestFrequency
@@ -4206,6 +4286,18 @@ export interface components {
             knowbase_links?: components["schemas"]["KnowbaseLinkIn"][] | null;
             /** Slug */
             slug?: string | null;
+        };
+        /**
+         * UnsubscribeResult
+         * @description The same answer for every valid token, whether or not anything changed (an unknown or
+         *     deleted account is not revealed).
+         */
+        UnsubscribeResult: {
+            /**
+             * Status
+             * @constant
+             */
+            status: "unsubscribed";
         };
         /**
          * UpdateMeRequest
@@ -7632,6 +7724,81 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModerationQueue"];
+                };
+            };
+            /** @description Error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    deleted_content_api_v1_moderation_deleted__get: {
+        parameters: {
+            query?: {
+                type?: ("post" | "thread") | null;
+                skip?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletedPage"];
                 };
             };
             /** @description Error */
@@ -12318,6 +12485,71 @@ export interface operations {
             };
             /** @description Error */
             423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    unsubscribe_api_v1_notifications_unsubscribe_post: {
+        parameters: {
+            query?: {
+                token?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnsubscribeResult"];
+                };
+            };
+            /** @description Error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Error */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

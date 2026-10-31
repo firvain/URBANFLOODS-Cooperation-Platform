@@ -3,13 +3,21 @@ import { createPinia, setActivePinia } from 'pinia'
 
 import { useModerationStore } from '@/stores/moderation'
 import { callsTo, deferred, jsonResponse, mockApi, reply, replyError } from './helpers/api'
-import { makeLogEntry, makeQueueItem, makeReport, page, queryOf } from './helpers/admin'
+import {
+  makeDeletedItem,
+  makeLogEntry,
+  makeQueueItem,
+  makeReport,
+  page,
+  queryOf,
+} from './helpers/admin'
 
 beforeEach(() => setActivePinia(createPinia()))
 
 const QUEUE = 'GET /api/v1/moderation/queue/'
 const REPORTS = 'GET /api/v1/reports/'
 const LOG = 'GET /api/v1/moderation/log/'
+const DELETED = 'GET /api/v1/moderation/deleted/'
 
 const result = (status: string, id = 12, type = 'thread') => ({
   content_type: type,
@@ -83,6 +91,69 @@ describe('moderation store: queue', () => {
     const fetchMock = mockApi({ [route]: reply(200, result('hidden', 11, 'post')) })
     await useModerationStore().reject(makeQueueItem(), '   ')
     expect(callsTo(fetchMock, route)[0]!.body).toEqual({ reason: null })
+  })
+})
+
+describe('moderation store: deleted items', () => {
+  const THREAD = makeDeletedItem({ id: 12, content_type: 'thread' })
+
+  it('fetchDeleted sends type and page and keeps total and items', async () => {
+    const fetchMock = mockApi({ [DELETED]: reply(200, page([makeDeletedItem()], 30)) })
+    const store = useModerationStore()
+    await store.fetchDeleted({ type: 'post', skip: 20, limit: 20 })
+    const query = queryOf(callsTo(fetchMock, DELETED)[0]!.url)
+    expect(query.get('type')).toBe('post')
+    expect(query.get('skip')).toBe('20')
+    expect(store.deleted.total).toBe(30)
+    expect(store.deleted.items).toHaveLength(1)
+  })
+
+  it('restoreDeleted restores and removes the item', async () => {
+    const route = 'POST /api/v1/moderation/thread/12/restore'
+    const fetchMock = mockApi({
+      [DELETED]: reply(200, page([makeDeletedItem(), THREAD])),
+      [route]: reply(200, result('published')),
+    })
+    const store = useModerationStore()
+    await store.fetchDeleted({})
+    await store.restoreDeleted(store.deleted.items[1]!)
+    expect(callsTo(fetchMock, route)).toHaveLength(1)
+    expect(store.deleted.items.map((i) => i.id)).toEqual([1])
+    expect(store.deleted.total).toBe(1)
+  })
+
+  it('purgeDeleted purges and removes the item', async () => {
+    const route = 'POST /api/v1/moderation/post/1/purge'
+    const fetchMock = mockApi({
+      [DELETED]: reply(200, page([makeDeletedItem(), THREAD])),
+      [route]: reply(200, {
+        content_type: 'post',
+        id: 1,
+        purged: true,
+        children_deleted: 0,
+        attachments_deleted: 0,
+        reports_resolved: 0,
+      }),
+    })
+    const store = useModerationStore()
+    await store.fetchDeleted({})
+    await store.purgeDeleted(store.deleted.items[0]!)
+    expect(callsTo(fetchMock, route)).toHaveLength(1)
+    expect(store.deleted.items.map((i) => i.id)).toEqual([12])
+  })
+
+  it('keeps the item when the server refuses', async () => {
+    mockApi({
+      [DELETED]: reply(200, page([THREAD])),
+      'POST /api/v1/moderation/thread/12/restore': replyError(409, 'moderation.invalid_transition'),
+    })
+    const store = useModerationStore()
+    await store.fetchDeleted({})
+    await expect(store.restoreDeleted(store.deleted.items[0]!)).rejects.toMatchObject({
+      code: 'moderation.invalid_transition',
+    })
+    expect(store.deleted.items).toHaveLength(1)
+    expect(store.deleted.total).toBe(1)
   })
 })
 

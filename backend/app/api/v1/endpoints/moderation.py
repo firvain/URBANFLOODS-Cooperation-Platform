@@ -1,5 +1,5 @@
-"""Moderation: the pending queue, the content actions and the audit log (admins), and the
-author's resubmission of a rejected post or thread.
+"""Moderation: the pending queue, the deleted items, the content actions and the audit log
+(admins), and the author's resubmission of a rejected post or thread.
 
 Every route but ``resubmit`` needs an admin. Actions load the content row ``FOR UPDATE`` and hand
 it to ``crud/moderation.py``, which enforces the state machine (409
@@ -14,7 +14,8 @@ Approve, reject and an unhide that approves a rejected post/thread email the aut
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from datetime import timedelta
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, BackgroundTasks, Body, Path, Query
 
@@ -22,6 +23,9 @@ from app.api.v1.schemas.moderation import (
     EXCERPT_LENGTH,
     AuditLogEntry,
     AuditLogPage,
+    DeletedItem,
+    DeletedPage,
+    DeletedUser,
     ModerationQueue,
     ModerationReason,
     ModerationResult,
@@ -37,7 +41,7 @@ from app.crud import audit as crud_audit
 from app.crud import moderation
 from app.crud.visibility import is_visible
 from app.db.enums import ContentType
-from app.db.models import User
+from app.db.models import AuditLog, User
 from app.services import images, notifications
 
 router = APIRouter()
@@ -148,6 +152,74 @@ async def moderation_queue(
     )
 
 
+@router.get("/deleted/", response_model=DeletedPage, responses=_error_responses(401, 403, 422))
+async def deleted_content(
+    admin: AdminUser,
+    db: DbTx,
+    content_type: Annotated[Literal["post", "thread"] | None, Query(alias="type")] = None,
+    skip: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> DeletedPage:
+    """Deleted posts and threads, newest deletion first, with who deleted them and when the
+    maintenance sweep removes them for good (``purge_at``, null when that is off). Admins can
+    restore or purge them with the content actions until then."""
+    total, items = await moderation.list_deleted(
+        db,
+        content_type=ContentType(content_type) if content_type else None,
+        skip=skip,
+        limit=limit,
+    )
+    days = settings.DELETED_CONTENT_RETENTION_DAYS
+    return DeletedPage(
+        total=total,
+        items=[
+            DeletedItem(
+                content_type=item.content_type,
+                id=item.content.id,
+                title=item.content.title,
+                slug=item.content.slug,
+                author=_user_ref(item.content.author),
+                category=QueueCategory.model_validate(item.content.category),
+                deleted_at=item.content.deleted_at,
+                deleted_by=_user_ref(item.deleted_by),
+                purge_at=item.content.deleted_at + timedelta(days=days) if days > 0 else None,
+            )
+            for item in items
+            # ``deleted`` without ``deleted_at`` cannot be listed with a date (never written so).
+            if item.content.deleted_at is not None
+        ],
+    )
+
+
+def _user_ref(user: User | None) -> DeletedUser | None:
+    return DeletedUser.model_validate(user) if user is not None else None
+
+
+_PAGE_PATHS = {ContentType.POST: "/blog/{}", ContentType.THREAD: "/forum/t/{}"}
+
+
+async def _log_entries(db: DbTx, rows: list[AuditLog]) -> list[AuditLogEntry]:
+    """Audit rows as entries, with ``target_path`` for post/thread targets that still exist (two
+    queries for the whole page)."""
+    ids: dict[ContentType, set[int]] = {ContentType.POST: set(), ContentType.THREAD: set()}
+    for row in rows:
+        if row.target_type in ("post", "thread") and row.target_id is not None:
+            ids[ContentType(row.target_type)].add(row.target_id)
+    slugs = await moderation.content_slugs(
+        db, post_ids=ids[ContentType.POST], thread_ids=ids[ContentType.THREAD]
+    )
+    entries = []
+    for row in rows:
+        entry = AuditLogEntry.model_validate(row)
+        if row.target_type in ("post", "thread") and row.target_id is not None:
+            content_type = ContentType(row.target_type)
+            slug = slugs.get((content_type, row.target_id))
+            if slug is not None:
+                entry.target_path = _PAGE_PATHS[content_type].format(slug)
+        entries.append(entry)
+    return entries
+
+
 @router.get("/log/", response_model=AuditLogPage, responses=_error_responses(401, 403, 422))
 async def moderation_log(
     admin: AdminUser,
@@ -159,11 +231,12 @@ async def moderation_log(
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> AuditLogPage:
     """Audit rows, newest first. ``action`` ending in ``.`` is a prefix (``moderation.``);
-    otherwise it is matched exactly. ``actor`` is null for automatic actions."""
+    otherwise it is matched exactly. ``actor`` is null for automatic actions; ``target_path``
+    links a post/thread target that still exists."""
     total, rows = await crud_audit.list_actions(
         db, action=action, actor_id=actor_id, target_type=target_type, skip=skip, limit=limit
     )
-    return AuditLogPage(total=total, items=[AuditLogEntry.model_validate(row) for row in rows])
+    return AuditLogPage(total=total, items=await _log_entries(db, rows))
 
 
 # --- actions ----------------------------------------------------------------------------------

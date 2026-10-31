@@ -21,19 +21,25 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.db.enums import CategoryKind, ContentStatus, TokenPurpose
+from app.crud import moderation as crud_moderation
+from app.db.enums import CategoryKind, ContentStatus, ReportStatus, TokenPurpose
 from app.db.models import (
     Attachment,
     AuditLog,
+    Comment,
     EmailToken,
     NotificationPreference,
     Post,
+    Reply,
+    Report,
     Session,
+    Thread,
     User,
 )
 from app.services import scheduler
 from app.services.scheduler import (
     MAINTENANCE_STEPS,
+    purge_deleted_content,
     purge_unverified_users,
     run_maintenance,
     sweep_orphan_uploads,
@@ -44,6 +50,7 @@ from tests.factories import (
     create_comment,
     create_post,
     create_reply,
+    create_report,
     create_thread,
     create_user,
     create_verified_user,
@@ -330,7 +337,14 @@ async def tx_factory(database_url: str) -> AsyncIterator[Callable[[], AsyncSessi
             await outer.rollback()
 
 
-EXPECTED_KEYS = {"sessions", "tokens", "unverified_users", "orphan_uploads", "auto_approved"}
+EXPECTED_KEYS = {
+    "sessions",
+    "tokens",
+    "unverified_users",
+    "orphan_uploads",
+    "auto_approved",
+    "deleted_content",
+}
 
 
 async def test_run_maintenance_returns_counts_per_step(tx_factory, uploads) -> None:
@@ -465,3 +479,321 @@ async def test_failed_orphan_transaction_keeps_rows_and_files(
     assert all((uploads / rel).exists() for rel in rel_paths)
     async with tx_factory() as db:
         assert await db.get(Attachment, orphan_id) is not None
+
+
+# --- 7a: deleted content retention ------------------------------------------------------------
+
+# Long ago, so only this section's rows are older than the retention limit at this ``now``.
+LONG_AGO = datetime(2002, 1, 1, tzinfo=UTC)
+DUE = LONG_AGO - timedelta(days=8)
+NOT_DUE = LONG_AGO - timedelta(days=6)
+D = ContentStatus.DELETED
+
+
+async def _deleted_post(db, deleted_at: datetime | None, **kw) -> Post:
+    category = await create_category(db)
+    status = kw.pop("status", D)
+    post = await create_post(
+        db, category_id=category.id, status=status, deleted_at=deleted_at, **kw
+    )
+    post.published_at = LONG_AGO - timedelta(days=30)
+    await db.flush()
+    return post
+
+
+async def _deleted_thread(db, deleted_at: datetime | None, **kw) -> Thread:
+    category = await create_category(db, kind=CategoryKind.FORUM)
+    thread = await create_thread(
+        db, category_id=category.id, status=kw.pop("status", D), deleted_at=deleted_at, **kw
+    )
+    thread.published_at = LONG_AGO - timedelta(days=30)
+    await db.flush()
+    return thread
+
+
+async def _live_thread(db) -> Thread:
+    category = await create_category(db, kind=CategoryKind.FORUM)
+    return await create_thread(db, category_id=category.id)
+
+
+async def _live_post(db) -> Post:
+    category = await create_category(db)
+    return await create_post(db, category_id=category.id)
+
+
+async def test_deleted_content_purges_posts_and_threads_past_the_limit(db_session) -> None:
+    old_post = await _deleted_post(db_session, DUE)
+    old_thread = await _deleted_thread(db_session, DUE)
+    young = await _deleted_post(db_session, NOT_DUE)
+    live = await _deleted_post(db_session, None, status=ContentStatus.PUBLISHED)
+    ids = old_post.id, old_thread.id, young.id, live.id
+
+    count = await purge_deleted_content(db_session, now=LONG_AGO, files=[])
+
+    assert count == 2
+    assert not await _exists(db_session, Post, ids[0])
+    assert not await _exists(db_session, Thread, ids[1])
+    assert await _exists(db_session, Post, ids[2])
+    assert await _exists(db_session, Post, ids[3])
+
+
+async def test_deleted_content_respects_the_day_boundary(db_session) -> None:
+    exactly = await _deleted_post(db_session, LONG_AGO - timedelta(days=7))
+    just_over = await _deleted_post(db_session, LONG_AGO - timedelta(days=7, seconds=1))
+    ids = exactly.id, just_over.id
+
+    await purge_deleted_content(db_session, now=LONG_AGO, files=[])
+
+    assert await _exists(db_session, Post, ids[0])
+    assert not await _exists(db_session, Post, ids[1])
+
+
+async def test_deleted_content_keeps_restored_items(db_session) -> None:
+    admin = await create_verified_user(db_session)
+    post = await _deleted_post(db_session, DUE)
+    await crud_moderation.restore(db_session, content=post, actor=admin, now=LONG_AGO)
+    post_id = post.id
+
+    count = await purge_deleted_content(db_session, now=LONG_AGO, files=[])
+
+    assert count == 0
+    assert await _exists(db_session, Post, post_id)
+
+
+async def test_deleted_content_uses_the_setting(db_session, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "DELETED_CONTENT_RETENTION_DAYS", 3)
+    post = await _deleted_post(db_session, LONG_AGO - timedelta(days=4))
+
+    assert await purge_deleted_content(db_session, now=LONG_AGO, files=[]) == 1
+    assert not await _exists(db_session, Post, post.id)
+
+
+async def test_deleted_content_is_off_when_the_setting_is_0(db_session, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "DELETED_CONTENT_RETENTION_DAYS", 0)
+    post = await _deleted_post(db_session, LONG_AGO - timedelta(days=400))
+
+    assert await purge_deleted_content(db_session, now=LONG_AGO, files=[]) == 0
+    assert await _exists(db_session, Post, post.id)
+    assert await _audit(db_session, "maintenance.deleted_content") == []
+
+
+async def test_deleted_content_purges_old_comments_and_replies(db_session) -> None:
+    post = await _live_post(db_session)
+    thread = await _live_thread(db_session)
+    old_comment = await create_comment(db_session, post_id=post.id, status=D, deleted_at=DUE)
+    young_comment = await create_comment(db_session, post_id=post.id, status=D, deleted_at=NOT_DUE)
+    live_comment = await create_comment(db_session, post_id=post.id)
+    old_reply = await create_reply(db_session, thread_id=thread.id, status=D, deleted_at=DUE)
+    young_reply = await create_reply(db_session, thread_id=thread.id, status=D, deleted_at=NOT_DUE)
+    ids = old_comment.id, young_comment.id, live_comment.id, old_reply.id, young_reply.id
+    parents = post.id, thread.id
+
+    count = await purge_deleted_content(db_session, now=LONG_AGO, files=[])
+
+    assert count == 2
+    assert not await _exists(db_session, Comment, ids[0])
+    assert await _exists(db_session, Comment, ids[1])
+    assert await _exists(db_session, Comment, ids[2])
+    assert not await _exists(db_session, Reply, ids[3])
+    assert await _exists(db_session, Reply, ids[4])
+    assert await _exists(db_session, Post, parents[0])
+    assert await _exists(db_session, Thread, parents[1])
+
+
+@pytest.mark.parametrize(
+    "child_fields",
+    [
+        {},  # published: another member's reply, shown under the placeholder
+        {"status": ContentStatus.HIDDEN},
+        # Deleted, but more recently: it still has its own days to be restored.
+        {"status": ContentStatus.DELETED, "deleted_at": NOT_DUE},
+    ],
+)
+async def test_deleted_reply_with_a_live_child_is_kept(db_session, child_fields) -> None:
+    """A deleted reply that still holds replies is shown as a placeholder: purging it would
+    delete those replies with it."""
+    thread = await _live_thread(db_session)
+    parent = await create_reply(db_session, thread_id=thread.id, status=D, deleted_at=DUE)
+    child = await create_reply(
+        db_session, thread_id=thread.id, parent_reply_id=parent.id, **child_fields
+    )
+    ids = parent.id, child.id
+
+    count = await purge_deleted_content(db_session, now=LONG_AGO, files=[])
+
+    assert count == 0
+    assert await _exists(db_session, Reply, ids[0])
+    assert await _exists(db_session, Reply, ids[1])
+
+
+async def test_deleted_reply_whose_children_are_all_due_is_purged(db_session) -> None:
+    thread = await _live_thread(db_session)
+    parent = await create_reply(db_session, thread_id=thread.id, status=D, deleted_at=DUE)
+    child = await create_reply(
+        db_session,
+        thread_id=thread.id,
+        parent_reply_id=parent.id,
+        status=D,
+        deleted_at=DUE - timedelta(days=1),
+    )
+    ids = parent.id, child.id
+
+    count = await purge_deleted_content(db_session, now=LONG_AGO, files=[])
+
+    assert count == 2
+    assert not await _exists(db_session, Reply, ids[0])
+    assert not await _exists(db_session, Reply, ids[1])
+
+
+async def test_deleted_content_audits_each_purge_and_a_summary(db_session) -> None:
+    post = await _deleted_post(db_session, DUE)
+    comment = await create_comment(db_session, post_id=post.id)
+    thread = await _deleted_thread(db_session, DUE - timedelta(hours=1))
+    ids = post.id, comment.id, thread.id
+
+    count = await purge_deleted_content(db_session, now=LONG_AGO, files=[])
+
+    assert count == 2
+    purges = [
+        row
+        for row in await _audit(db_session, "moderation.purge")
+        if (row.target_type, row.target_id) in {("post", ids[0]), ("thread", ids[2])}
+    ]
+    # Oldest first: the thread was deleted an hour before the post.
+    assert [(row.target_type, row.target_id) for row in purges] == [
+        ("thread", ids[2]),
+        ("post", ids[0]),
+    ]
+    for row in purges:
+        assert row.actor_id is None
+        assert row.metadata_["reason"] == "retention"
+    assert purges[1].metadata_["children_deleted"] == 1
+    (summary,) = await _audit(db_session, "maintenance.deleted_content")
+    assert summary.actor_id is None
+    assert summary.metadata_ == {"count": 2}
+    assert not await _exists(db_session, Comment, ids[1])
+
+
+async def test_deleted_content_with_nothing_due_writes_no_audit(db_session) -> None:
+    await _deleted_post(db_session, NOT_DUE)
+
+    assert await purge_deleted_content(db_session, now=LONG_AGO, files=[]) == 0
+    assert await _audit(db_session, "maintenance.deleted_content") == []
+
+
+async def test_deleted_content_resolves_open_reports_by_nobody(db_session) -> None:
+    reporter = await create_verified_user(db_session)
+    post = await _deleted_post(db_session, DUE)
+    report = await create_report(
+        db_session, reporter_id=reporter.id, content_type="post", content_id=post.id
+    )
+    report_id = report.id
+
+    await purge_deleted_content(db_session, now=LONG_AGO, files=[])
+
+    db_session.expire_all()
+    report = await db_session.get(Report, report_id)
+    assert report.status == ReportStatus.RESOLVED
+    assert report.resolved_by is None
+
+
+async def test_deleted_content_collects_freed_files(db_session, uploads) -> None:
+    image = await _upload(db_session, uploads, age=OLD)
+    rel_paths = [image.storage_path, image.thumb_path]
+    post = await _deleted_post(db_session, DUE)
+    post.body_html = f'<img src="{settings.UPLOAD_URL_PREFIX}/{image.storage_path}" alt="x">'
+    await db_session.flush()
+    files: list[str] = []
+
+    await purge_deleted_content(db_session, now=LONG_AGO, files=files)
+
+    assert set(rel_paths) <= set(files)
+    # Removed by the caller only after the commit.
+    assert all((uploads / rel).exists() for rel in rel_paths)
+
+
+async def test_deleted_content_caps_one_run(db_session, monkeypatch) -> None:
+    monkeypatch.setattr(scheduler, "MAX_DELETED_PURGES_PER_RUN", 2)
+    posts = [await _deleted_post(db_session, DUE - timedelta(hours=i)) for i in range(3)]
+    ids = [post.id for post in posts]
+
+    with structlog.testing.capture_logs() as logs:
+        count = await purge_deleted_content(db_session, now=LONG_AGO, files=[])
+
+    assert count == 2
+    # Oldest first: the first post (deleted last) is left for the next run.
+    assert await _exists(db_session, Post, ids[0])
+    assert not await _exists(db_session, Post, ids[1])
+    assert not await _exists(db_session, Post, ids[2])
+    capped = [e for e in logs if e["event"] == "maintenance.capped"]
+    assert capped == [
+        {"event": "maintenance.capped", "step": "deleted_content", "limit": 2, "log_level": "info"}
+    ]
+
+
+async def test_run_maintenance_purges_deleted_content_and_files_after_commit(
+    tx_factory, uploads
+) -> None:
+    async with tx_factory() as db:
+        image = await _upload(db, uploads, age=timedelta(hours=1))
+        rel_paths = [image.storage_path, image.thumb_path]
+        post = await _deleted_post(db, DUE)
+        post.body_html = f'<img src="{settings.UPLOAD_URL_PREFIX}/{image.storage_path}" alt="x">'
+        post_id, image_id = post.id, image.id
+        await db.commit()
+
+    counts = await run_maintenance(LONG_AGO, session_factory=tx_factory)
+
+    assert counts["deleted_content"] == 1
+    assert not any((uploads / rel).exists() for rel in rel_paths)
+    async with tx_factory() as db:
+        assert await db.get(Post, post_id) is None
+        assert await db.get(Attachment, image_id) is None
+
+
+async def test_run_maintenance_skips_deleted_content_when_off(
+    tx_factory, uploads, monkeypatch
+) -> None:
+    monkeypatch.setattr(settings, "DELETED_CONTENT_RETENTION_DAYS", 0)
+    async with tx_factory() as db:
+        post = await _deleted_post(db, DUE)
+        post_id = post.id
+        await db.commit()
+
+    with structlog.testing.capture_logs() as logs:
+        counts = await run_maintenance(LONG_AGO, session_factory=tx_factory)
+
+    assert counts["deleted_content"] == 0
+    (event,) = [
+        e for e in logs if e["event"] == "maintenance.step" and e["step"] == "deleted_content"
+    ]
+    assert event["skipped"] is True
+    async with tx_factory() as db:
+        assert await db.get(Post, post_id) is not None
+
+
+async def test_failed_deleted_content_transaction_keeps_rows_and_files(
+    tx_factory, uploads, monkeypatch
+) -> None:
+    async with tx_factory() as db:
+        image = await _upload(db, uploads, age=timedelta(hours=1))
+        rel_paths = [image.storage_path, image.thumb_path]
+        post = await _deleted_post(db, DUE)
+        post.body_html = f'<img src="{settings.UPLOAD_URL_PREFIX}/{image.storage_path}" alt="x">'
+        post_id = post.id
+        await db.commit()
+    real_log_action = scheduler.log_action
+
+    async def failing_log_action(db, **kwargs):
+        if kwargs.get("action") == "maintenance.deleted_content":
+            raise RuntimeError("audit down")
+        return await real_log_action(db, **kwargs)
+
+    monkeypatch.setattr(scheduler, "log_action", failing_log_action)
+
+    counts = await run_maintenance(LONG_AGO, session_factory=tx_factory)
+
+    assert counts["deleted_content"] == -1
+    assert all((uploads / rel).exists() for rel in rel_paths)
+    async with tx_factory() as db:
+        assert await db.get(Post, post_id) is not None

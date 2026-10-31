@@ -1062,6 +1062,7 @@
       "dashboard": "Dashboard",
       "queue": "Approval queue",
       "reports": "Reports",
+      "deleted": "Deleted content",
       "users": "Users",
       "categories": "Categories",
       "tags": "Tags",
@@ -1273,6 +1274,35 @@
       "restored": "The content is restored.",
       "restoreTitle": "Restore this content?",
       "restoreDescription": "It is published again, or goes back to the approval queue if it was never approved."
+    },
+    "deleted": {
+      "title": "Deleted content",
+      "introDays": "Deleted posts and discussions are kept for {days} days so they can be restored, then removed for good.",
+      "introKept": "Deleted posts and discussions are kept until an admin removes them for good; until then they can be restored.",
+      "introUnknown": "Deleted posts and discussions can be restored here until they are removed for good.",
+      "caption": "Deleted posts and discussions, most recently deleted first",
+      "empty": "Nothing has been deleted.",
+      "type": "Type",
+      "types": {
+        "all": "All",
+        "post": "Posts",
+        "thread": "Discussions"
+      },
+      "item": "Item",
+      "author": "Author",
+      "deleted": "Deleted",
+      "by": "by",
+      "removedIn": "Removed in",
+      "daysLeft": "today | 1 day | {count} days",
+      "never": "Not automatically",
+      "restore": "Restore",
+      "restoreLabel": "Restore “{title}”",
+      "restoreTitle": "Restore “{title}”?",
+      "restoreDescription": "It is published again, or goes back to the approval queue if it was never approved.",
+      "restored": "“{title}” is restored.",
+      "purge": "Delete permanently",
+      "purgeLabel": "Delete “{title}” permanently",
+      "purged": "“{title}” was deleted permanently."
     },
     "users": {
       "title": "Users",

@@ -245,6 +245,12 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: 'admin.reports.title' },
       },
       {
+        path: 'deleted',
+        name: 'admin-deleted',
+        component: () => import('@/views/admin/AdminDeletedView.vue'),
+        meta: { title: 'admin.deleted.title' },
+      },
+      {
         path: 'users',
         name: 'admin-users',
         component: () => import('@/views/admin/AdminUsersView.vue'),

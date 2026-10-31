@@ -23,6 +23,14 @@ Maintenance steps:
   approved; skipped (0) when the setting is 0. Once that step has committed, each author is
   emailed (``content_approved``, "published automatically"; at most
   ``MAX_DECISION_EMAILS_PER_RUN`` per run); only the numbers sent and left over are logged.
+- ``deleted_content``: posts, threads, comments and replies soft-deleted more than
+  ``DELETED_CONTENT_RETENTION_DAYS`` days ago are purged for good, oldest first, at most
+  ``MAX_DELETED_PURGES_PER_RUN`` per run (the rest wait for the next run), through the admin
+  purge without an actor (``crud/moderation.py::purge_expired_deleted``); a deleted reply that
+  still holds replies that are not due is skipped. Files of the attachments they freed go once
+  the step has committed. Audit: one ``moderation.purge`` per item (no actor, ``"reason":
+  "retention"``) and ``maintenance.deleted_content`` with the count. Skipped (0) when the
+  setting is 0.
 """
 
 from __future__ import annotations
@@ -54,6 +62,9 @@ FAILED = -1
 # relay. The rest of a capped run gets no email (the items are published either way).
 MAX_DECISION_EMAILS_PER_RUN = 100
 DECISION_EMAIL_CONCURRENCY = 3
+# Items the retention sweep purges in one run: a backlog is worked off over several nights
+# instead of in one long transaction.
+MAX_DELETED_PURGES_PER_RUN = 200
 
 SessionFactory = Callable[[], AsyncSession]
 Step = Callable[..., Awaitable[int]]
@@ -93,6 +104,30 @@ async def sweep_orphan_uploads(db: AsyncSession, *, now: datetime, files: list[s
     return len(deleted)
 
 
+async def purge_deleted_content(db: AsyncSession, *, now: datetime, files: list[str]) -> int:
+    """Purge content deleted longer ago than the retention limit (see the module docstring) and
+    append the freed files' paths (relative to ``UPLOAD_DIR``) to ``files``, for the caller to
+    remove after the commit. Returns the number of items purged (children not counted)."""
+    days = settings.DELETED_CONTENT_RETENTION_DAYS
+    if days <= 0:
+        return 0
+    limit = MAX_DELETED_PURGES_PER_RUN
+    results = await crud_moderation.purge_expired_deleted(
+        db, cutoff=now - timedelta(days=days), limit=limit, now=now
+    )
+    if results:
+        await log_action(
+            db,
+            actor_id=None,
+            action="maintenance.deleted_content",
+            metadata={"count": len(results)},
+        )
+        files.extend(path for r in results for pair in r.files for path in pair if path)
+    if len(results) >= limit:
+        log.info("maintenance.capped", step="deleted_content", limit=limit)
+    return len(results)
+
+
 async def _expired_sessions(db: AsyncSession, *, now: datetime, files: list[str]) -> int:
     return await delete_expired_sessions(db, now=now)
 
@@ -117,6 +152,10 @@ async def _auto_approve(
     approved: list[crud_moderation.ApprovedItem] | None = None,
 ) -> int:
     return await crud_moderation.auto_approve_stale(db, now=now, approved=approved)
+
+
+async def _deleted_content(db: AsyncSession, *, now: datetime, files: list[str]) -> int:
+    return await purge_deleted_content(db, now=now, files=files)
 
 
 async def _send_decision_emails(
@@ -148,7 +187,14 @@ async def _send_decision_emails(
     )
 
 
-MAINTENANCE_STEPS = ("sessions", "tokens", "unverified_users", "orphan_uploads", "auto_approved")
+MAINTENANCE_STEPS = (
+    "sessions",
+    "tokens",
+    "unverified_users",
+    "orphan_uploads",
+    "auto_approved",
+    "deleted_content",
+)
 
 
 def _steps() -> dict[str, Step]:
@@ -158,7 +204,17 @@ def _steps() -> dict[str, Step]:
         "unverified_users": _unverified_users,
         "orphan_uploads": _orphan_uploads,
         "auto_approved": _auto_approve,
+        "deleted_content": _deleted_content,
     }
+
+
+def _disabled(name: str) -> bool:
+    """Steps switched off by their setting (0) run no session at all."""
+    if name == "auto_approved":
+        return settings.AUTO_APPROVE_AFTER_DAYS <= 0
+    if name == "deleted_content":
+        return settings.DELETED_CONTENT_RETENTION_DAYS <= 0
+    return False
 
 
 # --- entry points (jobs and CLI) --------------------------------------------------------------
@@ -173,7 +229,7 @@ async def run_maintenance(
     factory = session_factory or AsyncSessionLocal
     counts: dict[str, int] = {}
     for name, step in _steps().items():
-        if name == "auto_approved" and settings.AUTO_APPROVE_AFTER_DAYS <= 0:
+        if _disabled(name):
             counts[name] = 0
             log.info("maintenance.step", step=name, count=0, skipped=True)
             continue

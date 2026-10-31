@@ -14,7 +14,7 @@ Last updated: 2026-10-31
 | Role | Can |
 |---|---|
 | member | read; once verified: write posts and threads (reviewed until trusted), replies, comments, report content, upload images |
-| admin | everything a member can, publish without review, moderate (queue, reports, hide/unhide/delete/restore, delete permanently), manage users (within the rules below), categories, tags, organisations, expertise areas, see stats and the audit log |
+| admin | everything a member can, publish without review, moderate (queue, reports, deleted content, hide/unhide/delete/restore, delete permanently), manage users (within the rules below), categories, tags, organisations, expertise areas, see stats and the audit log |
 | superadmin | everything an admin can, plus grant or remove the superadmin role and ban/demote other superadmins |
 
 Account flags shown on the Users page (`/admin/users`): **verified** (email confirmed),
@@ -295,8 +295,9 @@ The CLI commands write audit rows with no actor.
 
 ### API calls from the command line
 
-A few admin functions have no page: restoring or permanently deleting a deleted item, a reply or
-a comment, and deleting another member's image (organisations have a page now, but the calls
+A few admin functions have no page: restoring or permanently deleting a reply or a comment
+(deleted posts and discussions have the **Deleted content** page, `/admin/deleted`), and
+deleting another member's image (organisations have a page now, but the calls
 below still work as a fallback). Call the API with curl.
 Sign in once into a cookie jar, then send every POST, PATCH or DELETE with the session cookie
 **and** the `X-Requested-With: XMLHttpRequest` header (the CSRF check rejects a signed-in write
@@ -339,12 +340,15 @@ With `ENABLE_SCHEDULER=true` (run it in one backend process only), two jobs run 
 
 | Time (default) | Job | Removes or changes |
 |---|---|---|
-| 05:00 (`DIGEST_HOUR_UTC` − 1) | maintenance | sessions expired or revoked more than 7 days ago; email tokens expired or used more than 7 days ago; unverified **member** accounts older than `UNVERIFIED_PURGE_DAYS` (30) days, hard-deleted with their sessions, tokens and preferences (audit `maintenance.purge_unverified`, count only); uploaded images older than `ORPHAN_UPLOAD_HOURS` (24) hours that are no cover, no avatar and not used in any post, thread, reply or comment body (any status), rows and files (audit `maintenance.orphan_uploads`); pending posts/threads older than `AUTO_APPROVE_AFTER_DAYS` days are approved (only when > 0) |
+| 05:00 (`DIGEST_HOUR_UTC` − 1) | maintenance | sessions expired or revoked more than 7 days ago; email tokens expired or used more than 7 days ago; unverified **member** accounts older than `UNVERIFIED_PURGE_DAYS` (30) days, hard-deleted with their sessions, tokens and preferences (audit `maintenance.purge_unverified`, count only); uploaded images older than `ORPHAN_UPLOAD_HOURS` (24) hours that are no cover, no avatar and not used in any post, thread, reply or comment body (any status), rows and files (audit `maintenance.orphan_uploads`); pending posts/threads older than `AUTO_APPROVE_AFTER_DAYS` days are approved (only when > 0); posts, discussions, replies and comments deleted more than `DELETED_CONTENT_RETENTION_DAYS` (7) days ago are removed for good as by *Delete permanently* (a deleted reply still holding replies that are not due is kept; at most 200 items per run; audit `moderation.purge` with no actor and `"reason": "retention"` per item, and `maintenance.deleted_content` with the count; off when 0) |
 | 06:00 (`DIGEST_HOUR_UTC`) | admin digest | nothing removed; emails admins ([moderation guide](moderation-guide.md#5-the-admin-digest)) |
 
-Not purged by any job: content (soft-deleted items stay until an admin uses *Delete permanently*,
-see the [moderation guide](moderation-guide.md#delete-permanently)), reports, digest runs and the
-audit log.
+The maintenance steps, in order and as `python -m app.cli maintenance` prints them: `sessions`,
+`tokens`, `unverified_users`, `orphan_uploads`, `auto_approved`, `deleted_content`.
+
+Deleted content is kept for 7 days so admins can restore it from the **Deleted content** page
+(`/admin/deleted`; see the [moderation guide](moderation-guide.md#the-7-day-bin)). Not purged by
+any job: published, pending or hidden content, reports, digest runs and the audit log.
 Database and upload backups are planned for M6 (`scripts/backup.sh`, 14-day retention). [CHECK after 6a]
 
 ## 13. GDPR requests
@@ -439,6 +443,7 @@ All settings are environment variables read by `backend/app/core/config.py` (def
 | `AUTO_APPROVE_AFTER_DAYS` | `0` | auto-approve pending items after N days (0 = off) |
 | `ENABLE_SCHEDULER`, `DIGEST_HOUR_UTC` | `false`, `6` | scheduled jobs |
 | `UNVERIFIED_PURGE_DAYS`, `ORPHAN_UPLOAD_HOURS` | `30`, `24` | maintenance thresholds |
+| `DELETED_CONTENT_RETENTION_DAYS` | `7` | days deleted content is kept (restorable) before the maintenance removes it for good (0 = never) |
 | `RATE_LIMIT_ENABLED`, `TRUST_PROXY_HEADERS` | `true`, `false` | rate limits; trust `CF-Connecting-IP` / `X-Forwarded-Proto` (set `true` behind Cloudflare and nginx) |
 | `LOG_LEVEL`, `LOG_JSON` | `INFO`, `false` | logging |
 | `CONTENT_LICENSE_URL` | CC BY 4.0 URL | licence link in exports |

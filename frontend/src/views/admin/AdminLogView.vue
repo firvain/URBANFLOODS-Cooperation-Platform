@@ -100,6 +100,10 @@ const columns = computed<TableColumn<AuditLogEntry>[]>(() => [
   { id: 'target', header: t('admin.log.target') },
   { id: 'details', header: t('admin.log.details') },
 ])
+
+/** `post #3`; the target cell links it to `target_path` when the item still exists. */
+const targetLabel = (entry: AuditLogEntry) =>
+  `${entry.target_type}${entry.target_id !== null ? ` #${entry.target_id}` : ''}`
 </script>
 
 <template>
@@ -193,9 +197,15 @@ const columns = computed<TableColumn<AuditLogEntry>[]>(() => [
             <span v-else class="text-muted">{{ t('admin.common.system') }}</span>
           </template>
           <template #target-cell="{ row }">
-            <span v-if="row.original.target_type" class="font-mono text-xs whitespace-nowrap">
-              {{ row.original.target_type
-              }}{{ row.original.target_id !== null ? ` #${row.original.target_id}` : '' }}
+            <ULink
+              v-if="row.original.target_type && row.original.target_path"
+              :to="row.original.target_path"
+              class="font-mono text-xs whitespace-nowrap text-primary-700 hover:underline"
+            >
+              {{ targetLabel(row.original) }}
+            </ULink>
+            <span v-else-if="row.original.target_type" class="font-mono text-xs whitespace-nowrap">
+              {{ targetLabel(row.original) }}
             </span>
             <span v-else class="text-muted">—</span>
           </template>

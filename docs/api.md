@@ -223,7 +223,8 @@ on the KNOWBASE site), so the lookup endpoints currently have no frontend caller
 | POST | `/api/v1/reports/{report_id}/resolve` | admin | – | close as acted upon |
 | POST | `/api/v1/reports/{report_id}/dismiss` | admin | – | close without action |
 | GET | `/api/v1/moderation/queue/` | admin | – | pending posts and threads, oldest first |
-| GET | `/api/v1/moderation/log/` | admin | – | audit rows; `action` ending in `.` is a prefix; `actor_id`, `target_type` |
+| GET | `/api/v1/moderation/deleted/` | admin | – | deleted posts and threads, newest `deleted_at` first; `type=post\|thread`, `skip`/`limit`; each with `content_type, id, title, slug, author {id, display_name} \| null, category {id, name, slug}, deleted_at, deleted_by` (actor of the latest `moderation.delete` / `post.deleted` / `thread.deleted` audit row, or null) and `purge_at` (`deleted_at` + `DELETED_CONTENT_RETENTION_DAYS`, null when that is 0) |
+| GET | `/api/v1/moderation/log/` | admin | – | audit rows; `action` ending in `.` is a prefix; `actor_id`, `target_type`; `target_path` (`/blog/<slug>` or `/forum/t/<slug>`) for a post/thread target that still exists, in any status, else null |
 | POST | `/api/v1/moderation/{content_type}/{content_id}/approve` | admin | – | publish pending; author becomes trusted; author emailed (`content_approved`) |
 | POST | `.../reject` | admin | – | hide pending as rejected (optional reason: audited and stored as the item's `moderation_note`, shown to the author on the detail and in the `content_rejected` email) |
 | POST | `.../resubmit` | verified author | 403 not the author, 404 not visible | rejected post/thread → pending (`hidden_reason` cleared, `moderation_note` kept until the next decision); queue item gets `resubmitted: true` |

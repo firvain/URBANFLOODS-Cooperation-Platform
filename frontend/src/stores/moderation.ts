@@ -1,13 +1,16 @@
 /**
- * Moderation store (admins): the approval queue, the reports and the audit log. Approving or
- * rejecting removes the queue item at once (put back if the server refuses); report and content
- * actions update the rows with the server's answer.
+ * Moderation store (admins): the approval queue, the deleted items, the reports and the audit log.
+ * Approving or rejecting removes the queue item at once (put back if the server refuses); restoring
+ * or purging a deleted item removes it once the server agreed; report and content actions update
+ * the rows with the server's answer.
  */
 import { defineStore } from 'pinia'
 
 import {
   moderationService,
   type ContentType,
+  type DeletedItem,
+  type DeletedParams,
   type LogParams,
   type ModerationAction,
   type ModerationResult,
@@ -49,6 +52,32 @@ export const useModerationStore = defineStore('moderation', () => {
 
   const approve = (item: QueueItem) => review(item, 'approve')
   const reject = (item: QueueItem, reason?: string | null) => review(item, 'reject', reason)
+
+  // --- Deleted items ----------------------------------------------------------------------------
+
+  const deletedList = pagedList((params: DeletedParams) => moderationService.listDeleted(params))
+  const deleted = deletedList.state
+
+  function dropDeleted(item: DeletedItem) {
+    const index = deleted.items.findIndex(
+      (i) => i.id === item.id && i.content_type === item.content_type,
+    )
+    if (index === -1) return
+    deleted.items.splice(index, 1)
+    deleted.total = Math.max(0, deleted.total - 1)
+  }
+
+  async function restoreDeleted(item: DeletedItem) {
+    const result = await moderationService.act(item.content_type, item.id, 'restore')
+    dropDeleted(item)
+    return result
+  }
+
+  async function purgeDeleted(item: DeletedItem) {
+    const result = await moderationService.purge(item.content_type, item.id)
+    dropDeleted(item)
+    return result
+  }
 
   // --- Reports ----------------------------------------------------------------------------------
 
@@ -93,6 +122,11 @@ export const useModerationStore = defineStore('moderation', () => {
     reloadQueue: queueList.reload,
     approve,
     reject,
+    deleted,
+    fetchDeleted: deletedList.fetch,
+    reloadDeleted: deletedList.reload,
+    restoreDeleted,
+    purgeDeleted,
     reports,
     fetchReports: reportsList.fetch,
     reloadReports: reportsList.reload,

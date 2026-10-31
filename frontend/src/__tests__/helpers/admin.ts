@@ -1,6 +1,6 @@
 /**
- * Fixtures for the admin area (4g, 5n): stats, users, queue, reports, audit log, categories, tags,
- * organisations and expertise areas.
+ * Fixtures for the admin area (4g, 5n, 7a): stats, users, queue, deleted items, reports, audit log,
+ * categories, tags, organisations and expertise areas.
  */
 import { flushPromises } from '@vue/test-utils'
 import { expect } from 'vitest'
@@ -9,7 +9,7 @@ import type { AdminStats, AdminUser } from '@/services/admin'
 import type { CategoryOut } from '@/services/categories'
 import type { ExpertiseTag } from '@/services/expertise'
 import type { Organisation } from '@/services/organisations'
-import type { AuditLogEntry, QueueItem, ReportDetail } from '@/services/moderation'
+import type { AuditLogEntry, DeletedItem, QueueItem, ReportDetail } from '@/services/moderation'
 import type { TagOut } from '@/services/tags'
 import type { UserMe } from '@/services/auth'
 import { makeUser, mockApi, reply, type Handler } from './api'
@@ -86,6 +86,25 @@ export function makeQueueItem(overrides: Partial<QueueItem> = {}): QueueItem {
   }
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/** A deleted post, deleted a day ago and removed in `daysLeft` days (6 by default). */
+export function makeDeletedItem(overrides: Partial<DeletedItem> = {}, daysLeft = 6): DeletedItem {
+  const purgeAt = Date.now() + daysLeft * DAY_MS
+  return {
+    content_type: 'post',
+    id: 1,
+    title: 'Green roofs in Kozani',
+    slug: 'green-roofs-in-kozani',
+    author: { id: 7, display_name: 'Nikos' },
+    category: { id: 2, name: 'Nature-based solutions', slug: 'nbs' },
+    deleted_at: new Date(purgeAt - 7 * DAY_MS).toISOString(),
+    deleted_by: { id: 1, display_name: 'Ada Admin' },
+    purge_at: new Date(purgeAt).toISOString(),
+    ...overrides,
+  }
+}
+
 export function makeReport(overrides: Partial<ReportDetail> = {}): ReportDetail {
   return {
     id: 31,
@@ -120,6 +139,7 @@ export function makeLogEntry(overrides: Partial<AuditLogEntry> = {}): AuditLogEn
     target_id: 12,
     metadata: { reason: 'Spam <b>link</b>', from: 'published', to: 'hidden' },
     created_at: '2026-10-31T08:30:00Z',
+    target_path: null,
     ...overrides,
   }
 }

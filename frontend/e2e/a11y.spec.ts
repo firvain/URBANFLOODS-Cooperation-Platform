@@ -47,6 +47,7 @@ const ADMIN_PAGES = [
   '/admin',
   '/admin/queue',
   '/admin/reports',
+  '/admin/deleted',
   '/admin/users',
   '/admin/categories',
   '/admin/tags',

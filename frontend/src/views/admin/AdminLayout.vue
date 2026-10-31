@@ -16,6 +16,7 @@ const SECTIONS = [
   { key: 'dashboard', to: '/admin', icon: 'i-lucide-layout-dashboard' },
   { key: 'queue', to: '/admin/queue', icon: 'i-lucide-hourglass' },
   { key: 'reports', to: '/admin/reports', icon: 'i-lucide-flag' },
+  { key: 'deleted', to: '/admin/deleted', icon: 'i-lucide-trash-2' },
   { key: 'users', to: '/admin/users', icon: 'i-lucide-users' },
   { key: 'categories', to: '/admin/categories', icon: 'i-lucide-folder-tree' },
   { key: 'tags', to: '/admin/tags', icon: 'i-lucide-tags' },

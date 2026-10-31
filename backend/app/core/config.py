@@ -81,6 +81,9 @@ class Settings(BaseSettings):
     # Maintenance (scheduler job / ``python -m app.cli maintenance``)
     UNVERIFIED_PURGE_DAYS: int = 30
     ORPHAN_UPLOAD_HOURS: int = 24
+    # Soft-deleted content is kept this many days (an admin can restore it), then purged by the
+    # maintenance sweep; 0 = never purged automatically.
+    DELETED_CONTENT_RETENTION_DAYS: int = 7
 
     # Rate limiting / proxy
     RATE_LIMIT_ENABLED: bool = True
