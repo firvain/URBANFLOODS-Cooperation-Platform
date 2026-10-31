@@ -38,6 +38,79 @@ if (!window.matchMedia) {
   })
 }
 
+// happy-dom's NodeIterator stops when the node it just returned is removed (browsers move the
+// iterator back to the preceding node, per the DOM spec). DOMPurify removes nodes while iterating,
+// so under happy-dom everything after a removed element (a <script>, a rejected <img>) escaped
+// sanitisation. Only when the bug is present: replace createNodeIterator with a spec-compatible
+// one (forward traversal that survives removal of the current node, which is all DOMPurify needs).
+{
+  const probe = document.implementation.createHTMLDocument('')
+  probe.body.innerHTML = '<i></i><b></b>'
+  const iterator = probe.createNodeIterator(probe.body, NodeFilter.SHOW_ELEMENT)
+  iterator.nextNode() // <body>
+  ;(iterator.nextNode() as ChildNode).remove() // <i>
+  if (iterator.nextNode()?.nodeName !== 'B') {
+    /** The node after `node`'s subtree in document order, within `root`. */
+    const following = (node: Node | null, root: Node): Node | null => {
+      for (let n = node; n && n !== root; n = n.parentNode) if (n.nextSibling) return n.nextSibling
+      return null
+    }
+    // Patch the prototype that defines it (happy-dom's window classes are subclasses of the
+    // global `Document`, so patching `Document.prototype` alone would be shadowed).
+    let owner: object = Object.getPrototypeOf(document)
+    while (!Object.prototype.hasOwnProperty.call(owner, 'createNodeIterator')) {
+      owner = Object.getPrototypeOf(owner)
+    }
+    ;(owner as Document).createNodeIterator = function (
+      root: Node,
+      whatToShow = NodeFilter.SHOW_ALL,
+      filter: NodeFilter | null = null,
+    ): NodeIterator {
+      let current: Node | null = null
+      let parent: Node | null = null
+      let previous: Node | null = null
+      const accept = (node: Node) => {
+        if (!((1 << (node.nodeType - 1)) & whatToShow)) return false
+        if (!filter) return true
+        const result = typeof filter === 'function' ? filter(node) : filter.acceptNode(node)
+        return result === NodeFilter.FILTER_ACCEPT
+      }
+      const successor = (): Node | null => {
+        if (!current) return root
+        if (current !== root && current.parentNode !== parent) {
+          // The current node was removed: continue where it used to be. (Removing the root does
+          // not move the iterator, as in browsers: DOMPurify detaches a disallowed <body> root.)
+          const next = previous?.parentNode === parent ? previous!.nextSibling : parent?.firstChild
+          return next ?? following(parent, root)
+        }
+        return current.firstChild ?? following(current, root)
+      }
+      return {
+        root,
+        whatToShow,
+        filter,
+        get referenceNode() {
+          return current ?? root
+        },
+        pointerBeforeReferenceNode: false,
+        nextNode() {
+          for (let node = successor(); node; node = successor()) {
+            current = node
+            parent = node.parentNode
+            previous = node.previousSibling
+            if (accept(node)) return node
+          }
+          return null
+        },
+        previousNode: () => {
+          throw new Error('previousNode is not implemented by the test shim')
+        },
+        detach() {},
+      } as NodeIterator
+    }
+  }
+}
+
 // No test touches the network: every test starts with a fetch stub (anonymous `GET /auth/me`,
 // 404 for anything unmocked). Tests override it with their own `mockApi(...)`/`vi.stubGlobal`.
 beforeEach(() => {

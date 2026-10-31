@@ -21,7 +21,6 @@ idempotent (existing rows are left alone), runs in one transaction, and refuses 
 DATABASE_URL=postgresql+asyncpg://cooperation:cooperation_dev_password@localhost:5432/cooperation_db \
 SECRET_KEY=dev uv run python -m scripts.seed_dev
 
-# or inside the running backend container (the image does not ship scripts/)
 # (scripts/ is part of the image and bind-mounted in dev)
 docker compose exec backend python -m scripts.seed_dev
 ```

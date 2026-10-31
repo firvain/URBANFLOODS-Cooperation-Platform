@@ -78,14 +78,14 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 2f | `services/images.py` + uploads + static mount | done | a8f704e | 62 pytest (796 total) | WebP re-encode, EXIF stripped, avatars; orphan sweep + export/delete of attachments deferred to M4 | | | |
 | 2g | `scripts/seed_dev.py` + `npm run gen:types` | done | | 5 pytest (857 total) | demo accounts `*@urbanfloods.example` (see backend/README.md); api-schema.ts generated (services not rewired yet) | | | |
 | 2h | FE knowbase store/views | done | bda74dc | 40 vitest | | | |
-| 2i | FE editor components (Tiptap) | in progress | | | |
-| 2j | FE blog views + stores | todo | | | |
+| 2i | FE editor components (Tiptap) | done | | 50 vitest (399 total) | Tiptap 3.32 (already a Nuxt UI dependency, lazy chunk ≈131 kB gzip); tables skipped; happy-dom NodeIterator shim | | | |
+| 2j | FE blog views + stores | in progress | | | |
 | 2k | Playwright `blog.spec.ts` | todo | | | |
 
 ### M3 — Forum + comments
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
-| 3a | Models Thread/Reply/Comment + migration (one-level trigger, counters) | todo | | | |
+| 3a | Models Thread/Reply/Comment + migration (one-level trigger, counters) | in progress | | | |
 | 3b | threads endpoints + admin pin/lock | todo | | | |
 | 3c | replies endpoints | todo | | | |
 | 3d | comments endpoints | todo | | | |
