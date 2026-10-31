@@ -103,13 +103,13 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 4d | moderation + admin endpoints incl. stats CSV export | done | 4ab2184 + 0a7fa8d | 88 pytest (1360 total) | /moderation/queue, /{type}/{id}/<action>, /log (prefix filter); /admin/stats (KnowbaseStatus reused), /admin/knowbase/cache/clear, /admin/stats/export.csv (users by country/org, content, contributors, sign-ins from audit rows, RCO87 incl. free-text orgs) | | | |
 | 4e | digest + scheduler (+ AUTO_APPROVE_AFTER_DAYS sweep) + `cli digest` | done | | 84 pytest (1369 total) | APScheduler 3.11 AsyncIOScheduler (one worker); admin digest per frequency (daily window since last run, weekly 7 days), run not recorded if every send fails; maintenance: expired sessions/tokens, unverified purge (UNVERIFIED_PURGE_DAYS), orphan uploads (files deleted after commit), auto-approve sweep; `cli digest [--force]`, `cli maintenance` | | | |
 | 4f | FE report/status components | done | 0f3c724 | 47 vitest | ReportButton/ReportDialog (session-remembered, code-mapped toasts), StatusBadge replaces PostStatusBadge, PendingBanner with reasons + contact; placed on posts, threads, replies, comments | | | |
-| 4g | FE admin views | done | | 96 vitest (732 total) | /admin dashboard (stats, cache clear, CSV export), queue, reports (row menu with content actions), users (role-rule gating), categories, tags (merge/delete), log; stores admin + moderation; UserMenu Admin link; admin en.json keys landed in 0f3c724 | | | |
+| 4g | FE admin views | done | 5c3c3cd | 96 vitest (732 total) | /admin dashboard (stats, cache clear, CSV export), queue, reports (row menu with content actions), users (role-rule gating), categories, tags (merge/delete), log; stores admin + moderation; UserMenu Admin link; admin en.json keys landed in 0f3c724 | | | |
 | 4h | Playwright `moderation.spec.ts` | todo | | | |
 
 ### M5 — Search, i18n, a11y, FAIR, docs
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
-| 5a | search crud + endpoint | todo | | | core |
+| 5a | search crud + endpoint | done | 4e5ad74 | 37 pytest | core. FTS OR title ILIKE OR per-word strict_word_similarity; title hit +1.0 rank; UNION ALL paginated in SQL, ≤4 statements; ts_headline via sentinels → escaped text with <mark> only; 60/min |
 | 5b | export endpoints, Atom, sitemap | todo | | | extended |
 | 5c | FE SearchView + header search + `usePageHead` | todo | | | core |
 | 5d | accessibility pass + axe in Playwright | todo | | | core |
