@@ -1,0 +1,12 @@
+{% extends "el/_layout.html.j2" %}
+{% block title %}Νέα απάντηση στη συζήτησή σας{% endblock %}
+{% block content %}
+<h1 style="font-size:22px; margin:0 0 16px;">Νέα απάντηση στη συζήτησή σας</h1>
+<p>Γεια σας {{ display_name }},</p>
+<p>{{ actor_name }} απάντησε στη συζήτησή σας «{{ thread_title }}»:</p>
+<blockquote style="margin:0 0 16px; padding:8px 16px; border-left:4px solid #0b4f8a; color:#333333;">{{ excerpt }}</blockquote>
+<p><a href="{{ frontend_url }}{{ link_url }}" style="color:#0b4f8a; font-weight:bold;">Διαβάστε την απάντηση στην {{ app_name }}</a></p>
+{% endblock %}
+{% block notice %}
+<p style="margin:0 0 8px;">Λάβατε αυτό το μήνυμα επειδή επιλέξατε να ειδοποιείστε για απαντήσεις στις συζητήσεις σας. <a href="{{ frontend_url }}{{ settings_url }}" style="color:#0b4f8a;">Αλλάξτε τις ρυθμίσεις ειδοποιήσεων</a> για να σταματήσετε αυτά τα μηνύματα.</p>
+{% endblock %}

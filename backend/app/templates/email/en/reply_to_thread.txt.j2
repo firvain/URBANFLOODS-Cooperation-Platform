@@ -1,0 +1,11 @@
+Hello {{ display_name }},
+
+{{ actor_name }} replied to your thread “{{ thread_title }}” on the {{ app_name }}:
+
+  {{ excerpt }}
+
+Read the reply: {{ frontend_url }}{{ link_url }}
+
+You received this email because you asked to be told about replies to your threads. To stop these emails, change your notification settings: {{ frontend_url }}{{ settings_url }}
+
+{% include "en/_footer.txt.j2" %}

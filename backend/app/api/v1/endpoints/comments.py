@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Path, Query, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query, Response, status
 
 from app.api.v1.schemas.comment import (
     CommentCreate,
@@ -23,6 +23,7 @@ from app.core.rate_limit import limit
 from app.crud import audit as crud_audit
 from app.crud import comment as crud_comment
 from app.db.models import Comment
+from app.services import notifications
 
 router = APIRouter()
 
@@ -82,14 +83,20 @@ async def list_comments(
     responses=_error_responses(401, 403, 404, 422, 429),
 )
 async def create_comment(
-    post_id: PostId, body: CommentCreate, user: VerifiedUser, db: DbTx
+    post_id: PostId,
+    body: CommentCreate,
+    user: VerifiedUser,
+    db: DbTx,
+    background_tasks: BackgroundTasks,
 ) -> CommentOut:
-    """Comment on a published post. Comments are published immediately."""
+    """Comment on a published post. Comments are published immediately. The post author is
+    emailed after the commit (background task; a failure there never fails this request)."""
     post = await crud_comment.get_visible_post(db, post_id=post_id, user=user)
     comment = await crud_comment.create_comment(
         db, post=post, author=user, body_html=body.body_html
     )
     await _audit(db, actor_id=user.id, action="comment.created", comment=comment)
+    background_tasks.add_task(notifications.send_comment_notifications, comment.id)
     return CommentOut.model_validate(comment)
 
 

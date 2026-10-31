@@ -1,0 +1,1 @@
+{{ actor_name }} commented on your post “{{ post_title }}”

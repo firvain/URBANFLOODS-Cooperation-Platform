@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Path, Query, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query, Response, status
 
 from app.api.v1.schemas.reply import (
     PaginatedReplies,
@@ -24,6 +24,7 @@ from app.core.rate_limit import limit
 from app.crud import audit as crud_audit
 from app.crud import reply as crud_reply
 from app.db.models import Reply
+from app.services import notifications
 
 router = APIRouter()
 
@@ -89,10 +90,15 @@ async def list_replies(
     responses=_error_responses(401, 403, 404, 422, 423, 429),
 )
 async def create_reply(
-    thread_id: ThreadId, body: ReplyCreate, user: VerifiedUser, db: DbTx
+    thread_id: ThreadId,
+    body: ReplyCreate,
+    user: VerifiedUser,
+    db: DbTx,
+    background_tasks: BackgroundTasks,
 ) -> ReplyOut:
     """Reply to a published, unlocked thread, or (``parent_reply_id``) to one of its top-level
-    replies. Replies are published immediately."""
+    replies. Replies are published immediately. The thread and parent authors are emailed
+    after the commit (background task; a failure there never fails this request)."""
     thread = await crud_reply.get_visible_thread(db, thread_id=thread_id, user=user)
     reply = await crud_reply.create_reply(
         db,
@@ -102,6 +108,7 @@ async def create_reply(
         parent_reply_id=body.parent_reply_id,
     )
     await _audit(db, actor_id=user.id, action="reply.created", reply=reply)
+    background_tasks.add_task(notifications.send_reply_notifications, reply.id)
     return ReplyOut.model_validate(reply)
 
 

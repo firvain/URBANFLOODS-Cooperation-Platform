@@ -89,15 +89,15 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 3b | threads endpoints + admin pin/lock | done | 1ceb637 | 52 pytest | tag usage now counts threads too | | | |
 | 3c | replies endpoints | done | 374abf7 | 29 pytest (996 total) | one-level nesting via trigger mapped to 422; placeholders for invisible parents; merge_tags moves thread_tags | | | |
 | 3d | comments endpoints | done | 88157ae | 30 pytest | | | |
-| 3e | notification emails honouring preferences | in progress | | | |
-| 3f | FE forum views + stores | done | | 84 vitest (555 total) | threads list/detail/editor, replies tree with optimistic insert, compact editor prop, shared .content-prose | | | |
+| 3e | notification emails honouring preferences | done | | 33 pytest (1029 total) | BackgroundTasks after commit; de-dup for nested replies; no addresses in logs | | | |
+| 3f | FE forum views + stores | done | adfc8eb | 84 vitest (555 total) | threads list/detail/editor, replies tree with optimistic insert, compact editor prop, shared .content-prose | | | |
 | 3g | FE comments + notifications tab | in progress | | | |
 | 3h | Playwright `forum.spec.ts` | todo | | | |
 
 ### M4 — Moderation + admin UI
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
-| 4a | Models Report/DigestRun + migration | todo | | | |
+| 4a | Models Report/DigestRun + migration | in progress | | | |
 | 4b | `crud/moderation.py` state machine + audit | todo | | | |
 | 4c | reports endpoint + auto-hide | todo | | | |
 | 4d | moderation + admin endpoints incl. stats CSV export | todo | | | |

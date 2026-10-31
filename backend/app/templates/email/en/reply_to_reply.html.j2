@@ -1,0 +1,12 @@
+{% extends "en/_layout.html.j2" %}
+{% block title %}New reply to your reply{% endblock %}
+{% block content %}
+<h1 style="font-size:22px; margin:0 0 16px;">New reply to your reply</h1>
+<p>Hello {{ display_name }},</p>
+<p>{{ actor_name }} replied to your reply in the thread “{{ thread_title }}”:</p>
+<blockquote style="margin:0 0 16px; padding:8px 16px; border-left:4px solid #0b4f8a; color:#333333;">{{ excerpt }}</blockquote>
+<p><a href="{{ frontend_url }}{{ link_url }}" style="color:#0b4f8a; font-weight:bold;">Read the reply on the {{ app_name }}</a></p>
+{% endblock %}
+{% block notice %}
+<p style="margin:0 0 8px;">You received this email because you asked to be told about replies to your replies. <a href="{{ frontend_url }}{{ settings_url }}" style="color:#0b4f8a;">Change your notification settings</a> to stop these emails.</p>
+{% endblock %}

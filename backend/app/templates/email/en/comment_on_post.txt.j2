@@ -1,0 +1,11 @@
+Hello {{ display_name }},
+
+{{ actor_name }} commented on your post “{{ post_title }}” on the {{ app_name }}:
+
+  {{ excerpt }}
+
+Read the comment: {{ frontend_url }}{{ link_url }}
+
+You received this email because you asked to be told about comments on your posts. To stop these emails, change your notification settings: {{ frontend_url }}{{ settings_url }}
+
+{% include "en/_footer.txt.j2" %}

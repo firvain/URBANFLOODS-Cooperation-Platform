@@ -193,8 +193,9 @@ async def send_email(
     try:
         await (backend or get_backend()).send(msg)
     except Exception as exc:
+        # Never log the address: a recipient is personal data (see docs/legal/privacy-policy.md).
         structlog.get_logger(__name__).error(
-            "email.send_failed", template=template, to=to, error=type(exc).__name__
+            "email.send_failed", template=template, error=type(exc).__name__
         )
         raise
     return msg
