@@ -12,7 +12,9 @@ import re
 from typing import Any
 
 import structlog
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.db.models import AuditLog
 
@@ -67,3 +69,45 @@ async def log_action(
     db.add(entry)
     await db.flush()
     return entry
+
+
+def _escape_like(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+async def list_actions(
+    db: AsyncSession,
+    *,
+    action: str | None = None,
+    actor_id: int | None = None,
+    target_type: str | None = None,
+    skip: int = 0,
+    limit: int = 50,
+) -> tuple[int, list[AuditLog]]:
+    """``(total, rows)`` of audit rows, newest first, each with its actor loaded.
+
+    ``action`` ending in ``.`` is a prefix (``moderation.`` matches every moderation action);
+    otherwise it must match exactly.
+    """
+    conditions = []
+    if action is not None:
+        if action.endswith("."):
+            conditions.append(AuditLog.action.like(f"{_escape_like(action)}%", escape="\\"))
+        else:
+            conditions.append(AuditLog.action == action)
+    if actor_id is not None:
+        conditions.append(AuditLog.actor_id == actor_id)
+    if target_type is not None:
+        conditions.append(AuditLog.target_type == target_type)
+
+    filtered = select(AuditLog.id).where(*conditions).subquery()
+    total = (await db.execute(select(func.count()).select_from(filtered))).scalar_one()
+    rows = await db.scalars(
+        select(AuditLog)
+        .where(*conditions)
+        .options(joinedload(AuditLog.actor))
+        .order_by(AuditLog.created_at.desc(), AuditLog.id.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    return total, list(rows.unique())

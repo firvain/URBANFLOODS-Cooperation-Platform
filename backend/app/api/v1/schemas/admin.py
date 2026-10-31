@@ -8,6 +8,7 @@ from pydantic import BaseModel, field_validator
 from pydantic_core import PydanticCustomError
 
 from app.api.v1.schemas.auth import UserMe
+from app.api.v1.schemas.knowbase import KnowbaseStatus
 from app.db.enums import UserRole
 
 
@@ -38,3 +39,34 @@ class AdminUserUpdate(BaseModel):
         if value is None:
             raise PydanticCustomError("null_not_allowed", "This field cannot be null")
         return value
+
+
+# --- stats ------------------------------------------------------------------------------------
+
+
+class UserStats(BaseModel):
+    total: int
+    verified: int
+    trusted: int
+    admins: int
+    new_30d: int
+
+
+class ContentStats(BaseModel):
+    posts_published: int
+    threads_published: int
+    replies: int
+    comments: int
+    pending: int
+
+
+class AdminStats(BaseModel):
+    users: UserStats
+    content: ContentStats
+    reports_open: int
+    # The same shape as ``GET /knowbase/status``.
+    knowbase: KnowbaseStatus
+
+
+class CacheClearResult(BaseModel):
+    cleared: int

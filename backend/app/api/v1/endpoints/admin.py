@@ -14,17 +14,29 @@ Rules (each enforced in one helper, shared by the action routes and ``PATCH``):
 
 from __future__ import annotations
 
+import csv
+import io
+from collections.abc import Iterable, Sequence
+from datetime import UTC, date, datetime
 from typing import Annotated, Any, Literal
 
 import structlog
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.schemas.admin import AdminUserList, AdminUserOut, AdminUserUpdate
+from app.api.v1.schemas.admin import (
+    AdminStats,
+    AdminUserList,
+    AdminUserOut,
+    AdminUserUpdate,
+    CacheClearResult,
+)
 from app.api.v1.schemas.auth import MessageResponse
-from app.core.deps import AdminUser, DbTx
-from app.core.exceptions import AppError, error_body
+from app.api.v1.schemas.knowbase import KnowbaseStatus
+from app.core.deps import AdminUser, DbTx, Knowbase
+from app.core.exceptions import AppError, error_body, validation_error
 from app.crud import audit as crud_audit
+from app.crud import stats as crud_stats
 from app.crud import token as crud_token
 from app.crud import user as crud_user
 from app.db.enums import TokenPurpose, UserRole
@@ -274,3 +286,131 @@ async def resend_verification(user_id: int, admin: AdminUser, db: DbTx) -> Messa
         ) from None
     await _audit(db, actor=admin, action="resend_verification", target=target)
     return VERIFICATION_SENT
+
+
+# --- stats and reporting ----------------------------------------------------------------------
+
+# Start of the URBANFLOODS project: the default lower bound of the stats export.
+PROJECT_START = date(2024, 9, 1)
+FRESH_CACHE_CLASSES = ("lists", "details", "lookups")
+# Cells starting with these are formulas to spreadsheet apps; they get a leading apostrophe.
+CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+@router.get("/stats", response_model=AdminStats, responses=_error_responses(401, 403))
+async def get_stats(admin: AdminUser, db: DbTx, kb: Knowbase) -> AdminStats:
+    """Dashboard counts: users, content, pending items, open reports, and the KNOWBASE proxy
+    state (the same object as ``GET /knowbase/status``)."""
+    counts = await crud_stats.overview(db)
+    return AdminStats(**counts, knowbase=KnowbaseStatus.model_validate(kb.status()))
+
+
+@router.post(
+    "/knowbase/cache/clear", response_model=CacheClearResult, responses=_error_responses(401, 403)
+)
+async def clear_knowbase_cache(admin: AdminUser, db: DbTx, kb: Knowbase) -> CacheClearResult:
+    """Empty the KNOWBASE proxy cache (stale copies included). ``cleared`` is the number of
+    cached responses dropped (each is kept fresh and as a stale copy; counted once).
+
+    The cache lives in the memory of this backend process: the platform runs a single worker by
+    design, so this clears the only copy. With several workers it would clear one of them only.
+    """
+    cache = kb.status()["cache"]
+    cleared = max(sum(cache[name] for name in FRESH_CACHE_CLASSES), cache["stale"])
+    await crud_audit.log_action(
+        db, actor_id=admin.id, action="admin.knowbase_cache_clear", metadata={"cleared": cleared}
+    )
+    kb.clear_cache()
+    return CacheClearResult(cleared=cleared)
+
+
+def _cell(value: object) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    text = str(value)
+    return f"'{text}" if text.startswith(CSV_FORMULA_PREFIXES) else text
+
+
+def _write_section(
+    writer: Any, name: str, header: Sequence[str], rows: Iterable[Sequence[object]]
+) -> None:
+    writer.writerow([name])
+    writer.writerow(header)
+    writer.writerows([_cell(value) for value in row] for row in rows)
+
+
+def _stats_csv(data: crud_stats.ExportStats) -> str:
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    sections: list[tuple[str, Sequence[str], Iterable[Sequence[object]]]] = [
+        (
+            "users_by_country",
+            ("country", "count"),
+            [(country or "unknown", count) for country, count in data.users_by_country],
+        ),
+        (
+            "users_by_organisation",
+            ("organisation", "is_partner", "count"),
+            data.users_by_organisation,
+        ),
+        ("content", ("metric", "count"), list(data.content.items())),
+        (
+            "active_users",
+            ("metric", "count"),
+            [("contributors", data.contributors), ("logged_in", data.logged_in)],
+        ),
+        (
+            "rco87",
+            ("organisation", "is_partner", "country", "contributions"),
+            [
+                (name, is_partner, country or "unknown", count)
+                for name, is_partner, country, count in data.rco87
+            ],
+        ),
+    ]
+    for index, (name, header, rows) in enumerate(sections):
+        if index:
+            writer.writerow([])
+        _write_section(writer, name, header, rows)
+    return buffer.getvalue()
+
+
+@router.get(
+    "/stats/export.csv",
+    response_class=Response,
+    responses={
+        200: {"description": "CSV report", "content": {"text/csv": {}}},
+        **_error_responses(401, 403, 422),
+    },
+)
+async def export_stats(
+    admin: AdminUser,
+    db: DbTx,
+    from_: Annotated[date | None, Query(alias="from")] = None,
+    to: date | None = None,
+) -> Response:
+    """Reporting CSV for the days ``from``..``to`` (inclusive; defaults: project start, today).
+
+    Sections, separated by a blank line, each a name row then a header row: users registered in
+    the range by country and by organisation (free-text organisations as "Other"), published
+    content created in the range, active users (contributors, sign-ins) and RCO87 (listed and
+    free-text organisations whose members contributed). See ``crud/stats.py`` for the
+    definitions.
+    """
+    end = to or datetime.now(UTC).date()
+    start = from_ or PROJECT_START
+    if start > end:
+        raise validation_error({"query.from": "date_range_invalid"}, "from must not be after to.")
+    data = await crud_stats.export_stats(db, start=start, end=end)
+    await crud_audit.log_action(
+        db,
+        actor_id=admin.id,
+        action="admin.stats_export",
+        metadata={"from": start.isoformat(), "to": end.isoformat()},
+    )
+    filename = f"urbanfloods-cooperation-stats-{start.isoformat()}-{end.isoformat()}.csv"
+    return Response(
+        content=_stats_csv(data),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
