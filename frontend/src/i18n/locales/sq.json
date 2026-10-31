@@ -18,6 +18,9 @@
     "register": "Regjistrohu",
     "account": "Llogaria"
   },
+  "blog": {
+    "title": "Blogu"
+  },
   "auth": {
     "login": "Hyr",
     "register": "Regjistrohu",

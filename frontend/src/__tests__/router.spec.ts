@@ -26,6 +26,12 @@ describe('routes', () => {
     ['/knowbase/measures/12', 'knowbase-measure'],
     ['/knowbase/documents', 'knowbase-documents'],
     ['/knowbase/documents/34', 'knowbase-document'],
+    ['/blog', 'blog'],
+    ['/blog/category/news', 'blog-category'],
+    ['/blog/tag/nbs', 'blog-tag'],
+    ['/blog/new', 'post-new'],
+    ['/blog/rain-gardens', 'post'],
+    ['/blog/rain-gardens/edit', 'post-edit'],
     ['/this/does/not/exist', 'not-found'],
   ])('%s resolves to %s with an i18n meta.title', (path, name) => {
     const resolved = router.resolve(path)
@@ -56,6 +62,35 @@ it('the KNOWBASE routes are public, the landing is titled nav.knowbase, details 
   for (const path of ['/knowbase', '/knowbase/measures', '/knowbase/measures/1']) {
     expect(router.resolve(path).meta.auth).toBeUndefined()
   }
+})
+
+it('the blog list routes are public, titled nav.blog, and share one view', () => {
+  const router = createAppRouter(createMemoryHistory())
+  const list = router.resolve('/blog')
+  expect(list.meta.title).toBe('nav.blog')
+  expect(list.meta.auth).toBeUndefined()
+  const category = router.resolve('/blog/category/news')
+  const tag = router.resolve('/blog/tag/nbs')
+  expect(category.params.slug).toBe('news')
+  expect(tag.params.slug).toBe('nbs')
+  expect(category.meta.auth).toBeUndefined()
+  const view = list.matched[0]!.components!.default
+  expect(category.matched[0]!.components!.default).toBe(view)
+  expect(tag.matched[0]!.components!.default).toBe(view)
+})
+
+it('writing and editing posts need a verified account; reading is public', () => {
+  const router = createAppRouter(createMemoryHistory())
+  expect(router.resolve('/blog/new').meta.auth).toBe('verified')
+  const edit = router.resolve('/blog/rain-gardens/edit')
+  expect(edit.meta.auth).toBe('verified')
+  expect(edit.params.slug).toBe('rain-gardens')
+  expect(edit.matched[0]!.components!.default).toBe(
+    router.resolve('/blog/new').matched[0]!.components!.default,
+  )
+  const post = router.resolve('/blog/rain-gardens')
+  expect(post.meta.auth).toBeUndefined()
+  expect(post.params.slug).toBe('rain-gardens')
 })
 
 it('the legal routes are public, titled legal.* and pass the document to LegalView', () => {
@@ -121,6 +156,11 @@ describe('navigation', () => {
   it('sets document.title from meta.title and the app title', async () => {
     await mountAt('/about')
     expect(document.title).toBe(`${t('nav.about')} | ${t('app.title')}`)
+  })
+
+  it('sets the blog page title', async () => {
+    await mountAt('/blog')
+    expect(document.title).toBe(`${t('nav.blog')} | ${t('app.title')}`)
   })
 
   it('sets the legal page titles', async () => {

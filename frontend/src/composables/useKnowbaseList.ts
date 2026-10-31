@@ -10,7 +10,11 @@ import { KB_MIN_SEARCH_LENGTH, KB_SEARCH_DEBOUNCE_MS } from '@/constants/knowbas
 import type { Page } from '@/services/members'
 
 /** `v-model` for the search input: writes `q` after a pause, follows URL changes otherwise. */
-export function useDebouncedSearch(current: () => string, commit: (q: string) => unknown) {
+export function useDebouncedSearch(
+  current: () => string,
+  commit: (q: string) => unknown,
+  delay: number = KB_SEARCH_DEBOUNCE_MS,
+) {
   const search = ref(current())
   let timer: ReturnType<typeof setTimeout> | undefined
 
@@ -20,7 +24,7 @@ export function useDebouncedSearch(current: () => string, commit: (q: string) =>
       timer = undefined
       const q = value.trim()
       if (q !== current()) void commit(q)
-    }, KB_SEARCH_DEBOUNCE_MS)
+    }, delay)
   })
 
   // The URL changed some other way (back button, "Clear filters"), unless the user is typing.

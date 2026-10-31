@@ -18,6 +18,9 @@
     "register": "Registracija",
     "account": "Račun"
   },
+  "blog": {
+    "title": "Blog"
+  },
   "auth": {
     "login": "Prijava",
     "register": "Registracija",

@@ -79,13 +79,13 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 2g | `scripts/seed_dev.py` + `npm run gen:types` | done | 8977626 | 5 pytest (857 total) | demo accounts `*@urbanfloods.example` (see backend/README.md); api-schema.ts generated (services not rewired yet) | | | |
 | 2h | FE knowbase store/views | done | bda74dc | 40 vitest | | | |
 | 2i | FE editor components (Tiptap) | done | c8f50fb | 50 vitest (399 total) | Tiptap 3.32 (already a Nuxt UI dependency, lazy chunk ≈131 kB gzip); tables skipped; happy-dom NodeIterator shim | | | |
-| 2j | FE blog views + stores | in progress | | | |
-| 2k | Playwright `blog.spec.ts` | todo | | | |
+| 2j | FE blog views + stores | done | | 72 vitest (471 total) | list/detail/editor on generated types; header collapses to burger below xl (overflow fix) | | | |
+| 2k | Playwright `blog.spec.ts` | in progress | | | |
 
 ### M3 — Forum + comments
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
-| 3a | Models Thread/Reply/Comment + migration (one-level trigger, counters) | done | | 28 pytest (885 total) | migration 0005; nesting + counter triggers | | | |
+| 3a | Models Thread/Reply/Comment + migration (one-level trigger, counters) | done | 8710d19 | 28 pytest (885 total) | migration 0005; nesting + counter triggers | | | |
 | 3b | threads endpoints + admin pin/lock | in progress | | | |
 | 3c | replies endpoints | todo | | | |
 | 3d | comments endpoints | in progress | | | |

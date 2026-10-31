@@ -26,12 +26,52 @@ declare module 'vue-router' {
   }
 }
 
+// Shared loaders: the preset blog lists and the two editor routes render the same view.
+const BlogListView = () => import('@/views/BlogListView.vue')
+const PostEditorView = () => import('@/views/PostEditorView.vue')
+
 export const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'home',
     component: () => import('@/views/HomeView.vue'),
     meta: { title: 'app.title' },
+  },
+  {
+    path: '/blog',
+    name: 'blog',
+    component: BlogListView,
+    meta: { title: 'nav.blog' },
+  },
+  {
+    path: '/blog/category/:slug',
+    name: 'blog-category',
+    component: BlogListView,
+    meta: { title: 'nav.blog' },
+  },
+  {
+    path: '/blog/tag/:slug',
+    name: 'blog-tag',
+    component: BlogListView,
+    meta: { title: 'nav.blog' },
+  },
+  {
+    path: '/blog/new',
+    name: 'post-new',
+    component: PostEditorView,
+    meta: { title: 'editor.form.titleNew', auth: 'verified' },
+  },
+  {
+    path: '/blog/:slug',
+    name: 'post',
+    component: () => import('@/views/PostDetailView.vue'),
+    meta: { title: 'post.pageTitle' },
+  },
+  {
+    path: '/blog/:slug/edit',
+    name: 'post-edit',
+    component: PostEditorView,
+    meta: { title: 'editor.form.titleEdit', auth: 'verified' },
   },
   {
     path: '/partners',

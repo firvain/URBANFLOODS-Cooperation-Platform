@@ -1,9 +1,10 @@
 /**
- * Primary navigation. Labels are i18n keys. Blog and forum join this list in the increments
- * that add their routes (M2/M3), so the header never links to a 404.
+ * Primary navigation. Labels are i18n keys. The forum joins this list in the increment that adds
+ * its routes (M3), so the header never links to a 404.
  */
 export const NAV_ITEMS = [
   { name: 'home', labelKey: 'nav.home', to: '/' },
+  { name: 'blog', labelKey: 'nav.blog', to: '/blog' },
   { name: 'partners', labelKey: 'nav.partners', to: '/partners' },
   { name: 'network', labelKey: 'nav.network', to: '/network' },
   { name: 'knowbase', labelKey: 'nav.knowbase', to: '/knowbase' },

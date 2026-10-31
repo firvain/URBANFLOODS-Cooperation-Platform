@@ -18,6 +18,9 @@
     "register": "Registrati",
     "account": "Account"
   },
+  "blog": {
+    "title": "Blog"
+  },
   "auth": {
     "login": "Accedi",
     "register": "Registrati",

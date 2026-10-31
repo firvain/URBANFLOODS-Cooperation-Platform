@@ -47,6 +47,76 @@
       "open": "Open the DSS"
     }
   },
+  "blog": {
+    "title": "Blog",
+    "intro": "News, case studies, good practices and events on flood management from partners and members of the platform.",
+    "write": "Write a post",
+    "loading": "Loading the posts…",
+    "count": "No posts | 1 post | {count} posts",
+    "empty": "No posts match these filters.",
+    "emptyAll": "No posts yet.",
+    "loadError": "The posts could not be loaded.",
+    "retry": "Try again",
+    "clearFilters": "Clear filters",
+    "pagination": "Blog pages",
+    "filters": {
+      "title": "Filter the posts",
+      "category": "Category",
+      "allCategories": "All",
+      "search": "Search",
+      "searchPlaceholder": "Title or text",
+      "locale": "Language",
+      "allLocales": "All languages",
+      "sort": "Order",
+      "sortNewest": "Newest first",
+      "sortOldest": "Oldest first",
+      "sortEvents": "Upcoming events",
+      "tag": "Tag",
+      "removeTag": "Remove the tag filter {tag}",
+      "popularTags": "Popular tags:"
+    }
+  },
+  "post": {
+    "pageTitle": "Blog post",
+    "back": "Back to the blog",
+    "notFound": "Post not found",
+    "notFoundHint": "The post does not exist, has been removed, or is not visible to you.",
+    "loadError": "The post could not be loaded.",
+    "formerMember": "Former member",
+    "updated": "updated",
+    "tags": "Tags",
+    "comments": "No comments | 1 comment | {count} comments",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleted": "The post was deleted.",
+    "deleteConfirm": {
+      "title": "Delete this post?",
+      "description": "The post will no longer be visible on the platform.",
+      "confirm": "Delete post",
+      "cancel": "Cancel"
+    },
+    "status": {
+      "pending": "Pending approval",
+      "hidden": "Hidden",
+      "deleted": "Deleted",
+      "published": "Published"
+    },
+    "statusHint": {
+      "pending": "Waiting for approval by an admin. Only you and the admins can see this post until it is approved.",
+      "rejected": "An admin did not approve this post. Only you and the admins can see it.",
+      "hidden": "This post is hidden. Only its author and the admins can see it.",
+      "deleted": "This post has been deleted."
+    },
+    "event": {
+      "label": "Event",
+      "link": "Event page"
+    },
+    "knowbase": {
+      "title": "From the KNOWBASE",
+      "measure": "Measure",
+      "document": "Document"
+    }
+  },
   "partners": {
     "title": "Partners",
     "partnershipTitle": "Partnership",
@@ -331,6 +401,15 @@
         "animated": "Animated images are not accepted.",
         "too_large_pixels": "The image has too many pixels. Resize it and try again.",
         "daily_limit": "You have reached today's upload limit. Try again tomorrow."
+      },
+      "posts": {
+        "not_found": "The post does not exist or is not visible to you.",
+        "forbidden": "You cannot change this post.",
+        "category_admin_only": "Only administrators can post in this category.",
+        "slug_taken": "Another post already uses this address."
+      },
+      "knowbase": {
+        "unavailable": "The KNOWBASE cannot be reached, so the linked items could not be checked. Please try again later."
       }
     },
     "fields": {
@@ -345,7 +424,13 @@
         "password_too_common": "This password is too common. Choose a less predictable one.",
         "email_taken": "An account with this email address already exists.",
         "password_same": "The new password must be different from the current one."
-      }
+      },
+      "missing": "This field is required.",
+      "empty": "This field cannot be empty.",
+      "string_too_short": "This text is too short.",
+      "string_too_long": "This text is too long.",
+      "archived": "This category is archived. Choose another one.",
+      "too_many": "There are too many items."
     }
   },
   "auth": {
@@ -556,6 +641,69 @@
       "measure": "Measure",
       "document": "Document",
       "limit": "You can link at most {max} KNOWBASE items."
+    },
+    "form": {
+      "titleNew": "Write a post",
+      "titleEdit": "Edit the post",
+      "backToPost": "Back to the post",
+      "title": "Title",
+      "category": "Category",
+      "categoryPlaceholder": "Choose a category",
+      "locale": "Language of the post",
+      "localeHint": "The language the post is written in.",
+      "excerpt": "Summary",
+      "excerptHint": "Optional. Shown on the blog list; without it the beginning of the text is used.",
+      "cover": "Cover image",
+      "coverHint": "Optional. Shown on the blog list and at the top of the post.",
+      "coverAdd": "Add a cover image",
+      "coverRemove": "Remove the cover image",
+      "body": "Text",
+      "tags": "Tags",
+      "tagsHint": "Press Enter or type a comma after each tag. At most {max} tags.",
+      "tagsPlaceholder": "Add a tag",
+      "event": {
+        "title": "Event",
+        "toggle": "This post announces an event",
+        "at": "Date and time",
+        "url": "Event web page",
+        "urlHint": "Optional. Starts with https:// or http://"
+      },
+      "untrustedNote": "Your first post will be reviewed by an admin before it is published.",
+      "submitCreate": "Publish",
+      "submitReview": "Send for review",
+      "submitEdit": "Save changes",
+      "cancel": "Cancel",
+      "created": "The post is published.",
+      "createdPending": "The post was sent. It will be published once an admin approves it.",
+      "saved": "The changes are saved.",
+      "unverified": "Verify your email address to write posts.",
+      "forbidden": "You cannot edit this post.",
+      "errors": {
+        "titleRequired": "Enter a title.",
+        "titleTooShort": "Use at least {min} characters.",
+        "categoryRequired": "Choose a category.",
+        "bodyRequired": "Write the text of the post.",
+        "bodyTooLong": "The text is too long. Shorten it before saving.",
+        "eventAtRequired": "Enter the date and time of the event.",
+        "eventUrlInvalid": "Enter an address that starts with https:// or http://.",
+        "knowbaseNotFound": "One of the linked KNOWBASE items could not be found. Remove it and try again.",
+        "coverInvalid": "The cover image is no longer available. Remove it or upload another one."
+      },
+      "leave": {
+        "title": "Leave without saving?",
+        "description": "Your changes to this post are not saved and will be lost.",
+        "confirm": "Leave",
+        "stay": "Keep editing"
+      },
+      "draft": {
+        "found": "You have an unsaved draft of this post.",
+        "savedAt": "Saved at {time}.",
+        "restore": "Restore the draft",
+        "discard": "Discard it"
+      }
     }
+  },
+  "common": {
+    "cancel": "Cancel"
   }
 }

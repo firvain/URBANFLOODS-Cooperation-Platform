@@ -13,9 +13,9 @@ const { isVerified } = storeToRefs(useAuthStore())
 /** The Unified DSS web app; the card is hidden when it is not configured. */
 const dss = dssUrl()
 
-/** Sections of the platform; blog (M2) and forum (M3) stay placeholders until their routes exist. */
+/** Sections of the platform; the forum (M3) stays a placeholder until its routes exist. */
 const sections: { key: string; icon: string; to?: string }[] = [
-  { key: 'blog', icon: 'i-lucide-newspaper' },
+  { key: 'blog', icon: 'i-lucide-newspaper', to: '/blog' },
   { key: 'forum', icon: 'i-lucide-messages-square' },
   { key: 'knowbase', icon: 'i-lucide-library', to: '/knowbase' },
 ]

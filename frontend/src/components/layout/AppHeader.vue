@@ -51,8 +51,9 @@ function linkAttrs(item: NavLink) {
   <!--
     Project logo (docs/branding.md): the official horizontal image, on white, never narrower than
     240 px (300 px from lg, 384 px from xl). Fixed widths + matching min-widths + max-w-none keep it from
-    shrinking; the navigation collapses into the menu instead. py-3/pe-4 plus the header height
-    (main.css) keep clear space of at least half the EU emblem height around it.
+    shrinking; the navigation collapses into the menu instead, below xl (seven items, the account
+    buttons and the language switcher do not fit beside the logo on a 1024 px laptop). py-3/pe-4
+    plus the header height (main.css) keep clear space of at least half the EU emblem height.
   -->
   <UHeader
     to="/"
@@ -60,6 +61,9 @@ function linkAttrs(item: NavLink) {
     :ui="{
       root: 'bg-white backdrop-blur-none border-b border-default',
       title: 'items-center py-3 pe-4',
+      toggle: 'lg:inline-flex xl:hidden',
+      content: 'lg:flex xl:hidden',
+      overlay: 'lg:block xl:hidden',
     }"
   >
     <template #title>
@@ -72,7 +76,7 @@ function linkAttrs(item: NavLink) {
       />
     </template>
 
-    <nav :aria-label="t('app.mainNavigation')" class="hidden items-center gap-1 lg:flex">
+    <nav :aria-label="t('app.mainNavigation')" class="hidden items-center gap-0.5 xl:flex">
       <UButton
         v-for="item in navItems"
         :key="item.name"
@@ -89,7 +93,7 @@ function linkAttrs(item: NavLink) {
     </nav>
 
     <template #right>
-      <UserMenu class="hidden lg:flex" />
+      <UserMenu class="hidden xl:flex" />
       <!-- Below sm the logo needs the room; the language switcher moves into the menu. -->
       <div class="hidden sm:block">
         <LocaleSwitcher />

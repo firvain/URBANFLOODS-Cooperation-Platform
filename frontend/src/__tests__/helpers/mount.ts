@@ -26,7 +26,7 @@ export async function mountWithApp(
   const wrapper = mount(component, {
     props,
     attachTo: document.body,
-    global: { plugins: [pinia, router, i18n, ui] },
+    global: { plugins: [pinia, router, i18n, createHead(), ui] },
   })
   mounted.push(wrapper)
   await flushPromises()
