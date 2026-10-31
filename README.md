@@ -8,6 +8,8 @@ and never modifies.
 Deliverable **D.5.1.1** of the Interreg IPA ADRION project **URBANFLOODS** (IPA-ADRION00374),
 Work Package 5, Activity 5.1. Lead partner: University of Western Macedonia (UOWM).
 
+Live at **https://cooperation.urbanfloods.app** (since 31 October 2026); deployment runbook in [docs/deployment.md](docs/deployment.md).
+
 > **Status (2026-10-31):** in development, not yet deployed. M0–M3 complete; M4 moderation and
 > admin area implemented (end-to-end spec in progress); M5 search API, exports and feeds done,
 > search UI, accessibility pass, static pages and translations under way; M6 deployment not

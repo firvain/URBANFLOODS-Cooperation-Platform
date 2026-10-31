@@ -134,12 +134,21 @@ core/                            config, security, deps, csrf, rate_limit, loggi
   verification links. axe checks from M5.
 - CI (`.github/workflows/ci.yml`) must be green before a commit is considered done.
 
-## 8. Deployment (M6, only on explicit request)
+## 8. Deployment (live since 2026-10-31)
 
-Target: same server as KNOWBASE (`ssh knowbase`, user `urbanfloods`, no passwordless sudo).
-Ports: frontend `127.0.0.1:3002`, backend `127.0.0.1:8002`, Postgres **not** published.
-Hostname `cooperation.urbanfloods.app` (Cloudflare proxied; A record exists). Host nginx + certbot
-steps need sudo and are run by the user. See `docs/deployment.md` when it exists.
+Live at https://cooperation.urbanfloods.app on the KNOWBASE server (`ssh knowbase`, user
+`urbanfloods`, no passwordless sudo). Repo clone `~/URBANFLOODS-Cooperation-Platform`, secrets in
+its `.env.prod` (mode 600, never printed or committed). Ports: frontend `127.0.0.1:3002`, backend
+`127.0.0.1:8002`, Postgres **not** published. Runbook: `docs/deployment.md`; current state and next
+steps: the last session-log entry of `PROGRESS.md`.
+
+- **Redeploy routine:** CI green on `main` first, then
+  `ssh knowbase 'cd ~/URBANFLOODS-Cooperation-Platform && ./deploy.sh'` (pull, backup, build,
+  start, wait for health; never `down`; migrations run in the backend entrypoint). Afterwards check
+  that the `urbanfloods-knowbase-*` containers are unchanged. Deploy only with the owner's go.
+- `ssh knowbase …` is allowed for Claude by a project permission rule; anything needing `sudo`
+  (host nginx, certbot) is run by the owner from commands or a script Claude prepares.
+- Nightly backups 03:15 via `scripts/backup.sh` to `~/backups/cooperation` (user crontab).
 
 ## 9. Do-not list
 
