@@ -525,8 +525,8 @@ only with explicit permission for each step. The KNOWBASE is never touched.
 - [ ] `docs/deployment.md` written, with the owner's steps: nginx site symlink,
   `certbot --nginx -d cooperation.urbanfloods.app` (the Cloudflare record may need DNS-only
   briefly), `nginx -t && systemctl reload nginx`.
-- [ ] Before and after: KNOWBASE containers `urbanfloods-knowbase-*-prod` show unchanged uptime
-  (read-only `docker ps` over `ssh knowbase`).
+- [x] Before and after: KNOWBASE containers `urbanfloods-knowbase-*-prod` show unchanged uptime
+  (read-only `docker ps` over `ssh knowbase`) — verified 2026-10-31.
 
 **After first start (with permission)**
 
