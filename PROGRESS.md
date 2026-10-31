@@ -73,12 +73,12 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 2a | Models Category/Tag/Post/Attachment/KnowbaseLink + migration (FTS, trigram) | done | 317b387 | 21 pytest | migration 0004; `sa.Computed` tsvector; seeded 9 categories |
 | 2b | `services/sanitize.py` (nh3) + `services/slugs.py` | done | a258d05 | 91 pytest | | | |
 | 2c | `services/knowbase.py` proxy + cache + `/knowbase/*` endpoints | done | 2b4e995 | 61 pytest (694 total) | | | |
-| 2d | categories + tags endpoints | done (uncommitted until 2f lands) | | 39 pytest | | | |
-| 2e | posts endpoints (visibility, trust→status, knowbase_links) | todo | | | |
-| 2f | `services/images.py` + uploads + static mount | in progress | | | |
+| 2d | categories + tags endpoints | done | 5db7103 | 39 pytest | | | |
+| 2e | posts endpoints (visibility, trust→status, knowbase_links) | in progress | | | |
+| 2f | `services/images.py` + uploads + static mount | done | a8f704e | 62 pytest (796 total) | WebP re-encode, EXIF stripped, avatars; orphan sweep + export/delete of attachments deferred to M4 | | | |
 | 2g | `scripts/seed_dev.py` + `npm run gen:types` | todo | | | |
-| 2h | FE knowbase store/views | todo | | | |
-| 2i | FE editor components (Tiptap) | todo | | | |
+| 2h | FE knowbase store/views | in progress | | | |
+| 2i | FE editor components (Tiptap) | in progress | | | |
 | 2j | FE blog views + stores | todo | | | |
 | 2k | Playwright `blog.spec.ts` | todo | | | |
 
@@ -113,7 +113,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 5b | export endpoints, Atom, sitemap | todo | | | extended |
 | 5c | FE SearchView + header search + `usePageHead` | todo | | | core |
 | 5d | accessibility pass + axe in Playwright | todo | | | core |
-| 5e | static pages + consent text | in progress | | 5e-a: 42 vitest (288 total) | 5e-a done: /terms, /privacy from docs/legal markdown via a Vite plugin that strips reviewer notes at build time; marked + dompurify added; /about, /accessibility, /open-data still to do |
+| 5e | static pages + consent text | in progress | 26107dc (5e-a) | 5e-a: 42 vitest | 5e-a done: /terms, /privacy from docs/legal markdown via a Vite plugin that strips reviewer notes at build time; marked + dompurify added; /about, /accessibility, /open-data still to do |
 | 5f | translation pass (8 locales) | todo | | | extended |
 | 5g | docs incl. `report-D5.1.1-outline.md`, admin handbook, moderation guide | todo | | | core |
 
