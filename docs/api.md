@@ -277,7 +277,7 @@ curl -s 'http://localhost:8000/api/v1/posts/?limit=5' | jq '.total, .items[].tit
 
 # signed-in write (cookie jar + CSRF header)
 curl -s -c jar -H 'Content-Type: application/json' \
-  -d '{"email":"member@urbanfloods.example","password":"Member-Dev-Pass-2026"}' \
+  -d '{"email":"giulia.romano@urbanfloods.example","password":"Urbanfloods-2026"}' \
   http://localhost:8000/api/v1/auth/login
 curl -s -b jar -H 'X-Requested-With: XMLHttpRequest' http://localhost:8000/api/v1/auth/me
 ```

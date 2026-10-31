@@ -47,15 +47,15 @@ Requires Docker.
 ```bash
 cp .env.example .env            # optional: every value has a default
 docker compose up --build
-docker compose exec backend python -m scripts.seed_dev    # demo accounts and posts
+docker compose exec backend python -m scripts.seed_dev    # demo accounts and content (--reset: start over)
 ```
 
 - Frontend: http://localhost:5173
 - API docs: http://localhost:8000/docs
 - Mailpit (captured email): http://localhost:8025
 
-Log in as `admin@urbanfloods.example` / `Admin-Dev-Pass-2026` (superadmin); the other demo
-accounts are listed in [`backend/README.md`](backend/README.md#development-seed). Running the
+Log in as `eleni.papadopoulou@urbanfloods.example` / `Urbanfloods-2026` (superadmin); the other
+demo accounts (same password) are listed in [`backend/README.md`](backend/README.md#development-seed). Running the
 backend or frontend outside Docker: see the root [`CLAUDE.md`](CLAUDE.md) (section 3).
 
 ## Stack

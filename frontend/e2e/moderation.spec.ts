@@ -21,6 +21,8 @@ import {
   NEWBIE,
   categoryBySlug,
   displayNameOf,
+  escapeRegExp,
+  searchTermOf,
   type DemoAccount,
 } from './helpers/demo'
 import { waitForEmailTo } from './helpers/mailpit'
@@ -588,8 +590,9 @@ test('6. users: the superadmin toggles trust; an admin is not offered "Make supe
 
   await admin.goto('/admin/users')
   await expect(admin.getByRole('heading', { level: 1, name: 'Users' })).toBeVisible()
-  await admin.getByRole('searchbox', { name: 'Search', exact: true }).fill('newbie')
-  await expect(admin).toHaveURL(/[?&]q=newbie(&|$)/)
+  const newbieTerm = searchTermOf(NEWBIE)
+  await admin.getByRole('searchbox', { name: 'Search', exact: true }).fill(newbieTerm)
+  await expect(admin).toHaveURL(new RegExp(`[?&]q=${escapeRegExp(newbieTerm)}(&|$)`))
   await expect(usersRow(admin, newbieName)).toHaveCount(1)
   await expect(trustedCell(admin, newbieName)).toHaveText('No')
 
@@ -612,7 +615,7 @@ test('6. users: the superadmin toggles trust; an admin is not offered "Make supe
   expect((await newbieUser(adminContext.request)).is_trusted).toBe(false)
 
   // The superadmin may promote the admin to superadmin (offered, not used)…
-  await admin.goto('/admin/users?q=editor')
+  await admin.goto(`/admin/users?q=${encodeURIComponent(searchTermOf(EDITOR))}`)
   await menuButton(admin, editorName).click()
   await expect(admin.getByRole('menuitem', { name: 'Make superadmin' })).toBeVisible()
   await admin.keyboard.press('Escape')

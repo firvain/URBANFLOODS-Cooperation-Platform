@@ -53,22 +53,27 @@ API types in `src/types/api-schema.ts` are generated, never hand-written:
 
 ## 3. Development data
 
-The e2e tests and manual testing use the development seed: four verified demo accounts and eight
-blog posts.
+The e2e tests and manual testing use the development seed: twelve demo personas covering every
+account state (one password, `Urbanfloods-2026`), eleven blog posts with comments and four forum
+threads with replies.
 
 ```bash
 docker compose up --build -d
-docker compose exec backend python -m scripts.seed_dev
+docker compose exec backend python -m scripts.seed_dev            # create what is missing
+docker compose exec backend python -m scripts.seed_dev --reset    # delete all demo data, reseed
 ```
 
-| Account | Password | Role |
-|---|---|---|
-| `admin@urbanfloods.example` | `Admin-Dev-Pass-2026` | superadmin, trusted |
-| `editor@urbanfloods.example` | `Editor-Dev-Pass-2026` | admin, trusted |
-| `member@urbanfloods.example` | `Member-Dev-Pass-2026` | member, trusted |
-| `newbie@urbanfloods.example` | `Newbie-Dev-Pass-2026` | member, not trusted (one pending post) |
+The e2e suite logs in as four of them (`frontend/e2e/helpers/demo.ts`):
 
-The seed is idempotent and refuses `ENV=prod`. Details: [backend/README.md](../backend/README.md#development-seed).
+| e2e name | Account | Role |
+|---|---|---|
+| `ADMIN` | `eleni.papadopoulou@urbanfloods.example` | superadmin, trusted |
+| `EDITOR` | `matej.kovacic@urbanfloods.example` | admin, trusted |
+| `MEMBER` | `giulia.romano@urbanfloods.example` | member, trusted |
+| `NEWBIE` | `arben.hoxha@urbanfloods.example` | member, verified, not trusted |
+
+The seed is idempotent and refuses to run unless `ENV` is `dev` or `test`. All personas and what
+each is for: [backend/README.md](../backend/README.md#development-seed).
 
 ## 4. End-to-end (Playwright)
 

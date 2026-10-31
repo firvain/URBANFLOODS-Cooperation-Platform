@@ -209,7 +209,7 @@ Run inside the backend container (`docker compose exec backend …`) or from `ba
 | `python -m app.cli digest [--force]` | send the admin digest now; prints `recipients=N items=M`; exit 1 if every email failed |
 | `python -m app.cli maintenance` | run the maintenance sweeps once; prints `step=count` per step; exit 1 if a step failed (`-1`) |
 | `alembic upgrade head` | apply database migrations (the container entrypoint does this on start) |
-| `python -m scripts.seed_dev` | development demo data only; refuses `ENV=prod` |
+| `python -m scripts.seed_dev [--reset]` | development demo data only (`--reset` deletes every `@urbanfloods.example` account and its content first); refuses unless `ENV` is `dev`/`test` |
 
 The CLI commands write audit rows with no actor.
 

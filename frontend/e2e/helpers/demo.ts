@@ -21,26 +21,39 @@ export interface DemoAccount {
   name: string
 }
 
+/** Every demo account shares one password (backend/README.md, "Development seed"). */
+const DEMO_PASSWORD = 'Urbanfloods-2026'
+
+/** Superadmin (UOWM, Greece). */
 export const ADMIN: DemoAccount = {
-  email: 'admin@urbanfloods.example',
-  password: 'Admin-Dev-Pass-2026',
-  name: 'Dev Superadmin',
+  email: 'eleni.papadopoulou@urbanfloods.example',
+  password: DEMO_PASSWORD,
+  name: 'Eleni Papadopoulou',
 }
+/** Admin (Development Centre Murska Sobota, Slovenia). */
 export const EDITOR: DemoAccount = {
-  email: 'editor@urbanfloods.example',
-  password: 'Editor-Dev-Pass-2026',
-  name: 'Dev Editor',
+  email: 'matej.kovacic@urbanfloods.example',
+  password: DEMO_PASSWORD,
+  name: 'Matej Kovačič',
 }
+/** Trusted member (Macerata Municipality, Italy): publishes directly. */
 export const MEMBER: DemoAccount = {
-  email: 'member@urbanfloods.example',
-  password: 'Member-Dev-Pass-2026',
-  name: 'Dev Member',
+  email: 'giulia.romano@urbanfloods.example',
+  password: DEMO_PASSWORD,
+  name: 'Giulia Romano',
 }
+/** Verified, untrusted member (Hydrowater-Albania): the first post waits for approval. */
 export const NEWBIE: DemoAccount = {
-  email: 'newbie@urbanfloods.example',
-  password: 'Newbie-Dev-Pass-2026',
-  name: 'Dev Newbie',
+  email: 'arben.hoxha@urbanfloods.example',
+  password: DEMO_PASSWORD,
+  name: 'Arben Hoxha',
 }
+
+/** The local part of an account's address: a search term that matches only that account. */
+export const searchTermOf = (account: DemoAccount): string => account.email.split('@')[0]
+
+/** `value` with RegExp metacharacters escaped (for URL assertions on search terms). */
+export const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /** Log in through the form; ends on the home page with the account menu in the header. */
 export async function loginViaForm(page: Page, account: DemoAccount): Promise<void> {
