@@ -125,6 +125,7 @@ export function makePostDetail(overrides: Partial<PostDetail> = {}): PostDetail 
     ],
     approved_at: null,
     hidden_reason: null,
+    deleted_at: null,
     ...overrides,
   }
 }

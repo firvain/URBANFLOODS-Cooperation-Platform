@@ -316,6 +316,28 @@ describe('ThreadDetailView', () => {
     expect(button(t('thread.delete'))).toBeDefined()
   })
 
+  it('shows an admin a deleted thread with its deletion date and the moderation menu, without Edit or Delete', async () => {
+    mockApi(
+      routes(
+        { status: 'deleted', deleted_at: '2026-10-30T15:00:00Z' },
+        makeUser({ id: 99, role: 'admin' }),
+      ),
+    )
+    const { wrapper } = await mountThread()
+    expect(wrapper.find('[data-testid="post-status"]').text()).toBe(t('post.status.deleted'))
+    const deletedAt = wrapper.find('[data-testid="deleted-at"]')
+    expect(deletedAt.attributes('datetime')).toBe('2026-10-30T15:00:00Z')
+    expect(deletedAt.text()).not.toBe('')
+    expect(button(t('moderation.menu'))).toBeDefined()
+    expect(wrapper.find(`a[href="/forum/t/${SLUG}/edit"]`).exists()).toBe(false)
+    const header = wrapper.find('article > header')
+    const headerButtons = header.findAll('button').map((b) => b.text())
+    expect(headerButtons).not.toContain(t('thread.delete'))
+    // Pin and lock answer 404 for a deleted thread, so they are not offered either.
+    expect(headerButtons).not.toContain(t('thread.admin.pin'))
+    expect(headerButtons).not.toContain(t('thread.admin.lock'))
+  })
+
   it('deletes the thread after a modal, then goes to /forum', async () => {
     const fetchMock = mockApi(routes({}, makeUser({ id: 11 }), { [DELETE_THREAD]: reply(204) }))
     const { router } = await mountThread()

@@ -155,6 +155,7 @@ class PostDetail(PostSummary):
     knowbase_links: list[KnowbaseLinkOut] = Field(default_factory=list)
     approved_at: datetime | None
     hidden_reason: HiddenReason | None
+    deleted_at: datetime | None
 
 
 class PaginatedPosts(BaseModel):

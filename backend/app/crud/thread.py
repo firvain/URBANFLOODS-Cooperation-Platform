@@ -156,8 +156,10 @@ async def list_threads(
 
 
 async def get_thread_by_slug(db: AsyncSession, *, slug: str, user: User | None) -> Thread | None:
-    """The thread with ``slug`` if ``user`` may see it."""
-    stmt = _with_relations(select(Thread).where(Thread.slug == slug, visible_filter(Thread, user)))
+    """The thread with ``slug`` if ``user`` may see it; admins also get a deleted thread (so they
+    can restore or purge it from its page)."""
+    visible = visible_filter(Thread, user, include_deleted=True)
+    stmt = _with_relations(select(Thread).where(Thread.slug == slug, visible))
     return (await db.scalars(stmt)).unique().one_or_none()
 
 

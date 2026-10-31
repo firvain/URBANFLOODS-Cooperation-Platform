@@ -224,6 +224,28 @@ async def test_list_on_pending_or_missing_thread_404(
     assert response.json() == {"total": 0, "items": []}
 
 
+async def test_list_on_deleted_thread_200_for_admin_only(
+    client, db_session, cleanup_users, cleanup_forum_categories
+):
+    user, thread_author, _, thread = await _setup(
+        db_session,
+        cleanup_users,
+        cleanup_forum_categories,
+        status=ContentStatus.DELETED,
+        deleted_at=datetime.now(UTC),
+    )
+    reply = await _reply(db_session, thread, author_id=user.id)
+    admin = await _committed(db_session, cleanup_users, factory=create_admin)
+
+    _assert_error(await client.get(_replies_url(thread.id)), 404, "threads.not_found")
+    for member in (user, thread_author):
+        await login_as(client, member)
+        _assert_error(await client.get(_replies_url(thread.id)), 404, "threads.not_found")
+
+    await login_as(client, admin)
+    assert _ids(await client.get(_replies_url(thread.id))) == [reply.id]
+
+
 async def test_list_structure_and_ordering(
     client, db_session, cleanup_users, cleanup_forum_categories
 ):
@@ -377,6 +399,25 @@ async def test_create_on_pending_thread(
     client.cookies.clear()
     await login_as(client, thread_author)
     _assert_error(await _create(client, thread.id), 422, "threads.not_published")
+
+
+async def test_nobody_can_reply_to_a_deleted_thread(
+    client, db_session, cleanup_users, cleanup_forum_categories
+):
+    user, thread_author, _, thread = await _setup(
+        db_session,
+        cleanup_users,
+        cleanup_forum_categories,
+        status=ContentStatus.DELETED,
+        deleted_at=datetime.now(UTC),
+    )
+    reply = await _reply(db_session, thread, author_id=user.id)
+    admin = await _committed(db_session, cleanup_users, factory=create_admin)
+
+    for member in (user, thread_author, admin):
+        await login_as(client, member)
+        _assert_error(await _create(client, thread.id), 404, "threads.not_found")
+        _assert_error(await _create(client, thread.id, parent=reply.id), 404, "threads.not_found")
 
 
 async def test_create_on_locked_thread_423_for_member_and_admin(

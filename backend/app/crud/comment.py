@@ -123,9 +123,12 @@ async def get_comment(db: AsyncSession, *, comment_id: int) -> Comment | None:
 
 
 async def get_visible_post(db: AsyncSession, *, post_id: int, user: User | None) -> Post:
-    """The post ``user`` may see; 404 ``posts.not_found`` otherwise."""
+    """The post ``user`` may see (admins: deleted too); 404 ``posts.not_found`` otherwise.
+
+    :func:`create_comment` re-checks without deleted posts, so nobody comments on one.
+    """
     post = await db.get(Post, post_id)
-    if post is None or not is_visible(post, user):
+    if post is None or not is_visible(post, user, include_deleted=True):
         raise post_not_found()
     return post
 

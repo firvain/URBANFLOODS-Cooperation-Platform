@@ -47,8 +47,8 @@ from tests import factories
 KB_BASE = "https://knowbase.test"
 KB_API = f"{KB_BASE}/api/v1"
 
-MEASURE_1 = {"id": 1, "title_en": "Green roofs", "title_local": "Πράσινες στέγες"}
-MEASURE_2 = {"id": 2, "title_en": "Retention basin", "title_local": None}
+MEASURE_1 = {"id": 14, "title_en": "Green roofs", "title_local": "Πράσινες στέγες"}
+MEASURE_2 = {"id": 17, "title_en": "Retention basin", "title_local": None}
 DOCUMENT_1 = {"id": 1, "name_of_document_en": "Floods Directive", "name_of_document_local": None}
 
 PASSWORD = "Urbanfloods-2026"
@@ -92,8 +92,8 @@ def kb_settings(monkeypatch) -> None:
 def upstream(kb_settings) -> Iterator[respx.MockRouter]:
     """Every request to the (test) KNOWBASE goes through this router; anything unmocked fails."""
     with respx.mock(base_url=KB_API, assert_all_called=False, assert_all_mocked=True) as router:
-        router.get("/measures/1").respond(json=MEASURE_1)
-        router.get("/measures/2").respond(json=MEASURE_2)
+        router.get("/measures/14").respond(json=MEASURE_1)
+        router.get("/measures/17").respond(json=MEASURE_2)
         router.get("/documents/1").respond(json=DOCUMENT_1)
         yield router
 
@@ -314,8 +314,8 @@ async def test_seed_content(db_session, upstream, knowbase):
     green = next(p for p in posts if p.slug == seed_dev.GREEN_ROOFS_SLUG)
     assert green.author_id == uid[MEMBER_IT] and "Sarajevo pilot" in green.body_html
     assert [(r.kb_type.value, r.kb_id) for r in await _links(db_session, green.id)] == [
-        ("measure", 1),
-        ("measure", 2),
+        ("measure", 14),
+        ("measure", 17),
     ]
 
     # The banned and the anonymised personas keep a published, attributed post.
@@ -327,7 +327,7 @@ async def test_seed_content(db_session, upstream, knowbase):
     linked = {p.id: rows for p in posts if (rows := await _links(db_session, p.id))}
     assert len(linked) == 2
     pairs = sorted((r.kb_type.value, r.kb_id) for rows in linked.values() for r in rows)
-    assert pairs == [("document", 1), ("measure", 1), ("measure", 2)]
+    assert pairs == [("document", 1), ("measure", 14), ("measure", 17)]
     titles = {r.cached_title_en for rows in linked.values() for r in rows}
     assert titles == {"Green roofs", "Retention basin", "Floods Directive"}
 

@@ -204,6 +204,24 @@ describe('PostDetailView', () => {
     expect(button(t('post.delete'))).toBeDefined()
   })
 
+  it('shows an admin a deleted post with its deletion date and the moderation menu, without Edit or Delete', async () => {
+    mockApi(
+      routes(
+        { status: 'deleted', deleted_at: '2026-10-30T15:00:00Z' },
+        { [ME]: reply(200, makeUser({ id: 99, role: 'admin' })) },
+      ),
+    )
+    const { wrapper } = await mountPost()
+    expect(wrapper.find('[data-testid="post-status"]').text()).toBe(t('post.status.deleted'))
+    const deletedAt = wrapper.find('[data-testid="deleted-at"]')
+    expect(deletedAt.attributes('datetime')).toBe('2026-10-30T15:00:00Z')
+    expect(deletedAt.text()).not.toBe('')
+    expect(button(t('moderation.menu'))).toBeDefined()
+    expect(wrapper.find(`a[href="/blog/${SLUG}/edit"]`).exists()).toBe(false)
+    const header = wrapper.find('article > header')
+    expect(header.findAll('button').map((b) => b.text())).not.toContain(t('post.delete'))
+  })
+
   it('deletes after confirming in a dialog, then goes to /blog', async () => {
     const fetchMock = mockApi(
       routes({}, { [ME]: reply(200, makeUser({ id: 11 })), [DELETE_POST]: reply(204) }),

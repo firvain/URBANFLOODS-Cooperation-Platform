@@ -3491,6 +3491,8 @@ export interface components {
             /** Approved At */
             approved_at: string | null;
             hidden_reason: components["schemas"]["HiddenReason"] | null;
+            /** Deleted At */
+            deleted_at: string | null;
         };
         /** PostSummary */
         PostSummary: {
@@ -4013,6 +4015,8 @@ export interface components {
             /** Approved At */
             approved_at: string | null;
             hidden_reason: components["schemas"]["HiddenReason"] | null;
+            /** Deleted At */
+            deleted_at: string | null;
         };
         /** ThreadSummary */
         ThreadSummary: {

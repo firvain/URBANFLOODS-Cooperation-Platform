@@ -170,8 +170,11 @@ async def list_posts(
 
 
 async def get_post_by_slug(db: AsyncSession, *, slug: str, user: User | None) -> Post | None:
-    """The post with ``slug`` if ``user`` may see it."""
-    stmt = _with_relations(select(Post).where(Post.slug == slug, visible_filter(Post, user)))
+    """The post with ``slug`` if ``user`` may see it; admins also get a deleted post (so they
+    can restore or purge it from its page)."""
+    stmt = _with_relations(
+        select(Post).where(Post.slug == slug, visible_filter(Post, user, include_deleted=True))
+    )
     return (await db.scalars(stmt)).unique().one_or_none()
 
 

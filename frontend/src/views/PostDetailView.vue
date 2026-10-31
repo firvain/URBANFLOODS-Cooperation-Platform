@@ -36,7 +36,7 @@ const { errorMessage } = useApiErrors()
 const slug = computed(() => String(route.params.slug ?? ''))
 const post = ref<PostDetail | null>(null)
 const state = ref<'loading' | 'ready' | 'not-found' | 'failed'>('loading')
-/** When an admin deleted it from the menu (the detail response has no such field). */
+/** When it was deleted (only admins can load a deleted post); updated by the moderation menu. */
 const deletedAt = ref<string | null>(null)
 
 async function load() {
@@ -45,6 +45,7 @@ async function load() {
   state.value = 'loading'
   try {
     post.value = await postsService.get(slug.value)
+    deletedAt.value = post.value.deleted_at ?? null
     state.value = 'ready'
   } catch (error) {
     state.value = error instanceof ApiError && error.status === 404 ? 'not-found' : 'failed'
@@ -97,7 +98,12 @@ usePageHead(() => {
 const isAuthor = computed(
   () => !!post.value && auth.user !== null && auth.user.id === post.value.author?.id,
 )
-const canManage = computed(() => !!post.value && (auth.isAdmin || isAuthor.value))
+/** Edit and delete for its author or an admin; a deleted post cannot be edited (admins restore
+ * or purge it from the moderation menu instead). */
+const canManage = computed(
+  () =>
+    !!post.value && post.value.status !== 'deleted' && (auth.isAdmin || isAuthor.value),
+)
 
 const publishedAt = computed(() => post.value?.published_at ?? post.value?.created_at ?? '')
 /** "Updated" only for a real edit, not the seconds between creation and publication. */

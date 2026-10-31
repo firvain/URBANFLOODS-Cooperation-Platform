@@ -51,7 +51,13 @@ SUMMARY_FIELDS = {
     "created_at",
     "updated_at",
 }
-DETAIL_FIELDS = SUMMARY_FIELDS | {"body_html", "knowbase_links", "approved_at", "hidden_reason"}
+DETAIL_FIELDS = SUMMARY_FIELDS | {
+    "body_html",
+    "knowbase_links",
+    "approved_at",
+    "hidden_reason",
+    "deleted_at",
+}
 
 
 # --- helpers ----------------------------------------------------------------------------------
@@ -216,7 +222,13 @@ async def test_author_sees_own_pending_in_list_and_detail(
     _assert_error(await client.get(f"{POSTS}{deleted.slug}"), 404, "posts.not_found")
 
 
-async def test_admin_sees_hidden_and_pending_but_not_deleted(
+async def _deleted_post(db, category: Category, **kwargs) -> Post:
+    return await _post(
+        db, category, status=ContentStatus.DELETED, deleted_at=datetime.now(UTC), **kwargs
+    )
+
+
+async def test_admin_sees_hidden_and_pending_in_list_and_deleted_only_in_detail(
     client, db_session, cleanup_users, cleanup_categories
 ):
     author = await _committed(db_session, cleanup_users)
@@ -225,7 +237,7 @@ async def test_admin_sees_hidden_and_pending_but_not_deleted(
     published = await _post(db_session, category, author_id=author.id)
     pending = await _post(db_session, category, author_id=author.id, status=ContentStatus.PENDING)
     hidden = await _post(db_session, category, author_id=author.id, status=ContentStatus.HIDDEN)
-    deleted = await _post(db_session, category, author_id=author.id, status=ContentStatus.DELETED)
+    deleted = await _deleted_post(db_session, category, author_id=author.id)
 
     await login_as(client, admin)
     listed = await client.get(POSTS, params={"category": category.slug})
@@ -233,9 +245,50 @@ async def test_admin_sees_hidden_and_pending_but_not_deleted(
 
     only_hidden = await client.get(POSTS, params={"category": category.slug, "status": "hidden"})
     assert _ids(only_hidden) == [hidden.id]
+    only_deleted = await client.get(POSTS, params={"category": category.slug, "status": "deleted"})
+    assert deleted.id not in _ids(only_deleted)
 
-    assert (await client.get(f"{POSTS}{hidden.slug}")).status_code == 200
+    hidden_detail = await client.get(f"{POSTS}{hidden.slug}")
+    assert hidden_detail.status_code == 200
+    assert hidden_detail.json()["deleted_at"] is None
+
+    # Admins can still open a deleted post (to restore or purge it from the Moderate menu).
+    detail = await client.get(f"{POSTS}{deleted.slug}")
+    assert detail.status_code == 200, detail.text
+    body = detail.json()
+    assert body["status"] == "deleted"
+    assert body["deleted_at"] is not None
+    assert datetime.fromisoformat(body["deleted_at"]) == deleted.deleted_at
+
+
+async def test_deleted_post_detail_404_for_author_member_and_anon(
+    client, db_session, cleanup_users, cleanup_categories
+):
+    author = await _committed(db_session, cleanup_users)
+    member = await _committed(db_session, cleanup_users)
+    category = await _category(db_session, cleanup_categories)
+    deleted = await _deleted_post(db_session, category, author_id=author.id)
+
     _assert_error(await client.get(f"{POSTS}{deleted.slug}"), 404, "posts.not_found")
+    for user in (author, member):
+        await login_as(client, user)
+        _assert_error(await client.get(f"{POSTS}{deleted.slug}"), 404, "posts.not_found")
+
+
+async def test_admin_cannot_edit_or_delete_a_deleted_post(
+    client, db_session, cleanup_users, cleanup_categories
+):
+    admin = await _committed(db_session, cleanup_users, factory=create_admin)
+    category = await _category(db_session, cleanup_categories)
+    deleted = await _deleted_post(db_session, category)
+
+    await login_as(client, admin)
+    _assert_error(
+        await client.patch(f"{POSTS}{deleted.id}", json={"title": "Back again"}),
+        404,
+        "posts.not_found",
+    )
+    _assert_error(await client.delete(f"{POSTS}{deleted.id}"), 404, "posts.not_found")
 
 
 async def test_status_filter_ignored_for_members(

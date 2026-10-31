@@ -247,6 +247,28 @@ async def test_list_on_pending_post_404_for_anon_200_for_author(
     assert response.json() == {"total": 0, "items": []}
 
 
+async def test_list_on_deleted_post_200_for_admin_only(
+    client, db_session, cleanup_users, cleanup_categories
+):
+    user, post_author, _, post = await _setup(
+        db_session,
+        cleanup_users,
+        cleanup_categories,
+        status=ContentStatus.DELETED,
+        deleted_at=datetime.now(UTC),
+    )
+    comment = await _comment(db_session, post, author_id=user.id)
+    admin = await _committed(db_session, cleanup_users, factory=create_admin)
+
+    _assert_error(await client.get(_comments_url(post.id)), 404, "posts.not_found")
+    for member in (user, post_author):
+        await login_as(client, member)
+        _assert_error(await client.get(_comments_url(post.id)), 404, "posts.not_found")
+
+    await login_as(client, admin)
+    assert _ids(await client.get(_comments_url(post.id))) == [comment.id]
+
+
 async def test_list_order_oldest_first_and_pagination(
     client, db_session, cleanup_users, cleanup_categories
 ):
@@ -338,6 +360,23 @@ async def test_create_on_hidden_or_missing_post_404_for_member(
 
     _assert_error(await _create(client, post.id), 404, "posts.not_found")
     _assert_error(await _create(client, 2_000_000_000), 404, "posts.not_found")
+
+
+async def test_nobody_can_comment_on_a_deleted_post(
+    client, db_session, cleanup_users, cleanup_categories
+):
+    user, post_author, _, post = await _setup(
+        db_session,
+        cleanup_users,
+        cleanup_categories,
+        status=ContentStatus.DELETED,
+        deleted_at=datetime.now(UTC),
+    )
+    admin = await _committed(db_session, cleanup_users, factory=create_admin)
+
+    for member in (user, post_author, admin):
+        await login_as(client, member)
+        _assert_error(await _create(client, post.id), 404, "posts.not_found")
 
 
 async def test_admin_cannot_comment_on_hidden_post(

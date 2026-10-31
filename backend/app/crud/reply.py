@@ -142,9 +142,12 @@ async def get_reply(db: AsyncSession, *, reply_id: int) -> Reply | None:
 
 
 async def get_visible_thread(db: AsyncSession, *, thread_id: int, user: User | None) -> Thread:
-    """The thread ``user`` may see (never a deleted one); 404 ``threads.not_found`` otherwise."""
+    """The thread ``user`` may see (admins: deleted too); 404 ``threads.not_found`` otherwise.
+
+    :func:`create_reply` re-checks without deleted threads, so nobody replies to one.
+    """
     thread = await db.get(Thread, thread_id, populate_existing=True)
-    if thread is None or not is_visible(thread, user):
+    if thread is None or not is_visible(thread, user, include_deleted=True):
         raise thread_not_found()
     return thread
 

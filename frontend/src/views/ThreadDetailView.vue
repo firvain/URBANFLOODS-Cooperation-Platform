@@ -41,7 +41,7 @@ const { errorMessage } = useApiErrors()
 const slug = computed(() => String(route.params.slug ?? ''))
 const thread = ref<ThreadDetail | null>(null)
 const state = ref<'loading' | 'ready' | 'not-found' | 'failed'>('loading')
-/** When an admin deleted it from the menu (the detail response has no such field). */
+/** When it was deleted (only admins can load a deleted thread); updated by the moderation menu. */
 const deletedAt = ref<string | null>(null)
 
 async function load() {
@@ -50,6 +50,7 @@ async function load() {
   state.value = 'loading'
   try {
     thread.value = await threadsService.get(slug.value)
+    deletedAt.value = thread.value.deleted_at ?? null
     state.value = 'ready'
   } catch (error) {
     state.value = error instanceof ApiError && error.status === 404 ? 'not-found' : 'failed'
@@ -68,7 +69,12 @@ watch(
 const isAuthor = computed(
   () => !!thread.value && auth.user !== null && auth.user.id === thread.value.author?.id,
 )
-const canManage = computed(() => !!thread.value && (auth.isAdmin || isAuthor.value))
+/** Edit and delete for its author or an admin; a deleted thread cannot be edited (admins restore
+ * or purge it from the moderation menu instead). */
+const canManage = computed(
+  () =>
+    !!thread.value && thread.value.status !== 'deleted' && (auth.isAdmin || isAuthor.value),
+)
 
 const startedAt = computed(() => thread.value?.published_at ?? thread.value?.created_at ?? '')
 
@@ -291,7 +297,7 @@ async function confirmDelete() {
             </div>
 
             <div class="flex flex-wrap gap-2">
-              <template v-if="auth.isAdmin">
+              <template v-if="auth.isAdmin && thread.status !== 'deleted'">
                 <div role="group" :aria-label="t('thread.admin.label')" class="flex gap-2">
                   <UButton
                     :icon="thread.is_pinned ? 'i-lucide-pin-off' : 'i-lucide-pin'"
