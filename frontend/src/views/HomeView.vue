@@ -15,6 +15,17 @@ const { isVerified } = storeToRefs(useAuthStore())
 const dss = dssUrl()
 
 /**
+ * Card colours follow the KNOWBASE wordmark: navy titles with the project green as the accent
+ * (green only on backgrounds and borders, per docs/branding.md and the contrast guard).
+ */
+const CARD_UI = {
+  root: 'border-t-4 border-t-secondary-500 shadow-sm',
+  header: 'bg-primary-50',
+} as const
+const ICON_DISC =
+  'inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary-500 text-white'
+
+/**
  * Sections of the platform: internal ones have a linked title (`to`), the KNOWBASE is another
  * site browsed there (user decision 2026-10-31), so like the DSS card it has a plain title and an
  * "Open" button (`external`).
@@ -61,10 +72,12 @@ usePageHead(() => ({
     <!-- Two rows of two: Blog and Forum, then the KNOWBASE and the Unified DSS (user decision). -->
     <ul class="mt-10 grid gap-6 md:grid-cols-2">
       <li v-for="section in sections" :key="section.key" :data-testid="`home-card-${section.key}`">
-        <UCard class="h-full">
+        <UCard class="h-full" :ui="CARD_UI">
           <template #header>
-            <h2 class="flex items-center gap-2 text-lg font-semibold text-highlighted">
-              <UIcon :name="section.icon" class="size-5 text-primary" aria-hidden="true" />
+            <h2 class="flex items-center gap-2 text-lg font-semibold text-primary-800">
+              <span :class="ICON_DISC"
+                ><UIcon :name="section.icon" class="size-4" aria-hidden="true"
+              /></span>
               <ULink
                 v-if="section.to"
                 :to="section.to"
@@ -94,10 +107,12 @@ usePageHead(() => ({
       </li>
 
       <li v-if="dss" data-testid="dss-card">
-        <UCard class="h-full">
+        <UCard class="h-full" :ui="CARD_UI">
           <template #header>
-            <h2 class="flex items-center gap-2 text-lg font-semibold text-highlighted">
-              <UIcon name="i-lucide-map" class="size-5 text-primary" aria-hidden="true" />
+            <h2 class="flex items-center gap-2 text-lg font-semibold text-primary-800">
+              <span :class="ICON_DISC"
+                ><UIcon name="i-lucide-map" class="size-4" aria-hidden="true"
+              /></span>
               {{ t('home.dss.title') }}
             </h2>
           </template>
