@@ -139,7 +139,7 @@ async def test_list_expertise_public(client, db_session):
     assert body["total"] == len(body["items"]) == len(SEEDED_SLUGS)
     assert [item["slug"] for item in body["items"]] == SEEDED_SLUGS
     first = body["items"][0]
-    assert set(first) == {"id", "slug", "label", "sort_order"}
+    assert set(first) == {"id", "slug", "label", "sort_order", "is_active"}
     assert first["label"] == "Hydrology"
     assert first["sort_order"] == 1
 
@@ -181,7 +181,7 @@ async def test_patch_me_sets_expertise_in_sort_order(
     assert response.status_code == 200, response.text
     expertise = response.json()["expertise"]
     assert [tag["slug"] for tag in expertise] == ["hydrology", "urban-planning", "meteorology"]
-    assert set(expertise[0]) == {"id", "slug", "label", "sort_order"}
+    assert set(expertise[0]) == {"id", "slug", "label", "sort_order", "is_active"}
     assert await _stored_tag_ids(db_session, user.id) == set(ids)
     (entry,) = await _profile_audits(db_session, user.id)
     assert entry.metadata_ == {"fields": ["expertise"]}

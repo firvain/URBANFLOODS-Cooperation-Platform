@@ -21,6 +21,8 @@ const ADMIN_PATHS = [
   '/admin/users',
   '/admin/categories',
   '/admin/tags',
+  '/admin/organisations',
+  '/admin/expertise',
   '/admin/log',
 ]
 

@@ -1,20 +1,30 @@
 /** Expertise areas: the controlled vocabulary members tag their profiles with. */
+import type { components, operations } from '@/types/api-schema'
 import { api } from './api'
 
-// TODO(gen:types): replace with components['schemas'][...] once generated (`npm run gen:types`).
-// Hand-written only because the backend contract is being built concurrently (increment 1n).
-export interface ExpertiseTag {
-  id: number
-  slug: string
-  label: string
-  sort_order: number
+export type ExpertiseTag = components['schemas']['ExpertiseTagOut']
+export type ExpertiseList = components['schemas']['ExpertiseTagList']
+export type ExpertiseTagCreate = components['schemas']['ExpertiseTagCreate']
+export type ExpertiseTagUpdate = components['schemas']['ExpertiseTagUpdate']
+export type ExpertiseListParams = NonNullable<
+  operations['list_expertise_api_v1_expertise__get']['parameters']['query']
+>
+
+const BASE = '/api/v1/expertise'
+
+/** The active tags (`include_inactive` is honoured for admins only). */
+export function listExpertise(params: ExpertiseListParams = {}): Promise<ExpertiseList> {
+  return api<ExpertiseList>(`${BASE}/`, { query: { ...params } })
 }
 
-export interface ExpertiseList {
-  total: number
-  items: ExpertiseTag[]
-}
+export const expertiseService = {
+  list: listExpertise,
 
-export function listExpertise(): Promise<ExpertiseList> {
-  return api<ExpertiseList>('/api/v1/expertise/')
+  /** Admin; the slug is derived from the label when omitted. 409 `expertise.slug_taken`. */
+  create: (payload: ExpertiseTagCreate) =>
+    api<ExpertiseTag>(`${BASE}/`, { method: 'POST', body: payload }),
+
+  /** Admin; omitted fields are kept. `is_active: false` deactivates. 409 `expertise.slug_taken`. */
+  update: (id: number, changes: ExpertiseTagUpdate) =>
+    api<ExpertiseTag>(`${BASE}/${id}`, { method: 'PATCH', body: changes }),
 }

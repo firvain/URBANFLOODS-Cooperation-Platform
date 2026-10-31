@@ -1,39 +1,18 @@
-/** Organisations (project partners and associated partners). */
+/** Organisations (project partners and associated partners): public list, admin create/update. */
+import type { components, operations } from '@/types/api-schema'
 import { api } from './api'
 
-// TODO(gen:types): replace with components['schemas'][...] once generated (`npm run gen:types`).
-// Hand-written only because the backend contract is being built concurrently (increment 1j).
-export type OrganisationType = 'PP' | 'AP' | 'other'
-
+export type OrganisationType = components['schemas']['OrganisationType']
 /** `OrganisationSummary` (embedded in `UserMe`). */
-export interface OrganisationSummary {
-  id: number
-  short_name: string
-  name: string
-  /** ISO 3166-1 alpha-2. */
-  country: string
-  type: OrganisationType
-}
-
+export type OrganisationSummary = components['schemas']['OrganisationSummary']
 /** `OrganisationOut` (the public list). */
-export interface Organisation extends OrganisationSummary {
-  website: string | null
-  is_partner: boolean
-  sort_order: number
-  member_count: number
-}
-
-export interface OrganisationList {
-  total: number
-  items: Organisation[]
-}
-
-export interface OrganisationListParams {
-  partners_only?: boolean
-  q?: string
-  skip?: number
-  limit?: number
-}
+export type Organisation = components['schemas']['OrganisationOut']
+export type OrganisationList = components['schemas']['OrganisationList']
+export type OrganisationCreate = components['schemas']['OrganisationCreate']
+export type OrganisationUpdate = components['schemas']['OrganisationUpdate']
+export type OrganisationListParams = NonNullable<
+  operations['list_organisations_api_v1_organisations__get']['parameters']['query']
+>
 
 /**
  * A user's organisation as the register and profile forms send it: a listed organisation
@@ -45,6 +24,20 @@ export interface OrganisationChoice {
   organisation_other: string | null
 }
 
+const BASE = '/api/v1/organisations'
+
 export function listOrganisations(params: OrganisationListParams = {}): Promise<OrganisationList> {
-  return api<OrganisationList>('/api/v1/organisations/', { query: params })
+  return api<OrganisationList>(`${BASE}/`, { query: { ...params } })
+}
+
+export const organisationsService = {
+  list: listOrganisations,
+
+  /** Admin. 409 `organisations.name_taken`. */
+  create: (payload: OrganisationCreate) =>
+    api<Organisation>(`${BASE}/`, { method: 'POST', body: payload }),
+
+  /** Admin; omitted fields are kept, `website: null` clears. 409 `organisations.name_taken`. */
+  update: (id: number, changes: OrganisationUpdate) =>
+    api<Organisation>(`${BASE}/${id}`, { method: 'PATCH', body: changes }),
 }

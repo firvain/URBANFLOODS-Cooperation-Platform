@@ -20,6 +20,7 @@ export const EXPERTISE: ExpertiseTag[] = LABELS.map((label, i) => ({
   slug: label.toLowerCase().replace(/[^a-z]+/g, '-'),
   label,
   sort_order: i + 1,
+  is_active: true,
 }))
 
 export const EXPERTISE_RESPONSE = { total: EXPERTISE.length, items: EXPERTISE }

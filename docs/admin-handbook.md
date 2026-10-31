@@ -2,10 +2,11 @@
 
 This handbook is for the people who run the Cooperation Platform: admins who manage accounts and
 the content catalogue, and the operator who has shell access to the server. It covers roles,
-account actions, categories and tags, the dashboard and the reporting export, the KNOWBASE
-cache, GDPR requests, email problems, logs, the command-line tools and the scheduled
-maintenance. Day-to-day content moderation is in the [moderation guide](moderation-guide.md);
-deployment will be in `docs/deployment.md` (increment M6, not written yet).
+account actions, categories, tags, organisations and expertise areas, the dashboard and the
+reporting export, the KNOWBASE cache, GDPR requests, email problems, logs, the command-line tools
+and the scheduled maintenance. Day-to-day content moderation is in the
+[moderation guide](moderation-guide.md); deployment will be in `docs/deployment.md` (increment M6,
+not written yet).
 
 Last updated: 2026-10-31
 
@@ -14,7 +15,7 @@ Last updated: 2026-10-31
 | Role | Can |
 |---|---|
 | member | read; once verified: write posts and threads (reviewed until trusted), replies, comments, report content, upload images |
-| admin | everything a member can, publish without review, moderate (queue, reports, hide/unhide/delete/restore, delete permanently), manage users (within the rules below), categories, tags, organisations, see stats and the audit log |
+| admin | everything a member can, publish without review, moderate (queue, reports, hide/unhide/delete/restore, delete permanently), manage users (within the rules below), categories, tags, organisations, expertise areas, see stats and the audit log |
 | superadmin | everything an admin can, plus grant or remove the superadmin role and ban/demote other superadmins |
 
 Account flags shown on the Users page (`/admin/users`): **verified** (email confirmed),
@@ -75,7 +76,7 @@ older links stop working. If sending fails the page shows an error (`admin.email
 to unverified members; 3 per hour). Unverified member accounts are deleted automatically after
 `UNVERIFIED_PURGE_DAYS` (30) days.
 
-## 6. Categories, tags and organisations
+## 6. Categories, tags, organisations and expertise areas
 
 ### Categories (`/admin/categories`)
 
@@ -111,18 +112,42 @@ Authors create tags by typing them. Admins can:
   and the source tag is deleted.
 - **Delete** a tag: it is removed from every post and thread.
 
-### Organisations
+### Organisations (`/admin/organisations`)
 
 The 22 project partners (lead partner, PPs and APs) are seeded by migration 0002 and shown in the
 partnership section of the About page (`/about#partnership`; the old `/partners` address
-redirects there). Members pick one of them, or "other" with a free-text name. There is no admin
-page for organisations: add or edit them through the API (`POST /api/v1/organisations/`,
-`PATCH /api/v1/organisations/{id}`) with curl, as shown in
+redirects there). Members pick one of them, or "other" with a free-text name.
+
+- The list shows every organisation, partners first (then by type and order), with its short
+  name, country, type, partner flag and number of (verified, active) members.
+- **Create** and **edit**: name (unique), short name, country, type (*Project partner*,
+  *Associated partner* or *Other*), website (an `http://` or `https://` address; empty removes
+  it), order, and *Project partnership* (shown on the About page).
+- There is no delete: members belong to organisations. Changes are audited as
+  `organisation.created` and `organisation.updated`.
+
+If the page is unavailable, the same changes can be made through the API
+(`POST /api/v1/organisations/`, `PATCH /api/v1/organisations/{id}`) with curl, as shown in
 [API calls from the command line](#api-calls-from-the-command-line). The Swagger page (`/docs`)
 does not work for this: its *Try it out* sends the session cookie but not the
 `X-Requested-With: XMLHttpRequest` header, so the CSRF check answers 403 `security.csrf` for every
 POST, PATCH or DELETE made while signed in (`backend/app/core/csrf.py` exempts only the docs
 pages themselves, not the API calls made from them).
+
+### Expertise areas (`/admin/expertise`)
+
+The 22 expertise areas members tag their profiles with (and filter the Collaboration Network by)
+are seeded by migration 0003. The page lists active and deactivated areas.
+
+- **Create** and **edit**: label (2 to 80 characters), slug (derived from the label when empty;
+  the interface translates seeded areas by slug, so a new area shows its English label in every
+  language), order.
+- **Deactivate** instead of deleting: members who have the area keep it on their profiles (and
+  can keep it when they save their profile), but nobody can pick it any more and it leaves the
+  Network filter. **Reactivate** brings it back.
+- Changes are audited as `expertise.created` and `expertise.updated` (target type
+  `expertise_tag`). The API fallback is `POST /api/v1/expertise/` and
+  `PATCH /api/v1/expertise/{id}`.
 
 ## 7. The dashboard (`/admin`)
 
@@ -251,8 +276,9 @@ The CLI commands write audit rows with no actor.
 
 ### API calls from the command line
 
-A few admin functions have no page: managing organisations, restoring or permanently deleting a
-deleted item, a reply or a comment, and deleting another member's image. Call the API with curl.
+A few admin functions have no page: restoring or permanently deleting a deleted item, a reply or
+a comment, and deleting another member's image (organisations have a page now, but the calls
+below still work as a fallback). Call the API with curl.
 Sign in once into a cookie jar, then send every POST, PATCH or DELETE with the session cookie
 **and** the `X-Requested-With: XMLHttpRequest` header (the CSRF check rejects a signed-in write
 without it). The login is rate limited like the sign-in form (10 per 15 minutes). Ids come from

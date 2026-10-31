@@ -3,7 +3,17 @@ import { createPinia, setActivePinia } from 'pinia'
 
 import { useAdminStore } from '@/stores/admin'
 import { callsTo, mockApi, reply, replyError } from './helpers/api'
-import { makeAdminUser, makeCategory, makeStats, makeTag, page, queryOf } from './helpers/admin'
+import {
+  makeAdminUser,
+  makeCategory,
+  makeExpertise,
+  makeOrganisation,
+  makeStats,
+  makeTag,
+  page,
+  queryOf,
+} from './helpers/admin'
+import { useExpertiseStore } from '@/stores/expertise'
 
 beforeEach(() => setActivePinia(createPinia()))
 
@@ -169,6 +179,106 @@ describe('admin store: categories', () => {
     await store.archiveCategory(2)
     expect(callsTo(fetchMock, 'DELETE /api/v1/categories/2')).toHaveLength(1)
     expect(store.categories[0]!.is_archived).toBe(true)
+  })
+})
+
+describe('admin store: organisations', () => {
+  const LIST = 'GET /api/v1/organisations/'
+
+  it('fetchOrganisations loads up to 200, partners first by type and sort_order', async () => {
+    const fetchMock = mockApi({
+      [LIST]: reply(
+        200,
+        page([
+          makeOrganisation({ id: 1, name: 'Zeta', type: 'other', is_partner: false }),
+          makeOrganisation({ id: 2, type: 'AP', sort_order: 1 }),
+          makeOrganisation({ id: 3, type: 'PP', sort_order: 9 }),
+        ]),
+      ),
+    })
+    const store = useAdminStore()
+    await store.fetchOrganisations()
+    expect(queryOf(callsTo(fetchMock, LIST)[0]!.url).get('limit')).toBe('200')
+    expect(store.organisations.map((o) => o.id)).toEqual([3, 2, 1])
+  })
+
+  it('fetchOrganisations flags a failure', async () => {
+    mockApi({ [LIST]: replyError(500, 'server.error') })
+    const store = useAdminStore()
+    await store.fetchOrganisations()
+    expect(store.organisationsFailed).toBe(true)
+  })
+
+  it('createOrganisation posts and adds; updateOrganisation patches and replaces', async () => {
+    const created = makeOrganisation({ id: 9, name: 'New org', short_name: 'NO' })
+    const fetchMock = mockApi({
+      'POST /api/v1/organisations/': reply(201, created),
+      'PATCH /api/v1/organisations/9': reply(200, { ...created, short_name: 'NEW' }),
+    })
+    const store = useAdminStore()
+    const payload = {
+      name: 'New org',
+      short_name: 'NO',
+      country: 'GR',
+      type: 'PP' as const,
+      website: null,
+      is_partner: true,
+      sort_order: 1,
+    }
+    await store.createOrganisation(payload)
+    expect(callsTo(fetchMock, 'POST /api/v1/organisations/')[0]!.body).toEqual(payload)
+    expect(store.organisations).toContainEqual(created)
+    await store.updateOrganisation(9, { short_name: 'NEW' })
+    expect(store.organisations.map((o) => o.short_name)).toEqual(['NEW'])
+  })
+})
+
+describe('admin store: expertise areas', () => {
+  const LIST = 'GET /api/v1/expertise/'
+
+  it('fetchExpertise asks for deactivated areas too, in sort_order', async () => {
+    const fetchMock = mockApi({
+      [LIST]: reply(
+        200,
+        page([
+          makeExpertise({ id: 2, sort_order: 5, is_active: false }),
+          makeExpertise({ id: 1, sort_order: 1 }),
+        ]),
+      ),
+    })
+    const store = useAdminStore()
+    await store.fetchExpertise()
+    expect(queryOf(callsTo(fetchMock, LIST)[0]!.url).get('include_inactive')).toBe('true')
+    expect(store.expertise.map((e) => e.id)).toEqual([1, 2])
+  })
+
+  it('updateExpertise patches, replaces the area and refreshes a loaded vocabulary', async () => {
+    const fetchMock = mockApi({
+      [LIST]: reply(200, page([makeExpertise()])),
+      'PATCH /api/v1/expertise/1': reply(200, makeExpertise({ is_active: false })),
+    })
+    const vocabulary = useExpertiseStore()
+    await vocabulary.fetch()
+    const store = useAdminStore()
+    await store.fetchExpertise()
+    const before = callsTo(fetchMock, LIST).length
+    await store.updateExpertise(1, { is_active: false })
+    expect(callsTo(fetchMock, 'PATCH /api/v1/expertise/1')[0]!.body).toEqual({ is_active: false })
+    expect(store.expertise[0]!.is_active).toBe(false)
+    expect(callsTo(fetchMock, LIST).length).toBe(before + 1)
+  })
+
+  it('createExpertise posts the payload and adds the area', async () => {
+    const created = makeExpertise({ id: 9, slug: 'drones', label: 'Drones' })
+    const fetchMock = mockApi({ 'POST /api/v1/expertise/': reply(201, created) })
+    const store = useAdminStore()
+    await store.createExpertise({ label: 'Drones', slug: null, sort_order: 0 })
+    expect(callsTo(fetchMock, 'POST /api/v1/expertise/')[0]!.body).toEqual({
+      label: 'Drones',
+      slug: null,
+      sort_order: 0,
+    })
+    expect(store.expertise).toContainEqual(created)
   })
 })
 

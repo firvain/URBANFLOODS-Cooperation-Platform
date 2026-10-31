@@ -19,6 +19,8 @@ const SECTIONS = [
   { key: 'users', to: '/admin/users', icon: 'i-lucide-users' },
   { key: 'categories', to: '/admin/categories', icon: 'i-lucide-folder-tree' },
   { key: 'tags', to: '/admin/tags', icon: 'i-lucide-tags' },
+  { key: 'organisations', to: '/admin/organisations', icon: 'i-lucide-building-2' },
+  { key: 'expertise', to: '/admin/expertise', icon: 'i-lucide-brain' },
   { key: 'log', to: '/admin/log', icon: 'i-lucide-scroll-text' },
 ] as const
 

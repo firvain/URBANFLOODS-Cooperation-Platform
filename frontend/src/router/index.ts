@@ -263,6 +263,18 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: 'admin.tags.title' },
       },
       {
+        path: 'organisations',
+        name: 'admin-organisations',
+        component: () => import('@/views/admin/AdminOrganisationsView.vue'),
+        meta: { title: 'admin.organisations.title' },
+      },
+      {
+        path: 'expertise',
+        name: 'admin-expertise',
+        component: () => import('@/views/admin/AdminExpertiseView.vue'),
+        meta: { title: 'admin.expertise.title' },
+      },
+      {
         path: 'log',
         name: 'admin-log',
         component: () => import('@/views/admin/AdminLogView.vue'),

@@ -1,7 +1,8 @@
 /**
  * Admin store: the dashboard stats, the user list and its actions, and the admin side of
- * categories and tags. Every action calls the API first and then updates the rows with the
- * server's answer (errors propagate to the view, which shows the translated `admin.*` code).
+ * categories, tags, organisations and expertise areas. Every action calls the API first and then
+ * updates the rows with the server's answer (errors propagate to the view, which shows the
+ * translated `admin.*` code).
  */
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
@@ -20,7 +21,21 @@ import {
   type CategoryOut,
   type CategoryUpdate,
 } from '@/services/categories'
+import {
+  expertiseService,
+  type ExpertiseTag,
+  type ExpertiseTagCreate,
+  type ExpertiseTagUpdate,
+} from '@/services/expertise'
+import {
+  organisationsService,
+  type Organisation,
+  type OrganisationCreate,
+  type OrganisationUpdate,
+} from '@/services/organisations'
 import { tagsService, type TagListParams, type TagOut } from '@/services/tags'
+import { useExpertiseStore } from '@/stores/expertise'
+import { useOrganisationsStore } from '@/stores/organisations'
 import { pagedList } from './pagedList'
 
 const KIND_ORDER = { blog: 0, forum: 1 } as const
@@ -29,6 +44,20 @@ const byKindAndOrder = (a: CategoryOut, b: CategoryOut) =>
   KIND_ORDER[a.kind] - KIND_ORDER[b.kind] ||
   a.sort_order - b.sort_order ||
   a.name.localeCompare(b.name)
+
+const TYPE_ORDER = { PP: 0, AP: 1, other: 2 } as const
+/** The backend's order: partners first, then PP, AP, other, then `sort_order` and name. */
+const byPartnerTypeAndOrder = (a: Organisation, b: Organisation) =>
+  Number(b.is_partner) - Number(a.is_partner) ||
+  TYPE_ORDER[a.type] - TYPE_ORDER[b.type] ||
+  a.sort_order - b.sort_order ||
+  a.name.localeCompare(b.name)
+
+const byOrderAndLabel = (a: ExpertiseTag, b: ExpertiseTag) =>
+  a.sort_order - b.sort_order || a.label.localeCompare(b.label)
+
+/** The backend caps a page of organisations at 200; the platform has a few dozen. */
+const ORGANISATIONS_LIMIT = 200
 
 export const useAdminStore = defineStore('admin', () => {
   // --- Dashboard --------------------------------------------------------------------------------
@@ -143,6 +172,88 @@ export const useAdminStore = defineStore('admin', () => {
     dropTag(id)
   }
 
+  // --- Organisations ----------------------------------------------------------------------------
+
+  const organisations = ref<Organisation[]>([])
+  const organisationsLoading = ref(false)
+  const organisationsFailed = ref(false)
+
+  async function fetchOrganisations(): Promise<void> {
+    organisationsLoading.value = true
+    organisationsFailed.value = false
+    try {
+      const { items } = await organisationsService.list({ limit: ORGANISATIONS_LIMIT })
+      organisations.value = [...items].sort(byPartnerTypeAndOrder)
+    } catch {
+      organisationsFailed.value = true
+    } finally {
+      organisationsLoading.value = false
+    }
+  }
+
+  function putOrganisation(organisation: Organisation) {
+    const rest = organisations.value.filter((o) => o.id !== organisation.id)
+    organisations.value = [...rest, organisation].sort(byPartnerTypeAndOrder)
+    // The pickers' and `/partners` cached lists are stale now; refresh the loaded ones.
+    const shared = useOrganisationsStore()
+    if (shared.allLoaded) shared.fetchAll({ force: true }).catch(() => {})
+    if (shared.partnersLoaded) shared.fetchPartners({ force: true }).catch(() => {})
+  }
+
+  async function createOrganisation(payload: OrganisationCreate): Promise<Organisation> {
+    const created = await organisationsService.create(payload)
+    putOrganisation(created)
+    return created
+  }
+
+  async function updateOrganisation(
+    id: number,
+    changes: OrganisationUpdate,
+  ): Promise<Organisation> {
+    const updated = await organisationsService.update(id, changes)
+    putOrganisation(updated)
+    return updated
+  }
+
+  // --- Expertise areas --------------------------------------------------------------------------
+
+  const expertise = ref<ExpertiseTag[]>([])
+  const expertiseLoading = ref(false)
+  const expertiseFailed = ref(false)
+
+  async function fetchExpertise(): Promise<void> {
+    expertiseLoading.value = true
+    expertiseFailed.value = false
+    try {
+      const { items } = await expertiseService.list({ include_inactive: true })
+      expertise.value = [...items].sort(byOrderAndLabel)
+    } catch {
+      expertiseFailed.value = true
+    } finally {
+      expertiseLoading.value = false
+    }
+  }
+
+  function putExpertise(tag: ExpertiseTag) {
+    const rest = expertise.value.filter((e) => e.id !== tag.id)
+    expertise.value = [...rest, tag].sort(byOrderAndLabel)
+    // The pickers' shared vocabulary is stale now; refresh it if it was loaded.
+    const vocabulary = useExpertiseStore()
+    if (vocabulary.loaded) vocabulary.fetch({ force: true }).catch(() => {})
+  }
+
+  async function createExpertise(payload: ExpertiseTagCreate): Promise<ExpertiseTag> {
+    const created = await expertiseService.create(payload)
+    putExpertise(created)
+    return created
+  }
+
+  async function updateExpertise(id: number, changes: ExpertiseTagUpdate): Promise<ExpertiseTag> {
+    const updated = await expertiseService.update(id, changes)
+    putExpertise(updated)
+    return updated
+  }
+
   return {
     stats,
     statsLoading,
@@ -166,5 +277,17 @@ export const useAdminStore = defineStore('admin', () => {
     reloadTags: tagsList.reload,
     mergeTag,
     deleteTag,
+    organisations,
+    organisationsLoading,
+    organisationsFailed,
+    fetchOrganisations,
+    createOrganisation,
+    updateOrganisation,
+    expertise,
+    expertiseLoading,
+    expertiseFailed,
+    fetchExpertise,
+    createExpertise,
+    updateExpertise,
   }
 })

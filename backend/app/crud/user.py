@@ -74,14 +74,19 @@ async def get_user_by_id(db: AsyncSession, *, user_id: int) -> User | None:
     return (await db.execute(stmt)).unique().scalar_one_or_none()
 
 
-async def _load_expertise_tags(db: AsyncSession, ids: Iterable[int]) -> list[ExpertiseTag]:
-    """The active tags for ``ids`` (duplicates collapse), in ``sort_order``. Raises ``AppError``
-    422 (``fields.expertise_ids = "not_found"``) if any id is unknown or inactive."""
+async def _load_expertise_tags(
+    db: AsyncSession, ids: Iterable[int], *, held: Iterable[ExpertiseTag] = ()
+) -> list[ExpertiseTag]:
+    """The tags for ``ids`` (duplicates collapse), in ``sort_order``. Tags in ``held`` (the
+    user's current expertise) are kept even if since deactivated; every other id must be an
+    active tag. Raises ``AppError`` 422 (``fields.expertise_ids = "not_found"``) otherwise."""
     wanted = set(ids)
-    tags = await crud_expertise.get_active_tags(db, tag_ids=wanted)
-    if len(tags) != len(wanted):
+    kept = [tag for tag in held if tag.id in wanted]
+    new_ids = wanted - {tag.id for tag in kept}
+    added = await crud_expertise.get_active_tags(db, tag_ids=new_ids)
+    if len(added) != len(new_ids):
         raise validation_error({"expertise_ids": "not_found"})
-    return tags
+    return sorted([*kept, *added], key=lambda tag: (tag.sort_order, tag.id))
 
 
 async def create_user(
@@ -165,8 +170,9 @@ async def update_profile(db: AsyncSession, *, user: User, changes: Mapping[str, 
     user (``get_user_by_id``) to see the new ``organisation`` relationship.
 
     ``expertise_ids`` replaces the user's expertise as a set (``user.expertise`` must be loaded);
-    it is reported as ``expertise``. Raises ``AppError`` 422 (``fields.expertise_ids =
-    "not_found"``) if any id is unknown or inactive.
+    it is reported as ``expertise``. Tags the user already holds may stay even if deactivated
+    since. Raises ``AppError`` 422 (``fields.expertise_ids = "not_found"``) if any other id is
+    unknown or inactive.
     """
     unknown = set(changes) - PROFILE_FIELDS
     if unknown:
@@ -180,7 +186,7 @@ async def update_profile(db: AsyncSession, *, user: User, changes: Mapping[str, 
         values["organisation_id"] = None
     tags = None
     if "expertise_ids" in values:
-        tags = await _load_expertise_tags(db, values.pop("expertise_ids"))
+        tags = await _load_expertise_tags(db, values.pop("expertise_ids"), held=user.expertise)
 
     changed = sorted(name for name, value in values.items() if getattr(user, name) != value)
     for name in changed:
