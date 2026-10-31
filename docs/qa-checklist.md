@@ -5,7 +5,7 @@ A person or a fresh Claude session can follow it from start to finish. It covers
 suites do not: real browsers, real emails, every role and account state, accessibility by hand,
 layout, and the AF commitments. Run it once before M6 and again after any large change.
 
-Last updated: 2026-10-31
+Last updated: 2026-10-31 (first full run the same day; results in section 7)
 
 Conventions: each scenario has an id (`V-03`), the account to use, steps and the expected result.
 **AF** names the commitment it evidences (ids in section 5). `[CHECK]` marks something the source
@@ -131,10 +131,10 @@ Run all of them on a clean tree with the seed freshly reset. Expected counts as 
 | E2E a11y | `cd frontend && E2E_A11Y=1 npm run e2e -- a11y` | 4 passed, 0 axe violations (23 page scans per PROGRESS 5d) |
 | CI | GitHub Actions on `main` | green |
 
-- [ ] Backend green
-- [ ] Frontend unit, lint, type-check and build green
-- [ ] E2E green (stack up, seed reset, rate limits **on**, no override file)
-- [ ] E2E a11y green
+- [x] Backend green (1621, 2026-10-31)
+- [x] Frontend unit, lint, type-check and build green (1038 vitest; editor in its own chunk)
+- [x] E2E green (32 passed, 2026-10-31; stack up, seed reset, rate limits **on**, no override file)
+- [x] E2E a11y green (4 passed, 0 violations; run it after `docker compose restart backend`, or the three signed-in scans fail on 429s right after a full run)
 - [ ] CI green on the commit under test
 
 Notes:
@@ -143,8 +143,6 @@ Notes:
   because the bucket refills during the run. Do not run it twice within about 15 minutes; if you
   must, run `docker compose restart backend` first. Reset the seed before the run: blog test 1 and
   moderation test 2 assume the seeded state. See [testing.md](testing.md#rate-limit-budget-per-full-run).
-- `docs/testing.md` still lists moderation as 6 tests and a11y as 3, and says 4h is uncommitted.
-  The spec files have 8 and 4. Update testing.md. [CHECK]
 
 **What a green result proves:** the API rules (authorisation for every mutating endpoint,
 moderation state machine, sanitisation, upload validation, GDPR export and deletion, rate limits,
@@ -168,7 +166,7 @@ banned, anonymised, directory-hidden), account deletion in the UI, and anything 
 | V-01 | Open `/` | Hero "URBANFLOODS COOPERATION PLATFORM", the "Project at a Glance" card, cards for Blog, Forum, URBANFLOODS KNOWBASE (links out to knowbase.urbanfloods.app) and URBANFLOODS DSS (links out to https://urbanfloods.finki.ukim.mk/), latest content. Nav: Home · Blog · Forum · KNOWBASE · Network · Unified DSS · About. No suggested-collaborators widget for visitors | AF-4, AF-5, M-2 |
 | V-02 | Open `/about`, then `/partners` | About shows the project facts and the `#partnership` section: lead-partner card, partner tiles, associated partners, logos and flags. `/partners` redirects to `/about#partnership` and scrolls below the sticky header | AF-6 |
 | V-03 | `/blog`: use the category chips, a tag link (`/blog/tag/<slug>`), a category URL (`/blog/category/news`), the search box and pagination | Only published posts appear. Amra's pending post is absent. The filters update the URL and survive a reload. The Events order shows upcoming events | AF-4, M-4 |
-| V-04 | Open the green-roofs post | Body, cover, tags, author card, comments (read only) and KNOWBASE link cards for measures 14 and 17. No comment form; a prompt to sign in instead. Report button absent or asks you to sign in [CHECK] | AF-2, AF-4 |
+| V-04 | Open the green-roofs post | Body, cover, tags, author card, comments (read only) and KNOWBASE link cards for measures 14 and 17. No comment form; a prompt to sign in instead. Report button absent for visitors | AF-2, AF-4 |
 | V-05 | Click a KNOWBASE link card → `/knowbase/measures/14`. Check its "Mentioned in" list and "Open in the KNOWBASE". Repeat for `/knowbase/documents/1` (from the Reading guide post) | The item page renders the proxied measure/document fields. "Mentioned in" lists the platform posts that link to it. "Open in the KNOWBASE" goes to knowbase.urbanfloods.app. `/knowbase/measures/999999` shows "Measure not found" with a hint | AF-2, AF-3 |
 | V-06 | Open the Greek post | The article has `lang="el"` (check in devtools). The rest of the UI stays in the current locale | AF-11 |
 | V-07 | `/forum`, a category (`/forum/c/general`), the pinned thread, a thread with a nested reply | The pinned thread is first. Replies nest one level. No reply form for visitors | AF-5 |
@@ -212,7 +210,7 @@ Use a real inbox for the real-mail variant (section 1.3). Otherwise use any addr
 | T-08 | Account → Notifications: turn "reply to my thread" off; have Ivana reply to your thread | No email. Turn it on again: the next reply emails you. The "moderation decisions" switch is present | AF-5 |
 | T-09 | Account → Data → Export | A JSON download (`format_version` 2) with your profile, expertise, preferences, posts/threads/replies/comments (all statuses), attachments as URLs, reports you made, sessions and audit rows. No password hashes, no tokens, no admin ids | AF-9 |
 | T-10 | Account → Uploads | Lists your images with "used in". You cannot delete an image that a post uses (error message). An unused image can be deleted | AF-9 |
-| T-11 | Upload rejection (in the editor image dialog): a 6 MB JPEG, a PDF renamed `.jpg`, an animated GIF/WebP, a huge-pixel PNG | Translated errors for `uploads.too_large`, `uploads.invalid_image` / `uploads.unsupported_type`, `uploads.animated` and `uploads.too_large_pixels`. A phone JPEG (MPO) is accepted | AF-9 |
+| T-11 | Upload rejection (in the editor image dialog): a 6 MB JPEG, a PDF renamed `.jpg`, an animated GIF/WebP, a huge-pixel PNG | Translated errors for `uploads.too_large`, `uploads.invalid_image` / `uploads.unsupported_type`, `uploads.animated` and `uploads.too_large_pixels`. A phone JPEG (MPO) is accepted. An animated GIF is refused as `uploads.unsupported_type` (GIF is never accepted); `uploads.animated` needs an animated WebP | AF-9 |
 | T-12 | `/network`: filter by expertise, country, organisation; open Giulia's own card and Ivana's profile `/u/<id>` | Filters work. Giulia's email shows (she opted in). Admin badges appear on admin profiles and cards. Profiles list published contributions with counts and links to author-filtered blog/forum lists | AF-6, M-3 |
 | T-13 | Header user menu → Log out | Signed out. The `uf_session` cookie is gone | AF-1 |
 | T-14 | **Throwaway account only** (the N-01 account): Account → Data → Delete account. First try a wrong password, then the right one | Wrong password: refused. Right one: signed out. Its content now shows "Deleted user". Logging in with the old address fails. The avatar and unused uploads are removed. Mailpit receives no further mail for it | AF-9 |
@@ -236,7 +234,7 @@ Use a real inbox for the real-mail variant (section 1.3). Otherwise use any addr
 | A-13 | Digest: `docker compose exec backend python -m app.cli digest --force` | Prints `recipients=N items=M`. Mailpit: "[URBANFLOODS Cooperation] Moderation digest: … pending, … reports" to the admins whose digest switch is on, with links to `/admin/queue` and `/admin/reports`. Without `--force` and nothing pending: no email | AF-10 |
 | A-14 | `docker compose exec backend python -m app.cli maintenance` | Prints `step=count` per step, exit 0 | AF-10 |
 | A-15 | `/admin/log`: chips `moderation.`, `admin.`, `report.`, `auth.`; filter by actor and target type | Every action from A-01–A-14 is present with its actor (empty for system and CLI actions). Reasons are visible only here | AF-10 |
-| A-16 | Organisations via the API: the handbook says to use `POST/PATCH /api/v1/organisations/` from `/docs` while signed in | Swagger requests carrying the session cookie but no `X-Requested-With` header should get 403 `security.csrf`. Confirm and record; the handbook may need another method (curl with the header) [CHECK] | AF-10 |
+| A-16 | Organisations via the API: the handbook says to use `POST/PATCH /api/v1/organisations/` from `/docs` while signed in | Swagger requests carrying the session cookie but no `X-Requested-With` header get 403 `security.csrf` (confirmed 2026-10-31); the handbook §6 shows curl with the header | AF-10 |
 
 ### 3.5 Superadmin (Eleni)
 
@@ -388,9 +386,7 @@ curl -s -c /tmp/uf.jar -H 'Content-Type: application/json' -H 'X-Requested-With:
     KNOWBASE-dependent requests wait about 5 s.
   - [ ] Stale copies (the KNOWBASE fails *after* the cache is warm) cannot be simulated this way,
     because recreating the backend clears the cache. The `X-Knowbase-Cache: stale` path is covered by
-    `backend/tests/test_knowbase_proxy.py`. The admin handbook §8 says the pages show a notice
-    when cached data is used, but only the admin dashboard reads the cache state in the frontend
-    since the library views were removed [CHECK].
+    `backend/tests/test_knowbase_proxy.py`. The admin handbook §8 says that only the admin dashboard shows the KNOWBASE state (confirmed 2026-10-31).
 
   Remove the override, then run `docker compose up -d backend` again.
 
@@ -403,31 +399,31 @@ AF = application form (Activity 5.1, D.5.1.1, Output 5.1 and the horizontal prin
 
 | Id | Commitment (source) | Verified in | Result | Notes |
 |---|---|---|---|---|
-| AF-1 | Access "upon registration" (A5.1). Reading: public read, registration to participate (PLAN "Access model") | N-01–N-07, V-14, E-01, E-07 | | |
-| AF-2 | Categorised information: measures, actions, policy recommendations from the KNOWBASE (A5.1) | V-04, V-05, T-01 | | Browsing by country happens on the KNOWBASE itself (decision 2026-10-31) |
-| AF-3 | Built on top of the KNOWBASE, which stays untouched (D.5.1.1, PLAN) | V-05, A-11, 4.6 | | |
-| AF-4 | Blog format (A5.1) | V-03, V-04, T-01–T-03, A-09, A-10 | | |
-| AF-5 | Dynamic forum for interaction, learning, collaboration (A5.1) | V-07, N-06, T-04–T-08, A-05 | | |
-| AF-6 | Transnational exchange among PPs and stakeholders; Output 5.1 RCO87 target 22 organisations | V-02, N-04, T-12, A-12, E-05 | | |
-| AF-7 | Accessibility: screen readers, easy navigation, alt text, clear presentation, feedback (horizontal principles) | 4.1, T-01, V-10, V-15, E-06 | | |
-| AF-8 | FAIR: discoverable, clear access, open formats, documentation and metadata (sustainability section) | V-10, V-12, V-13 | | |
-| AF-9 | GDPR; no sensitive personal data | V-09, N-08, T-09–T-11, T-14, A-04, E-03, E-04, 4.5 | | |
-| AF-10 | Durability with few admins; MoU long-term cooperation (A5.3, sustainability) | T-07, A-01–A-16, S-01–S-06, E-02 | | |
-| AF-11 | Information exchange across diverse groups (multilingual) | V-06, V-11, 4.3 | | |
-| AF-12 | Platform reachable from the project website | outside the platform | | link from urbanfloods.interreg-ipa-adrion.eu [CHECK] |
-| AF-13 | Succinct report on development and functionality (D.5.1.1) | [report-D5.1.1-outline.md](report-D5.1.1-outline.md) | | see doc drift below |
-| M-1 | WCAG 2.1 AA | 4.1 | | |
-| M-2 | Link to the Unified DSS | V-01 | | link only, no API |
-| M-3 | Matchmaking: expertise, directory, suggested collaborators, opt-in email | N-04, T-12 | | |
-| M-4 | Events / webinars | V-03, T-01 | | |
-| M-5 | JSON-LD metadata | V-13 | | |
-| M-6 | Open export formats (CSV, JSON; **XML**) | V-12 | | XML bulk export not implemented (Atom + sitemap only) |
-| M-7 | DOI | — | | process at project end (Zenodo deposit) [CHECK] |
-| M-8 | RCO87 tracking | A-12 | | |
-| M-9 | Documentation, Docker, automated backups | section 2, section 6 | | backups in M6 (6a todo) |
-| M-10 | Responsive UI for browser and mobile | 4.2 | | no native app |
-| M-11 | Nine project locales | V-11, 4.3 | | |
-| M-12 | Search | V-08 | | posts and threads; not members or KNOWBASE |
+| AF-1 | Access "upon registration" (A5.1). Reading: public read, registration to participate (PLAN "Access model") | N-01–N-07, V-14, E-01, E-07 | pass | N-01–N-03, N-08, T-14 via the API and Mailpit; V-14 and E-01 in the browser; weak password refused (`auth.password_too_common`) |
+| AF-2 | Categorised information: measures, actions, policy recommendations from the KNOWBASE (A5.1) | V-04, V-05, T-01 | pass | Browsing by country happens on the KNOWBASE itself (decision 2026-10-31). V-04/V-05 with live titles for measures 14 and 17; browsing by country happens on the KNOWBASE itself (decision 2026-10-31) |
+| AF-3 | Built on top of the KNOWBASE, which stays untouched (D.5.1.1, PLAN) | V-05, A-11, 4.6 | pass | Proxy only; the outage scenario (4.6) degrades gracefully: stored link titles, error + Try again, dashboard Unreachable, picker message |
+| AF-4 | Blog format (A5.1) | V-03, V-04, T-01–T-03, A-09, A-10 | pass | V-03 filters survive a reload; A-09 archive hides from the public list; A-10 merge/delete; editor sanitisation X-S2 |
+| AF-5 | Dynamic forum for interaction, learning, collaboration (A5.1) | V-07, N-06, T-04–T-08, A-05 | pass | V-07, A-05 pin/lock in the browser; T-04–T-08 by `forum.spec.ts` |
+| AF-6 | Transnational exchange among PPs and stakeholders; Output 5.1 RCO87 target 22 organisations | V-02, N-04, T-12, A-12, E-05 | pass | Directory, expertise filter (`?expertise_ids=`), admin badge, free-text organisation on cards; `rco87` CSV lists City of Zenica once Amra is approved |
+| AF-7 | Accessibility: screen readers, easy navigation, alt text, clear presentation, feedback (horizontal principles) | 4.1, T-01, V-10, V-15, E-06 | partial | Skip link, focus on h1, Esc, toolbar `aria-pressed`, dialog focus return, reduced motion, 390/768/1280 px all pass; axe 0 violations. Fixed: KNOWBASE item pages had no h1 in the load-error state. Open: hover contrast of solid buttons (statement §3.1); text-only zoom to check by hand in Firefox |
+| AF-8 | FAIR: discoverable, clear access, open formats, documentation and metadata (sustainability section) | V-10, V-12, V-13 | pass | Exports, feeds, sitemap, robots, data package (CC BY 4.0), JSON-LD on home/post/thread; no email or role in any public payload |
+| AF-9 | GDPR; no sensitive personal data | V-09, N-08, T-09–T-11, T-14, A-04, E-03, E-04, 4.5 | pass | Export v2 complete, deletion flow, sessions revoke, CSRF, uploads (WebP, nosniff, no EXIF), no secrets in the backend log. Note: the uvicorn access log keeps admin user-search URLs (`/admin/users/?q=<email>`) |
+| AF-10 | Durability with few admins; MoU long-term cooperation (A5.3, sustainability) | T-07, A-01–A-16, S-01–S-06, E-02 | pass | Queue, approve email, Moderate menu incl. deleted items (bug a fixed), role gating (A-08, S-01–S-06), ban/unban, CLI promote, digest and maintenance CLI, audit chips |
+| AF-11 | Information exchange across diverse groups (multilingual) | V-06, V-11, 4.3 | pass | Nine locales switch at once, persist, Cyrillic sr/mk, `lang` per article; no overflow at 390 px in el/sq/mk |
+| AF-12 | Platform reachable from the project website | outside the platform | n/a | link from urbanfloods.interreg-ipa-adrion.eu [CHECK]. link from the project website to add at launch [CHECK] |
+| AF-13 | Succinct report on development and functionality (D.5.1.1) | [report-D5.1.1-outline.md](report-D5.1.1-outline.md) | partial | see doc drift below. outline exists; write after M6 |
+| M-1 | WCAG 2.1 AA | 4.1 | partial | see AF-7 |
+| M-2 | Link to the Unified DSS | V-01 | pass | link only, no API. link only |
+| M-3 | Matchmaking: expertise, directory, suggested collaborators, opt-in email | N-04, T-12 | pass | suggested collaborators shown to Giulia on Home |
+| M-4 | Events / webinars | V-03, T-01 | pass | Events order shows the webinar first |
+| M-5 | JSON-LD metadata | V-13 | pass | WebSite, Article, DiscussionForumPosting |
+| M-6 | Open export formats (CSV, JSON; **XML**) | V-12 | partial | XML bulk export not implemented (Atom + sitemap only) |
+| M-7 | DOI | — | n/a | process at project end (Zenodo deposit) [CHECK]. Zenodo deposit at project end [CHECK] |
+| M-8 | RCO87 tracking | A-12 | pass | A-12 |
+| M-9 | Documentation, Docker, automated backups | section 2, section 6 | partial | backups in M6 (6a todo) |
+| M-10 | Responsive UI for browser and mobile | 4.2 | pass | no native app. 390/768/1280/1536 px, burger below xl |
+| M-11 | Nine project locales | V-11, 4.3 | pass | V-11 |
+| M-12 | Search | V-08 | pass | posts and threads; not members or KNOWBASE. typo `drainige` finds the drainage post; count announced; filters in the URL |
 
 ### 5.1 Known limitations (PROGRESS §4, PLAN M5x "Deferred by decision", session log)
 
@@ -452,6 +448,7 @@ decision or an increment before launch).
 | Orphan-upload and usage detection by substring scan (fine at current scale) | | |
 | Public categories list cached per browser session | | |
 | Home suggested-collaborator cards lack the admin badge | | |
+| Author links of directory-hidden members lead to a 404 profile (the content payload does not carry the directory flag) | to decide | found in E-04 |
 | Hover contrast of solid success/warning buttons ~4.1:1 | | |
 | Greek email templates only for two messages; others English | | |
 | Single backend worker (in-memory rate limits, cache, scheduler) | | |
@@ -538,3 +535,32 @@ only with explicit permission for each step. The KNOWBASE is never touched.
   approve → email; X-S4 Secure cookie; X-S8 headers; Turnstile renders; `/feeds/posts.atom`,
   `/sitemap.xml`, `/robots.txt` served by the backend; `curl -sI https://cooperation.urbanfloods.app`
   returns 200.
+
+## 7. Results of the run of 2026-10-31
+
+Dev stack, seed reset, Chromium via Playwright for the browser scenarios, curl for the API-only
+ones, Mailpit for every email. Evaluation sheet filled in section 5.
+
+**Fixed during the run (one commit each):** the seed linked KNOWBASE measures 1 and 2 (id 1 does
+not exist upstream; now 14 and 17) · bug (a) admins can open deleted posts and threads to restore
+or purge them · bug (b) `/confirm-email` page and the Email address section of the account page ·
+the KNOWBASE item pages had no `h1` in the load-error state.
+
+| Scenario | Result | Notes |
+|---|---|---|
+| V-01–V-15 | pass | V-14: signed-out visitors are sent to `/login?next=` for the admin URLs; a signed-in member sees the 404 page (wording corrected) |
+| N-01–N-08 | pass | via the API and Mailpit; weak password → `auth.password_too_common`; verification link single-use; welcome mail; revoked session → 401 |
+| T-09, T-10, T-11, T-12, T-13 | pass | export v2 complete without secrets; unused image deleted, used image refused; the five upload rejections; directory filter, mailto for the opted-in email, admin badge, free-text organisation card |
+| T-01–T-08 | pass | by `blog.spec.ts` and `forum.spec.ts` (image → WebP, cover, KNOWBASE link, edit guard, nesting, notifications) plus the toolbar and image-dialog checks by hand |
+| T-14 | pass | wrong password 400, right one 204, login afterwards 401, no mail or log line with the address |
+| A-01, A-05, A-06, A-08, A-09, A-10, A-11, A-12, A-13, A-14, A-15, A-16 | pass | approve → author email with the newly-trusted sentence; `user.trust` in the log; pin/lock; row menus gated; archive hides from the public list; tag delete/merge; CSV with the five sections and a `rco87` row for City of Zenica; CSRF without the header confirmed |
+| A-02, A-03, A-04 | pass | A-04 by hand (delete → reload → Deleted badge with date → Restore); reports, auto-hide, dismiss, unhide and purge by `moderation.spec.ts` |
+| A-07 | pass | ban → login `auth.account_disabled`, unban keeps role and trust; CLI promote |
+| S-01–S-06 | pass | last-superadmin deletion and self-demotion refused (409); promote with `?to=superadmin`, demote one step at a time; CLI promote without actor |
+| E-01–E-07 | pass | E-04: Nikola absent from the directory and his profile answers 404 to others, content still attributed. Follow-up: the author link on his content still points at the 404 profile; E-07 covered by the untrusted-member e2e tests |
+| 4.1 accessibility | partial | skip link, focus on h1, Esc, toolbar `aria-pressed`, dialog focus trap and return, reduced motion (no animations), axe 0 violations. Open: hover contrast (statement §3.1); text-only zoom 200 % at 1280 px to confirm by hand in Firefox (Tailwind breakpoints are rem-based, so the header should collapse; the simulated check cannot tell). Screen-reader spot check still to do by a person |
+| 4.2 responsiveness | pass | no horizontal scroll at 390, 768, 1280 and 1536 px on home, blog, post, editor, thread, network, about, account, register; toolbar wraps at 390 px |
+| 4.3 locales | pass | nine locales switch and persist; `lang` follows; no raw keys; no overflow at 390 px in el, sq, mk. Partner confirmation of the flagged translations still open |
+| 4.4 email | pass | verify, welcome, reset, reply, approval, digest and change-email checked: `From noreply@`, `Reply-To urbanfloods@uowm.gr`, HTML + text, EU line, absolute links, opt-out where relevant; the rejection mail names the contact address without the reason (by `test_moderation_notifications.py`) |
+| 4.5 security | pass | X-S1, X-S2, X-S3 (429 with `Retry-After: 60` and `rate.limited`), X-S4 (HttpOnly, Lax), X-S5 (WebP, nosniff, no EXIF), X-S6, X-S7; X-S8 after M6. Accepted: the uvicorn access log keeps query strings, so admin user searches by email (`/admin/users/?q=`) appear in the server log |
+| 4.6 performance and outage | pass | every page under 1.3 s in dev; the editor is a separate 400 kB chunk in the production build; KNOWBASE unreachable: stored titles, error + Try again (now with an h1), dashboard Unreachable with the error, picker "could not be searched", the rest of the site unaffected |
