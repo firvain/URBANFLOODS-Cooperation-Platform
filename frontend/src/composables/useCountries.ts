@@ -2,6 +2,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { PROJECT_COUNTRIES } from '@/constants/auth'
+import { KNOWBASE_COUNTRY_ALIASES } from '@/constants/knowbase'
 
 /** Sentinel select value: "my country is not in the list" (sent as `null`). */
 export const OTHER_COUNTRY = 'other'
@@ -23,8 +24,10 @@ export function useCountries() {
   })
 
   function countryName(code: string): string {
+    const upper = code.toUpperCase()
+    const iso = KNOWBASE_COUNTRY_ALIASES[upper] ?? upper
     try {
-      return displayNames.value?.of(code.toUpperCase()) ?? code
+      return displayNames.value?.of(iso) ?? code
     } catch {
       return code
     }
