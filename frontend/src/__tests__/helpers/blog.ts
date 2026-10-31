@@ -63,6 +63,7 @@ export const AUTHOR = {
     type: 'PP' as const,
   },
   avatar_url: null,
+  has_profile: true,
 }
 
 export const COVER = {

@@ -182,7 +182,13 @@ async def test_anon_sees_only_published(client, db_session, cleanup_users, clean
     }
     assert item["author"]["id"] == author.id
     assert item["author"]["display_name"] == author.display_name
-    assert set(item["author"]) == {"id", "display_name", "organisation", "avatar_url"}
+    assert set(item["author"]) == {
+        "id",
+        "display_name",
+        "organisation",
+        "avatar_url",
+        "has_profile",
+    }
     assert item["tags"] == []
     assert item["cover"] is None
     assert "body_html" not in item
@@ -342,6 +348,27 @@ async def test_detail_shape(client, db_session, cleanup_users, cleanup_categorie
         "height": cover.height,
         "alt_text": "A basin",
     }
+
+
+async def test_author_has_profile_follows_directory_opt_out(
+    client, db_session, cleanup_users, cleanup_categories
+):
+    author = await _committed(db_session, cleanup_users)
+    category = await _category(db_session, cleanup_categories)
+    post = await _post(db_session, category, author_id=author.id)
+
+    detail = await client.get(f"{POSTS}{post.slug}")
+    assert detail.json()["author"]["has_profile"] is True
+    listing = await client.get(POSTS, params={"category": category.slug})
+    assert listing.json()["items"][0]["author"]["has_profile"] is True
+
+    author.show_in_directory = False
+    await db_session.commit()
+
+    detail = await client.get(f"{POSTS}{post.slug}")
+    assert detail.json()["author"]["has_profile"] is False
+    listing = await client.get(POSTS, params={"category": category.slug})
+    assert listing.json()["items"][0]["author"]["has_profile"] is False
 
 
 # --- list: filters, search, sort, pagination --------------------------------------------------

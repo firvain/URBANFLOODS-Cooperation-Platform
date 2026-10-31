@@ -81,7 +81,7 @@ const hasActions = computed(
           />
           <span data-testid="reply-author">
             <ULink
-              v-if="reply.author"
+              v-if="reply.author?.has_profile"
               :to="`/u/${reply.author.id}`"
               raw
               class="font-medium text-primary-700 underline-offset-2 hover:underline focus-visible:underline"

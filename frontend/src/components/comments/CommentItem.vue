@@ -60,7 +60,7 @@ const canReport = useCanReport(() => ({
         />
         <span data-testid="comment-author">
           <ULink
-            v-if="comment.author"
+            v-if="comment.author?.has_profile"
             :to="`/u/${comment.author.id}`"
             raw
             class="font-medium text-primary-700 underline-offset-2 hover:underline focus-visible:underline"

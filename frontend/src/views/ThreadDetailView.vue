@@ -275,13 +275,16 @@ async function confirmDelete() {
               />
               <div class="text-sm">
                 <ULink
-                  v-if="thread.author"
+                  v-if="thread.author?.has_profile"
                   :to="`/u/${thread.author.id}`"
                   raw
                   class="font-medium text-primary-700 underline-offset-2 hover:underline focus-visible:underline"
                 >
                   {{ thread.author.display_name }}
                 </ULink>
+                <span v-else-if="thread.author" class="font-medium">
+                  {{ thread.author.display_name }}
+                </span>
                 <span v-else class="font-medium">{{ t('post.formerMember') }}</span>
                 <span v-if="thread.author?.organisation" class="block text-gray-700">
                   {{ thread.author.organisation.name }}

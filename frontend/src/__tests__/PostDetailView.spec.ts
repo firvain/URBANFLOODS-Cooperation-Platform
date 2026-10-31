@@ -6,7 +6,7 @@ import i18n from '@/i18n'
 import { formatDateTime } from '@/utils/datetime'
 import type { PostDetail } from '@/services/posts'
 import { callsTo, makeUser, mockApi, reply, replyError, type Handler } from './helpers/api'
-import { COVER, makePostDetail } from './helpers/blog'
+import { AUTHOR, COVER, makePostDetail } from './helpers/blog'
 import { commentsOf, makeComment } from './helpers/comments'
 import { buttonIn, dialog } from './helpers/editor'
 import { mountApp, mountWithApp, unmountAll } from './helpers/mount'
@@ -55,6 +55,18 @@ describe('PostDetailView', () => {
     expect(wrapper.find('a[href="/blog/tag/urban-drainage"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="post-status"]').exists()).toBe(false)
   })
+
+  it.each([true, false])(
+    'links the author name to the profile only when it exists (has_profile %s)',
+    async (hasProfile) => {
+      mockApi(routes({ author: { ...AUTHOR, has_profile: hasProfile } }))
+      const { wrapper } = await mountPost()
+      const author = wrapper.find('[data-testid="post-author"]')
+      expect(author.text()).toContain(AUTHOR.display_name)
+      expect(author.find('a[href="/u/11"]').exists()).toBe(hasProfile)
+      expect(author.text()).toContain(AUTHOR.organisation.name)
+    },
+  )
 
   it('renders the body through SafeHtml with the post language, without scripts', async () => {
     mockApi(

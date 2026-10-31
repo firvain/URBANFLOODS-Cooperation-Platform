@@ -76,6 +76,24 @@ async function typeInto(target: Editor, text: string) {
 }
 
 describe('CommentList', () => {
+  it.each([true, false])(
+    'links the author name to the profile only when it exists (has_profile %s)',
+    async (hasProfile) => {
+      mockApi(
+        routes(
+          reply(200, {
+            total: 1,
+            items: [makeComment(1, { author: { ...OTHER, has_profile: hasProfile } })],
+          }),
+        ),
+      )
+      const { wrapper } = await mountList({ count: 1 })
+      const author = items(wrapper)[0]!.find('[data-testid="comment-author"]')
+      expect(author.text()).toContain(OTHER.display_name)
+      expect(author.find('a[href="/u/12"]').exists()).toBe(hasProfile)
+    },
+  )
+
   it('loads the first page and lists comments oldest first with author, time and "edited"', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-10-30T10:00:00Z'))

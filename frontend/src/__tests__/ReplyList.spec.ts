@@ -43,6 +43,24 @@ const topLevel = (wrapper: VueWrapper) =>
   wrapper.findAll('[data-testid="reply-list"] > [data-testid="reply"]')
 
 describe('ReplyList', () => {
+  it.each([true, false])(
+    'links the author name to the profile only when it exists (has_profile %s)',
+    async (hasProfile) => {
+      mockApi(
+        routes(
+          reply(200, {
+            total: 1,
+            items: [makeReply(1, { author: { ...OTHER, has_profile: hasProfile } })],
+          }),
+        ),
+      )
+      const { wrapper } = await mountList()
+      const author = items(wrapper)[0]!.find('[data-testid="reply-author"]')
+      expect(author.text()).toContain(OTHER.display_name)
+      expect(author.find('a[href="/u/12"]').exists()).toBe(hasProfile)
+    },
+  )
+
   it('loads the first page and renders top-level replies with their children one level in', async () => {
     const fetchMock = mockApi(routes())
     const { wrapper } = await mountList()

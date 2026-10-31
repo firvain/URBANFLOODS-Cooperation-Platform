@@ -9,6 +9,7 @@ import type { UserMe } from '@/services/auth'
 import type { ThreadDetail } from '@/services/threads'
 import { callsTo, makeUser, mockApi, reply, replyError, type Handler } from './helpers/api'
 import { buttonIn, dialog } from './helpers/editor'
+import { AUTHOR } from './helpers/blog'
 import { OTHER, makeReply, makeThreadDetail, repliesOf, replyUrl } from './helpers/forum'
 import { mountApp, mountWithApp, unmountAll } from './helpers/mount'
 
@@ -84,6 +85,18 @@ describe('ThreadDetailView', () => {
     expect(wrapper.find('[data-testid="post-status"]').exists()).toBe(false)
     expect(wrapper.find('a[href="/forum"]').exists()).toBe(true)
   })
+
+  it.each([true, false])(
+    'links the author name to the profile only when it exists (has_profile %s)',
+    async (hasProfile) => {
+      mockApi(routes({ author: { ...AUTHOR, has_profile: hasProfile } }))
+      const { wrapper } = await mountThread()
+      const author = wrapper.find('[data-testid="thread-author"]')
+      expect(author.text()).toContain(AUTHOR.display_name)
+      expect(author.find('a[href="/u/11"]').exists()).toBe(hasProfile)
+      expect(author.text()).toContain(AUTHOR.organisation.name)
+    },
+  )
 
   it('shows pinned and locked badges', async () => {
     mockApi(routes({ is_pinned: true, is_locked: true }))

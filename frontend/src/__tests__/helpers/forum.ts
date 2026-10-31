@@ -52,6 +52,7 @@ export const OTHER = {
   display_name: 'Marko Petrović',
   organisation: null,
   avatar_url: null,
+  has_profile: true,
 }
 
 export function makeThread(id: number, overrides: Partial<ThreadSummary> = {}): ThreadSummary {

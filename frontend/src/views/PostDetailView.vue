@@ -256,13 +256,16 @@ async function confirmDelete() {
             />
             <div class="text-sm">
               <ULink
-                v-if="post.author"
+                v-if="post.author?.has_profile"
                 :to="`/u/${post.author.id}`"
                 raw
                 class="font-medium text-primary-700 underline-offset-2 hover:underline focus-visible:underline"
               >
                 {{ post.author.display_name }}
               </ULink>
+              <span v-else-if="post.author" class="font-medium">
+                {{ post.author.display_name }}
+              </span>
               <span v-else class="font-medium">{{ t('post.formerMember') }}</span>
               <span v-if="post.author?.organisation" class="block text-gray-700">
                 {{ post.author.organisation.name }}

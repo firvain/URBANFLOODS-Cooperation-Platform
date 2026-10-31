@@ -116,6 +116,8 @@ export const useRepliesStore = defineStore('replies', () => {
             display_name: user.display_name,
             organisation: user.organisation,
             avatar_url: null,
+            // Until the server answers: the directory rule behind `/u/{id}`.
+            has_profile: user.is_verified && user.show_in_directory,
           }
         : null,
       body_html: bodyHtml,

@@ -204,7 +204,29 @@ async def test_list_on_published_post_is_public(
     assert item["is_edited"] is False
     assert item["author"]["id"] == user.id
     assert item["author"]["display_name"] == user.display_name
-    assert set(item["author"]) == {"id", "display_name", "organisation", "avatar_url"}
+    assert set(item["author"]) == {
+        "id",
+        "display_name",
+        "organisation",
+        "avatar_url",
+        "has_profile",
+    }
+
+
+async def test_author_has_profile_follows_directory_opt_out(
+    client, db_session, cleanup_users, cleanup_categories
+):
+    user, _, _, post = await _setup(db_session, cleanup_users, cleanup_categories)
+    await _comment(db_session, post, author_id=user.id)
+
+    response = await client.get(_comments_url(post.id))
+    assert response.json()["items"][0]["author"]["has_profile"] is True
+
+    user.show_in_directory = False
+    await db_session.commit()
+
+    response = await client.get(_comments_url(post.id))
+    assert response.json()["items"][0]["author"]["has_profile"] is False
 
 
 async def test_list_hides_non_published_comments_from_others(

@@ -205,12 +205,39 @@ async def test_anon_sees_only_published(
         "name": category.name,
     }
     assert item["author"]["id"] == author.id
-    assert set(item["author"]) == {"id", "display_name", "organisation", "avatar_url"}
+    assert set(item["author"]) == {
+        "id",
+        "display_name",
+        "organisation",
+        "avatar_url",
+        "has_profile",
+    }
     assert item["excerpt"] == "How do you size retention ponds?"
     assert item["is_pinned"] is False
     assert item["is_locked"] is False
     assert item["reply_count"] == 0
     assert "body_html" not in item
+
+
+async def test_author_has_profile_follows_directory_opt_out(
+    client, db_session, cleanup_users, cleanup_forum_categories
+):
+    author = await _committed(db_session, cleanup_users)
+    category = await _forum(db_session, cleanup_forum_categories)
+    thread = await _thread(db_session, category, author_id=author.id)
+
+    detail = await client.get(f"{THREADS}{thread.slug}")
+    assert detail.json()["author"]["has_profile"] is True
+    listing = await client.get(THREADS, params={"category": category.slug})
+    assert listing.json()["items"][0]["author"]["has_profile"] is True
+
+    author.show_in_directory = False
+    await db_session.commit()
+
+    detail = await client.get(f"{THREADS}{thread.slug}")
+    assert detail.json()["author"]["has_profile"] is False
+    listing = await client.get(THREADS, params={"category": category.slug})
+    assert listing.json()["items"][0]["author"]["has_profile"] is False
 
 
 async def test_author_sees_own_pending_in_list_and_detail(

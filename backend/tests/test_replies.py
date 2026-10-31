@@ -205,7 +205,29 @@ async def test_list_on_published_thread_is_public(
     assert item["is_edited"] is False
     assert item["children"] == []
     assert item["author"]["id"] == user.id
-    assert set(item["author"]) == {"id", "display_name", "organisation", "avatar_url"}
+    assert set(item["author"]) == {
+        "id",
+        "display_name",
+        "organisation",
+        "avatar_url",
+        "has_profile",
+    }
+
+
+async def test_author_has_profile_follows_directory_opt_out(
+    client, db_session, cleanup_users, cleanup_forum_categories
+):
+    user, _, _, thread = await _setup(db_session, cleanup_users, cleanup_forum_categories)
+    await _reply(db_session, thread, author_id=user.id)
+
+    response = await client.get(_replies_url(thread.id))
+    assert response.json()["items"][0]["author"]["has_profile"] is True
+
+    user.show_in_directory = False
+    await db_session.commit()
+
+    response = await client.get(_replies_url(thread.id))
+    assert response.json()["items"][0]["author"]["has_profile"] is False
 
 
 async def test_list_on_pending_or_missing_thread_404(

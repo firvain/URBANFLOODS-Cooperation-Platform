@@ -78,10 +78,27 @@ class AuthorSummary(BaseModel):
     avatar_url: str | None = Field(
         default=None, validation_alias=AliasPath("avatar", "storage_path")
     )
+    # Read from the ``User`` row only to work out ``has_profile``; never serialised.
+    is_verified: bool = Field(exclude=True)
+    is_active: bool = Field(exclude=True)
+    deleted_at: datetime | None = Field(exclude=True)
+    show_in_directory: bool = Field(exclude=True)
 
     @field_serializer("avatar_url")
     def _avatar_url(self, storage_path: str | None) -> str | None:
         return upload_url(storage_path)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def has_profile(self) -> bool:
+        """Whether ``/u/{id}`` exists for other members: the same rule as the member
+        directory (``crud/member.py::_in_directory``), so a link never leads to a 404."""
+        return (
+            self.is_verified
+            and self.is_active
+            and self.deleted_at is None
+            and self.show_in_directory
+        )
 
 
 class CategorySummary(BaseModel):
