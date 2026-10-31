@@ -187,10 +187,9 @@ describe('footer branding', () => {
     expect(links.map((a) => a.getAttribute('href'))).toEqual([
       EXTERNAL_LINKS.project,
       EXTERNAL_LINKS.programme,
-      EXTERNAL_LINKS.knowbase,
       EXTERNAL_LINKS.linkedin,
     ])
-    // All four live in the one footer nav, as list items.
+    // All three live in the one footer nav, as list items (KNOWBASE is in the header nav).
     const navLinks = Array.from(externalNav().querySelectorAll('li > a'))
     expect(navLinks).toEqual(links)
     for (const link of links) {
@@ -202,16 +201,15 @@ describe('footer branding', () => {
     }
     expect(links[0]!.textContent).toContain(t('footer.links.project'))
     expect(links[1]!.textContent).toContain(t('footer.links.programme'))
-    expect(links[2]!.textContent).toContain(t('footer.links.knowbase'))
     expect(t('footer.links.linkedin')).toBe('URBANFLOODS on LinkedIn')
-    expect(links[3]!.textContent).toContain(t('footer.links.linkedin'))
-    expect(links[3]!.querySelector('[data-icon="i-lucide-linkedin"]')).not.toBeNull()
+    expect(links[2]!.textContent).toContain(t('footer.links.linkedin'))
+    expect(links[2]!.querySelector('[data-icon="i-lucide-linkedin"]')).not.toBeNull()
   })
 
   it('styles the external links small and muted, underlined only on hover/focus', async () => {
     await mountApp()
     const links = externalNav().querySelectorAll('a')
-    expect(links).toHaveLength(4)
+    expect(links).toHaveLength(3)
     for (const link of links) {
       const classes = link.classList
       expect(classes.contains('text-sm')).toBe(true)

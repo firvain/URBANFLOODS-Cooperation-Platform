@@ -20,7 +20,6 @@ const legalLinks = [
 const externalLinks = [
   { key: 'project', href: EXTERNAL_LINKS.project },
   { key: 'programme', href: EXTERNAL_LINKS.programme },
-  { key: 'knowbase', href: EXTERNAL_LINKS.knowbase },
   { key: 'linkedin', href: EXTERNAL_LINKS.linkedin, icon: 'i-lucide-linkedin' },
 ] as const
 </script>
