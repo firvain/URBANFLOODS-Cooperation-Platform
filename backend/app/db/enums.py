@@ -28,3 +28,33 @@ class OrganisationType(StrEnum):
 class DigestFrequency(StrEnum):
     DAILY = "daily"
     WEEKLY = "weekly"
+
+
+class ContentStatus(StrEnum):
+    PENDING = "pending"
+    PUBLISHED = "published"
+    HIDDEN = "hidden"
+    DELETED = "deleted"
+
+
+class HiddenReason(StrEnum):
+    AUTO_REPORTS = "auto_reports"
+    ADMIN = "admin"
+    REJECTED = "rejected"
+
+
+class CategoryKind(StrEnum):
+    BLOG = "blog"
+    FORUM = "forum"
+
+
+class KbType(StrEnum):
+    DOCUMENT = "document"
+    MEASURE = "measure"
+
+
+class ContentType(StrEnum):
+    POST = "post"
+    THREAD = "thread"
+    REPLY = "reply"
+    COMMENT = "comment"

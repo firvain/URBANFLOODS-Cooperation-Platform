@@ -10,10 +10,13 @@ writes are visible to ``db_session``. Users created here are registered with ``c
 from __future__ import annotations
 
 import re
+import uuid
+from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import select
+import pytest
+from sqlalchemy import delete, select
 
 from app.core.config import settings
 from app.crud import audit as crud_audit
@@ -21,7 +24,15 @@ from app.crud import user as crud_user
 from app.crud.session import create_session, revoke_session
 from app.crud.token import create_email_token
 from app.db.enums import TokenPurpose, UserRole
-from app.db.models import AuditLog, EmailToken, NotificationPreference, Organisation, Session, User
+from app.db.models import (
+    Attachment,
+    AuditLog,
+    EmailToken,
+    NotificationPreference,
+    Organisation,
+    Session,
+    User,
+)
 from tests.factories import (
     DEFAULT_PASSWORD,
     create_admin,
@@ -52,6 +63,29 @@ DEFAULT_PREFERENCES = {
 
 
 # --- helpers ----------------------------------------------------------------------------------
+
+
+@pytest.fixture
+async def avatar_attachment_id(database_url: str) -> AsyncIterator[int]:
+    """A committed attachment (no uploader) to use as an avatar; deleted afterwards."""
+    from app.db.session import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as session, session.begin():
+        attachment = Attachment(
+            storage_path=f"test/{uuid.uuid4().hex}.webp",
+            original_filename="avatar.png",
+            mime="image/webp",
+            size_bytes=1,
+            width=1,
+            height=1,
+            alt_text="Avatar",
+        )
+        session.add(attachment)
+        await session.flush()
+        attachment_id = attachment.id
+    yield attachment_id
+    async with AsyncSessionLocal() as session, session.begin():
+        await session.execute(delete(Attachment).where(Attachment.id == attachment_id))
 
 
 async def _committed(
@@ -339,7 +373,7 @@ async def test_delete_missing_password(client, db_session, cleanup_users, cleanu
 
 
 async def test_delete_account_anonymises(
-    client, other_client, db_session, outbox, cleanup_users, cleanup_user_ids
+    client, other_client, db_session, outbox, cleanup_users, cleanup_user_ids, avatar_attachment_id
 ):
     uowm = await _uowm(db_session)
     user = await _committed(
@@ -349,7 +383,7 @@ async def test_delete_account_anonymises(
         organisation_id=uowm.id,
         country="GR",
         bio="Hydrologist.",
-        avatar_attachment_id=12345,
+        avatar_attachment_id=avatar_attachment_id,
         trusted_at=datetime.now(UTC),
         display_name="Soon Gone",
     )
