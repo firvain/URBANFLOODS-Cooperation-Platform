@@ -61,6 +61,15 @@ export default defineConfig(({ mode }) => ({
     }),
   ],
   server: {
+    // Uploaded images are referenced as same-origin `/static/uploads/...` (production nginx routes
+    // /static/ to the backend). In dev the browser talks to Vite, so proxy that prefix to the
+    // backend; inside docker compose the target is the backend service, not localhost.
+    proxy: {
+      '/static': {
+        target: process.env.VITE_DEV_PROXY_TARGET ?? 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
     fs: {
       // The legal texts are imported (`?legal`, see above) from docs/legal/ at the repository root, outside this
       // project. Allow only that folder, plus Vite's default (the workspace root), so the dev

@@ -562,3 +562,29 @@ async def test_admin_user_list_and_detail_show_avatar_url(
     assert item["avatar_url"] == avatar["url"]
     assert detail.status_code == 200, detail.text
     assert detail.json()["avatar_url"] == avatar["url"]
+
+
+async def test_served_upload_has_the_webp_content_type(
+    client, db_session, cleanup_users, monkeypatch
+):
+    """The container's Python knows no .webp mapping by default; the endpoint module registers
+    it, so the served file is image/webp with nosniff (otherwise browsers show a broken image)."""
+    import mimetypes
+
+    from app.api.v1.endpoints import uploads as uploads_module
+
+    # Simulate a platform without the mapping, then re-run the module-level registration.
+    monkeypatch.setitem(mimetypes.types_map, ".webp", "application/octet-stream")
+    mimetypes.add_type("image/webp", ".webp")
+    assert mimetypes.guess_type("x.webp")[0] == "image/webp"
+    assert hasattr(uploads_module, "UploadStaticFiles")
+
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+    response = await _upload(client)
+    assert response.status_code == 201, response.text
+    url = response.json()["url"]
+    served = await client.get(url)
+    assert served.status_code == 200
+    assert served.headers["content-type"].startswith("image/webp")
+    assert served.headers["x-content-type-options"] == "nosniff"

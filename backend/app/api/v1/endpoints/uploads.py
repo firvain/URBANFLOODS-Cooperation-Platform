@@ -9,6 +9,7 @@ background task. Orphans left by a failed commit are for the scheduled sweep.
 
 from __future__ import annotations
 
+import mimetypes
 import os
 import uuid
 from datetime import UTC, datetime
@@ -254,6 +255,11 @@ async def delete_upload(
 
 
 # --- static files -----------------------------------------------------------------------------
+
+
+# Slim Linux images ship no mapping for .webp, so StaticFiles would serve the re-encoded uploads
+# as application/octet-stream (and nosniff then stops browsers from treating them as images).
+mimetypes.add_type("image/webp", ".webp")
 
 
 class UploadStaticFiles(StaticFiles):

@@ -112,6 +112,8 @@ services:
     environment:
       VITE_API_BASE_URL: http://localhost:${BACKEND_PORT:-8000}
       VITE_DSS_URL: ${DSS_URL:-https://urbanfloods.finki.ukim.mk/}
+      # Vite's /static proxy (uploaded images) must reach the backend service, not localhost.
+      VITE_DEV_PROXY_TARGET: http://backend:8000
     volumes:
       - ./frontend:/app
       # Legal pages (/terms, /privacy) are built from the markdown in docs/legal.
