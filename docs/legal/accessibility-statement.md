@@ -34,14 +34,12 @@ The content listed below is not yet fully accessible, for the following reasons.
 
 The colour-contrast, avatar-initials and link-name issues found in the first self-assessment were
 corrected on 31 October 2026 (text and button colours, placeholders, the focus indicator and the
-email link name now meet the required ratios on every page that was scanned). One item remains:
+email link name now meet the required ratios on every page that was scanned). The hover state of
+solid green, amber, olive and blue buttons (for example "Approve" in the moderation queue), where
+the white label fell just below 4.5:1, was also corrected on 31 October 2026: these buttons now
+darken on hover and press instead of lightening.
 
-- **Hover state of some buttons.** While the pointer rests on a solid green or amber button (for
-  example "Approve" in the moderation queue), the component library lightens it and the white
-  label falls just below 4.5:1 (about 4.1:1; success criterion 1.4.3). The resting and focused
-  states are compliant.
-
-We are correcting this issue and will update this statement when it is fixed.
+No non-conformities with WCAG 2.1 level AA are currently known.
 
 ### 3.2 Content outside the scope of the applicable legislation or under the author's control
 

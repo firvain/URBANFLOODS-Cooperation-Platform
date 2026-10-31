@@ -57,6 +57,37 @@ export default defineConfig(({ mode }) => ({
           primary: 'primary',
           secondary: 'secondary',
         },
+        // Solid buttons (WCAG 2.1 AA 1.4.3, increment 5k). Nuxt UI lightens a solid button to its
+        // 75 % tint on hover and press (`hover:bg-x/75`), and the white label then falls below
+        // 4.5:1 (white text on the tint over white / on shade 900 instead):
+        //   secondary 800 → /75 3.91, 900 #354415 10.56
+        //   success   800 → /75 4.05, 900 #0d542b  9.07
+        //   warning   800 → /75 3.91, 900 #733e0a  8.69  (Nuxt UI's warning is Tailwind yellow)
+        //   info      700 → /75 4.12, 900 #1c398e 10.40
+        // so these darken to shade 900 instead (tailwind-merge replaces the default classes).
+        // Primary (#11395c, 5.63 at 75 %) and error (700 #c10007, 4.66) keep the default. Class
+        // names are written out in full so Tailwind's source scan finds them. Other variants
+        // (outline, soft, subtle, ghost, link) are unchanged.
+        button: {
+          compoundVariants: [
+            {
+              color: 'secondary',
+              variant: 'solid',
+              class: 'hover:bg-secondary-900 active:bg-secondary-900',
+            },
+            {
+              color: 'success',
+              variant: 'solid',
+              class: 'hover:bg-success-900 active:bg-success-900',
+            },
+            {
+              color: 'warning',
+              variant: 'solid',
+              class: 'hover:bg-warning-900 active:bg-warning-900',
+            },
+            { color: 'info', variant: 'solid', class: 'hover:bg-info-900 active:bg-info-900' },
+          ],
+        },
       },
     }),
   ],

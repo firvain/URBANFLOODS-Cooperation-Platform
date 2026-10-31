@@ -135,3 +135,38 @@ describe('source guards', () => {
     expect(offenders).toEqual([])
   })
 })
+
+describe('solid button hover and pressed states (WCAG 1.4.3, increment 5k)', () => {
+  // Nuxt UI's solid variant lightens the background to its 75 % tint on hover/press; with white
+  // labels that drops below 4.5:1 for these aliases, so vite.config.ts darkens them to shade 900.
+  const DARKENED = ['secondary', 'success', 'warning', 'info'] as const
+
+  async function solidButton(color: string) {
+    const UButton = (await import('@nuxt/ui/components/Button.vue')).default
+    const { wrapper } = await mountWithApp(UButton, { props: { color, label: 'Approve' } })
+    return wrapper.find('button').classes()
+  }
+
+  it.each(DARKENED)('%s darkens to shade 900 instead of the 75 percent tint', async (color) => {
+    const classes = await solidButton(color)
+    expect(classes).toContain(`bg-${color}`)
+    expect(classes).toContain(`hover:bg-${color}-900`)
+    expect(classes).toContain(`active:bg-${color}-900`)
+    expect(classes).not.toContain(`hover:bg-${color}/75`)
+    expect(classes).not.toContain(`active:bg-${color}/75`)
+  })
+
+  it.each(DARKENED)('white text keeps 4.5:1 on %s-900', (color) => {
+    expect(contrast(WHITE, parseColor(shade(color, 900)))).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it.each(['primary', 'error'])(
+    '%s keeps the default 75 percent hover, which already passes with white text',
+    async (color) => {
+      const classes = await solidButton(color)
+      expect(classes).toContain(`hover:bg-${color}/75`)
+      const hover = overWhite(parseColor(aliasColour(color)), 0.75)
+      expect(contrast(WHITE, hover)).toBeGreaterThanOrEqual(4.5)
+    },
+  )
+})
