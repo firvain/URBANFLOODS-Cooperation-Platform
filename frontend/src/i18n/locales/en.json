@@ -99,6 +99,108 @@
       "loadError": "Suggestions could not be loaded."
     }
   },
+  "knowbase": {
+    "title": "KNOWBASE Library",
+    "intro": "The URBANFLOODS KNOWBASE collects flood management measures and the legislation and policies of the partner countries. Browse it here, find out which posts discuss an item, or open the KNOWBASE itself.",
+    "openKnowbase": "Open the KNOWBASE",
+    "openInKnowbase": "Open in the KNOWBASE",
+    "backToLibrary": "KNOWBASE Library",
+    "loading": "Loading…",
+    "retry": "Try again",
+    "clearFilters": "Clear filters",
+    "notFoundHint": "It may have been removed from the KNOWBASE, or the link is wrong.",
+    "status": {
+      "stale": "The KNOWBASE is temporarily unreachable; showing cached data.",
+      "unavailable": "The KNOWBASE is temporarily unreachable; no data available."
+    },
+    "filters": {
+      "title": "Filters",
+      "search": "Search",
+      "keywords": "Keywords",
+      "any": "Any"
+    },
+    "fields": {
+      "description": "Description",
+      "descriptionLocal": "Description (original language)",
+      "keywords": "Keywords"
+    },
+    "mentions": {
+      "title": "Mentioned in"
+    },
+    "measures": {
+      "title": "Flood management measures",
+      "detailTitle": "Flood management measure",
+      "intro": "Structural, nature-based, hybrid and non-structural measures for flood management, with their benefits, constraints and the resources they require.",
+      "description": "Structural, nature-based, hybrid and non-structural measures, with benefits, constraints and resources required.",
+      "count": "No measures | {count} measure | {count} measures",
+      "untitled": "Untitled measure",
+      "back": "All measures",
+      "empty": "No measures match these filters.",
+      "emptyAll": "No measures are available.",
+      "loadError": "The measures could not be loaded.",
+      "detailError": "The measure could not be loaded.",
+      "notFound": "Measure not found",
+      "pagination": "Measure list pages",
+      "photoCredit": "Photo: {source}",
+      "filters": {
+        "searchPlaceholder": "Titles and descriptions",
+        "category": "Category",
+        "allCategories": "All categories",
+        "levels": "Level of application",
+        "scales": "Scale"
+      },
+      "fields": {
+        "category": "Category",
+        "level": "Level of application",
+        "scale": "Scale",
+        "resources": "Resources required",
+        "benefits": "Benefits",
+        "constraints": "Constraints"
+      }
+    },
+    "documents": {
+      "title": "Legislation and policies",
+      "detailTitle": "Legislation or policy document",
+      "intro": "Laws, regulations and policy documents on flood management from the partner countries and the EU.",
+      "description": "Laws, regulations and policies on flood management from the partner countries, by country, governance level and subject.",
+      "count": "No documents | {count} document | {count} documents",
+      "untitled": "Untitled document",
+      "back": "All legislation and policies",
+      "empty": "No documents match these filters.",
+      "emptyAll": "No documents are available.",
+      "loadError": "The documents could not be loaded.",
+      "detailError": "The document could not be loaded.",
+      "notFound": "Document not found",
+      "pagination": "Document list pages",
+      "filters": {
+        "searchPlaceholder": "Names, descriptions and gazette references",
+        "country": "Country",
+        "allCountries": "All countries",
+        "level": "Governance level",
+        "allLevels": "All levels",
+        "subject": "Subject",
+        "allSubjects": "All subjects"
+      },
+      "fields": {
+        "level": "Governance level",
+        "subject": "Subject",
+        "number": "Number",
+        "gazette": "Official Gazette reference",
+        "webLinks": "Web links",
+        "comments": "Comments"
+      }
+    },
+    "toolkit": {
+      "title": "Policy Toolkit",
+      "intro": "Pick a country to see its flood management legislation and policies, then compare them with the measures in the KNOWBASE.",
+      "country": "Country",
+      "allCountries": "All countries",
+      "documents": "Legislation and policies",
+      "documentsFor": "Legislation and policies: {country}",
+      "measures": "Flood management measures",
+      "timelineNote": "Short/mid/long-term filtering will follow once WP3 adds it to the KNOWBASE."
+    }
+  },
   "profile": {
     "title": "Member profile",
     "organisation": "Organisation",
@@ -221,6 +323,14 @@
       },
       "validation": {
         "failed": "Please correct the highlighted fields."
+      },
+      "uploads": {
+        "too_large": "The image is too large. Choose a file of at most 5 MB.",
+        "unsupported_type": "Only JPEG, PNG and WebP images are accepted.",
+        "invalid_image": "The file is not a valid image.",
+        "animated": "Animated images are not accepted.",
+        "too_large_pixels": "The image has too many pixels. Resize it and try again.",
+        "daily_limit": "You have reached today's upload limit. Try again tomorrow."
       }
     },
     "fields": {
@@ -377,6 +487,75 @@
       "action": "Add your expertise",
       "dismiss": "Dismiss this reminder",
       "ownCard": "Add your expertise"
+    }
+  },
+  "editor": {
+    "toolbar": "Formatting",
+    "placeholder": "Write here…",
+    "actions": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "strike": "Strikethrough",
+      "heading2": "Heading",
+      "heading3": "Subheading",
+      "bulletList": "Bulleted list",
+      "orderedList": "Numbered list",
+      "blockquote": "Quote",
+      "codeBlock": "Code block",
+      "link": "Link",
+      "image": "Insert image",
+      "undo": "Undo",
+      "redo": "Redo"
+    },
+    "counter": "{count} / {max}",
+    "counterLabel": "{count} of {max} characters used",
+    "overLimit": "The text is one character too long. | The text is {count} characters too long.",
+    "link": {
+      "title": "Link",
+      "description": "Link the selected text to a web page or an email address.",
+      "url": "Web address",
+      "urlHint": "Starts with https://, http:// or mailto:",
+      "invalid": "Enter an address that starts with https://, http:// or mailto:.",
+      "newTab": "Open in a new tab",
+      "apply": "Apply",
+      "remove": "Remove link",
+      "cancel": "Cancel"
+    },
+    "image": {
+      "title": "Insert image",
+      "description": "Upload an image and describe it for people who cannot see it.",
+      "file": "Image file",
+      "fileHint": "JPEG, PNG or WebP, at most 5 MB.",
+      "unsupported": "Choose a JPEG, PNG or WebP image.",
+      "alt": "Alternative text",
+      "altHint": "Describe what the image shows (required, at most 300 characters).",
+      "preview": "Preview",
+      "upload": "Upload and insert",
+      "uploading": "Uploading the image…",
+      "cancel": "Cancel"
+    },
+    "kb": {
+      "label": "KNOWBASE links",
+      "hint": "Link measures or documents of the KNOWBASE that this text is about.",
+      "type": "Search in",
+      "measures": "Measures",
+      "documents": "Documents",
+      "search": "Search the KNOWBASE",
+      "searchPlaceholder": "Title or keyword",
+      "searching": "Searching…",
+      "noResults": "No results.",
+      "searchError": "The KNOWBASE could not be searched. Please try again.",
+      "results": "Search results",
+      "add": "Add",
+      "addItem": "Add {title}",
+      "added": "Added",
+      "selected": "Linked items",
+      "none": "No KNOWBASE items linked yet.",
+      "remove": "Remove {title}",
+      "measure": "Measure",
+      "document": "Document",
+      "limit": "You can link at most {max} KNOWBASE items."
     }
   }
 }

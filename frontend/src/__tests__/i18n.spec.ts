@@ -71,6 +71,15 @@ describe('locale files', () => {
     }
   })
 
+  it('every non-English locale translates knowbase.title', () => {
+    for (const [path, messages] of Object.entries(localeFiles)) {
+      if (path.endsWith('/en.json')) continue
+      const flat = flatten(messages)
+      expect(flat['knowbase.title'], `${path} knowbase.title`).toBeTruthy()
+      expect(flat['knowbase.title']).not.toBe(flatten(en)['knowbase.title'])
+    }
+  })
+
   it('every non-English locale translates nav.* and app.title', () => {
     const navKeys = Object.keys(flatten(en)).filter((k) => k.startsWith('nav.'))
     for (const [path, messages] of Object.entries(localeFiles)) {

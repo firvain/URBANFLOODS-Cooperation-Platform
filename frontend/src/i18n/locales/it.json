@@ -35,5 +35,8 @@
     "nudge": {
       "title": "Dite ai membri di cosa vi occupate"
     }
+  },
+  "knowbase": {
+    "title": "Biblioteca KNOWBASE"
   }
 }

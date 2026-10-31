@@ -21,6 +21,11 @@ describe('routes', () => {
     ['/u/5', 'profile'],
     ['/terms', 'terms'],
     ['/privacy', 'privacy'],
+    ['/knowbase', 'knowbase'],
+    ['/knowbase/measures', 'knowbase-measures'],
+    ['/knowbase/measures/12', 'knowbase-measure'],
+    ['/knowbase/documents', 'knowbase-documents'],
+    ['/knowbase/documents/34', 'knowbase-document'],
     ['/this/does/not/exist', 'not-found'],
   ])('%s resolves to %s with an i18n meta.title', (path, name) => {
     const resolved = router.resolve(path)
@@ -37,6 +42,20 @@ it('the network route is titled nav.network and the profile route takes an id', 
   const profile = router.resolve('/u/42')
   expect(profile.params.id).toBe('42')
   expect(profile.meta.auth).toBeUndefined()
+})
+
+it('the KNOWBASE routes are public, the landing is titled nav.knowbase, details take an id', () => {
+  const router = createAppRouter(createMemoryHistory())
+  expect(router.resolve('/knowbase').meta.title).toBe('nav.knowbase')
+  expect(router.resolve('/knowbase/measures').meta.title).toBe('knowbase.measures.title')
+  expect(router.resolve('/knowbase/documents').meta.title).toBe('knowbase.documents.title')
+  const measure = router.resolve('/knowbase/measures/12')
+  const doc = router.resolve('/knowbase/documents/34')
+  expect(measure.params.id).toBe('12')
+  expect(doc.params.id).toBe('34')
+  for (const path of ['/knowbase', '/knowbase/measures', '/knowbase/measures/1']) {
+    expect(router.resolve(path).meta.auth).toBeUndefined()
+  }
 })
 
 it('the legal routes are public, titled legal.* and pass the document to LegalView', () => {

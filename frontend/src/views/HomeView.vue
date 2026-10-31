@@ -13,12 +13,12 @@ const { isVerified } = storeToRefs(useAuthStore())
 /** The Unified DSS web app; the card is hidden when it is not configured. */
 const dss = dssUrl()
 
-// Placeholders until the blog (M2), forum (M3) and KNOWBASE browser (M2) routes exist.
-const sections = [
+/** Sections of the platform; blog (M2) and forum (M3) stay placeholders until their routes exist. */
+const sections: { key: string; icon: string; to?: string }[] = [
   { key: 'blog', icon: 'i-lucide-newspaper' },
   { key: 'forum', icon: 'i-lucide-messages-square' },
-  { key: 'knowbase', icon: 'i-lucide-library' },
-] as const
+  { key: 'knowbase', icon: 'i-lucide-library', to: '/knowbase' },
+]
 </script>
 
 <template>
@@ -31,15 +31,25 @@ const sections = [
     <CompleteProfileBanner class="mt-8" />
 
     <ul class="mt-10 grid gap-6 md:grid-cols-3">
-      <li v-for="section in sections" :key="section.key">
+      <li v-for="section in sections" :key="section.key" :data-testid="`home-card-${section.key}`">
         <UCard class="h-full">
           <template #header>
             <div class="flex items-center justify-between gap-2">
               <h2 class="flex items-center gap-2 text-lg font-semibold text-highlighted">
                 <UIcon :name="section.icon" class="size-5 text-primary" aria-hidden="true" />
-                {{ t(`home.cards.${section.key}.title`) }}
+                <ULink
+                  v-if="section.to"
+                  :to="section.to"
+                  raw
+                  class="text-primary-700 underline-offset-2 hover:underline focus-visible:underline"
+                >
+                  {{ t(`home.cards.${section.key}.title`) }}
+                </ULink>
+                <template v-else>{{ t(`home.cards.${section.key}.title`) }}</template>
               </h2>
-              <UBadge color="neutral" variant="subtle" size="sm">{{ t('home.comingSoon') }}</UBadge>
+              <UBadge v-if="!section.to" color="neutral" variant="subtle" size="sm">
+                {{ t('home.comingSoon') }}
+              </UBadge>
             </div>
           </template>
           <p class="text-muted">{{ t(`home.cards.${section.key}.description`) }}</p>

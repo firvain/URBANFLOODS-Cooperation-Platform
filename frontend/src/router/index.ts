@@ -46,6 +46,36 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.network' },
   },
   {
+    path: '/knowbase',
+    name: 'knowbase',
+    component: () => import('@/views/KnowbaseView.vue'),
+    meta: { title: 'nav.knowbase' },
+  },
+  {
+    path: '/knowbase/measures',
+    name: 'knowbase-measures',
+    component: () => import('@/views/MeasuresView.vue'),
+    meta: { title: 'knowbase.measures.title' },
+  },
+  {
+    path: '/knowbase/measures/:id',
+    name: 'knowbase-measure',
+    component: () => import('@/views/MeasureDetailView.vue'),
+    meta: { title: 'knowbase.measures.detailTitle' },
+  },
+  {
+    path: '/knowbase/documents',
+    name: 'knowbase-documents',
+    component: () => import('@/views/DocumentsView.vue'),
+    meta: { title: 'knowbase.documents.title' },
+  },
+  {
+    path: '/knowbase/documents/:id',
+    name: 'knowbase-document',
+    component: () => import('@/views/DocumentDetailView.vue'),
+    meta: { title: 'knowbase.documents.detailTitle' },
+  },
+  {
     path: '/u/:id',
     name: 'profile',
     component: () => import('@/views/ProfileView.vue'),

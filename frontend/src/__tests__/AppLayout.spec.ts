@@ -176,12 +176,14 @@ describe('footer branding', () => {
       '/',
       '/partners',
       '/network',
+      '/knowbase',
       '/about',
     ])
     expect(links.map((a) => a.textContent?.trim())).toEqual([
       t('nav.home'),
       t('nav.partners'),
       t('nav.network'),
+      t('nav.knowbase'),
       t('nav.about'),
     ])
     for (const link of links) expect(link.getAttribute('target')).toBeNull()
@@ -224,7 +226,8 @@ describe('footer branding', () => {
   it('styles column links muted, underlined only on hover/focus', async () => {
     await mountApp()
     const links = footer().querySelectorAll('h2 + ul a')
-    expect(links).toHaveLength(8)
+    // Five platform pages (KNOWBASE included) + the project links.
+    expect(links).toHaveLength(9)
     for (const link of links) {
       const classes = link.classList
       expect(classes.contains('text-sm')).toBe(true)
@@ -366,19 +369,23 @@ describe('main navigation and the Unified DSS', () => {
   }
   const label = (a: Element) => a.textContent?.replace(t('a11y.opensInNewTab'), '').trim()
 
-  it('orders the items Home, Partners, Network, Unified DSS, About', async () => {
+  it('orders the items Home, Partners, Network, KNOWBASE, Unified DSS, About', async () => {
     vi.stubEnv('VITE_DSS_URL', DSS)
     await mountApp()
     expect(t('nav.network')).toBe('Network')
+    expect(t('nav.knowbase')).toBe('KNOWBASE')
     expect(t('nav.dss')).toBe('Unified DSS')
     expect(navLinks().map(label)).toEqual([
       t('nav.home'),
       t('nav.partners'),
       t('nav.network'),
+      t('nav.knowbase'),
       t('nav.dss'),
       t('nav.about'),
     ])
     expect(navLinks()[2]!.getAttribute('href')).toBe('/network')
+    expect(navLinks()[3]!.getAttribute('href')).toBe('/knowbase')
+    expect(navLinks()[3]!.getAttribute('target')).toBeNull()
   })
 
   it('links the DSS in a new tab, announced, with the URL from VITE_DSS_URL', async () => {
@@ -400,6 +407,7 @@ describe('main navigation and the Unified DSS', () => {
       t('nav.home'),
       t('nav.partners'),
       t('nav.network'),
+      t('nav.knowbase'),
       t('nav.about'),
     ])
     expect(document.querySelector('[data-testid="dss-card"]')).toBeNull()
