@@ -1168,6 +1168,16 @@
         "clearConfirm": "Clear cache",
         "cleared": "The cache was already empty. | 1 cached response cleared. | {count} cached responses cleared."
       },
+      "digest": {
+        "heading": "Moderation digest",
+        "intro": "The digest is emailed to admins every morning. Send it now to get the current queue and open reports straight away.",
+        "button": "Send digest now",
+        "title": "Send the moderation digest now?",
+        "description": "Every admin with the digest switched on gets it by email, even when nothing is pending.",
+        "confirm": "Send digest",
+        "sent": "Digest sent to no admin: nobody has it switched on. | Digest sent to 1 admin. Items to review: {items}. | Digest sent to {recipients} admins. Items to review: {items}.",
+        "failed": "The digest could not be sent: every email failed. Check the email settings and try again."
+      },
       "export": {
         "heading": "Reporting export",
         "description": "A CSV with registrations by country and organisation, published content, active users and contributing organisations for the chosen days (inclusive).",

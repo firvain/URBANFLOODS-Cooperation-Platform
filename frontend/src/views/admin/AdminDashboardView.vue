@@ -14,7 +14,8 @@ import { saveFile } from '@/utils/download'
 
 /**
  * Admin dashboard: counts of users, content and open reports, the KNOWBASE proxy state with a
- * "clear cache" action, and the reporting CSV for a date range.
+ * "clear cache" action, a "send the moderation digest now" action, and the reporting CSV for a
+ * date range.
  */
 const { t, locale } = useI18n()
 const toast = useToast()
@@ -115,6 +116,44 @@ async function confirmClear() {
     clearError.value = adminError(error)
   } finally {
     clearing.value = false
+  }
+}
+
+// --- Send the admin digest now ---------------------------------------------------------------
+
+const digestOpen = ref(false)
+const sendingDigest = ref(false)
+const digestError = ref('')
+
+function askDigest() {
+  digestError.value = ''
+  digestOpen.value = true
+}
+
+async function confirmDigest() {
+  if (sendingDigest.value) return
+  sendingDigest.value = true
+  digestError.value = ''
+  try {
+    const { recipients, items, sent } = await adminService.sendDigest()
+    digestOpen.value = false
+    toast.add(
+      sent
+        ? {
+            title: t('admin.dashboard.digest.sent', { recipients, items }, recipients),
+            color: 'success',
+            icon: 'i-lucide-check',
+          }
+        : {
+            title: t('admin.dashboard.digest.failed'),
+            color: 'warning',
+            icon: 'i-lucide-triangle-alert',
+          },
+    )
+  } catch (error) {
+    digestError.value = adminError(error)
+  } finally {
+    sendingDigest.value = false
   }
 }
 
@@ -257,6 +296,20 @@ async function downloadCsv() {
     </template>
 
     <section
+      aria-labelledby="dashboard-digest"
+      data-testid="digest-send"
+      class="space-y-4 rounded-md border border-default p-4"
+    >
+      <h2 id="dashboard-digest" class="text-lg font-semibold text-highlighted">
+        {{ t('admin.dashboard.digest.heading') }}
+      </h2>
+      <p class="text-sm text-muted">{{ t('admin.dashboard.digest.intro') }}</p>
+      <UButton color="neutral" variant="outline" icon="i-lucide-send" @click="askDigest">
+        {{ t('admin.dashboard.digest.button') }}
+      </UButton>
+    </section>
+
+    <section
       aria-labelledby="dashboard-export"
       class="space-y-4 rounded-md border border-default p-4"
     >
@@ -299,6 +352,16 @@ async function downloadCsv() {
       :loading="clearing"
       :error="clearError"
       @confirm="confirmClear"
+    />
+
+    <ConfirmDialog
+      v-model:open="digestOpen"
+      :title="t('admin.dashboard.digest.title')"
+      :description="t('admin.dashboard.digest.description')"
+      :confirm-label="t('admin.dashboard.digest.confirm')"
+      :loading="sendingDigest"
+      :error="digestError"
+      @confirm="confirmDigest"
     />
   </div>
 </template>

@@ -130,6 +130,10 @@ pages themselves, not the API calls made from them).
 - **Content**: published posts and threads, replies, comments, pending items; open reports.
 - **KNOWBASE**: reachable or not, last success, last error, cache sizes (lists, details, lookups,
   stale copies); **Clear cache** button.
+- **Moderation digest**: **Send digest now** emails the digest at once to every admin who has it
+  switched on, even when nothing is pending (`POST /api/v1/admin/digest/send`, the same as
+  `python -m app.cli digest --force`). A toast gives the number of recipients and items, or warns
+  when every email failed; each use writes an `admin.digest_sent` audit row.
 - **Reporting export**: choose a date range and download the CSV (next section).
 
 ### Stats CSV export
@@ -210,7 +214,8 @@ or a decision email does not arrive.
    SMTP server can be used by changing the `SMTP_*` settings.
 4. After fixing: account changes were saved even though the email failed, so ask members to use
    *Resend verification* or *Forgot password* again (or use the admin resend). A digest whose
-   emails all failed is retried the next day; send it now with `python -m app.cli digest`.
+   emails all failed is retried the next day; send it now with **Send digest now** on the
+   dashboard (or `python -m app.cli digest --force`).
 
 ## 10. Logs
 

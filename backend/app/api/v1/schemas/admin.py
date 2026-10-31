@@ -70,3 +70,12 @@ class AdminStats(BaseModel):
 
 class CacheClearResult(BaseModel):
     cleared: int
+
+
+class DigestSendResult(BaseModel):
+    """``POST /admin/digest/send``: how many admins got the digest and how many items it
+    listed; ``sent`` is false (and the counts 0) when every email failed."""
+
+    recipients: int
+    items: int
+    sent: bool

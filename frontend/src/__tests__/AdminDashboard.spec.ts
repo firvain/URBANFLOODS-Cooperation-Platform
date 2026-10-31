@@ -12,6 +12,7 @@ const t = i18n.global.t
 const STATS = 'GET /api/v1/admin/stats'
 const EXPORT = 'GET /api/v1/admin/stats/export.csv'
 const CLEAR = 'POST /api/v1/admin/knowbase/cache/clear'
+const DIGEST = 'POST /api/v1/admin/digest/send'
 const FILENAME = 'urbanfloods-report-2024-09-01-2026-10-31.csv'
 
 const csvResponse = () =>
@@ -99,6 +100,52 @@ describe('Admin dashboard', () => {
       expect(document.body.textContent).toContain(
         t('admin.dashboard.knowbase.cleared', { count: 23 }, 23),
       ),
+    )
+  })
+
+  it('sends the admin digest after confirming and reports recipients and items', async () => {
+    const { fetchMock } = await mountAdmin('/admin', {
+      [STATS]: reply(200, makeStats()),
+      [DIGEST]: reply(200, { recipients: 3, items: 5, sent: true }),
+    })
+    await click(t('admin.dashboard.digest.button'))
+    expect(callsTo(fetchMock, DIGEST)).toHaveLength(0)
+    expect(dialog().textContent).toContain(t('admin.dashboard.digest.title'))
+    expect(dialog().textContent).toContain(t('admin.dashboard.digest.description'))
+    buttonIn(dialog(), t('admin.dashboard.digest.confirm')).click()
+    await flushPromises()
+    expect(callsTo(fetchMock, DIGEST)).toHaveLength(1)
+    await vi.waitFor(() =>
+      expect(document.body.textContent).toContain(
+        t('admin.dashboard.digest.sent', { recipients: 3, items: 5 }, 3),
+      ),
+    )
+  })
+
+  it('warns when every digest email failed', async () => {
+    const { fetchMock } = await mountAdmin('/admin', {
+      [STATS]: reply(200, makeStats()),
+      [DIGEST]: reply(200, { recipients: 0, items: 0, sent: false }),
+    })
+    await click(t('admin.dashboard.digest.button'))
+    buttonIn(dialog(), t('admin.dashboard.digest.confirm')).click()
+    await flushPromises()
+    expect(callsTo(fetchMock, DIGEST)).toHaveLength(1)
+    await vi.waitFor(() =>
+      expect(document.body.textContent).toContain(t('admin.dashboard.digest.failed')),
+    )
+  })
+
+  it('shows the error in the dialog when the digest request fails', async () => {
+    await mountAdmin('/admin', {
+      [STATS]: reply(200, makeStats()),
+      [DIGEST]: replyError(500, 'server.error'),
+    })
+    await click(t('admin.dashboard.digest.button'))
+    buttonIn(dialog(), t('admin.dashboard.digest.confirm')).click()
+    await flushPromises()
+    await vi.waitFor(() =>
+      expect(dialog().querySelector('[role="alert"]')?.textContent).toBeTruthy(),
     )
   })
 

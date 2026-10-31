@@ -1,5 +1,6 @@
 """Increment 4d: admin reporting - ``GET /admin/stats``, ``GET /admin/stats/export.csv`` and
-``POST /admin/knowbase/cache/clear`` - and their permission matrix.
+``POST /admin/knowbase/cache/clear`` - and their permission matrix. Increment 5m adds
+``POST /admin/digest/send`` (the admin digest, forced, from the dashboard).
 
 The overview numbers are global, so they are checked as differences against a baseline taken
 in the same test. The CSV export is checked on a date range far in the past that only this
@@ -16,11 +17,13 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 import respx
-from sqlalchemy import select
+import structlog
+from sqlalchemy import func, select
 
 from app.core.config import settings
 from app.db.enums import CategoryKind, ContentStatus, HiddenReason, ReportStatus
-from app.db.models import AuditLog, User
+from app.db.models import AuditLog, DigestRun, NotificationPreference, User
+from app.services import digest as digest_service
 from tests.factories import (
     create_admin,
     create_category,
@@ -40,6 +43,7 @@ API = settings.API_V1_PREFIX
 STATS = f"{API}/admin/stats"
 EXPORT = f"{API}/admin/stats/export.csv"
 CACHE_CLEAR = f"{API}/admin/knowbase/cache/clear"
+DIGEST_SEND = f"{API}/admin/digest/send"
 KB_BASE = "https://knowbase.test"
 KB_API = f"{KB_BASE}/api/v1"
 
@@ -63,6 +67,28 @@ def upstream(monkeypatch) -> Iterator[respx.MockRouter]:
     monkeypatch.setattr(settings, "KNOWBASE_BASE_URL", KB_BASE)
     with respx.mock(base_url=KB_API, assert_all_called=False, assert_all_mocked=True) as router:
         yield router
+
+
+@pytest.fixture(autouse=True)
+async def cleanup_digest_runs(database_url: str):
+    """``POST /admin/digest/send`` commits a digest run; drop the runs this test added."""
+    from sqlalchemy import delete
+
+    from app.db.session import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as session:
+        last_id = await session.scalar(select(func.coalesce(func.max(DigestRun.id), 0)))
+    yield
+    async with AsyncSessionLocal() as session, session.begin():
+        await session.execute(delete(DigestRun).where(DigestRun.id > last_id))
+
+
+@pytest.fixture(autouse=True)
+def fresh_digest_logger(monkeypatch) -> None:
+    """The digest module's logger, used here under the app's logging config, would cache that
+    config (``cache_logger_on_first_use``) and hide later ``capture_logs`` in other test files;
+    give each test a throwaway logger instead."""
+    monkeypatch.setattr(digest_service, "log", structlog.get_logger(digest_service.__name__))
 
 
 @pytest.fixture
@@ -136,7 +162,7 @@ def _diff(after: dict, before: dict) -> dict:
 
 # --- permission matrix ------------------------------------------------------------------------
 
-ROUTES = [("get", STATS), ("get", EXPORT), ("post", CACHE_CLEAR)]
+ROUTES = [("get", STATS), ("get", EXPORT), ("post", CACHE_CLEAR), ("post", DIGEST_SEND)]
 
 
 @pytest.mark.parametrize(("method", "url"), ROUTES)
@@ -299,6 +325,84 @@ async def test_cache_clear_empties_cache_and_audits(client, env, upstream):
 async def test_cache_clear_when_empty(client, env):
     await _signed_in(client, env)
     assert (await client.post(CACHE_CLEAR)).json() == {"cleared": 0}
+
+
+# --- admin digest ----------------------------------------------------------------------------
+
+
+async def _digest_rows(env, admin: User) -> list[AuditLog]:
+    stmt = select(AuditLog).where(
+        AuditLog.actor_id == admin.id, AuditLog.action == "admin.digest_sent"
+    )
+    return list((await env.db.scalars(stmt)).all())
+
+
+async def test_digest_send_emails_opted_in_admins_and_audits(client, env, outbox):
+    other = await _user(env, factory=create_superadmin)
+    opted_out = await _user(env, factory=create_admin)
+    (await env.db.get(NotificationPreference, opted_out.id)).admin_digest = False
+    member = await _user(env)
+    admin = await _signed_in(client, env)
+    outbox.clear()
+
+    response = await client.post(DIGEST_SEND)
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert set(body) == {"recipients", "items", "sent"}
+    assert body["sent"] is True
+    recipients = [m.to for m in outbox]
+    assert admin.email in recipients
+    assert other.email in recipients
+    assert opted_out.email not in recipients
+    assert member.email not in recipients
+    assert body["recipients"] == len(recipients)
+    assert isinstance(body["items"], int)
+    assert body["items"] >= 0
+    rows = await _digest_rows(env, admin)
+    assert len(rows) == 1
+    assert rows[0].metadata_ == {
+        "recipients": body["recipients"],
+        "items": body["items"],
+        "sent": True,
+    }
+    run = await env.db.scalar(select(DigestRun).order_by(DigestRun.id.desc()).limit(1))
+    assert run is not None
+    assert (run.recipients, run.items) == (body["recipients"], body["items"])
+
+
+async def test_digest_send_counts_pending_items(client, env, outbox):
+    author = await _user(env)
+    category = await _category(env, CategoryKind.BLOG)
+    await create_post(
+        env.db, category_id=category.id, author_id=author.id, status=P, title="Waiting"
+    )
+    await _signed_in(client, env)
+
+    body = (await client.post(DIGEST_SEND)).json()
+
+    assert body["items"] >= 1
+    assert any("Waiting" in (m.text or "") for m in outbox)
+
+
+async def test_digest_send_when_every_email_fails(client, env, outbox, monkeypatch):
+    admin = await _signed_in(client, env)
+
+    async def broken(**kwargs):
+        raise ConnectionError("smtp down")
+
+    monkeypatch.setattr(digest_service.email_service, "send_email", broken)
+    runs_before = await env.db.scalar(select(func.count()).select_from(DigestRun))
+
+    response = await client.post(DIGEST_SEND)
+
+    assert response.status_code == 200, response.text
+    assert response.json() == {"recipients": 0, "items": 0, "sent": False}
+    assert outbox == []
+    rows = await _digest_rows(env, admin)
+    assert len(rows) == 1
+    assert rows[0].metadata_ == {"recipients": 0, "items": 0, "sent": False}
+    assert await env.db.scalar(select(func.count()).select_from(DigestRun)) == runs_before
 
 
 # --- CSV export -------------------------------------------------------------------------------

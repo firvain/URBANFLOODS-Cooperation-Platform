@@ -740,6 +740,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/digest/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Digest
+         * @description Send the admin moderation digest now (forced: sent even when nothing is pending) to every
+         *     admin whose digest preference is on, as ``python -m app.cli digest --force`` does. The run
+         *     is recorded in this request's transaction. When every email fails nothing is recorded and
+         *     the answer is ``sent: false`` with zero counts (the failure is logged).
+         */
+        post: operations["send_digest_api_v1_admin_digest_send_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/stats/export.csv": {
         parameters: {
             query?: never;
@@ -2141,6 +2164,12 @@ export interface components {
             organisation: components["schemas"]["OrganisationSummary"] | null;
             /** Avatar Url */
             avatar_url?: string | null;
+            /**
+             * Has Profile
+             * @description Whether ``/u/{id}`` exists for other members: the same rule as the member
+             *     directory (``crud/member.py::_in_directory``), so a link never leads to a 404.
+             */
+            readonly has_profile: boolean;
         };
         /** Body_upload_image_api_v1_uploads_images__post */
         Body_upload_image_api_v1_uploads_images__post: {
@@ -2468,6 +2497,19 @@ export interface components {
          * @enum {string}
          */
         DigestFrequency: "daily" | "weekly";
+        /**
+         * DigestSendResult
+         * @description ``POST /admin/digest/send``: how many admins got the digest and how many items it
+         *     listed; ``sent`` is false (and the counts 0) when every email failed.
+         */
+        DigestSendResult: {
+            /** Recipients */
+            recipients: number;
+            /** Items */
+            items: number;
+            /** Sent */
+            sent: boolean;
+        };
         /** ExpertiseTagList */
         ExpertiseTagList: {
             /** Total */
@@ -7098,6 +7140,60 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CacheClearResult"];
+                };
+            };
+            /** @description Error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    send_digest_api_v1_admin_digest_send_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DigestSendResult"];
                 };
             };
             /** @description Error */

@@ -30,6 +30,7 @@ from app.api.v1.schemas.admin import (
     AdminUserOut,
     AdminUserUpdate,
     CacheClearResult,
+    DigestSendResult,
 )
 from app.api.v1.schemas.auth import MessageResponse
 from app.api.v1.schemas.knowbase import KnowbaseStatus
@@ -42,6 +43,7 @@ from app.crud import user as crud_user
 from app.db.enums import TokenPurpose, UserRole
 from app.db.models import User
 from app.services.csv_cells import csv_cell
+from app.services.digest import send_admin_digest
 from app.services.email import send_email
 
 router = APIRouter()
@@ -321,6 +323,24 @@ async def clear_knowbase_cache(admin: AdminUser, db: DbTx, kb: Knowbase) -> Cach
     )
     kb.clear_cache()
     return CacheClearResult(cleared=cleared)
+
+
+@router.post("/digest/send", response_model=DigestSendResult, responses=_error_responses(401, 403))
+async def send_digest(admin: AdminUser, db: DbTx) -> DigestSendResult:
+    """Send the admin moderation digest now (forced: sent even when nothing is pending) to every
+    admin whose digest preference is on, as ``python -m app.cli digest --force`` does. The run
+    is recorded in this request's transaction. When every email fails nothing is recorded and
+    the answer is ``sent: false`` with zero counts (the failure is logged)."""
+    run = await send_admin_digest(db, force=True)
+    result = (
+        DigestSendResult(recipients=run.recipients, items=run.items, sent=True)
+        if run is not None
+        else DigestSendResult(recipients=0, items=0, sent=False)
+    )
+    await crud_audit.log_action(
+        db, actor_id=admin.id, action="admin.digest_sent", metadata=result.model_dump()
+    )
+    return result
 
 
 def _write_section(

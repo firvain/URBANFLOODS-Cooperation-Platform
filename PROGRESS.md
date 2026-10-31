@@ -125,7 +125,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 5j | privacy policy wording for deletion | done | | LegalView spec 23 | v1.1: deletion removes the profile picture and unused own uploads; kept images keep their file name; pending email-change address not exported; audit keeps the browser description of sign-ins; permanent removal by an admin on request |
 | 5k | hover contrast of solid success/warning buttons | done | | 10 vitest (1052) | Nuxt UI `button.compoundVariants` in vite.config: solid secondary/success/warning/info darken to shade 900 on hover/press (white text 8.7–10.6:1; the 75 % tint was 3.9–4.1); statement §3.1 lists no open non-conformity |
 | 5l | author links of directory-hidden members shown as text | todo | | | `has_profile` on author summaries |
-| 5m | admin digest send-now endpoint + dashboard button | todo | | | audit `admin.digest_sent` |
+| 5m | admin digest send-now endpoint + dashboard button | done | | 7 pytest (1628), 3 vitest (1055) | `POST /admin/digest/send` → `{recipients, items, sent}` (forced run in the request transaction; `sent: false` when every email failed), audit `admin.digest_sent`; dashboard section with confirm dialog; admin keys English only by convention; handbook §7/§9 |
 | 5n | admin pages for organisations and expertise tags | todo | | | same pattern as categories |
 | 5o | resubmit after rejection; reason shown to the author and in the email | todo | | | `moderation_note`, `POST /{type}/{id}/resubmit` |
 | 5p | report_count recounted when a reporter is anonymised | todo | | | reports dismissed as `reporter_deleted` |

@@ -1,6 +1,6 @@
 /**
- * Admin endpoints (`/api/v1/admin/*`): dashboard stats, the reporting CSV, the KNOWBASE cache
- * and user management. Admins only; role rules are enforced by the backend (`admin.*` codes).
+ * Admin endpoints (`/api/v1/admin/*`): dashboard stats, the reporting CSV, the KNOWBASE cache,
+ * the admin digest and user management. Admins only; role rules are enforced by the backend (`admin.*` codes).
  */
 import type { components, operations } from '@/types/api-schema'
 import { api } from './api'
@@ -14,6 +14,7 @@ export type AdminUserListParams = NonNullable<
 >
 export type UserRole = components['schemas']['UserRole']
 export type CacheClearResult = components['schemas']['CacheClearResult']
+export type DigestSendResult = components['schemas']['DigestSendResult']
 export type MessageResponse = components['schemas']['MessageResponse']
 
 /** The one-click user actions (`POST /admin/users/{id}/<action>`). */
@@ -41,6 +42,9 @@ export const adminService = {
 
   clearKnowbaseCache: () =>
     api<CacheClearResult>(`${BASE}/knowbase/cache/clear`, { method: 'POST' }),
+
+  /** Send the admin moderation digest now (forced), to every admin who has it switched on. */
+  sendDigest: () => api<DigestSendResult>(`${BASE}/digest/send`, { method: 'POST' }),
 
   /** The reporting CSV for `from`..`to` (with the session cookie, like every request here). */
   async exportStats({ from, to }: StatsExportRange): Promise<StatsExportFile> {
