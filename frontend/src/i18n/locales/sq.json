@@ -30,5 +30,10 @@
   },
   "footer": {
     "statement": "Projekti bashkëfinancohet nga Bashkimi Evropian përmes programit Interreg IPA ADRION."
+  },
+  "account": {
+    "nudge": {
+      "title": "Tregojuni anëtarëve me çfarë merreni"
+    }
   }
 }

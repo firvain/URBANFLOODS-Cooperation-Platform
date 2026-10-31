@@ -5,10 +5,11 @@ import type { FormError, FormSubmitEvent } from '@nuxt/ui'
 
 import PasswordField from './PasswordField.vue'
 import TurnstileWidget from './TurnstileWidget.vue'
+import ExpertisePicker from '@/components/common/ExpertisePicker.vue'
 import OrganisationPicker from '@/components/common/OrganisationPicker.vue'
 import { useApiErrors } from '@/composables/useApiErrors'
 import { OTHER_COUNTRY, useCountries } from '@/composables/useCountries'
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/constants/auth'
+import { EXPERTISE_MAX, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/constants/auth'
 import { SUPPORTED_LOCALES, isSupportedLocale, type LocaleCode } from '@/i18n'
 import { ApiError } from '@/services/api'
 import type { RegisterPayload } from '@/services/auth'
@@ -29,11 +30,14 @@ const state = reactive({
   organisation: { organisation_id: null, organisation_other: null } as OrganisationChoice,
   country: undefined as string | undefined,
   locale: (isSupportedLocale(locale.value) ? locale.value : 'en') as LocaleCode,
+  expertise_ids: [] as number[],
   accept_terms: false,
 })
 type State = typeof state
 
 const turnstileToken = ref<string | null>(null)
+/** The optional expertise picker stays folded away so the form fits on one screen. */
+const expertiseOpen = ref(false)
 const pending = ref(false)
 const formError = ref('')
 /**
@@ -94,6 +98,8 @@ async function onSubmit(event: FormSubmitEvent<State>) {
     accept_terms: true,
     turnstile_token: turnstileToken.value,
   }
+  if (data.expertise_ids.length)
+    payload.expertise_ids = [...data.expertise_ids].sort((a, b) => a - b)
 
   formError.value = ''
   pending.value = true
@@ -106,6 +112,7 @@ async function onSubmit(event: FormSubmitEvent<State>) {
     for (const [field, message] of Object.entries(fields)) {
       serverErrors[field] = message
     }
+    if (fields.expertise_ids) expertiseOpen.value = true
     formError.value = Object.keys(fields).length
       ? t('errors.api.validation.failed')
       : errorMessage(e)
@@ -182,6 +189,34 @@ async function onSubmit(event: FormSubmitEvent<State>) {
         <USelect v-model="state.locale" :items="localeItems" class="w-full" />
       </UFormField>
     </div>
+
+    <UCollapsible v-model:open="expertiseOpen">
+      <UButton
+        color="primary"
+        variant="link"
+        icon="i-lucide-plus"
+        trailing-icon="i-lucide-chevron-down"
+        class="px-0"
+        :ui="{
+          trailingIcon: expertiseOpen ? 'rotate-180 transition-transform' : 'transition-transform',
+        }"
+      >
+        {{ t('auth.expertiseToggle') }}
+        <UBadge v-if="state.expertise_ids.length" color="secondary" variant="subtle" size="sm">
+          {{ t('auth.expertiseSelected', { count: state.expertise_ids.length }) }}
+        </UBadge>
+      </UButton>
+      <template #content>
+        <ExpertisePicker
+          v-model="state.expertise_ids"
+          class="pt-2"
+          :label="t('auth.expertiseLabel', { max: EXPERTISE_MAX })"
+          :help="t('auth.expertiseHint')"
+          :placeholder="t('auth.expertisePlaceholder')"
+          :error="serverErrors.expertise_ids"
+        />
+      </template>
+    </UCollapsible>
 
     <UFormField name="accept_terms" :error="serverErrors.accept_terms">
       <UCheckbox v-model="state.accept_terms" required>

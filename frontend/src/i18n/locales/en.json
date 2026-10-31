@@ -294,7 +294,8 @@
       "continue": "Go to the home page",
       "failed": "We could not verify your email address",
       "resendIntro": "Enter your email address and we will send you a new link.",
-      "resend": "Send a new link"
+      "resend": "Send a new link",
+      "redirectingProfile": "Taking you to the home page… You can add your areas of expertise from your account at any time."
     },
     "forgot": {
       "title": "Forgot your password",
@@ -317,7 +318,12 @@
     },
     "menu": {
       "signedInAs": "Signed in as {name}"
-    }
+    },
+    "expertiseToggle": "Add your areas of expertise",
+    "expertiseSelected": "{count} selected",
+    "expertiseLabel": "Areas of expertise (optional, up to {max})",
+    "expertiseHint": "Helps members working on the same flood management topics find you. You can change them later in your profile.",
+    "expertisePlaceholder": "Select your areas of expertise"
   },
   "account": {
     "intro": "Manage your profile, your password and the devices where you are signed in.",
@@ -364,6 +370,13 @@
       "loadError": "Your sessions could not be loaded.",
       "retry": "Try again",
       "empty": "No active sessions."
+    },
+    "nudge": {
+      "title": "Tell members what you work on",
+      "description": "Add your areas of expertise so the right people can find you.",
+      "action": "Add your expertise",
+      "dismiss": "Dismiss this reminder",
+      "ownCard": "Add your expertise"
     }
   }
 }

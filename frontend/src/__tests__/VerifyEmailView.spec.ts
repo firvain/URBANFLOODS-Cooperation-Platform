@@ -5,6 +5,7 @@ import VerifyEmailView from '@/views/VerifyEmailView.vue'
 import { AUTH_REDIRECT_DELAY_MS } from '@/constants/auth'
 import i18n from '@/i18n'
 import { callsTo, makeUser, mockApi, reply, replyError } from './helpers/api'
+import { EXPERTISE } from './helpers/members'
 import { mountWithApp, unmountAll } from './helpers/mount'
 
 const t = i18n.global.t
@@ -12,7 +13,10 @@ const t = i18n.global.t
 afterEach(() => {
   unmountAll()
   vi.useRealTimers()
+  sessionStorage.clear()
 })
+
+const banner = () => document.querySelector('[data-testid="complete-profile-banner"]')
 
 describe('VerifyEmailView', () => {
   it('posts the token from the query and shows success (logged in)', async () => {
@@ -70,5 +74,24 @@ describe('VerifyEmailView', () => {
     await flushPromises()
     expect(callsTo(fetchMock, 'POST /api/v1/auth/verify-email')).toHaveLength(0)
     expect(wrapper.text()).toContain(t('errors.api.auth.token_invalid'))
+  })
+
+  it('invites a new member without expertise to complete the profile', async () => {
+    mockApi({ 'POST /api/v1/auth/verify-email': reply(200, makeUser()) })
+    const { wrapper } = await mountWithApp(VerifyEmailView, { path: '/verify-email?token=abc' })
+    await flushPromises()
+    expect(banner()).not.toBeNull()
+    expect(banner()!.querySelector('a[href="/account?tab=profile"]')).not.toBeNull()
+    expect(wrapper.text()).toContain(t('auth.verify.redirectingProfile'))
+  })
+
+  it('shows no profile invitation when the user already has expertise', async () => {
+    mockApi({
+      'POST /api/v1/auth/verify-email': reply(200, makeUser({ expertise: [EXPERTISE[0]!] })),
+    })
+    const { wrapper } = await mountWithApp(VerifyEmailView, { path: '/verify-email?token=abc' })
+    await flushPromises()
+    expect(banner()).toBeNull()
+    expect(wrapper.text()).toContain(t('auth.verify.redirecting'))
   })
 })

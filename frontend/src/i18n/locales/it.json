@@ -30,5 +30,10 @@
   },
   "footer": {
     "statement": "Il progetto è cofinanziato dall'Unione europea attraverso il programma Interreg IPA ADRION."
+  },
+  "account": {
+    "nudge": {
+      "title": "Dite ai membri di cosa vi occupate"
+    }
   }
 }

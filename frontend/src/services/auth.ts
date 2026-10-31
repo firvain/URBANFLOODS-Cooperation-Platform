@@ -39,6 +39,8 @@ export interface RegisterPayload {
   locale: string
   accept_terms: true
   turnstile_token?: string | null
+  /** Optional expertise areas (at most 8). */
+  expertise_ids?: number[]
 }
 
 export interface RegisterResponse {

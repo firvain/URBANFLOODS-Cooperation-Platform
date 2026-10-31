@@ -7,3 +7,6 @@ export const PROJECT_COUNTRIES = ['AL', 'BA', 'HR', 'GR', 'IT', 'MK', 'RS', 'SI'
 
 /** How long success screens wait before moving on (verify email). */
 export const AUTH_REDIRECT_DELAY_MS = 2500
+
+/** Mirrors the backend limit on `expertise_ids` (registration and profile). */
+export const EXPERTISE_MAX = 8

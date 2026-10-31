@@ -4,7 +4,15 @@ import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import NetworkView, { SEARCH_DEBOUNCE_MS } from '@/views/NetworkView.vue'
 import i18n from '@/i18n'
 import { PROJECT_COUNTRIES } from '@/constants/auth'
-import { callsTo, mockApi, ORGANISATIONS, reply, replyError, type Handler } from './helpers/api'
+import {
+  callsTo,
+  makeUser,
+  mockApi,
+  ORGANISATIONS,
+  reply,
+  replyError,
+  type Handler,
+} from './helpers/api'
 import { EXPERTISE, EXPERTISE_RESPONSE, makeMember, memberPage } from './helpers/members'
 import { mountWithApp, unmountAll } from './helpers/mount'
 import { clickOption, enterOption, openSelect } from './helpers/select'
@@ -15,6 +23,7 @@ const MEMBERS = 'GET /api/v1/members/'
 afterEach(() => {
   vi.useRealTimers()
   unmountAll()
+  sessionStorage.clear()
 })
 
 /** Serve `GET /members/` pages out of `total` members, honouring skip/limit. */
@@ -215,5 +224,57 @@ describe('NetworkView', () => {
     expect(callsTo(fetchMock, MEMBERS)).toHaveLength(2)
     expect(wrapper.text()).not.toContain(t('network.loadError'))
     expect(cards(wrapper)).toHaveLength(24)
+  })
+
+  describe('profile nudge', () => {
+    const ME = 'GET /api/v1/auth/me'
+    const banner = () => document.querySelector('[data-testid="complete-profile-banner"]')
+    const ownLink = (card: ReturnType<typeof cards>[number]) =>
+      card.find('[data-testid="add-own-expertise"]')
+
+    it('shows the banner above the member grid for a verified user without expertise', async () => {
+      mockApi({ ...routes(), [ME]: reply(200, makeUser()) })
+      const { wrapper } = await mountNetwork()
+      const el = banner()
+      expect(el).not.toBeNull()
+      const grid = cards(wrapper)[0]!.element
+      expect(el!.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    })
+
+    it('shows no banner for anonymous visitors or members with expertise', async () => {
+      mockApi(routes())
+      await mountNetwork()
+      expect(banner()).toBeNull()
+      unmountAll()
+
+      mockApi({ ...routes(), [ME]: reply(200, makeUser({ expertise: [EXPERTISE[0]!] })) })
+      await mountNetwork()
+      expect(banner()).toBeNull()
+    })
+
+    it('own card without expertise links to the profile; others show nothing extra', async () => {
+      const members = {
+        total: 2,
+        items: [makeMember(1, { expertise: [] }), makeMember(2, { expertise: [] })],
+      }
+      mockApi({ ...routes(reply(200, members)), [ME]: reply(200, makeUser({ id: 1 })) })
+      const { wrapper } = await mountNetwork()
+      const [own, other] = cards(wrapper)
+      const link = ownLink(own!)
+      expect(link.exists()).toBe(true)
+      expect(link.attributes('href')).toBe('/account?tab=profile')
+      expect(link.text()).toContain(t('account.nudge.ownCard'))
+      expect(t('account.nudge.ownCard')).toBe('Add your expertise')
+      expect(ownLink(other!).exists()).toBe(false)
+      expect(other!.find('[data-testid="expertise-badge"]').exists()).toBe(false)
+    })
+
+    it('own card with expertise shows the badges, not the link', async () => {
+      mockApi({ ...routes(), [ME]: reply(200, makeUser({ id: 1 })) })
+      const { wrapper } = await mountNetwork()
+      const own = cards(wrapper)[0]!
+      expect(ownLink(own).exists()).toBe(false)
+      expect(own.findAll('[data-testid="expertise-badge"]')).toHaveLength(2)
+    })
   })
 })

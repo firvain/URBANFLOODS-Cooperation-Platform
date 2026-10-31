@@ -11,6 +11,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 
+import CompleteProfileBanner from '@/components/account/CompleteProfileBanner.vue'
 import MemberCard from '@/components/network/MemberCard.vue'
 import { useCountries } from '@/composables/useCountries'
 import { useQueryFilters } from '@/composables/useQueryFilters'
@@ -164,6 +165,8 @@ const initialLoading = computed(() => loading.value && !members.value.length && 
       <div class="h-1 w-20 rounded bg-secondary-500" />
       <p class="mt-4 max-w-3xl text-muted">{{ t('network.intro') }}</p>
     </div>
+
+    <CompleteProfileBanner class="mb-8" />
 
     <div class="grid gap-8 lg:grid-cols-[18rem_1fr]">
       <section aria-labelledby="network-filters-heading" class="space-y-4">

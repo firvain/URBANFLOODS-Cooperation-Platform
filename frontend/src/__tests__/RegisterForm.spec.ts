@@ -4,7 +4,9 @@ import { flushPromises, type DOMWrapper } from '@vue/test-utils'
 import RegisterForm from '@/components/auth/RegisterForm.vue'
 import i18n from '@/i18n'
 import { callsTo, mockApi, ORGANISATIONS, reply, replyError, type Handler } from './helpers/api'
+import { EXPERTISE_RESPONSE } from './helpers/members'
 import { mountWithApp, unmountAll } from './helpers/mount'
+import { clickOption, controlFor, openSelect } from './helpers/select'
 
 const t = i18n.global.t
 
@@ -13,7 +15,11 @@ afterEach(unmountAll)
 const CREATED = { id: 7, email: 'new@example.org', display_name: 'Nina', is_verified: false }
 
 function routes(extra: Record<string, Handler> = {}) {
-  return { 'GET /api/v1/organisations/': reply(200, ORGANISATIONS), ...extra }
+  return {
+    'GET /api/v1/organisations/': reply(200, ORGANISATIONS),
+    'GET /api/v1/expertise/': reply(200, EXPERTISE_RESPONSE),
+    ...extra,
+  }
 }
 
 async function mountForm() {
@@ -150,5 +156,84 @@ describe('RegisterForm', () => {
     const wrapper = await mountForm()
     expect(wrapper.find('a[href="/terms"]').exists()).toBe(true)
     expect(wrapper.find('a[href="/privacy"]').exists()).toBe(true)
+  })
+
+  describe('expertise areas', () => {
+    const label = () => t('auth.expertiseLabel', { max: 8 })
+    const labelled = (wrapper: Awaited<ReturnType<typeof mountForm>>) =>
+      wrapper.findAll('label').some((l) => l.text().startsWith(label()))
+    const toggle = (wrapper: Awaited<ReturnType<typeof mountForm>>) =>
+      wrapper.findAll('button').find((b) => b.text().includes(t('auth.expertiseToggle')))!
+
+    async function openPicker(wrapper: Awaited<ReturnType<typeof mountForm>>) {
+      await toggle(wrapper).trigger('click')
+      await flushPromises()
+    }
+
+    it('hides the picker behind a toggle until it is clicked', async () => {
+      mockApi(routes())
+      const wrapper = await mountForm()
+      const button = toggle(wrapper)
+      expect(button.exists()).toBe(true)
+      expect(button.attributes('aria-expanded')).toBe('false')
+      expect(labelled(wrapper)).toBe(false)
+
+      await openPicker(wrapper)
+      expect(toggle(wrapper).attributes('aria-expanded')).toBe('true')
+      expect(labelled(wrapper)).toBe(true)
+      expect(label()).toBe('Areas of expertise (optional, up to 8)')
+    })
+
+    it('sends the chosen areas as sorted expertise_ids', async () => {
+      const fetchMock = mockApi(routes({ 'POST /api/v1/auth/register': reply(201, CREATED) }))
+      const wrapper = await mountForm()
+      await fillRequired(wrapper)
+      await openPicker(wrapper)
+      await openSelect(wrapper, label())
+      await clickOption('Urban planning')
+      await clickOption('Hydrology')
+      expect(controlFor(wrapper, label()).textContent).toContain('Hydrology')
+      await acceptTerms(wrapper)
+      await submit(wrapper)
+
+      const body = callsTo(fetchMock, 'POST /api/v1/auth/register')[0]!.body
+      expect(body).toMatchObject({ expertise_ids: [1, 3] })
+    })
+
+    it('sends no expertise_ids when none are chosen', async () => {
+      const fetchMock = mockApi(routes({ 'POST /api/v1/auth/register': reply(201, CREATED) }))
+      const wrapper = await mountForm()
+      await fillRequired(wrapper)
+      await acceptTerms(wrapper)
+      await submit(wrapper)
+
+      const body = callsTo(fetchMock, 'POST /api/v1/auth/register')[0]!.body as object
+      expect(body).not.toHaveProperty('expertise_ids')
+    })
+
+    it('maps a server fields.expertise_ids error onto the picker', async () => {
+      mockApi(
+        routes({
+          'POST /api/v1/auth/register': replyError(422, 'validation.failed', {
+            expertise_ids: 'not_found',
+          }),
+        }),
+      )
+      const wrapper = await mountForm()
+      await fillRequired(wrapper)
+      await openPicker(wrapper)
+      await openSelect(wrapper, label())
+      await clickOption('Hydrology')
+      await acceptTerms(wrapper)
+      await submit(wrapper)
+
+      const control = controlFor(wrapper, label())
+      expect(control.getAttribute('aria-invalid')).toBe('true')
+      const described = (control.getAttribute('aria-describedby') ?? '')
+        .split(' ')
+        .map((id) => document.getElementById(id)?.textContent ?? '')
+        .join(' ')
+      expect(described).toContain(t('errors.fields.invalid'))
+    })
   })
 })

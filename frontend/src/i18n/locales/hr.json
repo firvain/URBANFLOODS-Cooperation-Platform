@@ -30,5 +30,10 @@
   },
   "footer": {
     "statement": "Projekt sufinancira Europska unija kroz program Interreg IPA ADRION."
+  },
+  "account": {
+    "nudge": {
+      "title": "Recite članovima čime se bavite"
+    }
   }
 }

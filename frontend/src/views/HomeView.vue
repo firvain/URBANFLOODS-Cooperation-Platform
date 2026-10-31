@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 
+import CompleteProfileBanner from '@/components/account/CompleteProfileBanner.vue'
 import SuggestedCollaborators from '@/components/network/SuggestedCollaborators.vue'
 import { dssUrl } from '@/constants/links'
 import { useAuthStore } from '@/stores/auth'
@@ -26,6 +27,8 @@ const sections = [
       {{ t('home.title') }}
     </h1>
     <p class="mt-4 max-w-3xl text-lg text-muted">{{ t('home.intro') }}</p>
+
+    <CompleteProfileBanner class="mt-8" />
 
     <ul class="mt-10 grid gap-6 md:grid-cols-3">
       <li v-for="section in sections" :key="section.key">

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
+import CompleteProfileBanner from '@/components/account/CompleteProfileBanner.vue'
 import ResendVerificationForm from '@/components/auth/ResendVerificationForm.vue'
 import { useApiErrors } from '@/composables/useApiErrors'
 import { AUTH_REDIRECT_DELAY_MS } from '@/constants/auth'
@@ -17,6 +18,8 @@ const { errorMessage } = useApiErrors()
 
 const state = ref<'verifying' | 'success' | 'error'>('verifying')
 const error = ref('')
+/** A new member with no expertise yet: the success state points to the profile. */
+const needsExpertise = computed(() => auth.user?.expertise.length === 0)
 let redirectTimer: ReturnType<typeof setTimeout> | undefined
 
 onMounted(async () => {
@@ -52,9 +55,13 @@ onBeforeUnmount(() => clearTimeout(redirectTimer))
         variant="subtle"
         icon="i-lucide-circle-check"
         :title="t('auth.verify.success')"
-        :description="t('auth.verify.redirecting')"
+        :description="
+          needsExpertise ? t('auth.verify.redirectingProfile') : t('auth.verify.redirecting')
+        "
       />
     </div>
+
+    <CompleteProfileBanner v-if="state === 'success'" class="mt-6" />
 
     <UButton v-if="state === 'success'" to="/" class="mt-6" icon="i-lucide-house">
       {{ t('auth.verify.continue') }}

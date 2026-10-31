@@ -3,14 +3,20 @@ import { afterEach, describe, expect, it } from 'vitest'
 import HomeView from '@/views/HomeView.vue'
 import i18n from '@/i18n'
 import { callsTo, makeUser, mockApi, reply, replyError } from './helpers/api'
-import { makeSuggested } from './helpers/members'
+import { EXPERTISE, makeSuggested } from './helpers/members'
 import { mountWithApp, unmountAll } from './helpers/mount'
 
 const t = i18n.global.t
 const ME = 'GET /api/v1/auth/me'
 const SUGGESTED = 'GET /api/v1/members/suggested'
 
-afterEach(unmountAll)
+afterEach(() => {
+  unmountAll()
+  sessionStorage.clear()
+})
+
+/** A verified member with expertise (suggestions are only requested for them). */
+const expert = () => makeUser({ expertise: [EXPERTISE[0]!] })
 
 const SUGGESTIONS = {
   total: 8,
@@ -49,7 +55,7 @@ describe('SuggestedCollaborators on the home page', () => {
 
   it('shows up to 6 suggestions with the shared expertise count for verified users', async () => {
     const fetchMock = mockApi({
-      [ME]: reply(200, makeUser()),
+      [ME]: reply(200, expert()),
       [SUGGESTED]: reply(200, SUGGESTIONS),
     })
     await mountWithApp(HomeView)
@@ -73,7 +79,7 @@ describe('SuggestedCollaborators on the home page', () => {
 
   it('explains what to do when there are no suggestions', async () => {
     mockApi({
-      [ME]: reply(200, makeUser()),
+      [ME]: reply(200, expert()),
       [SUGGESTED]: reply(200, { total: 0, items: [] }),
     })
     await mountWithApp(HomeView)
@@ -83,9 +89,19 @@ describe('SuggestedCollaborators on the home page', () => {
   })
 
   it('stays quiet (no cards, a short note) when the request fails', async () => {
-    mockApi({ [ME]: reply(200, makeUser()), [SUGGESTED]: replyError(403, 'auth.not_verified') })
+    mockApi({ [ME]: reply(200, expert()), [SUGGESTED]: replyError(403, 'auth.not_verified') })
     await mountWithApp(HomeView)
     expect(cards()).toHaveLength(0)
     expect(widget()!.textContent).toContain(t('network.suggested.loadError'))
+  })
+
+  it('renders nothing and requests nothing when the user has no expertise', async () => {
+    const fetchMock = mockApi({
+      [ME]: reply(200, makeUser({ expertise: [] })),
+      [SUGGESTED]: reply(200, SUGGESTIONS),
+    })
+    await mountWithApp(HomeView)
+    expect(callsTo(fetchMock, SUGGESTED)).toHaveLength(0)
+    expect(widget()).toBeNull()
   })
 })

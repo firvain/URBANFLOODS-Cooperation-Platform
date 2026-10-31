@@ -69,11 +69,11 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 ### M2 — Blog + KNOWBASE proxy
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
-| 1o | Expertise asked at registration (backend: `expertise_ids` on register; FE: optional picker on the form, 'complete your profile' nudge after verification and on empty Network cards) | in progress | 43bcd21 (backend) | backend 8 pytest done | FE half next |
+| 1o | Expertise asked at registration (backend: `expertise_ids` on register; FE: optional picker on the form, 'complete your profile' nudge after verification and on empty Network cards) | done | 43bcd21 (backend) | 8 pytest + 21 vitest (309 total) | collapsible picker on sign-up; CompleteProfileBanner on verify/home/network; own-card link; suggestions widget hidden until expertise is set |
 | 2a | Models Category/Tag/Post/Attachment/KnowbaseLink + migration (FTS, trigram) | done | 317b387 | 21 pytest | migration 0004; `sa.Computed` tsvector; seeded 9 categories |
 | 2b | `services/sanitize.py` (nh3) + `services/slugs.py` | done | a258d05 | 91 pytest | | | |
 | 2c | `services/knowbase.py` proxy + cache + `/knowbase/*` endpoints | done | 2b4e995 | 61 pytest (694 total) | | | |
-| 2d | categories + tags endpoints | in progress | | | |
+| 2d | categories + tags endpoints | done (uncommitted until 2f lands) | | 39 pytest | | | |
 | 2e | posts endpoints (visibility, trust→status, knowbase_links) | todo | | | |
 | 2f | `services/images.py` + uploads + static mount | in progress | | | |
 | 2g | `scripts/seed_dev.py` + `npm run gen:types` | todo | | | |
