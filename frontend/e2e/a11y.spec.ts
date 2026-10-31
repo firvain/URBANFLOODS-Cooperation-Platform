@@ -2,6 +2,7 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
 
 import { formatViolations, scanA11y } from './a11y'
 import {
+  ADMIN,
   API_HEADERS,
   API_URL,
   EDITOR,
@@ -107,5 +108,27 @@ test.describe('a forum thread', () => {
     }
 
     expect(failures, failures.join('\n\n')).toEqual([])
+  })
+})
+
+test.describe('the admin area', () => {
+  // The dashboard and the approval queue, as the seeded superadmin (logged in through the API;
+  // the browser context shares the session cookie).
+  test('the dashboard and the queue have no WCAG 2.1 AA violations', async ({ browser }) => {
+    test.skip(!process.env.E2E_A11Y, 'axe checks are enabled in M5 (set E2E_A11Y=1)')
+
+    const context = await browser.newContext()
+    try {
+      await loginViaApi(context.request, ADMIN)
+      const page = await context.newPage()
+      const failures: string[] = []
+      for (const path of ['/admin', '/admin/queue']) {
+        const failure = await scan(page, path)
+        if (failure) failures.push(failure)
+      }
+      expect(failures, failures.join('\n\n')).toEqual([])
+    } finally {
+      await context.close()
+    }
   })
 })

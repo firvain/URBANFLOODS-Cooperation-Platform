@@ -140,7 +140,7 @@ test('1. anonymous: the blog lists the posts; category chips and search filter t
   // "storm drains" in its body); the green-roofs post is.
   const count = anon.getByTestId('blog-count')
   const unfiltered = (await count.textContent()) ?? ''
-  const search = anon.getByRole('searchbox', { name: 'Search' })
+  const search = anon.getByRole('searchbox', { name: 'Search', exact: true })
   await search.fill('drains')
   await expect(anon).toHaveURL(/[?&]q=drains(&|$)/)
   // Wait for the filtered result before asserting on what is missing from it.
