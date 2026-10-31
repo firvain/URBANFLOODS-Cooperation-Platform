@@ -82,7 +82,7 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["*"],
-        expose_headers=[REQUEST_ID_HEADER, "X-Knowbase-Cache"],
+        expose_headers=[REQUEST_ID_HEADER, "X-Knowbase-Cache", "Content-Disposition"],
     )
     # Added last, so it is outermost: every response, including CORS preflights, gets an id.
     app.add_middleware(RequestIdMiddleware)
