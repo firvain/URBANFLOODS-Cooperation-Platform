@@ -2,7 +2,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { PROFILE_TAB_LINK } from '@/components/account/CompleteProfileBanner.vue'
 import { memberOrganisation, membersService, type SuggestedMember } from '@/services/members'
 import { useAuthStore } from '@/stores/auth'
 
@@ -62,19 +61,7 @@ const shown = computed(() => suggestions.value.slice(0, MAX_SHOWN))
       </ULink>
     </div>
 
-    <p v-if="needsExpertise" data-testid="suggested-nudge" class="mt-4 text-gray-700">
-      <strong class="font-semibold text-highlighted">{{ t('account.nudge.title') }}.</strong>
-      {{ t('account.nudge.description') }}
-      <ULink
-        :to="PROFILE_TAB_LINK"
-        raw
-        class="font-medium text-primary underline underline-offset-2 hover:text-primary-700"
-      >
-        {{ t('account.nudge.action') }}
-      </ULink>
-    </p>
-
-    <div v-else-if="loading" class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div v-if="loading" class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <USkeleton v-for="n in 3" :key="n" class="h-20 w-full" />
     </div>
 
