@@ -133,7 +133,7 @@ contribution = published post, thread, reply or comment).
 - Backups: nightly database dump and uploads archive with 14-day retention (M6)
   `[CHECK after 6a]`.
 - Costs: zero paid services (open-source stack, existing project server, Cloudflare free tier,
-  Gmail SMTP); hosting cost of the shared server `[TBD]`.
+  Brevo free plan for email); hosting cost of the shared server `[TBD]`.
 - Link to the MoU for long-term cooperation and to D.5.3.x sustainability deliverables.
 - Data preservation: optional Zenodo deposit of the final export `[CHECK]`.
 
@@ -146,7 +146,7 @@ contribution = published post, thread, reply or comment).
 - No XML version of the bulk exports (Atom and sitemap only).
 - Restoring deleted content and managing organisations have no admin page (API only).
 - The personal data export does not yet list the member's own posts and comments.
-- Gmail sending limit (about 500 messages/day).
+- Email sending limit of the Brevo free plan (300 messages/day).
 - `[TBD]` items from user feedback and the accessibility audit.
 
 ## Annexes

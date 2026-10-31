@@ -27,7 +27,7 @@ Browser ──HTTPS──> Cloudflare (proxy, DNS, Turnstile)
      127.0.0.1:8002  backend container (FastAPI, one worker)
         ├─ asyncpg ─────> PostgreSQL 16 (internal network only, no host port)
         ├─ httpx GET ───> KNOWBASE public API  https://knowbase.urbanfloods.app/api/v1
-        ├─ aiosmtplib ──> smtp.gmail.com:587 (STARTTLS)
+        ├─ aiosmtplib ──> smtp-relay.brevo.com:587 (Brevo, STARTTLS)
         └─ httpx POST ──> challenges.cloudflare.com (Turnstile siteverify)
 ```
 
@@ -211,7 +211,9 @@ Exports, feeds and the sitemap use published content only.
 `services/email.py`: Jinja2 templates in `templates/email/<locale>/<name>.{subject.txt,txt.j2,html.j2}`
 (English fallback if any file is missing). Backends: SMTP (aiosmtplib, `SMTP_*` settings) when
 `EMAIL_ENABLED=true`; a logging backend when it is false; an in-memory outbox in tests. Dev
-compose sends to Mailpit.
+compose sends to Mailpit. Production relays through Brevo (EU, free plan, 300/day) as
+`noreply@cooperation.urbanfloods.app` (DKIM-authenticated domain) with `Reply-To` set from
+`SMTP_REPLY_TO` (default `urbanfloods@uowm.gr`; empty omits the header).
 
 | Template | Sent when |
 |---|---|

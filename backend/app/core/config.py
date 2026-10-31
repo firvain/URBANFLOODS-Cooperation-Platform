@@ -38,13 +38,17 @@ class Settings(BaseSettings):
     SESSION_COOKIE_NAME: str = "uf_session"
     SESSION_TTL_DAYS: int = 30
 
-    # Email
-    SMTP_HOST: str = "smtp.gmail.com"
+    # Email: Brevo SMTP relay (EU, free plan) by default. SMTP_USER is the account's SMTP login,
+    # SMTP_PASSWORD an SMTP key (one per environment). The sender must be on the authenticated
+    # domain; replies go to the project address (uowm.gr cannot be the sender: DMARC quarantine).
+    SMTP_HOST: str = "smtp-relay.brevo.com"
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
-    SMTP_FROM: str = "urbanfloods@gmail.com"
+    SMTP_FROM: str = "noreply@cooperation.urbanfloods.app"
     SMTP_FROM_NAME: str = "URBANFLOODS Cooperation Platform"
+    # Reply-To header on every email; empty = no header.
+    SMTP_REPLY_TO: str = "urbanfloods@uowm.gr"
     EMAIL_ENABLED: bool = False
 
     # KNOWBASE (public REST API only)

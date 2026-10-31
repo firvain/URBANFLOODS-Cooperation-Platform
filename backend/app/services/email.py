@@ -106,12 +106,15 @@ class LoggingBackend:
 
 class SmtpBackend:
     """Send through SMTP with aiosmtplib: STARTTLS on 587, implicit TLS on 465, plain otherwise
-    (Mailpit in dev). Logs in only when ``SMTP_USER`` is set."""
+    (Mailpit in dev). Logs in only when ``SMTP_USER`` is set. Adds ``Reply-To`` when
+    ``SMTP_REPLY_TO`` is set."""
 
     def build_message(self, msg: OutgoingEmail) -> EmailMessage:
         message = EmailMessage()
         message["From"] = formataddr((settings.SMTP_FROM_NAME, settings.SMTP_FROM))
         message["To"] = msg.to
+        if settings.SMTP_REPLY_TO:
+            message["Reply-To"] = settings.SMTP_REPLY_TO
         message["Subject"] = msg.subject
         message["Date"] = formatdate(usegmt=True)
         domain = settings.SMTP_FROM.rpartition("@")[2] or None

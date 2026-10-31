@@ -309,6 +309,22 @@ async def test_smtp_backend_builds_multipart_message(smtp_send) -> None:
     assert parts[1].get_content().strip() == "<p>HTML body</p>"
 
 
+async def test_smtp_backend_sets_reply_to_when_configured(smtp_send, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "SMTP_REPLY_TO", "urbanfloods@uowm.gr")
+    await SmtpBackend().send(_outgoing())
+    message = smtp_send.await_args.args[0]
+    assert message["Reply-To"] == "urbanfloods@uowm.gr"
+    # The sender stays the authenticated domain; only replies go to the project address.
+    assert message["From"] == "URBANFLOODS Cooperation Platform <noreply@example.org>"
+
+
+async def test_smtp_backend_omits_reply_to_when_empty(smtp_send, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "SMTP_REPLY_TO", "")
+    await SmtpBackend().send(_outgoing())
+    message = smtp_send.await_args.args[0]
+    assert "Reply-To" not in message
+
+
 async def test_smtp_backend_uses_starttls_on_587_without_auth(smtp_send) -> None:
     await SmtpBackend().send(_outgoing())
     kwargs = smtp_send.await_args.kwargs

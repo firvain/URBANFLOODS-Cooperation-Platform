@@ -1,6 +1,6 @@
 # Privacy Policy — URBANFLOODS Cooperation Platform
 
-**Version 1.1 (draft for legal review), 31 October 2026.** This is the text the platform's
+**Version 1.2 (draft for legal review), 31 October 2026.** This is the text the platform's
 `/privacy` page will show (increment 5e). It describes how personal data is processed when you
 use https://cooperation.urbanfloods.app. Items marked **[CHECK]** need confirmation by the
 University of Western Macedonia's legal office before go-live.
@@ -40,7 +40,7 @@ report on the project to the programme that funds it.
 | Data | Purpose | Legal basis | Retention |
 |---|---|---|---|
 | Email address (verified), password (stored only as an argon2id hash) | Create and secure your account; send verification, password-reset and notification emails | Performance of the agreement you enter by registering (art. 6(1)(b)) | Until you delete your account (then anonymised, section 7). Unverified accounts are deleted automatically after 30 days. |
-| Display name, optional organisation (from the partner list or free text), country, interface language, short biography, expertise areas | Your public member profile, the members directory, suggested collaborators, and attribution of your contributions | Performance of the agreement (art. 6(1)(b)); for the directory and email visibility, your choice in the account settings (consent, art. 6(1)(a), which you can withdraw at any time by changing the setting) | Until you delete your account |
+| Display name, optional organisation (from the partner list or free text), country, interface language, short biography, expertise areas | Your member profile in the members directory, which only registered, verified members of the Platform can see; suggested collaborators; and attribution of your contributions, which the public sees where you are the author of published content | Performance of the agreement (art. 6(1)(b)); for the directory and email visibility, your choice in the account settings (consent, art. 6(1)(a), which you can withdraw at any time by changing the setting) | Until you delete your account |
 | Your contributions: posts, threads, replies, comments, uploaded images with their descriptions and original file names, links to KNOWBASE items | The purpose of the Platform: knowledge exchange among stakeholders; published under the CC BY 4.0 licence (Terms of Use, section 8) | Performance of the agreement (art. 6(1)(b)) and public interest in the implementation of an EU co-funded project (art. 6(1)(e)) | Kept on the Platform; after account deletion attributed to "Deleted user" (section 7) |
 | Session cookie (`uf_session`, random identifier, HttpOnly, Secure, SameSite=Lax) | Keep you signed in; protect against cross-site request forgery | Strictly necessary for the service you requested (no consent required under the ePrivacy rules) | 30 days of inactivity, or until you sign out or revoke the session from your account page |
 | Session list: creation time, last activity, expiry, browser description (user agent) | Let you see and sign out your devices; security | Performance of the agreement (art. 6(1)(b)) | Expired and revoked sessions are deleted after 7 days. The browser description of each sign-in also stays in the audit log (section 7). |
@@ -83,18 +83,25 @@ not, delete this section]**
   through Cloudflare's network) and the Turnstile bot check. Cloudflare acts as a processor under
   its data processing addendum; transfers outside the EU are covered by the EU Standard Contractual
   Clauses and the EU-US Data Privacy Framework. **[CHECK: Cloudflare account holder and DPA]**
-- **Google LLC (Gmail):** transactional emails (verification, password reset, email change,
-  notifications, admin digests) are sent through a Gmail account operated by the project. Google
-  processes the recipient address and message content as a processor under Google's terms.
-  **[CHECK: consider an institutional SMTP server to keep email within UOWM]**
+- **Sendinblue SAS (Brevo), France:** transactional emails (verification, password reset, email
+  change, notifications, moderation decisions, admin digests) are sent through Brevo's email relay
+  from the address noreply@cooperation.urbanfloods.app; replies go to urbanfloods@uowm.gr. Brevo
+  processes the recipient address, the subject, the message content and delivery logs (sent,
+  delivered, bounced) as a processor under its data processing agreement, on servers in the
+  European Union. Brevo keeps this data for the period set in its terms **[CHECK: Brevo log and
+  message retention period; Brevo DPA accepted by the account holder]**.
 - **Project partners:** admins from the URBANFLOODS partner organisations see member profiles and
   content in the course of moderation. Aggregated, non-identifying statistics (numbers of members by
   country and organisation, numbers of contributions) are reported to the Interreg IPA ADRION
   programme as output indicators. Your name is not reported unless you are an admin acting on
   behalf of a partner.
-- **Public:** your display name, organisation, country, biography, expertise areas and
-  contributions are public by design when you appear in the directory or publish content. Your
-  email address is shown to other members only if you switch that on.
+- **Registered members:** your display name, organisation, country, biography and expertise
+  areas are visible to registered, verified members of the Platform through the members directory
+  and your profile when you appear in the directory. Your email address is shown to other members
+  only if you switch that on.
+- **Public:** your contributions are public by design once published, together with the author
+  details shown with them (such as your display name). The members directory is not public.
+  **[CHECK: confirm that individual member profile pages are restricted in the same way]**
 - **Authorities:** we disclose data when required by law, a court or a competent authority,
   including programme audit and control bodies.
 
@@ -150,8 +157,10 @@ one month.
 
 ## 9. International transfers
 
-Your data is stored in Greece. Cloudflare and Google may process limited data outside the European
-Economic Area under the safeguards listed in section 5. No other transfers take place.
+Your data is stored in Greece. Brevo processes email data in the European Union. Cloudflare may
+process limited data outside the European Economic Area under the safeguards listed in section 5.
+No other transfers take place. **[CHECK: whether Brevo's sub-processors transfer data outside the
+EEA]**
 
 ## 10. Children
 
@@ -179,6 +188,13 @@ authorities.
 ## Notes for the reviewer (not part of the policy)
 
 - Version 1.1 (31 Oct 2026) adds what deletion does to images and pending email changes, after the export/deletion increment 1i-b.
+- Version 1.2 (31 Oct 2026) replaces Google (Gmail) with Brevo (Sendinblue SAS, France, EU
+  hosting) as the email processor (section 5) and updates the transfers (section 9). The sender is
+  noreply@cooperation.urbanfloods.app (a project-controlled domain with DKIM); a uowm.gr sender
+  would need the UOWM NOC because of the university's DMARC policy. It also records that the
+  members directory is no longer public: profile details in it are visible to registered,
+  verified members only (sections 3.2 and 5); the public sees only the author details shown with
+  published content.
 - Everything stated here is implemented in the code as of 31 Oct 2026: argon2id hashing, hashed
   session tokens, HttpOnly/Secure/SameSite cookie, 30-day sliding sessions, 7-day cleanup of expired
   sessions and tokens, no IPs in the database, HMAC-hashed IPs in rate-limit logs, audit log without
@@ -188,4 +204,5 @@ authorities.
 - Modelled on the IPA ADRION programme's own privacy policy (controller, legal bases, retention per
   data type, rights, named processors) and the structure of Interreg Euro-MED project notices.
 - Open items: DPO naming; audit-log retention per the subsidy contract; hosting description;
-  Cloudflare and Google DPAs on file; age threshold; Greek-language version.
+  Cloudflare and Brevo DPAs on file; Brevo retention period and sub-processors; age threshold;
+  Greek-language version.

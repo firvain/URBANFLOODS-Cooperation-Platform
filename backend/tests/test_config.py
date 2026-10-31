@@ -37,3 +37,16 @@ def test_settings_defaults(base_env):
     assert s.ENV == "dev"
     assert s.REPORT_AUTO_HIDE_THRESHOLD == 3
     assert s.AUTO_APPROVE_AFTER_DAYS == 0
+
+
+def test_email_defaults_are_the_brevo_relay_and_project_addresses(base_env):
+    for name in ("SMTP_HOST", "SMTP_PORT", "SMTP_FROM", "SMTP_FROM_NAME", "SMTP_REPLY_TO"):
+        base_env.delenv(name, raising=False)
+
+    s = Settings(_env_file=None)
+
+    assert s.SMTP_HOST == "smtp-relay.brevo.com"
+    assert s.SMTP_PORT == 587
+    assert s.SMTP_FROM == "noreply@cooperation.urbanfloods.app"
+    assert s.SMTP_FROM_NAME == "URBANFLOODS Cooperation Platform"
+    assert s.SMTP_REPLY_TO == "urbanfloods@uowm.gr"

@@ -15,7 +15,7 @@ The KNOWBASE (`~/URBANFLOODS-Knowbase`, live at knowbase.urbanfloods.app on serv
 | Registration | Open sign-up, email verification. Roles: member / admin / superadmin. |
 | Posting model | "Trusted after first approval": first post or thread of a member goes to a moderation queue; approval marks the user trusted and they post freely after. Replies/comments by verified users are immediate. Report button everywhere; auto-hide after N distinct reports; soft delete only; admins get email digests; any admin can promote others. |
 | Hostname | cooperation.urbanfloods.app (Cloudflare A record already created, proxied). |
-| Email | Gmail SMTP, urbanfloods@gmail.com with app password via env vars. |
+| Email | **Brevo** (EU-hosted, free plan, 300 emails/day; decided and tested 2026-10-31). SMTP relay `smtp-relay.brevo.com:587` STARTTLS with the account's SMTP login and an SMTP key per environment (env vars only). Sender `noreply@cooperation.urbanfloods.app` on the domain authenticated in Brevo (DKIM, DMARC `p=none`); `Reply-To: urbanfloods@uowm.gr` (`SMTP_REPLY_TO`). uowm.gr cannot be the sender without the UOWM NOC because of its DMARC quarantine policy. Originally Gmail SMTP; replaced. |
 | Content language | One language per post/thread, tagged with a locale; UI translated in 9 locales (en complete first, others fall back). |
 | Licence | CC BY 4.0 for user contributions (in terms + FAIR export metadata). |
 | Attachments | Images only (JPEG/PNG/WebP ≤5 MB, re-encoded to WebP via Pillow). |
@@ -42,7 +42,7 @@ Browser → Cloudflare → host nginx (cooperation.urbanfloods.app, certbot) →
    /static/ → backend:8000 (uploads)
 FastAPI → asyncpg → postgres (internal only)
 FastAPI → httpx → KNOWBASE https://knowbase.urbanfloods.app/api/v1 (cachetools TTLCache + stale-on-error)
-FastAPI → aiosmtplib STARTTLS → smtp.gmail.com:587
+FastAPI → aiosmtplib STARTTLS → smtp-relay.brevo.com:587 (Brevo)
 ```
 
 Same-origin in prod (`VITE_API_BASE_URL=""`), so cookies are first-party; CORS only for Vite dev (`http://localhost:5173`). Measure photos are `<img src="https://knowbase.urbanfloods.app/static/measures/photos/...">` (images are not CORS-bound).
@@ -159,7 +159,7 @@ Reference files to copy patterns from: `~/URBANFLOODS-Knowbase/backend/app/main.
 
 ## Env vars (`core/config.py`)
 
-`ENV`, `DATABASE_URL`, `PROJECT_NAME`, `API_V1_PREFIX`, `ALLOWED_ORIGINS`, `ENABLE_DOCS`, `SECRET_KEY`, `FRONTEND_URL`, `COOKIE_SECURE`, `SESSION_COOKIE_NAME=uf_session`, `SESSION_TTL_DAYS=30`, `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_FROM_NAME`, `EMAIL_ENABLED`, `KNOWBASE_BASE_URL=https://knowbase.urbanfloods.app`, `KNOWBASE_PUBLIC_URL`, `KNOWBASE_TIMEOUT_SECONDS=5`, `KNOWBASE_CACHE_TTL_LIST=900`, `KNOWBASE_CACHE_TTL_DETAIL=21600`, `TURNSTILE_ENABLED`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `UPLOAD_DIR`, `MAX_UPLOAD_MB=5`, `REPORT_AUTO_HIDE_THRESHOLD=3`, `ENABLE_SCHEDULER`, `DIGEST_HOUR_UTC=6`, `RATE_LIMIT_ENABLED`, `TRUST_PROXY_HEADERS`, `LOG_LEVEL`, `LOG_JSON`, `CONTENT_LICENSE_URL`. Frontend: `VITE_API_BASE_URL`, `VITE_TURNSTILE_SITE_KEY`, `VITE_KNOWBASE_PUBLIC_URL`.
+`ENV`, `DATABASE_URL`, `PROJECT_NAME`, `API_V1_PREFIX`, `ALLOWED_ORIGINS`, `ENABLE_DOCS`, `SECRET_KEY`, `FRONTEND_URL`, `COOKIE_SECURE`, `SESSION_COOKIE_NAME=uf_session`, `SESSION_TTL_DAYS=30`, `SMTP_HOST=smtp-relay.brevo.com`, `SMTP_PORT=587`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM=noreply@cooperation.urbanfloods.app`, `SMTP_FROM_NAME`, `SMTP_REPLY_TO=urbanfloods@uowm.gr`, `EMAIL_ENABLED`, `KNOWBASE_BASE_URL=https://knowbase.urbanfloods.app`, `KNOWBASE_PUBLIC_URL`, `KNOWBASE_TIMEOUT_SECONDS=5`, `KNOWBASE_CACHE_TTL_LIST=900`, `KNOWBASE_CACHE_TTL_DETAIL=21600`, `TURNSTILE_ENABLED`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `UPLOAD_DIR`, `MAX_UPLOAD_MB=5`, `REPORT_AUTO_HIDE_THRESHOLD=3`, `ENABLE_SCHEDULER`, `DIGEST_HOUR_UTC=6`, `RATE_LIMIT_ENABLED`, `TRUST_PROXY_HEADERS`, `LOG_LEVEL`, `LOG_JSON`, `CONTENT_LICENSE_URL`, `CONTACT_EMAIL`. Frontend: `VITE_API_BASE_URL`, `VITE_TURNSTILE_SITE_KEY`, `VITE_KNOWBASE_PUBLIC_URL`.
 
 ## Working method (mandatory)
 
@@ -260,7 +260,7 @@ Reference files to copy patterns from: `~/URBANFLOODS-Knowbase/backend/app/main.
 - 5j Privacy policy §3.2/§7 updated for what deletion does (avatar and unused own uploads removed, kept filenames of images that stay, pending email-change address, user agent in login audit rows).
 Deferred by decision (known limitations in the report): resubmit after rejection, reason shown to the author, ban notice, re-reporting after dismissal, stricter superadmin self-deletion, cooling-off period, XML bulk export/DOI, admin digest send-now, pagination labels in other locales, organisations admin page (API only), admin anonymisation of another account (do after launch).
 
-**M6 — Production deployment (ONLY on explicit request).** `docker-compose.prod.yml` (3002/8002, no DB port, volumes, healthchecks on IPv4 `127.0.0.1`, logging), `.env.prod.example`, `deploy.sh` (alembic upgrade in backend entrypoint), `docker/nginx-host-config.template` for cooperation.urbanfloods.app (security headers, CSP allowing challenges.cloudflare.com + knowbase images, `client_max_body_size 6m`), `scripts/backup.sh` (pg_dump + uploads tar, 14-day retention, user crontab), `docs/deployment.md` listing the sudo steps the user runs (`ln -s`, `certbot --nginx -d cooperation.urbanfloods.app`, `nginx -t && reload`), Turnstile site creation, Gmail app password, first `create-superadmin`. Note: Certbot behind Cloudflare proxy may need the record flipped to DNS-only briefly.
+**M6 — Production deployment (ONLY on explicit request).** `docker-compose.prod.yml` (3002/8002, no DB port, volumes, healthchecks on IPv4 `127.0.0.1`, logging), `.env.prod.example`, `deploy.sh` (alembic upgrade in backend entrypoint), `docker/nginx-host-config.template` for cooperation.urbanfloods.app (security headers, CSP allowing challenges.cloudflare.com + knowbase images, `client_max_body_size 6m`), `scripts/backup.sh` (pg_dump + uploads tar, 14-day retention, user crontab), `docs/deployment.md` listing the sudo steps the user runs (`ln -s`, `certbot --nginx -d cooperation.urbanfloods.app`, `nginx -t && reload`), Turnstile site creation, Brevo SMTP key `cooperation-platform-prod`, first `create-superadmin`. Note: Certbot behind Cloudflare proxy may need the record flipped to DNS-only briefly.
 
 ## Security & GDPR checklist
 
@@ -268,7 +268,7 @@ Cookies HttpOnly/Secure/SameSite=Lax, revocable sessions; CSRF via origin check 
 
 ## Known risks
 
-Gmail 500/day cap and possible spam-foldering (mitigated by digests; any SMTP swaps in via env). Single-worker constraint for APScheduler / in-memory cache and rate limit (documented; Redis only if ever scaled). Spam via open registration (Turnstile + verification + first-post approval + auto-hide). KNOWBASE API drift (loose proxy schemas `extra="allow"`, cached titles). 9-locale UI translation is incremental.
+Brevo free-plan cap of 300 emails/day (mitigated by digests; far above expected volume; any SMTP swaps in via env) and possible spam-foldering (mitigated by DKIM/DMARC on the sending domain). Single-worker constraint for APScheduler / in-memory cache and rate limit (documented; Redis only if ever scaled). Spam via open registration (Turnstile + verification + first-post approval + auto-hide). KNOWBASE API drift (loose proxy schemas `extra="allow"`, cached titles). 9-locale UI translation is incremental.
 
 ## Verification (end-to-end)
 

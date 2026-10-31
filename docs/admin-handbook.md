@@ -169,11 +169,15 @@ does not arrive.
 1. Check the backend log for `email.send_failed`, `auth.email_not_sent`, `admin.email_not_sent`,
    `notification.failed`, `digest.failed` / `digest.failed_all` (section 10).
 2. Check the settings: `EMAIL_ENABLED=true`, `SMTP_HOST`/`SMTP_PORT` (default
-   `smtp.gmail.com:587`, STARTTLS), `SMTP_USER`, `SMTP_PASSWORD` (a Gmail **app password**),
-   `SMTP_FROM`, `SMTP_FROM_NAME`. With `EMAIL_ENABLED=false` nothing is sent and each message is
-   only logged as `email.not_sent`.
-3. Gmail limits sending to about 500 messages per day; bursts can be rejected or land in spam.
-   Any other SMTP server can be used by changing the `SMTP_*` settings.
+   `smtp-relay.brevo.com:587`, STARTTLS), `SMTP_USER` (the SMTP login shown on Brevo's
+   *SMTP & API* page), `SMTP_PASSWORD` (a Brevo **SMTP key**), `SMTP_FROM` (must stay on the
+   authenticated domain `cooperation.urbanfloods.app`), `SMTP_FROM_NAME`, `SMTP_REPLY_TO`. With
+   `EMAIL_ENABLED=false` nothing is sent and each message is only logged as `email.not_sent`.
+3. Check Brevo's transactional **logs** page (sent, delivered, bounced, blocked per message) and
+   the account's daily quota: the free plan sends 300 emails per day. An authentication error
+   means the SMTP key was revoked or mistyped: create a new key on the *SMTP & API* page (one per
+   environment), put it in `.env.prod`, restart the backend, then delete the old key. Any other
+   SMTP server can be used by changing the `SMTP_*` settings.
 4. After fixing: account changes were saved even though the email failed, so ask members to use
    *Resend verification* or *Forgot password* again (or use the admin resend). A digest whose
    emails all failed is retried the next day; send it now with `python -m app.cli digest`.
@@ -271,8 +275,9 @@ All settings are environment variables read by `backend/app/core/config.py` (def
 | `ENABLE_DOCS` | `true` | serve `/docs` and `/api/v1/openapi.json` |
 | `COOKIE_SECURE` | `false` | set `true` in production |
 | `SESSION_COOKIE_NAME`, `SESSION_TTL_DAYS` | `uf_session`, `30` | session cookie |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | `smtp.gmail.com`, `587`, empty, empty | outgoing mail |
-| `SMTP_FROM`, `SMTP_FROM_NAME` | `urbanfloods@gmail.com`, `URBANFLOODS Cooperation Platform` | sender |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | `smtp-relay.brevo.com`, `587`, empty, empty | outgoing mail (Brevo SMTP login and SMTP key) |
+| `SMTP_FROM`, `SMTP_FROM_NAME` | `noreply@cooperation.urbanfloods.app`, `URBANFLOODS Cooperation Platform` | sender |
+| `SMTP_REPLY_TO` | `urbanfloods@uowm.gr` | `Reply-To` header (empty = none) |
 | `EMAIL_ENABLED` | `false` | actually send email |
 | `KNOWBASE_BASE_URL`, `KNOWBASE_PUBLIC_URL` | `https://knowbase.urbanfloods.app` | KNOWBASE API and public links |
 | `KNOWBASE_TIMEOUT_SECONDS` | `5.0` | upstream timeout |
@@ -287,6 +292,7 @@ All settings are environment variables read by `backend/app/core/config.py` (def
 | `RATE_LIMIT_ENABLED`, `TRUST_PROXY_HEADERS` | `true`, `false` | rate limits; trust `CF-Connecting-IP` / `X-Forwarded-Proto` (set `true` behind Cloudflare and nginx) |
 | `LOG_LEVEL`, `LOG_JSON` | `INFO`, `false` | logging |
 | `CONTENT_LICENSE_URL` | CC BY 4.0 URL | licence link in exports |
+| `CONTACT_EMAIL` | `louta@uowm.gr` | project contact named in emails (e.g. a rejected post) |
 
 Frontend build variables: `VITE_API_BASE_URL` (empty in production, same origin),
 `VITE_TURNSTILE_SITE_KEY`, `VITE_DSS_URL`.
