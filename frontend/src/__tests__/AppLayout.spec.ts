@@ -375,18 +375,18 @@ describe('main navigation and the Unified DSS', () => {
       t('nav.home'),
       t('nav.blog'),
       t('nav.forum'),
-      t('nav.partners'),
       t('nav.network'),
       t('nav.knowbase'),
       t('nav.dss'),
+      t('nav.partners'),
       t('nav.about'),
     ])
     expect(t('nav.forum')).toBe('Forum')
     expect(navLinks()[1]!.getAttribute('href')).toBe('/blog')
     expect(navLinks()[2]!.getAttribute('href')).toBe('/forum')
-    expect(navLinks()[4]!.getAttribute('href')).toBe('/network')
-    expect(navLinks()[5]!.getAttribute('href')).toBe('/knowbase')
-    expect(navLinks()[5]!.getAttribute('target')).toBeNull()
+    expect(navLinks()[3]!.getAttribute('href')).toBe('/network')
+    expect(navLinks()[4]!.getAttribute('href')).toBe('/knowbase')
+    expect(navLinks()[4]!.getAttribute('target')).toBeNull()
   })
 
   it('links the DSS in a new tab, announced, with the URL from VITE_DSS_URL', async () => {
@@ -408,9 +408,9 @@ describe('main navigation and the Unified DSS', () => {
       t('nav.home'),
       t('nav.blog'),
       t('nav.forum'),
-      t('nav.partners'),
       t('nav.network'),
       t('nav.knowbase'),
+      t('nav.partners'),
       t('nav.about'),
     ])
     expect(document.querySelector('[data-testid="dss-card"]')).toBeNull()

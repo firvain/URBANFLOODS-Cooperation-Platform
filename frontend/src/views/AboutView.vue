@@ -187,11 +187,6 @@ const outputs = computed(() =>
                   {{ t('about.links.project') }}
                 </ExternalLink>
               </li>
-              <li>
-                <ExternalLink :href="EXTERNAL_LINKS.knowbase">
-                  {{ t('about.links.knowbase') }}
-                </ExternalLink>
-              </li>
             </ul>
           </section>
         </div>

@@ -3,9 +3,9 @@ export const NAV_ITEMS = [
   { name: 'home', labelKey: 'nav.home', to: '/' },
   { name: 'blog', labelKey: 'nav.blog', to: '/blog' },
   { name: 'forum', labelKey: 'nav.forum', to: '/forum' },
-  { name: 'partners', labelKey: 'nav.partners', to: '/partners' },
   { name: 'network', labelKey: 'nav.network', to: '/network' },
   { name: 'knowbase', labelKey: 'nav.knowbase', to: '/knowbase' },
+  { name: 'partners', labelKey: 'nav.partners', to: '/partners' },
   { name: 'about', labelKey: 'nav.about', to: '/about' },
 ] as const
 
