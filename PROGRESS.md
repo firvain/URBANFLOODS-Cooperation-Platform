@@ -115,7 +115,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 5d | accessibility pass + axe in Playwright | todo | | | core |
 | 5e | static pages + consent text | done | 26107dc (5e-a) | 5e-a: 42 vitest; 5e-b: 11 vitest | 5e-a: /terms, /privacy from docs/legal markdown (Vite plugin strips reviewer notes); 5e-b: /accessibility (EU model statement, partially conformant until 5d) and /open-data (exports, feeds, datapackage, CC BY 4.0, citation) from docs/legal, footer links, titles in all 9 locales; consent checkbox already linked Terms/Privacy. [CHECK] items listed in the two markdown files |
 | 5f | translation pass (8 locales) | todo | | | extended |
-| 5g | docs incl. `report-D5.1.1-outline.md`, admin handbook, moderation guide | todo | | | core |
+| 5g | docs incl. `report-D5.1.1-outline.md`, admin handbook, moderation guide | done | | links verified by script | core. docs/architecture, api, moderation-guide, admin-handbook, fair-data, testing, report-D5.1.1-outline; README rewritten; [CHECK] items inside each doc |
 
 ### M6 — Production deployment (only on explicit request)
 | Inc | Scope | Status | Commit | Tests | Notes |
@@ -168,6 +168,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - **Next:** full `npm run e2e` → commit 4h (M4 complete); commit 5g docs; then 5d (a11y pass) and 5f (translations) sequentially on the frontend.
 
 ## 4. Open questions / decisions pending
+- Gaps found while writing the docs (2026-10-31), to schedule: GDPR self-service export returns empty content lists (placeholder in schemas/auth.py + crud/user.py) and no attachments — must be fixed before go-live; the logging email backend (EMAIL_ENABLED=false) writes recipient addresses to the log; no UI button for "restore" although the API exists (and the UI text says restore is DB-only); no admin page for organisations and no admin way to add expertise tags; the XML bulk export agreed at the 3rd meeting is not implemented (Atom + sitemap only); `/admin/digest/send-now` from the plan not implemented (CLI only); PLAN.md env-var list and a few routes differ from the code (see docs/api.md); decide `ENABLE_DOCS` in production (open-data page assumes the OpenAPI file is served); datapackage keywords say "urban flooding".
 - Terms of Use draft v1 in `docs/legal/terms-of-use.md` needs UOWM legal review: age threshold (15/16), KNOWBASE data licence, jurisdiction. Contact for everything (incl. data requests): louta@uowm.gr (user, 2026-10-31). Privacy Policy draft v1 in `docs/legal/privacy-policy.md` (2026-10-31): review DPO naming, audit-log retention per subsidy contract, hosting description, Cloudflare/Google DPAs, age threshold.
 - None blocking. Turnstile site key and Gmail app password are needed before M1 can be tested
   end-to-end against real services (dev uses Mailpit and `TURNSTILE_ENABLED=false`).

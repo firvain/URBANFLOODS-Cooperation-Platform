@@ -9,6 +9,8 @@ uv run fastapi dev app/main.py     # http://localhost:8000 (needs DATABASE_URL, 
 uv run pytest                      # Docker (testcontainers) or TEST_DATABASE_URL
 ```
 
+Test setup details (compose test database, coverage, CI): [`docs/testing.md`](../docs/testing.md).
+
 ## Development seed
 
 `scripts/seed_dev.py` creates demo accounts and eight blog posts (all blog categories, one Greek
@@ -36,3 +38,15 @@ All accounts are verified. `.example` is a reserved TLD (RFC 2606), so these add
 be delivered to; `.local`/`.test` would be rejected by the login form's email validation. KNOWBASE link
 titles come from the live KNOWBASE API when it is reachable; otherwise placeholder titles are
 stored and a warning is printed.
+
+## Operator commands
+
+```bash
+python -m app.cli create-superadmin --email X --display-name Y [--password Z] [--organisation-id N]
+python -m app.cli promote --email X --to admin|superadmin
+python -m app.cli digest [--force]     # admin moderation digest now
+python -m app.cli maintenance          # expired sessions/tokens, unverified purge, orphan uploads, auto-approve
+```
+
+Run them in the container (`docker compose exec backend …`) or here with `uv run`. What each
+does and when to use it: [`docs/admin-handbook.md`](../docs/admin-handbook.md#11-command-line-tools).
