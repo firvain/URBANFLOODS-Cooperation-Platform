@@ -612,3 +612,154 @@ async def test_crud_create_user_policy_and_organisation_errors(db_session):
         )
     assert org.value.status_code == 422
     assert org.value.fields == {"organisation_id": "not_found"}
+
+
+# --- expertise at registration (increment 1o) -------------------------------------------------
+
+ME = f"{API}/auth/me"
+
+
+async def _seeded_tag_ids(db, *slugs: str) -> list[int]:
+    from app.db.models import ExpertiseTag
+
+    rows = (await db.execute(select(ExpertiseTag.slug, ExpertiseTag.id))).all()
+    by_slug = {slug: tag_id for slug, tag_id in rows}
+    return [by_slug[slug] for slug in slugs]
+
+
+async def _verify_and_get_me(client, outbox) -> dict:
+    assert (await client.post(VERIFY, json={"token": _token_from(outbox[0])})).status_code == 200
+    response = await client.get(ME)
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+async def _register_audit(db, user_id: int) -> AuditLog:
+    return await db.scalar(
+        select(AuditLog)
+        .where(
+            AuditLog.target_type == "user",
+            AuditLog.target_id == user_id,
+            AuditLog.action == "auth.register",
+        )
+        .execution_options(populate_existing=True)
+    )
+
+
+async def test_register_with_expertise(client, db_session, outbox, cleanup_users):
+    # Sent out of order; returned in sort_order.
+    ids = await _seeded_tag_ids(db_session, "meteorology", "hydrology", "civil-protection")
+
+    email, response = await _register(client, cleanup_users, expertise_ids=ids)
+
+    assert response.status_code == 201, response.text
+    assert set(response.json()) == {"id", "email", "display_name", "is_verified"}
+    me = await _verify_and_get_me(client, outbox)
+    assert [tag["slug"] for tag in me["expertise"]] == [
+        "hydrology",
+        "civil-protection",
+        "meteorology",
+    ]
+    audit = await _register_audit(db_session, response.json()["id"])
+    assert audit.metadata_ == {"locale": "en", "consent": True, "expertise_count": 3}
+
+
+async def test_register_without_expertise(client, db_session, outbox, cleanup_users):
+    _, response = await _register(client, cleanup_users)
+
+    assert response.status_code == 201, response.text
+    assert (await _verify_and_get_me(client, outbox))["expertise"] == []
+    audit = await _register_audit(db_session, response.json()["id"])
+    assert audit.metadata_["expertise_count"] == 0
+
+
+async def test_register_too_many_expertise(client, db_session, outbox, cleanup_users):
+    from app.db.models import ExpertiseTag
+
+    ids = list((await db_session.scalars(select(ExpertiseTag.id).limit(9))).all())
+    assert len(ids) == 9
+
+    email, response = await _register(client, cleanup_users, expertise_ids=ids)
+
+    _assert_validation(response, "expertise_ids")
+    assert await _user(db_session, email) is None
+    assert outbox == []
+
+
+async def test_register_unknown_expertise_creates_no_user(
+    client, db_session, outbox, cleanup_users
+):
+    ids = await _seeded_tag_ids(db_session, "hydrology")
+
+    email, response = await _register(client, cleanup_users, expertise_ids=[*ids, 987_654])
+
+    _assert_validation(response, "expertise_ids", "not_found")
+    assert await _user(db_session, email) is None
+    assert outbox == []
+
+
+async def test_register_inactive_expertise_rejected(client, db_session, cleanup_users):
+    from app.db.models import ExpertiseTag
+
+    retired = ExpertiseTag(slug="zz-reg-inactive", label="Retired", sort_order=99, is_active=False)
+    db_session.add(retired)
+    await db_session.commit()
+    try:
+        email, response = await _register(client, cleanup_users, expertise_ids=[retired.id])
+
+        _assert_validation(response, "expertise_ids", "not_found")
+        assert await _user(db_session, email) is None
+    finally:
+        await db_session.delete(retired)
+        await db_session.commit()
+
+
+async def test_register_duplicate_expertise_ids_collapse(client, db_session, outbox, cleanup_users):
+    hydrology = (await _seeded_tag_ids(db_session, "hydrology"))[0]
+
+    _, response = await _register(client, cleanup_users, expertise_ids=[hydrology, hydrology])
+
+    assert response.status_code == 201, response.text
+    me = await _verify_and_get_me(client, outbox)
+    assert [tag["id"] for tag in me["expertise"]] == [hydrology]
+    audit = await _register_audit(db_session, response.json()["id"])
+    assert audit.metadata_["expertise_count"] == 1
+
+
+async def test_register_request_openapi_lists_expertise_ids(client):
+    response = await client.get(f"{API}/openapi.json")
+
+    assert response.status_code == 200
+    schema = response.json()["components"]["schemas"]["RegisterRequest"]
+    assert "expertise_ids" not in schema.get("required", [])
+    field = schema["properties"]["expertise_ids"]
+    assert field["type"] == "array"
+    assert field["items"] == {"type": "integer"}
+    assert field["maxItems"] == 8
+    assert field.get("default") == []
+
+
+async def test_crud_create_user_with_expertise(db_session):
+    from app.core.exceptions import AppError
+    from app.crud.user import create_user as crud_create_user
+
+    ids = await _seeded_tag_ids(db_session, "meteorology", "hydrology")
+    user = await crud_create_user(
+        db_session,
+        email=unique_email("crud-exp"),
+        password=STRONG_PASSWORD,
+        display_name="Expert",
+        expertise_ids=[*ids, ids[0]],
+    )
+    assert [tag.slug for tag in user.expertise] == ["hydrology", "meteorology"]
+
+    with pytest.raises(AppError) as excinfo:
+        await crud_create_user(
+            db_session,
+            email=unique_email("crud-exp"),
+            password=STRONG_PASSWORD,
+            display_name="Unknown",
+            expertise_ids=[987_654],
+        )
+    assert excinfo.value.status_code == 422
+    assert excinfo.value.fields == {"expertise_ids": "not_found"}

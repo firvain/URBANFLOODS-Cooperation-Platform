@@ -94,6 +94,8 @@ class RegisterRequest(OrganisationFieldsMixin):
     display_name: DisplayName
     country: Country = None
     locale: Locale = "en"
+    # Duplicates collapse; unknown or inactive ids are rejected in crud (``not_found``).
+    expertise_ids: Annotated[list[int], Field(max_length=MAX_EXPERTISE)] = []
     accept_terms: bool
     turnstile_token: TurnstileToken = None
 

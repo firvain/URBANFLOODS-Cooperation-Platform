@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -19,7 +19,14 @@ from app.crud import expertise as crud_expertise
 from app.crud import session as crud_session
 from app.crud import token as crud_token
 from app.db.enums import TokenPurpose, UserRole
-from app.db.models import AuditLog, NotificationPreference, Organisation, Session, User
+from app.db.models import (
+    AuditLog,
+    ExpertiseTag,
+    NotificationPreference,
+    Organisation,
+    Session,
+    User,
+)
 
 EMAIL_UNIQUE_CONSTRAINT = "uq_users_email"
 # Fields a user may change on their own profile (``PATCH /auth/me``).
@@ -59,6 +66,16 @@ async def get_user_by_id(db: AsyncSession, *, user_id: int) -> User | None:
     return (await db.execute(stmt)).unique().scalar_one_or_none()
 
 
+async def _load_expertise_tags(db: AsyncSession, ids: Iterable[int]) -> list[ExpertiseTag]:
+    """The active tags for ``ids`` (duplicates collapse), in ``sort_order``. Raises ``AppError``
+    422 (``fields.expertise_ids = "not_found"``) if any id is unknown or inactive."""
+    wanted = set(ids)
+    tags = await crud_expertise.get_active_tags(db, tag_ids=wanted)
+    if len(tags) != len(wanted):
+        raise validation_error({"expertise_ids": "not_found"})
+    return tags
+
+
 async def create_user(
     db: AsyncSession,
     *,
@@ -69,16 +86,20 @@ async def create_user(
     organisation_other: str | None = None,
     country: str | None = None,
     locale: str = "en",
+    expertise_ids: Iterable[int] | None = None,
 ) -> User:
-    """Create an unverified member with default notification preferences.
+    """Create an unverified member with default notification preferences and the given
+    expertise (duplicates collapse).
 
     Raises ``PasswordPolicyError`` for a weak password, ``AppError`` 422 (``fields.
-    organisation_id = "not_found"``) for an unknown organisation, and ``AppError`` 409
+    organisation_id = "not_found"``) for an unknown organisation or (``fields.expertise_ids =
+    "not_found"``) for an unknown or inactive expertise tag, and ``AppError`` 409
     ``auth.email_taken`` if the address (any case) is already registered.
     """
     validate_password_policy(password)
     if organisation_id is not None and await db.get(Organisation, organisation_id) is None:
         raise validation_error({"organisation_id": "not_found"})
+    tags = await _load_expertise_tags(db, expertise_ids or ())
 
     # argon2 is deliberately slow; keep it off the event loop.
     password_hash = await asyncio.to_thread(hash_password, password)
@@ -92,6 +113,7 @@ async def create_user(
         locale=locale,
     )
     user.notification_preferences = NotificationPreference()
+    user.expertise = tags
     try:
         # A savepoint keeps the outer transaction usable if the insert fails.
         async with db.begin_nested():
@@ -150,10 +172,7 @@ async def update_profile(db: AsyncSession, *, user: User, changes: Mapping[str, 
         values["organisation_id"] = None
     tags = None
     if "expertise_ids" in values:
-        wanted = set(values.pop("expertise_ids"))
-        tags = await crud_expertise.get_active_tags(db, tag_ids=wanted)
-        if len(tags) != len(wanted):
-            raise validation_error({"expertise_ids": "not_found"})
+        tags = await _load_expertise_tags(db, values.pop("expertise_ids"))
 
     changed = sorted(name for name, value in values.items() if getattr(user, name) != value)
     for name in changed:

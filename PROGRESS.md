@@ -69,13 +69,13 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 ### M2 — Blog + KNOWBASE proxy
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
-| 1o | Expertise asked at registration (backend: `expertise_ids` on register; FE: optional picker on the form, 'complete your profile' nudge after verification and on empty Network cards) | in progress | | | user 2026-10-31 |
-| 2a | Models Category/Tag/Post/Attachment/KnowbaseLink + migration (FTS, trigram) | in progress | | | + `event_at`/`event_url` on posts (Events) |
-| 2b | `services/sanitize.py` (nh3) + `services/slugs.py` | in progress | | | |
-| 2c | `services/knowbase.py` proxy + cache + `/knowbase/*` endpoints | in progress | | | |
-| 2d | categories + tags endpoints | todo | | | |
+| 1o | Expertise asked at registration (backend: `expertise_ids` on register; FE: optional picker on the form, 'complete your profile' nudge after verification and on empty Network cards) | in progress | | backend 8 pytest done | backend half committed; FE half after 5e-a |
+| 2a | Models Category/Tag/Post/Attachment/KnowbaseLink + migration (FTS, trigram) | done | | 21 pytest | migration 0004; `sa.Computed` tsvector; seeded 9 categories |
+| 2b | `services/sanitize.py` (nh3) + `services/slugs.py` | done | | 91 pytest | | | |
+| 2c | `services/knowbase.py` proxy + cache + `/knowbase/*` endpoints | done | | 61 pytest (694 total) | | | |
+| 2d | categories + tags endpoints | in progress | | | |
 | 2e | posts endpoints (visibility, trust→status, knowbase_links) | todo | | | |
-| 2f | `services/images.py` + uploads + static mount | todo | | | |
+| 2f | `services/images.py` + uploads + static mount | in progress | | | |
 | 2g | `scripts/seed_dev.py` + `npm run gen:types` | todo | | | |
 | 2h | FE knowbase store/views | todo | | | |
 | 2i | FE editor components (Tiptap) | todo | | | |

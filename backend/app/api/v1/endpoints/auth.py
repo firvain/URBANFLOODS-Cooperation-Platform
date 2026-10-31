@@ -160,6 +160,7 @@ async def register(body: RegisterRequest, request: Request, db: DbTx) -> Registe
             organisation_other=body.organisation_other,
             country=body.country,
             locale=body.locale,
+            expertise_ids=body.expertise_ids,
         )
     except PasswordPolicyError as exc:
         raise validation_error({"password": exc.code}) from None
@@ -171,7 +172,11 @@ async def register(body: RegisterRequest, request: Request, db: DbTx) -> Registe
         action="auth.register",
         target_type="user",
         target_id=user.id,
-        metadata={"locale": user.locale, "consent": True},
+        metadata={
+            "locale": user.locale,
+            "consent": True,
+            "expertise_count": len(user.expertise),
+        },
     )
     # GDPR: the audit row's created_at is the consent timestamp.
     await crud_audit.log_action(
