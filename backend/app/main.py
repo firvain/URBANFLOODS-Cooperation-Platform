@@ -11,13 +11,16 @@ from app.api.v1.endpoints import (
     admin,
     auth,
     categories,
+    comments,
     expertise,
     health,
     knowbase,
     members,
     organisations,
     posts,
+    replies,
     tags,
+    threads,
     uploads,
 )
 from app.core.config import settings
@@ -97,6 +100,11 @@ def create_app() -> FastAPI:
     app.include_router(tags.router, prefix=f"{settings.API_V1_PREFIX}/tags", tags=["tags"])
     app.include_router(uploads.router, prefix=f"{settings.API_V1_PREFIX}/uploads", tags=["uploads"])
     app.include_router(posts.router, prefix=f"{settings.API_V1_PREFIX}/posts", tags=["posts"])
+    # Comments carry their own /posts/{post_id}/comments/ and /comments/{id} paths.
+    app.include_router(comments.router, prefix=settings.API_V1_PREFIX, tags=["comments"])
+    app.include_router(threads.router, prefix=f"{settings.API_V1_PREFIX}/threads", tags=["threads"])
+    # Replies carry their own /threads/{thread_id}/replies/ and /replies/{id} paths.
+    app.include_router(replies.router, prefix=settings.API_V1_PREFIX, tags=["replies"])
     # Uploaded images (re-encoded WebP), served with nosniff.
     app.mount(settings.UPLOAD_URL_PREFIX, uploads.UploadStaticFiles(), name="uploads")
 

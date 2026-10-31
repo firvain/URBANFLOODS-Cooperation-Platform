@@ -293,3 +293,37 @@ async def test_merge_errors(client, db_session, cleanup_users, cleanup_tags):
         "tags.not_found",
     )
     assert (await client.post(f"{TAGS}{tag.id}/merge", json={})).status_code == 422
+
+
+async def test_merge_moves_thread_tags_too(db_session):
+    from sqlalchemy.orm import selectinload
+
+    from app.db.enums import CategoryKind
+    from app.db.models import Thread, thread_tags
+    from tests.factories import create_category, create_thread
+
+    forum = await create_category(db_session, kind=CategoryKind.FORUM)
+    source = await create_tag(db_session)
+    target = await create_tag(db_session)
+    only_source = await create_thread(db_session, category_id=forum.id, tags=[source])
+    both = await create_thread(db_session, category_id=forum.id, tags=[source, target])
+    pending = await create_thread(
+        db_session, category_id=forum.id, tags=[source], status=ContentStatus.PENDING
+    )
+
+    merged = await crud_tag.merge_tags(db_session, source_id=source.id, target_id=target.id)
+
+    assert merged.usage_count == 2  # only_source and both; pending is not counted
+    thread_ids = set(
+        (
+            await db_session.scalars(
+                select(thread_tags.c.thread_id).where(thread_tags.c.tag_id == target.id)
+            )
+        ).all()
+    )
+    assert thread_ids == {only_source.id, both.id, pending.id}
+    stmt = (
+        select(Thread).where(Thread.id == only_source.id).execution_options(populate_existing=True)
+    )
+    reloaded = await db_session.scalar(stmt.options(selectinload(Thread.tags)))
+    assert [tag.id for tag in reloaded.tags] == [target.id]

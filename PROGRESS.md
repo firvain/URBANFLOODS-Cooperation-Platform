@@ -80,17 +80,17 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 2h | FE knowbase store/views | done | bda74dc | 40 vitest | | | |
 | 2i | FE editor components (Tiptap) | done | c8f50fb | 50 vitest (399 total) | Tiptap 3.32 (already a Nuxt UI dependency, lazy chunk ≈131 kB gzip); tables skipped; happy-dom NodeIterator shim | | | |
 | 2j | FE blog views + stores | done | a18244d | 72 vitest (471 total) | list/detail/editor on generated types; header collapses to burger below xl (overflow fix) | | | |
-| 2k | Playwright `blog.spec.ts` | done | | 7 e2e (15 total) | **M2 complete.** a11y findings (M5): contrast on /partners h3, /about labels, /register placeholders, avatar initials; mailto label mismatch | | | |
+| 2k | Playwright `blog.spec.ts` | done | 151f1de | 7 e2e (15 total) | **M2 complete.** a11y findings (M5): contrast on /partners h3, /about labels, /register placeholders, avatar initials; mailto label mismatch | | | |
 
 ### M3 — Forum + comments
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
 | 3a | Models Thread/Reply/Comment + migration (one-level trigger, counters) | done | 8710d19 | 28 pytest (885 total) | migration 0005; nesting + counter triggers | | | |
-| 3b | threads endpoints + admin pin/lock | done (uncommitted until 3d lands) | | 52 pytest | tag usage now counts threads too | | | |
-| 3c | replies endpoints | in progress | | | + merge_tags moves thread_tags | | | |
-| 3d | comments endpoints | in progress | | | |
+| 3b | threads endpoints + admin pin/lock | done | | 52 pytest | tag usage now counts threads too | | | |
+| 3c | replies endpoints | done | | 29 pytest (996 total) | one-level nesting via trigger mapped to 422; placeholders for invisible parents; merge_tags moves thread_tags | | | |
+| 3d | comments endpoints | done | | 30 pytest | | | |
 | 3e | notification emails honouring preferences | todo | | | |
-| 3f | FE forum views + stores | todo | | | |
+| 3f | FE forum views + stores | in progress | | | |
 | 3g | FE comments + notifications tab | todo | | | |
 | 3h | Playwright `forum.spec.ts` | todo | | | |
 

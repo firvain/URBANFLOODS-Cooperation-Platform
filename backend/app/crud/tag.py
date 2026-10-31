@@ -1,9 +1,9 @@
-"""Tag data access: find-or-create (used by posts), usage counts, list, delete and merge.
-Never commits; the caller (``get_db_tx``) does.
+"""Tag data access: find-or-create (used by posts and threads), usage counts, list, delete and
+merge. Never commits; the caller (``get_db_tx``) does.
 
 Tags are matched by slug (``slugify_title`` lowercases), so "NBS", " nbs " and "Nbs" are one tag;
 the first spelling seen becomes its display name. ``usage_count`` is the number of published,
-not-deleted posts carrying the tag; callers refresh it with :func:`recount_tag_usage`.
+not-deleted posts and threads carrying the tag; callers refresh it with :func:`recount_tag_usage`.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppError, validation_error
 from app.db.enums import ContentStatus
-from app.db.models import Post, Tag, post_tags
+from app.db.models import Post, Tag, Thread, post_tags, thread_tags
 from app.services.slugs import FALLBACK_SLUG, slugify_title
 
 TAG_NAME_MAX_LENGTH = 40
@@ -98,11 +98,12 @@ async def get_or_create_tags(db: AsyncSession, *, names: Sequence[str]) -> list[
 
 
 async def recount_tag_usage(db: AsyncSession, *, tag_ids: Iterable[int]) -> None:
-    """Set ``usage_count`` of the given tags to their number of published, not-deleted posts."""
+    """Set ``usage_count`` of the given tags to their number of published, not-deleted posts plus
+    published, not-deleted threads."""
     ids = list(set(tag_ids))
     if not ids:
         return
-    published = (
+    published_posts = (
         select(func.count())
         .select_from(post_tags.join(Post, Post.id == post_tags.c.post_id))
         .where(
@@ -113,10 +114,21 @@ async def recount_tag_usage(db: AsyncSession, *, tag_ids: Iterable[int]) -> None
         .correlate(Tag)
         .scalar_subquery()
     )
+    published_threads = (
+        select(func.count())
+        .select_from(thread_tags.join(Thread, Thread.id == thread_tags.c.thread_id))
+        .where(
+            thread_tags.c.tag_id == Tag.id,
+            Thread.status == ContentStatus.PUBLISHED,
+            Thread.deleted_at.is_(None),
+        )
+        .correlate(Tag)
+        .scalar_subquery()
+    )
     await db.execute(
         update(Tag)
         .where(Tag.id.in_(ids))
-        .values(usage_count=published)
+        .values(usage_count=published_posts + published_threads)
         .execution_options(synchronize_session=False)
     )
     # Loaded Tag objects would otherwise keep their stale counts.
@@ -126,14 +138,15 @@ async def recount_tag_usage(db: AsyncSession, *, tag_ids: Iterable[int]) -> None
 
 
 async def delete_tag(db: AsyncSession, *, tag: Tag) -> None:
-    """Delete ``tag``; its ``post_tags`` rows go with it (ON DELETE CASCADE)."""
+    """Delete ``tag``; its ``post_tags`` and ``thread_tags`` rows go with it (ON DELETE
+    CASCADE)."""
     await db.execute(delete(Tag).where(Tag.id == tag.id))
     db.expunge(tag)
 
 
 async def merge_tags(db: AsyncSession, *, source_id: int, target_id: int) -> Tag:
-    """Move every post of ``source`` to ``target`` (posts already on both keep one row), delete
-    ``source`` and recount ``target``. Returns the target.
+    """Move every post and thread of ``source`` to ``target`` (those already on both keep one
+    row), delete ``source`` and recount ``target``. Returns the target.
 
     Raises ``AppError`` 409 ``tags.same`` or 404 ``tags.not_found``.
     """
@@ -149,6 +162,14 @@ async def merge_tags(db: AsyncSession, *, source_id: int, target_id: int) -> Tag
     )
     await db.execute(
         insert(post_tags).from_select(["post_id", "tag_id"], moved).on_conflict_do_nothing()
+    )
+    moved_threads = select(thread_tags.c.thread_id, literal(target.id, Integer)).where(
+        thread_tags.c.tag_id == source.id
+    )
+    await db.execute(
+        insert(thread_tags)
+        .from_select(["thread_id", "tag_id"], moved_threads)
+        .on_conflict_do_nothing()
     )
     await delete_tag(db, tag=source)
     await recount_tag_usage(db, tag_ids=[target.id])
