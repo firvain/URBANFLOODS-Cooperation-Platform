@@ -25,7 +25,7 @@
   },
   "home": {
     "title": "Cooperation Platform",
-    "intro": "A meeting place for flood-management stakeholders across the Adriatic-Ionian region: share experience in the blog, discuss in the forum, and build on the measures and documents of the URBANFLOODS KNOWBASE.",
+    "intro": "A meeting place for flood-management stakeholders across the Adriatic-Ionian region: share experience in the blog, discuss in the forum.",
     "comingSoon": "Coming soon",
     "cards": {
       "blog": {
@@ -44,7 +44,7 @@
     },
     "dss": {
       "title": "Unified DSS",
-      "description": "The integrated Decision Support System developed by the URBANFLOODS partners for flood management, with a map view of the pilot sites.",
+      "description": "The integrated Decision Support System developed by the URBANFLOODS partners for flood management.",
       "open": "Open the DSS"
     }
   },
