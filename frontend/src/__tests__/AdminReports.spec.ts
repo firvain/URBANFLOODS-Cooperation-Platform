@@ -7,7 +7,9 @@ import {
   button,
   chooseMenuItem,
   makeReport,
+  menuItemTexts,
   mountAdmin,
+  openMenu,
   page,
   queryOf,
   tableRows,
@@ -178,5 +180,33 @@ describe('Admin reports', () => {
     const link = rows()[0]!.querySelector('a[href="/admin/log?target_type=thread"]')
     expect(link).not.toBeNull()
     expect(button(actions(31))).toBeTruthy()
+  })
+
+  it('offers Restore (and no Delete) for deleted content and restores it', async () => {
+    const route = 'POST /api/v1/moderation/thread/12/restore'
+    const deleted = makeReport({ content: { ...REPORT.content!, status: 'deleted' } })
+    const { fetchMock } = await mountAdmin('/admin/reports', {
+      [REPORTS]: reply(200, page([deleted])),
+      [route]: reply(200, result('published')),
+    })
+    await openMenu(actions(31))
+    expect(menuItemTexts()).toContain(t('admin.reports.restore'))
+    expect(menuItemTexts()).not.toContain(t('admin.reports.delete'))
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await flushPromises()
+    await chooseMenuItem(actions(31), t('admin.reports.restore'))
+    const box = dialog()
+    expect(box.textContent).toContain(t('admin.reports.restoreTitle'))
+    buttonIn(box, t('admin.reports.restore')).click()
+    await flushPromises()
+    expect(callsTo(fetchMock, route)).toHaveLength(1)
+    expect(rows()[0]!.textContent).toContain(t('admin.contentStatus.published'))
+    await vi.waitFor(() => expect(document.body.textContent).toContain(t('admin.reports.restored')))
+  })
+
+  it('does not offer Restore for content that is not deleted', async () => {
+    await mountAdmin('/admin/reports', { [REPORTS]: reply(200, page([REPORT])) })
+    await openMenu(actions(31))
+    expect(menuItemTexts()).not.toContain(t('admin.reports.restore'))
   })
 })

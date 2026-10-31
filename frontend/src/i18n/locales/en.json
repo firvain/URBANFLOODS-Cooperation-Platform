@@ -519,7 +519,8 @@
         "invalid_image": "The file is not a valid image.",
         "animated": "Animated images are not accepted.",
         "too_large_pixels": "The image has too many pixels. Resize it and try again.",
-        "daily_limit": "You have reached today's upload limit. Try again tomorrow."
+        "daily_limit": "You have reached today's upload limit. Try again tomorrow.",
+        "in_use": "This image is still used in a post or discussion. Remove it there first."
       },
       "posts": {
         "not_found": "The post does not exist or is not visible to you.",
@@ -663,6 +664,7 @@
       "password": "Password",
       "sessions": "Sessions",
       "notifications": "Notifications",
+      "uploads": "Uploads",
       "data": "Your data"
     },
     "profile": {
@@ -724,6 +726,29 @@
       "loading": "Loading your notification preferences…",
       "loadError": "Your notification preferences could not be loaded.",
       "retry": "Try again"
+    },
+    "uploads": {
+      "intro": "The images you uploaded. An image used in a post, discussion, reply or comment cannot be deleted here: remove it from that content first.",
+      "loading": "Loading your uploads…",
+      "loadError": "Your uploads could not be loaded.",
+      "retry": "Try again",
+      "empty": "You have not uploaded any images yet.",
+      "usedIn": "Used in:",
+      "notUsed": "Not used in any content.",
+      "inUse": "In use: remove it from the content first.",
+      "delete": "Delete",
+      "deleteLabel": "Delete image: {alt}",
+      "deleteTitle": "Delete this image?",
+      "deleteDescription": "The image is removed for good. This cannot be undone.",
+      "deleteConfirm": "Delete image",
+      "deleted": "The image has been deleted.",
+      "loadMore": "Load more",
+      "types": {
+        "post": "Post",
+        "thread": "Discussion",
+        "reply": "Reply",
+        "comment": "Comment"
+      }
     },
     "data": {
       "intro": "Download a copy of everything stored about you, or delete your account.",
@@ -917,6 +942,43 @@
       "ownContent": "You cannot report your own content.",
       "contentNotFound": "This content is no longer available.",
       "rateLimited": "You have sent many reports today. Please try again tomorrow."
+    }
+  },
+  "moderation": {
+    "menu": "Moderate",
+    "approve": "Approve",
+    "hide": "Hide",
+    "unhide": "Unhide",
+    "delete": "Delete",
+    "restore": "Restore",
+    "purge": "Delete permanently",
+    "done": {
+      "approve": "Approved and published.",
+      "hide": "Hidden from other members.",
+      "unhide": "Published again.",
+      "delete": "Deleted. It can be restored from this menu.",
+      "restore": "Restored.",
+      "purge": "Deleted permanently."
+    },
+    "hideTitle": "Hide this content?",
+    "hideDescription": "Only its author and the admins will see it. The reason, if you give one, goes into the audit log only.",
+    "deleteTitle": "Delete this content?",
+    "deleteDescription": "It disappears for everyone. You can restore it right away from this menu, or later from the reports page if it was reported.",
+    "purgeDialog": {
+      "title": "Delete permanently?",
+      "intro": "This cannot be undone. The following are removed for good:",
+      "content": {
+        "post": "The post, with its tags and KNOWBASE links",
+        "thread": "The discussion, with its tags and KNOWBASE links"
+      },
+      "children": {
+        "post": "All its comments",
+        "thread": "All its replies"
+      },
+      "images": "The images used only here (images also used elsewhere stay)",
+      "reports": "Open reports about it are marked resolved; the audit log keeps a record without the text",
+      "typeLabel": "Type {word} to confirm",
+      "confirm": "Delete permanently"
     }
   },
   "status": {
@@ -1129,7 +1191,11 @@
       "unhideTitle": "Publish this content again?",
       "unhideDescription": "It becomes visible to everyone who could see it before.",
       "deleteTitle": "Delete this content?",
-      "deleteDescription": "It is soft-deleted: hidden from everyone, and it can be restored from the database only."
+      "deleteDescription": "It is soft-deleted: hidden from everyone. It can be restored from this page.",
+      "restore": "Restore content",
+      "restored": "The content is restored.",
+      "restoreTitle": "Restore this content?",
+      "restoreDescription": "It is published again, or goes back to the approval queue if it was never approved."
     },
     "users": {
       "title": "Users",

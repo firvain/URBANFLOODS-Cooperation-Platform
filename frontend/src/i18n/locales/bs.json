@@ -519,7 +519,8 @@
         "invalid_image": "Datoteka nije ispravna slika.",
         "animated": "Animirane slike nisu dozvoljene.",
         "too_large_pixels": "Slika ima previše piksela. Smanjite je i pokušajte ponovo.",
-        "daily_limit": "Dostigli ste današnje ograničenje za otpremanje. Pokušajte ponovo sutra."
+        "daily_limit": "Dostigli ste današnje ograničenje za otpremanje. Pokušajte ponovo sutra.",
+        "in_use": "Slika se još koristi u objavi ili diskusiji. Prvo je uklonite odatle."
       },
       "posts": {
         "not_found": "Objava ne postoji ili Vam nije vidljiva.",
@@ -663,6 +664,7 @@
       "password": "Lozinka",
       "sessions": "Sesije",
       "notifications": "Obavještenja",
+      "uploads": "Otpremljene slike",
       "data": "Vaši podaci"
     },
     "profile": {
@@ -724,6 +726,29 @@
       "loading": "Učitavanje Vaših postavki obavještenja…",
       "loadError": "Vaše postavke obavještenja nije bilo moguće učitati.",
       "retry": "Pokušaj ponovo"
+    },
+    "uploads": {
+      "intro": "Slike koje ste otpremili. Slika koja se koristi u objavi, diskusiji, odgovoru ili komentaru ne može se ovdje izbrisati: prvo je uklonite iz tog sadržaja.",
+      "loading": "Učitavanje Vaših otpremljenih slika…",
+      "loadError": "Vaše otpremljene slike nije moguće učitati.",
+      "retry": "Pokušaj ponovo",
+      "empty": "Još niste otpremili nijednu sliku.",
+      "usedIn": "Koristi se u:",
+      "notUsed": "Ne koristi se ni u jednom sadržaju.",
+      "inUse": "U upotrebi: prvo je uklonite iz sadržaja.",
+      "delete": "Izbriši",
+      "deleteLabel": "Izbriši sliku: {alt}",
+      "deleteTitle": "Izbrisati ovu sliku?",
+      "deleteDescription": "Slika se trajno uklanja. Ovo se ne može poništiti.",
+      "deleteConfirm": "Izbriši sliku",
+      "deleted": "Slika je izbrisana.",
+      "loadMore": "Učitaj još",
+      "types": {
+        "post": "Objava",
+        "thread": "Diskusija",
+        "reply": "Odgovor",
+        "comment": "Komentar"
+      }
     },
     "data": {
       "intro": "Preuzmite kopiju svih podataka koji se čuvaju o Vama ili izbrišite svoj račun.",
@@ -917,6 +942,43 @@
       "ownContent": "Ne možete prijaviti vlastiti sadržaj.",
       "contentNotFound": "Ovaj sadržaj više nije dostupan.",
       "rateLimited": "Danas ste poslali mnogo prijava. Molimo pokušajte ponovo sutra."
+    }
+  },
+  "moderation": {
+    "menu": "Moderacija",
+    "approve": "Odobri",
+    "hide": "Sakrij",
+    "unhide": "Ponovo prikaži",
+    "delete": "Izbriši",
+    "restore": "Vrati",
+    "purge": "Trajno izbriši",
+    "done": {
+      "approve": "Odobreno i objavljeno.",
+      "hide": "Sakriveno od drugih članova.",
+      "unhide": "Ponovo objavljeno.",
+      "delete": "Izbrisano. Može se vratiti iz ovog menija.",
+      "restore": "Vraćeno.",
+      "purge": "Trajno izbrisano."
+    },
+    "hideTitle": "Sakriti ovaj sadržaj?",
+    "hideDescription": "Vidjet će ga samo autor i administratori. Razlog, ako ga navedete, upisuje se samo u dnevnik revizije.",
+    "deleteTitle": "Izbrisati ovaj sadržaj?",
+    "deleteDescription": "Nestat će za sve. Možete ga odmah vratiti iz ovog menija, ili kasnije sa stranice prijava ako je prijavljen.",
+    "purgeDialog": {
+      "title": "Trajno brisanje?",
+      "intro": "Ovo se ne može poništiti. Trajno se uklanjaju:",
+      "content": {
+        "post": "Objava, s oznakama i vezama na KNOWBASE",
+        "thread": "Diskusija, s oznakama i vezama na KNOWBASE"
+      },
+      "children": {
+        "post": "Svi njeni komentari",
+        "thread": "Svi odgovori u njoj"
+      },
+      "images": "Slike koje se koriste samo ovdje (slike koje se koriste i negdje drugdje ostaju)",
+      "reports": "Otvorene prijave za nju označavaju se kao riješene; dnevnik revizije čuva zapis bez teksta",
+      "typeLabel": "Unesite {word} za potvrdu",
+      "confirm": "Trajno izbriši"
     }
   },
   "status": {

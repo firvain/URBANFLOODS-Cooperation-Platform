@@ -359,7 +359,7 @@ async def test_list_mine_is_newest_first_and_excludes_deleted_and_others(
     body = response.json()
     assert body["total"] == 2
     assert [item["id"] for item in body["items"]] == [second["id"], first["id"]]
-    assert body["items"][0] == second
+    assert body["items"][0] == {**second, "used_in": []}
 
 
 async def test_list_mine_paginates(client, db_session, cleanup_users):

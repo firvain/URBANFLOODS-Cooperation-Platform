@@ -22,7 +22,7 @@ import { contentLink } from '@/utils/contentLink'
 /**
  * Reports: open ones by default (`?status=resolved|dismissed|all`, `?content_type=`). Each row
  * shows the reported content's summary and offers Resolve / Dismiss for the report and Hide /
- * Unhide / Delete for the content (each confirmed).
+ * Unhide / Delete / Restore for the content (each confirmed).
  */
 const { t } = useI18n()
 const route = useRoute()
@@ -122,7 +122,7 @@ const DONE: Record<ContentAction, string> = {
   hide: 'admin.reports.hidden',
   unhide: 'admin.reports.unhidden',
   delete: 'admin.reports.deleted',
-  restore: 'admin.reports.unhidden',
+  restore: 'admin.reports.restored',
 }
 
 function askContent(report: ReportDetail, action: ContentAction) {
@@ -150,21 +150,31 @@ async function runContent(reason?: string) {
   }
 }
 
-const confirmTexts = computed(() =>
-  pending.value?.action === 'delete'
-    ? {
+const confirmTexts = computed(() => {
+  switch (pending.value?.action) {
+    case 'delete':
+      return {
         title: t('admin.reports.deleteTitle'),
         description: t('admin.reports.deleteDescription'),
         label: t('admin.reports.delete'),
         color: 'error' as const,
       }
-    : {
+    case 'restore':
+      return {
+        title: t('admin.reports.restoreTitle'),
+        description: t('admin.reports.restoreDescription'),
+        label: t('admin.reports.restore'),
+        color: 'primary' as const,
+      }
+    default:
+      return {
         title: t('admin.reports.unhideTitle'),
         description: t('admin.reports.unhideDescription'),
         label: t('admin.reports.unhide'),
         color: 'primary' as const,
-      },
-)
+      }
+  }
+})
 
 function menuItems(report: ReportDetail): DropdownMenuItem[][] {
   const groups: DropdownMenuItem[][] = []
@@ -202,6 +212,12 @@ function menuItems(report: ReportDetail): DropdownMenuItem[][] {
       icon: 'i-lucide-trash-2',
       color: 'error',
       onSelect: () => askContent(report, 'delete'),
+    })
+  if (status === 'deleted')
+    content.push({
+      label: t('admin.reports.restore'),
+      icon: 'i-lucide-undo-2',
+      onSelect: () => askContent(report, 'restore'),
     })
   if (content.length) groups.push(content)
   return groups

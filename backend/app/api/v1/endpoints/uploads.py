@@ -32,7 +32,13 @@ from starlette.responses import JSONResponse, Response
 from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 
-from app.api.v1.schemas.upload import UploadKind, UploadList, UploadOut
+from app.api.v1.schemas.upload import (
+    MyUploadOut,
+    UploadKind,
+    UploadList,
+    UploadOut,
+    UploadUsage,
+)
 from app.core.config import settings
 from app.core.deps import ADMIN_ROLES, AuthUser, DbTx, VerifiedUser
 from app.core.exceptions import AppError, error_body
@@ -221,27 +227,46 @@ async def list_my_uploads(
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> UploadList:
-    """The signed-in user's uploads (not deleted), newest first."""
+    """The signed-in user's uploads (not deleted), newest first, each with the content that uses
+    it (``used_in``: covers and inline images, any status)."""
     total, items = await crud_attachment.list_for_uploader(
         db, user_id=user.id, skip=skip, limit=limit
     )
-    return UploadList(total=total, items=[UploadOut.model_validate(item) for item in items])
+    usage = await crud_attachment.usage_by_attachment(
+        db, attachment_ids=[item.id for item in items]
+    )
+    return UploadList(
+        total=total,
+        items=[
+            MyUploadOut.model_validate(item).model_copy(
+                update={
+                    "used_in": [UploadUsage.model_validate(used) for used in usage.get(item.id, [])]
+                }
+            )
+            for item in items
+        ],
+    )
 
 
 @router.delete(
     "/{attachment_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=_error_responses(401, 404, 422),
+    responses=_error_responses(401, 404, 409, 422),
 )
 async def delete_upload(
     attachment_id: int, user: AuthUser, db: DbTx, background: BackgroundTasks
 ) -> None:
     """Delete an upload (its uploader, or an admin). If it is someone's avatar, the avatar is
-    cleared. Someone else's upload answers 404 to a member, as if it did not exist."""
+    cleared. Someone else's upload answers 404 to a member, as if it did not exist. An upload
+    still used by content (a post cover or an image in any body, whatever its status) is 409
+    ``uploads.in_use`` for everyone: deleting it would break the content (admins remove such
+    images by editing or purging the content)."""
     attachment = await crud_attachment.get_attachment(db, attachment_id=attachment_id)
     is_admin = user.role in ADMIN_ROLES and user.is_verified
     if attachment is None or (attachment.uploader_id != user.id and not is_admin):
         raise _not_found()
+    if await crud_attachment.is_used_in_content(db, attachment_id=attachment.id):
+        raise AppError(409, "uploads.in_use", "The image is still used by a post or discussion.")
     await crud_attachment.soft_delete_attachment(db, attachment=attachment)
     await crud_audit.log_action(
         db,

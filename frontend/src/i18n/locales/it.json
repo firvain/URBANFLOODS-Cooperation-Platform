@@ -519,7 +519,8 @@
         "invalid_image": "Il file non è un'immagine valida.",
         "animated": "Le immagini animate non sono accettate.",
         "too_large_pixels": "L'immagine ha troppi pixel. Ridimensionala e riprova.",
-        "daily_limit": "Hai raggiunto il limite giornaliero di caricamenti. Riprova domani."
+        "daily_limit": "Hai raggiunto il limite giornaliero di caricamenti. Riprova domani.",
+        "in_use": "Questa immagine è ancora usata in un articolo o in una discussione. Rimuovila prima da lì."
       },
       "posts": {
         "not_found": "L'articolo non esiste o non è visibile per te.",
@@ -663,6 +664,7 @@
       "password": "Password",
       "sessions": "Sessioni",
       "notifications": "Notifiche",
+      "uploads": "Caricamenti",
       "data": "I tuoi dati"
     },
     "profile": {
@@ -724,6 +726,29 @@
       "loading": "Caricamento delle preferenze di notifica…",
       "loadError": "Non è stato possibile caricare le tue preferenze di notifica.",
       "retry": "Riprova"
+    },
+    "uploads": {
+      "intro": "Le immagini che hai caricato. Un'immagine usata in un articolo, una discussione, una risposta o un commento non può essere eliminata qui: rimuovila prima da quel contenuto.",
+      "loading": "Caricamento delle tue immagini…",
+      "loadError": "Non è stato possibile caricare le tue immagini.",
+      "retry": "Riprova",
+      "empty": "Non hai ancora caricato immagini.",
+      "usedIn": "Usata in:",
+      "notUsed": "Non usata in alcun contenuto.",
+      "inUse": "In uso: rimuovila prima dal contenuto.",
+      "delete": "Elimina",
+      "deleteLabel": "Elimina immagine: {alt}",
+      "deleteTitle": "Eliminare questa immagine?",
+      "deleteDescription": "L'immagine viene rimossa definitivamente. L'operazione non può essere annullata.",
+      "deleteConfirm": "Elimina immagine",
+      "deleted": "L'immagine è stata eliminata.",
+      "loadMore": "Carica altro",
+      "types": {
+        "post": "Articolo",
+        "thread": "Discussione",
+        "reply": "Risposta",
+        "comment": "Commento"
+      }
     },
     "data": {
       "intro": "Scarica una copia di tutti i dati conservati su di te, oppure elimina il tuo account.",
@@ -917,6 +942,43 @@
       "ownContent": "Non puoi segnalare i tuoi contenuti.",
       "contentNotFound": "Questo contenuto non è più disponibile.",
       "rateLimited": "Oggi hai inviato molte segnalazioni. Riprova domani."
+    }
+  },
+  "moderation": {
+    "menu": "Moderazione",
+    "approve": "Approva",
+    "hide": "Nascondi",
+    "unhide": "Mostra di nuovo",
+    "delete": "Elimina",
+    "restore": "Ripristina",
+    "purge": "Elimina definitivamente",
+    "done": {
+      "approve": "Approvato e pubblicato.",
+      "hide": "Nascosto agli altri membri.",
+      "unhide": "Pubblicato di nuovo.",
+      "delete": "Eliminato. Puoi ripristinarlo da questo menu.",
+      "restore": "Ripristinato.",
+      "purge": "Eliminato definitivamente."
+    },
+    "hideTitle": "Nascondere questo contenuto?",
+    "hideDescription": "Lo vedranno solo l'autore e gli amministratori. Il motivo, se indicato, viene salvato solo nel registro di controllo.",
+    "deleteTitle": "Eliminare questo contenuto?",
+    "deleteDescription": "Scomparirà per tutti. Puoi ripristinarlo subito da questo menu, oppure in seguito dalla pagina delle segnalazioni se è stato segnalato.",
+    "purgeDialog": {
+      "title": "Eliminare definitivamente?",
+      "intro": "L'operazione non può essere annullata. Vengono rimossi per sempre:",
+      "content": {
+        "post": "L'articolo, con i suoi tag e i collegamenti a KNOWBASE",
+        "thread": "La discussione, con i suoi tag e i collegamenti a KNOWBASE"
+      },
+      "children": {
+        "post": "Tutti i suoi commenti",
+        "thread": "Tutte le sue risposte"
+      },
+      "images": "Le immagini usate solo qui (quelle usate anche altrove restano)",
+      "reports": "Le segnalazioni aperte vengono contrassegnate come risolte; il registro di controllo conserva una traccia senza il testo",
+      "typeLabel": "Digita {word} per confermare",
+      "confirm": "Elimina definitivamente"
     }
   },
   "status": {

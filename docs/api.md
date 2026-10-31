@@ -182,8 +182,8 @@ Tags are created implicitly when a post or thread names them; there is no tag cr
 | Method | Path | Who | Limit | Purpose |
 |---|---|---|---|---|
 | POST | `/api/v1/uploads/images/` | verified | 30/day | upload JPEG/PNG/WebP ≤ 5 MiB with required `alt_text`; re-encoded to WebP |
-| GET | `/api/v1/uploads/mine/` | user | – | own uploads |
-| DELETE | `/api/v1/uploads/{attachment_id}` | user (uploader or admin) | – | delete an upload |
+| GET | `/api/v1/uploads/mine/` | user | – | own uploads, each with `used_in` (content using it, any status) |
+| DELETE | `/api/v1/uploads/{attachment_id}` | user (uploader or admin) | – | delete an upload; 409 `uploads.in_use` while a cover or body uses it |
 | GET | `/static/uploads/...` | public | – | the image files (no prefix) |
 
 ### KNOWBASE proxy (`/api/v1/knowbase`)
@@ -222,6 +222,7 @@ on the KNOWBASE site), so the lookup endpoints currently have no frontend caller
 | POST | `.../unhide` | admin | – | publish hidden again (from rejected = approval) |
 | POST | `.../delete` | admin | – | soft delete |
 | POST | `.../restore` | admin | – | restore deleted (to `pending` if never approved) |
+| POST | `.../purge` | admin | – | delete permanently from any status: comments/replies, tag and KNOWBASE links, images nothing else uses; open reports resolved; audit `moderation.purge` (counts only) |
 
 `content_type` is `post`, `thread`, `reply` or `comment`.
 

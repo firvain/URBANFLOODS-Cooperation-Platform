@@ -9,6 +9,7 @@ import CommentList from '@/components/comments/CommentList.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 import SafeHtml from '@/components/common/SafeHtml.vue'
+import ModerationMenu from '@/components/moderation/ModerationMenu.vue'
 import PendingBanner from '@/components/moderation/PendingBanner.vue'
 import ReportButton from '@/components/moderation/ReportButton.vue'
 import StatusBadge from '@/components/moderation/StatusBadge.vue'
@@ -16,6 +17,7 @@ import { useApiErrors } from '@/composables/useApiErrors'
 import { absoluteUrl, usePageHead } from '@/composables/usePageHead'
 import { CONTENT_LICENCE_URL } from '@/constants/links'
 import { ApiError } from '@/services/api'
+import type { ModerationResult } from '@/services/moderation'
 import { postsService, type PostDetail } from '@/services/posts'
 import { useAuthStore } from '@/stores/auth'
 import { formatDate, formatDateTime } from '@/utils/datetime'
@@ -102,6 +104,20 @@ const updatedAt = computed(() => {
   const edited = new Date(value.updated_at).getTime() - new Date(publishedAt.value).getTime()
   return edited > 60_000 ? value.updated_at : null
 })
+
+// --- Admin: moderation menu -------------------------------------------------------------------
+
+/** A moderation action from the menu: the page shows the new status (badge, banner) at once. */
+function applyModeration(result: ModerationResult) {
+  const value = post.value
+  if (!value) return
+  post.value = {
+    ...value,
+    status: result.status,
+    hidden_reason: result.hidden_reason,
+    published_at: result.published_at ?? value.published_at,
+  }
+}
 
 // --- Delete -----------------------------------------------------------------------------------
 
@@ -257,6 +273,12 @@ async function confirmDelete() {
                 {{ t('post.delete') }}
               </UButton>
             </template>
+            <ModerationMenu
+              content-type="post"
+              :content-id="post.id"
+              :status="post.status"
+              @changed="applyModeration"
+            />
             <ReportButton
               content-type="post"
               :content-id="post.id"

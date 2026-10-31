@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
 
@@ -71,6 +71,17 @@ class ModerationResult(BaseModel):
     published_at: datetime | None
     deleted_at: datetime | None
     author_trusted: bool
+
+
+class PurgeResultOut(BaseModel):
+    """Response of ``purge``: the item is gone; counts of what went with it."""
+
+    content_type: ContentType
+    id: int
+    purged: Literal[True] = True
+    children_deleted: int
+    attachments_deleted: int
+    reports_resolved: int
 
 
 # --- log --------------------------------------------------------------------------------------

@@ -9,6 +9,7 @@ import NotificationsForm from '@/components/account/NotificationsForm.vue'
 import PasswordForm from '@/components/account/PasswordForm.vue'
 import ProfileForm from '@/components/account/ProfileForm.vue'
 import SessionList from '@/components/account/SessionList.vue'
+import UploadsPanel from '@/components/account/UploadsPanel.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
@@ -22,6 +23,7 @@ const TABS = [
   { value: 'sessions', icon: 'i-lucide-monitor-smartphone' },
   // Linked from the opt-out line of every notification email: `/account?tab=notifications`.
   { value: 'notifications', icon: 'i-lucide-bell' },
+  { value: 'uploads', icon: 'i-lucide-images' },
   { value: 'data', icon: 'i-lucide-database' },
 ] as const
 type TabValue = (typeof TABS)[number]['value']
@@ -74,6 +76,9 @@ const activeTab = computed<string>({
       </template>
       <template #notifications>
         <NotificationsForm />
+      </template>
+      <template #uploads>
+        <UploadsPanel />
       </template>
       <template #data>
         <DataPanel />

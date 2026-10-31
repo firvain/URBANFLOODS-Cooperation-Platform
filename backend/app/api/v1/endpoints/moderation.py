@@ -3,14 +3,15 @@
 Every route needs an admin. Actions load the content row ``FOR UPDATE`` and hand it to
 ``crud/moderation.py``, which enforces the state machine (409 ``moderation.invalid_transition``)
 and writes the ``moderation.<action>`` audit row; unknown content is 404
-``moderation.content_not_found``.
+``moderation.content_not_found``. ``purge`` is outside the state machine: it hard-deletes the item
+from any status (files of the attachments it frees are removed after the response).
 """
 
 from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, Path, Query
+from fastapi import APIRouter, BackgroundTasks, Body, Path, Query
 
 from app.api.v1.schemas.moderation import (
     EXCERPT_LENGTH,
@@ -19,16 +20,19 @@ from app.api.v1.schemas.moderation import (
     ModerationQueue,
     ModerationReason,
     ModerationResult,
+    PurgeResultOut,
     QueueAuthor,
     QueueCategory,
     QueueItem,
 )
+from app.core.config import settings
 from app.core.deps import AdminUser, DbTx
 from app.core.exceptions import AppError, error_body
 from app.crud import audit as crud_audit
 from app.crud import moderation
 from app.db.enums import ContentType
 from app.db.models import User
+from app.services import images
 
 router = APIRouter()
 
@@ -222,3 +226,31 @@ async def restore_content(
     """Restore deleted content (to pending if it was never approved)."""
     content = await _load(db, content_type, content_id)
     return _result(await moderation.restore(db, content=content, actor=admin))
+
+
+@router.post(
+    "/{content_type}/{content_id}/purge",
+    response_model=PurgeResultOut,
+    responses=_error_responses(401, 403, 404, 422),
+)
+async def purge_content(
+    content_type: ContentType,
+    content_id: ContentId,
+    admin: AdminUser,
+    db: DbTx,
+    background: BackgroundTasks,
+) -> PurgeResultOut:
+    """Delete content permanently, from any status: with its comments or replies, its tag and
+    KNOWBASE links, and the images nothing else uses; its open reports are resolved."""
+    content = await _load(db, content_type, content_id)
+    result = await moderation.purge(db, content=content, actor=admin)
+    for storage_path, thumb_path in result.files:
+        # After the response, so after the commit (``get_db_tx``).
+        background.add_task(images.delete_files, settings.UPLOAD_DIR, storage_path, thumb_path)
+    return PurgeResultOut(
+        content_type=result.content_type,
+        id=result.id,
+        children_deleted=result.children_deleted,
+        attachments_deleted=result.attachments_deleted,
+        reports_resolved=result.reports_resolved,
+    )

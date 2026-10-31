@@ -8,6 +8,7 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from app.core.config import settings
+from app.db.enums import ContentStatus, ContentType
 
 
 class UploadKind(StrEnum):
@@ -45,6 +46,23 @@ class UploadOut(BaseModel):
         return upload_url(self.thumb_path)
 
 
+class UploadUsage(BaseModel):
+    """Content that uses an upload (cover or inline image), any status. For a reply or comment,
+    ``title``/``slug`` are those of the thread/post it belongs to."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    content_type: ContentType
+    id: int
+    title: str | None
+    slug: str | None
+    status: ContentStatus
+
+
+class MyUploadOut(UploadOut):
+    used_in: list[UploadUsage] = []
+
+
 class UploadList(BaseModel):
     total: int
-    items: list[UploadOut]
+    items: list[MyUploadOut]

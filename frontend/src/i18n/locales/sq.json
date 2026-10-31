@@ -519,7 +519,8 @@
         "invalid_image": "Skedari nuk është imazh i vlefshëm.",
         "animated": "Imazhet e animuara nuk pranohen.",
         "too_large_pixels": "Imazhi ka shumë piksela. Zvogëlojeni dhe provoni përsëri.",
-        "daily_limit": "Keni arritur kufirin e ngarkimeve për sot. Provoni përsëri nesër."
+        "daily_limit": "Keni arritur kufirin e ngarkimeve për sot. Provoni përsëri nesër.",
+        "in_use": "Ky imazh përdoret ende në një postim ose diskutim. Hiqeni fillimisht prej andej."
       },
       "posts": {
         "not_found": "Postimi nuk ekziston ose nuk është i dukshëm për ju.",
@@ -663,6 +664,7 @@
       "password": "Fjalëkalimi",
       "sessions": "Sesionet",
       "notifications": "Njoftimet",
+      "uploads": "Ngarkimet",
       "data": "Të dhënat tuaja"
     },
     "profile": {
@@ -724,6 +726,29 @@
       "loading": "Po ngarkohen preferencat tuaja të njoftimeve…",
       "loadError": "Preferencat tuaja të njoftimeve nuk mund të ngarkoheshin.",
       "retry": "Provo përsëri"
+    },
+    "uploads": {
+      "intro": "Imazhet që keni ngarkuar. Një imazh që përdoret në një postim, diskutim, përgjigje ose koment nuk mund të fshihet këtu: hiqeni fillimisht nga ajo përmbajtje.",
+      "loading": "Po ngarkohen ngarkimet tuaja…",
+      "loadError": "Ngarkimet tuaja nuk mund të ngarkoheshin.",
+      "retry": "Provo përsëri",
+      "empty": "Nuk keni ngarkuar ende asnjë imazh.",
+      "usedIn": "Përdoret në:",
+      "notUsed": "Nuk përdoret në asnjë përmbajtje.",
+      "inUse": "Në përdorim: hiqeni fillimisht nga përmbajtja.",
+      "delete": "Fshi",
+      "deleteLabel": "Fshi imazhin: {alt}",
+      "deleteTitle": "Ta fshini këtë imazh?",
+      "deleteDescription": "Imazhi hiqet përgjithmonë. Ky veprim nuk mund të zhbëhet.",
+      "deleteConfirm": "Fshi imazhin",
+      "deleted": "Imazhi u fshi.",
+      "loadMore": "Ngarko më shumë",
+      "types": {
+        "post": "Postim",
+        "thread": "Diskutim",
+        "reply": "Përgjigje",
+        "comment": "Koment"
+      }
     },
     "data": {
       "intro": "Shkarkoni një kopje të gjithçkaje që ruhet për ju ose fshini llogarinë tuaj.",
@@ -917,6 +942,43 @@
       "ownContent": "Nuk mund të raportoni përmbajtjen tuaj.",
       "contentNotFound": "Kjo përmbajtje nuk është më e disponueshme.",
       "rateLimited": "Keni dërguar shumë raportime sot. Ju lutemi provoni përsëri nesër."
+    }
+  },
+  "moderation": {
+    "menu": "Moderimi",
+    "approve": "Mirato",
+    "hide": "Fshih",
+    "unhide": "Shfaq përsëri",
+    "delete": "Fshi",
+    "restore": "Rikthe",
+    "purge": "Fshi përgjithmonë",
+    "done": {
+      "approve": "U miratua dhe u publikua.",
+      "hide": "U fsheh për anëtarët e tjerë.",
+      "unhide": "U publikua përsëri.",
+      "delete": "U fshi. Mund të rikthehet nga ky menu.",
+      "restore": "U rikthye.",
+      "purge": "U fshi përgjithmonë."
+    },
+    "hideTitle": "Ta fshehim këtë përmbajtje?",
+    "hideDescription": "Do ta shohin vetëm autori dhe administratorët. Arsyeja, nëse jepet, ruhet vetëm në regjistrin e auditimit.",
+    "deleteTitle": "Ta fshijmë këtë përmbajtje?",
+    "deleteDescription": "Do të zhduket për të gjithë. Mund ta riktheni menjëherë nga ky menu, ose më vonë nga faqja e raportimeve nëse është raportuar.",
+    "purgeDialog": {
+      "title": "Ta fshijmë përgjithmonë?",
+      "intro": "Ky veprim nuk mund të zhbëhet. Hiqen përgjithmonë:",
+      "content": {
+        "post": "Postimi, me etiketat dhe lidhjet me KNOWBASE",
+        "thread": "Diskutimi, me etiketat dhe lidhjet me KNOWBASE"
+      },
+      "children": {
+        "post": "Të gjitha komentet e tij",
+        "thread": "Të gjitha përgjigjet e tij"
+      },
+      "images": "Imazhet që përdoren vetëm këtu (imazhet që përdoren edhe diku tjetër mbeten)",
+      "reports": "Raportimet e hapura për të shënohen si të zgjidhura; regjistri i auditimit mban një shënim pa tekstin",
+      "typeLabel": "Shkruani {word} për ta konfirmuar",
+      "confirm": "Fshi përgjithmonë"
     }
   },
   "status": {

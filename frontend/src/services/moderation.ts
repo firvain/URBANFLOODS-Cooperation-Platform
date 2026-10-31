@@ -1,6 +1,6 @@
 /**
  * Moderation endpoints for admins: the approval queue, content actions
- * (`/api/v1/moderation/{type}/{id}/<action>`), the audit log, and the admin side of reports
+ * (`/api/v1/moderation/{type}/{id}/<action>`, `.../purge` for a permanent delete), the audit log, and the admin side of reports
  * (list, resolve, dismiss). Members file reports through `services/reports.ts`.
  */
 import type { components, operations } from '@/types/api-schema'
@@ -11,6 +11,7 @@ export type ContentStatus = components['schemas']['ContentStatus']
 export type QueueItem = components['schemas']['QueueItem']
 export type ModerationQueue = components['schemas']['ModerationQueue']
 export type ModerationResult = components['schemas']['ModerationResult']
+export type PurgeResult = components['schemas']['PurgeResultOut']
 export type AuditLogEntry = components['schemas']['AuditLogEntry']
 export type AuditLogPage = components['schemas']['AuditLogPage']
 export type ReportDetail = components['schemas']['ReportDetail']
@@ -47,6 +48,10 @@ export const moderationService = {
       method: 'POST',
       body: WITH_REASON.includes(action) ? { reason: reason?.trim() || null } : undefined,
     }),
+
+  /** Permanent delete from any status (comments/replies and images used only there go too). */
+  purge: (type: ContentType, id: number) =>
+    api<PurgeResult>(`${BASE}/${type}/${id}/purge`, { method: 'POST' }),
 
   listReports: (params: ReportListParams = {}) =>
     api<PaginatedReports>(`${REPORTS}/`, { query: { ...params } }),

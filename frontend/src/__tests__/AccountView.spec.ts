@@ -67,7 +67,7 @@ function describedText(input: Element): string {
 }
 
 describe('AccountView', () => {
-  it('has a focusable h1 and five tabs: profile, password, sessions, notifications, data', async () => {
+  it('has a focusable h1 and six tabs: profile, password, sessions, notifications, uploads, data', async () => {
     mockApi(routes())
     const { wrapper } = await mountAccount()
     expect(wrapper.find('h1').attributes('tabindex')).toBe('-1')
@@ -77,6 +77,7 @@ describe('AccountView', () => {
       t('account.tabs.password'),
       t('account.tabs.sessions'),
       t('account.tabs.notifications'),
+      t('account.tabs.uploads'),
       t('account.tabs.data'),
     ])
   })

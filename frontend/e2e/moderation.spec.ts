@@ -22,6 +22,7 @@ import {
   type DemoAccount,
 } from './helpers/demo'
 import { waitForEmailTo } from './helpers/mailpit'
+import { makePng } from './helpers/png'
 
 /**
  * M4 moderation against the real dev stack and its seeded demo accounts (backend/README.md):
@@ -29,7 +30,8 @@ import { waitForEmailTo } from './helpers/mailpit'
  * member is trusted and publishes directly), a later post is rejected with an audited reason,
  * three distinct reports hide a post automatically and the admin dismisses / unhides from the
  * reports page, the dashboard numbers and CSV export, the digest email (via the backend CLI in
- * the dev compose stack) and the trust toggle on the users page.
+ * the dev compose stack) and the trust toggle on the users page; then (5h) the Moderate menu on a
+ * post page (hide with a reason, unhide, delete permanently) and the account Uploads tab.
  *
  * One browser context per role, logged in once through the API (the UI login is covered by
  * auth.spec.ts; logins are rate limited) and kept across the tests, which run in order. Titles
@@ -573,4 +575,120 @@ test('6. users: the superadmin toggles trust; an admin is not offered "Make supe
     await editor.keyboard.press('Escape')
     await expect(menu).toBeHidden()
   }
+})
+
+test('7. the Moderate menu on a post: hide with a reason, unhide, then delete permanently', async () => {
+  // Newbie's second post from test 1, published again at the end of test 3.
+  test.setTimeout(120_000)
+  expect(await anonPostStatus(secondSlug)).toBe(200)
+  await admin.goto(`/blog/${secondSlug}`)
+  await expect(admin.getByRole('heading', { level: 1, name: secondTitle })).toBeVisible()
+  const moderate = admin.getByRole('button', { name: 'Moderate' })
+
+  await moderate.click()
+  await admin.getByRole('menuitem', { name: 'Hide', exact: true }).click()
+  const hideDialog = admin.getByRole('dialog', { name: 'Hide this content?' })
+  await hideDialog.getByLabel('Reason').fill(`Hidden from the menu (e2e ${RUN})`)
+  await hideDialog.getByRole('button', { name: 'Hide', exact: true }).click()
+  await expect(hideDialog).toBeHidden()
+  await expect(toast(admin, 'Hidden from other members.')).toBeVisible()
+  await expect(admin.getByTestId('post-status')).toHaveText('Hidden')
+  await expect.poll(() => anonPostStatus(secondSlug)).toBe(404)
+
+  await moderate.click()
+  await admin.getByRole('menuitem', { name: 'Unhide', exact: true }).click()
+  await expect(toast(admin, 'Published again.')).toBeVisible()
+  await expect(admin.getByTestId('post-status')).toHaveCount(0)
+  await expect.poll(() => anonPostStatus(secondSlug)).toBe(200)
+
+  await moderate.click()
+  await admin.getByRole('menuitem', { name: 'Delete permanently' }).click()
+  const purge = admin.getByRole('dialog', { name: 'Delete permanently?' })
+  await expect(purge).toContainText('All its comments')
+  const confirm = purge.getByRole('button', { name: 'Delete permanently' })
+  await expect(confirm).toBeDisabled()
+  await purge.getByLabel('Type DELETE to confirm').fill('DELETE')
+  await confirm.click()
+  await admin.waitForURL((url) => url.pathname === '/blog')
+  await expect(toast(admin, 'Deleted permanently.')).toBeVisible()
+  await expect(admin.getByRole('link', { name: secondTitle, exact: true })).toHaveCount(0)
+
+  const gone = await adminContext.request.get(
+    `${API_URL}/api/v1/posts/${encodeURIComponent(secondSlug)}`,
+    { headers: API_HEADERS },
+  )
+  expect(gone.status()).toBe(404)
+  const audit = await apiJson<{ items: { metadata: Record<string, unknown> }[] }>(
+    adminContext.request,
+    'GET',
+    `/moderation/log/?action=moderation.purge&target_type=post`,
+  )
+  expect(audit.items[0]?.metadata).toMatchObject({ content_id: secondId, title: secondTitle })
+})
+
+test('8. Uploads tab: an image used by a post cannot be deleted; purging the post removes it', async () => {
+  test.setTimeout(120_000)
+  const title = `E2E post with an image ${RUN}`
+  const alt = `E2E uploaded image ${RUN}`
+
+  // The member (trusted, logged in since test 3) writes a post with a cover image.
+  await member.goto('/blog/new')
+  await expect(member.getByRole('heading', { level: 1, name: 'Write a post' })).toBeVisible()
+  await member.getByLabel('Title', { exact: true }).fill(title)
+  const category = member.getByRole('combobox', { name: 'Category' })
+  await category.click()
+  await member.getByRole('option', { name: 'News', exact: true }).click()
+  await member.getByRole('textbox', { name: 'Text', exact: true }).click()
+  await member.keyboard.type(`A post with a cover image for the uploads e2e test, ${RUN}.`)
+  await member.getByRole('button', { name: 'Add a cover image' }).click()
+  const dialog = member.getByRole('dialog', { name: 'Insert image' })
+  await dialog.getByLabel('Image file').setInputFiles({
+    name: `e2e-upload-${RUN}.png`,
+    mimeType: 'image/png',
+    buffer: makePng(),
+  })
+  await dialog.getByLabel('Alternative text').fill(alt)
+  await dialog.getByRole('button', { name: 'Upload and insert' }).click()
+  await expect(dialog).toBeHidden({ timeout: 20_000 })
+  await member.getByRole('button', { name: 'Publish', exact: true }).click()
+  const slug = await waitForPostPage(member)
+  createdSlugs.add(slug)
+  await expect(member.getByRole('heading', { level: 1, name: title })).toBeVisible()
+
+  // Uploads tab: listed with "used in" and a disabled Delete.
+  await member.goto('/account?tab=uploads')
+  const row = member.getByTestId('upload-row').filter({ hasText: alt })
+  await expect(row).toHaveCount(1)
+  await expect(row).toContainText('Used in:')
+  await expect(row.getByRole('link', { name: title, exact: true })).toHaveAttribute(
+    'href',
+    `/blog/${slug}`,
+  )
+  await expect(row.getByRole('button', { name: `Delete image: ${alt}` })).toBeDisabled()
+
+  // The server refuses as well.
+  const mine = await apiJson<{ items: { id: number; alt_text: string }[] }>(
+    memberContext.request,
+    'GET',
+    '/uploads/mine/',
+  )
+  const upload = mine.items.find((u) => u.alt_text === alt)
+  if (!upload) throw new Error('The uploaded image is missing from /uploads/mine/')
+  const refused = await memberContext.request.delete(`${API_URL}/api/v1/uploads/${upload.id}`, {
+    headers: API_HEADERS,
+  })
+  expect(refused.status()).toBe(409)
+
+  // The admin deletes the post permanently: its only image goes with it.
+  const id = await postId(adminContext.request, slug)
+  const purged = await apiJson<{ attachments_deleted: number }>(
+    adminContext.request,
+    'POST',
+    `/moderation/post/${id}/purge`,
+  )
+  expect(purged.attachments_deleted).toBe(1)
+  await member.reload()
+  await expect(member.getByText('The images you uploaded.', { exact: false })).toBeVisible()
+  await expect(member.locator('[aria-busy="true"]')).toHaveCount(0)
+  await expect(member.getByTestId('upload-row').filter({ hasText: alt })).toHaveCount(0)
 })

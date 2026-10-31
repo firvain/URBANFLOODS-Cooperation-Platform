@@ -927,6 +927,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/moderation/{content_type}/{content_id}/purge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Purge Content
+         * @description Delete content permanently, from any status: with its comments or replies, its tag and
+         *     KNOWBASE links, and the images nothing else uses; its open reports are resolved.
+         */
+        post: operations["purge_content_api_v1_moderation__content_type___content_id__purge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/knowbase/documents/": {
         parameters: {
             query?: never;
@@ -1310,7 +1331,8 @@ export interface paths {
         };
         /**
          * List My Uploads
-         * @description The signed-in user's uploads (not deleted), newest first.
+         * @description The signed-in user's uploads (not deleted), newest first, each with the content that uses
+         *     it (``used_in``: covers and inline images, any status).
          */
         get: operations["list_my_uploads_api_v1_uploads_mine__get"];
         put?: never;
@@ -1334,7 +1356,10 @@ export interface paths {
         /**
          * Delete Upload
          * @description Delete an upload (its uploader, or an admin). If it is someone's avatar, the avatar is
-         *     cleared. Someone else's upload answers 404 to a member, as if it did not exist.
+         *     cleared. Someone else's upload answers 404 to a member, as if it did not exist. An upload
+         *     still used by content (a post cover or an image in any body, whatever its status) is 409
+         *     ``uploads.in_use`` for everyone: deleting it would break the content (admins remove such
+         *     images by editing or purging the content).
          */
         delete: operations["delete_upload_api_v1_uploads__attachment_id__delete"];
         options?: never;
@@ -3206,6 +3231,35 @@ export interface components {
             /** Author Trusted */
             author_trusted: boolean;
         };
+        /** MyUploadOut */
+        MyUploadOut: {
+            /** Id */
+            id: number;
+            /** Width */
+            width: number;
+            /** Height */
+            height: number;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Mime */
+            mime: string;
+            /** Alt Text */
+            alt_text: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Used In
+             * @default []
+             */
+            used_in: components["schemas"]["UploadUsage"][];
+            /** Url */
+            readonly url: string;
+            /** Thumb Url */
+            readonly thumb_url: string | null;
+        };
         /**
          * NotificationPreferences
          * @description ``GET /me/notifications`` response and ``PUT`` body (full replace: every field
@@ -3490,6 +3544,27 @@ export interface components {
             knowbase_links?: components["schemas"]["KnowbaseLinkIn"][] | null;
             /** Slug */
             slug?: string | null;
+        };
+        /**
+         * PurgeResultOut
+         * @description Response of ``purge``: the item is gone; counts of what went with it.
+         */
+        PurgeResultOut: {
+            content_type: components["schemas"]["ContentType"];
+            /** Id */
+            id: number;
+            /**
+             * Purged
+             * @default true
+             * @constant
+             */
+            purged: true;
+            /** Children Deleted */
+            children_deleted: number;
+            /** Attachments Deleted */
+            attachments_deleted: number;
+            /** Reports Resolved */
+            reports_resolved: number;
         };
         /** QueueAuthor */
         QueueAuthor: {
@@ -4022,7 +4097,7 @@ export interface components {
             /** Total */
             total: number;
             /** Items */
-            items: components["schemas"]["UploadOut"][];
+            items: components["schemas"]["MyUploadOut"][];
         };
         /** UploadOut */
         UploadOut: {
@@ -4047,6 +4122,21 @@ export interface components {
             readonly url: string;
             /** Thumb Url */
             readonly thumb_url: string | null;
+        };
+        /**
+         * UploadUsage
+         * @description Content that uses an upload (cover or inline image), any status. For a reply or comment,
+         *     ``title``/``slug`` are those of the thread/post it belongs to.
+         */
+        UploadUsage: {
+            content_type: components["schemas"]["ContentType"];
+            /** Id */
+            id: number;
+            /** Title */
+            title: string | null;
+            /** Slug */
+            slug: string | null;
+            status: components["schemas"]["ContentStatus"];
         };
         /**
          * UserMe
@@ -7839,6 +7929,97 @@ export interface operations {
             };
         };
     };
+    purge_content_api_v1_moderation__content_type___content_id__purge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                content_type: components["schemas"]["ContentType"];
+                content_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurgeResultOut"];
+                };
+            };
+            /** @description Error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     list_documents_api_v1_knowbase_documents__get: {
         parameters: {
             query?: {
@@ -9495,6 +9676,23 @@ export interface operations {
             };
             /** @description Error */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

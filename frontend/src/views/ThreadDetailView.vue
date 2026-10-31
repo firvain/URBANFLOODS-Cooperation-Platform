@@ -11,6 +11,7 @@ import SafeHtml from '@/components/common/SafeHtml.vue'
 import ReplyForm from '@/components/forum/ReplyForm.vue'
 import ReplyList from '@/components/forum/ReplyList.vue'
 import ThreadFlags from '@/components/forum/ThreadFlags.vue'
+import ModerationMenu from '@/components/moderation/ModerationMenu.vue'
 import PendingBanner from '@/components/moderation/PendingBanner.vue'
 import ReportButton from '@/components/moderation/ReportButton.vue'
 import StatusBadge from '@/components/moderation/StatusBadge.vue'
@@ -18,6 +19,7 @@ import { useApiErrors } from '@/composables/useApiErrors'
 import { absoluteUrl, usePageHead } from '@/composables/usePageHead'
 import { CONTENT_LICENCE_URL } from '@/constants/links'
 import { ApiError } from '@/services/api'
+import type { ModerationResult } from '@/services/moderation'
 import { threadsService, type ThreadAdminAction, type ThreadDetail } from '@/services/threads'
 import { useAuthStore } from '@/stores/auth'
 import { useRepliesStore } from '@/stores/replies'
@@ -128,6 +130,20 @@ async function moderate(action: ThreadAdminAction) {
     toast.add({ title: errorMessage(error), color: 'error', icon: 'i-lucide-circle-alert' })
   } finally {
     moderating.value = null
+  }
+}
+
+// --- Admin: moderation menu -------------------------------------------------------------------
+
+/** A moderation action from the menu: the page shows the new status (badge, banner) at once. */
+function applyModeration(result: ModerationResult) {
+  const value = thread.value
+  if (!value) return
+  thread.value = {
+    ...value,
+    status: result.status,
+    hidden_reason: result.hidden_reason,
+    published_at: result.published_at ?? value.published_at,
   }
 }
 
@@ -297,6 +313,12 @@ async function confirmDelete() {
                   {{ t('thread.delete') }}
                 </UButton>
               </template>
+              <ModerationMenu
+                content-type="thread"
+                :content-id="thread.id"
+                :status="thread.status"
+                @changed="applyModeration"
+              />
               <ReportButton
                 content-type="thread"
                 :content-id="thread.id"
