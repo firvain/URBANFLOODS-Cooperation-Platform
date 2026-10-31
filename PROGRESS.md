@@ -110,7 +110,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
 | 5a | search crud + endpoint | done | 4e5ad74 | 37 pytest | core. FTS OR title ILIKE OR per-word strict_word_similarity; title hit +1.0 rank; UNION ALL paginated in SQL, ≤4 statements; ts_headline via sentinels → escaped text with <mark> only; 60/min |
-| 5b | export endpoints, Atom, sitemap | todo | | | extended |
+| 5b | export endpoints, Atom, sitemap | done | | 53 pytest (1459 total) | extended. /export/posts.json, threads.json (streamed, keyset chunks, ETag/304), posts.csv, datapackage.json (Frictionless v2, CC BY 4.0); /feeds/posts.atom, threads.atom; /sitemap.xml, /robots.txt (no prefix). M6: nginx must route /feeds, /sitemap.xml, /robots.txt to the backend and frontend/public/robots.txt must go |
 | 5c | FE SearchView + header search + `usePageHead` | todo | | | core |
 | 5d | accessibility pass + axe in Playwright | todo | | | core |
 | 5e | static pages + consent text | in progress | 26107dc (5e-a) | 5e-a: 42 vitest | 5e-a done: /terms, /privacy from docs/legal markdown via a Vite plugin that strips reviewer notes at build time; marked + dompurify added; /about, /accessibility, /open-data still to do |

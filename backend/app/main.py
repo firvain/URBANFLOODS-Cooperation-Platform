@@ -13,6 +13,8 @@ from app.api.v1.endpoints import (
     categories,
     comments,
     expertise,
+    export,
+    feeds,
     health,
     knowbase,
     members,
@@ -122,6 +124,9 @@ def create_app() -> FastAPI:
     app.include_router(replies.router, prefix=settings.API_V1_PREFIX, tags=["replies"])
     app.include_router(reports.router, prefix=f"{settings.API_V1_PREFIX}/reports", tags=["reports"])
     app.include_router(search.router, prefix=f"{settings.API_V1_PREFIX}/search", tags=["search"])
+    app.include_router(export.router, prefix=f"{settings.API_V1_PREFIX}/export", tags=["export"])
+    # Atom feeds, sitemap.xml and robots.txt are mounted without the API prefix.
+    app.include_router(feeds.router, tags=["feeds"])
     # Uploaded images (re-encoded WebP), served with nosniff.
     app.mount(settings.UPLOAD_URL_PREFIX, uploads.UploadStaticFiles(), name="uploads")
 

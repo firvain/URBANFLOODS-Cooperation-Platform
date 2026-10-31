@@ -41,6 +41,7 @@ from app.crud import token as crud_token
 from app.crud import user as crud_user
 from app.db.enums import TokenPurpose, UserRole
 from app.db.models import User
+from app.services.csv_cells import csv_cell
 from app.services.email import send_email
 
 router = APIRouter()
@@ -293,8 +294,6 @@ async def resend_verification(user_id: int, admin: AdminUser, db: DbTx) -> Messa
 # Start of the URBANFLOODS project: the default lower bound of the stats export.
 PROJECT_START = date(2024, 9, 1)
 FRESH_CACHE_CLASSES = ("lists", "details", "lookups")
-# Cells starting with these are formulas to spreadsheet apps; they get a leading apostrophe.
-CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
 
 
 @router.get("/stats", response_model=AdminStats, responses=_error_responses(401, 403))
@@ -324,19 +323,12 @@ async def clear_knowbase_cache(admin: AdminUser, db: DbTx, kb: Knowbase) -> Cach
     return CacheClearResult(cleared=cleared)
 
 
-def _cell(value: object) -> str:
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    text = str(value)
-    return f"'{text}" if text.startswith(CSV_FORMULA_PREFIXES) else text
-
-
 def _write_section(
     writer: Any, name: str, header: Sequence[str], rows: Iterable[Sequence[object]]
 ) -> None:
     writer.writerow([name])
     writer.writerow(header)
-    writer.writerows([_cell(value) for value in row] for row in rows)
+    writer.writerows([csv_cell(value) for value in row] for row in rows)
 
 
 def _stats_csv(data: crud_stats.ExportStats) -> str:
