@@ -151,6 +151,36 @@ describe('PostDetailView', () => {
     expect(t('post.statusHint.pending')).toContain('Waiting for approval by an admin')
   })
 
+  it('offers a report button on the post to verified members other than the author', async () => {
+    mockApi(routes({}, { [ME]: reply(200, makeUser({ id: 99 })) }))
+    let { wrapper } = await mountPost()
+    const header = wrapper.find('article > header')
+    expect(header.find('[data-testid="report-button"]').attributes('aria-label')).toBe(
+      t('report.title.post'),
+    )
+    unmountAll()
+
+    mockApi(routes({}, { [ME]: reply(200, makeUser({ id: 11 })) }))
+    ;({ wrapper } = await mountPost())
+    expect(wrapper.find('article > header [data-testid="report-button"]').exists()).toBe(false)
+  })
+
+  it('shows the author why a hidden post is hidden, without a report button', async () => {
+    mockApi(
+      routes(
+        { status: 'hidden', hidden_reason: 'auto_reports' },
+        { [ME]: reply(200, makeUser({ id: 11 })) },
+      ),
+    )
+    const { wrapper } = await mountPost()
+    expect(wrapper.find('[data-testid="post-status"]').text()).toBe(t('post.status.hidden'))
+    const hint = wrapper.find('[data-testid="status-hint"]')
+    expect(hint.text()).toContain(t('post.statusHint.hidden'))
+    expect(hint.text()).toContain(t('status.reason.auto_reports'))
+    expect(hint.find('a[href^="mailto:"]').exists()).toBe(true)
+    expect(wrapper.find('article > header [data-testid="report-button"]').exists()).toBe(false)
+  })
+
   it('hides Edit and Delete from visitors and from other members', async () => {
     mockApi(routes())
     let { wrapper } = await mountPost()

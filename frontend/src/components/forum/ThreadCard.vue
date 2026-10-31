@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import PostStatusBadge from '@/components/blog/PostStatusBadge.vue'
 import RelativeTime from '@/components/common/RelativeTime.vue'
+import StatusBadge from '@/components/moderation/StatusBadge.vue'
 import type { ThreadSummary } from '@/services/threads'
 import ThreadFlags from './ThreadFlags.vue'
 
@@ -36,7 +36,7 @@ const organisation = computed(() => props.thread.author?.organisation?.name ?? n
         >
           {{ thread.category.name }}
         </ULink>
-        <PostStatusBadge :status="thread.status" />
+        <StatusBadge :status="thread.status" />
       </div>
 
       <h2 class="text-base leading-snug font-semibold" :lang="thread.locale">

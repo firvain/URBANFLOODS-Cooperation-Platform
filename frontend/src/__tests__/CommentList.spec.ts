@@ -201,7 +201,12 @@ describe('CommentList', () => {
     vi.setSystemTime(new Date('2026-10-30T10:00:00Z'))
     mockApi(routes(reply(200, COMMENTS), makeUser({ id: 99 })))
     let { wrapper } = await mountList()
-    expect(wrapper.findAll('[data-testid="comment-actions"]')).toHaveLength(0)
+    // Another member may only report.
+    expect(
+      wrapper
+        .findAll('[data-testid="comment-actions"]')
+        .map((row) => row.findAll('button').map((button) => button.text())),
+    ).toEqual([[t('report.button')], [t('report.button')]])
     unmountAll()
 
     mockApi(routes(reply(200, COMMENTS), makeUser({ id: OTHER.id })))
@@ -291,6 +296,22 @@ describe('CommentList', () => {
     await flushPromises()
     expect(dialog().textContent).toContain(t('errors.api.comments.forbidden'))
     expect(items(wrapper)).toHaveLength(2)
+  })
+
+  it('offers a report button on comments by others, not on own comments', async () => {
+    const list = {
+      total: 2,
+      items: [makeComment(1, { author: { ...OTHER, id: 1 } }), makeComment(2)],
+    }
+    mockApi(routes(reply(200, list), makeUser()))
+    const { wrapper } = await mountList()
+    const [own, other] = items(wrapper)
+    expect(own!.find('[data-testid="report-button"]').exists()).toBe(false)
+    expect(
+      other!
+        .find('[data-testid="comment-actions"] [data-testid="report-button"]')
+        .attributes('aria-label'),
+    ).toBe(t('report.title.comment'))
   })
 
   it('asks anonymous visitors to log in', async () => {

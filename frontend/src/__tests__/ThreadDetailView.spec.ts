@@ -105,6 +105,31 @@ describe('ThreadDetailView', () => {
     expect(callsTo(fetchMock, LIST_REPLIES)).toHaveLength(0)
   })
 
+  it('offers report buttons on the thread and on replies by others, not on own replies', async () => {
+    const replies = {
+      total: 2,
+      items: [makeReply(1, { author: { ...OTHER, id: 99 } }), makeReply(2)],
+    }
+    mockApi(routes({}, makeUser({ id: 99 }), { [LIST_REPLIES]: reply(200, replies) }))
+    const { wrapper } = await mountThread()
+    expect(
+      wrapper.find('article header [data-testid="report-button"]').attributes('aria-label'),
+    ).toBe(t('report.title.thread'))
+    const [own, other] = topLevel(wrapper)
+    expect(own!.find('[data-testid="report-button"]').exists()).toBe(false)
+    expect(
+      other!
+        .find('[data-testid="reply-actions"] [data-testid="report-button"]')
+        .attributes('aria-label'),
+    ).toBe(t('report.title.reply'))
+  })
+
+  it('offers no report button on the thread to its author', async () => {
+    mockApi(routes({}, makeUser({ id: 11 })))
+    const { wrapper } = await mountThread()
+    expect(wrapper.find('article header [data-testid="report-button"]').exists()).toBe(false)
+  })
+
   it('lists the replies as a tree, children one level in', async () => {
     mockApi(routes())
     const { wrapper } = await mountThread()

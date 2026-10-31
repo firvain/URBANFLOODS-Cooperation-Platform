@@ -5,11 +5,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from '@nuxt/ui/composables'
 
 import KnowbaseLinkCard from '@/components/blog/KnowbaseLinkCard.vue'
-import PostStatusBadge from '@/components/blog/PostStatusBadge.vue'
 import CommentList from '@/components/comments/CommentList.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 import SafeHtml from '@/components/common/SafeHtml.vue'
+import PendingBanner from '@/components/moderation/PendingBanner.vue'
+import ReportButton from '@/components/moderation/ReportButton.vue'
+import StatusBadge from '@/components/moderation/StatusBadge.vue'
 import { useApiErrors } from '@/composables/useApiErrors'
 import { usePageHead } from '@/composables/usePageHead'
 import { ApiError } from '@/services/api'
@@ -63,11 +65,10 @@ usePageHead(() =>
     : null,
 )
 
-const canManage = computed(
-  () =>
-    !!post.value &&
-    (auth.isAdmin || (auth.user !== null && auth.user.id === post.value.author?.id)),
+const isAuthor = computed(
+  () => !!post.value && auth.user !== null && auth.user.id === post.value.author?.id,
 )
+const canManage = computed(() => !!post.value && (auth.isAdmin || isAuthor.value))
 
 const publishedAt = computed(() => post.value?.published_at ?? post.value?.created_at ?? '')
 /** "Updated" only for a real edit, not the seconds between creation and publication. */
@@ -76,18 +77,6 @@ const updatedAt = computed(() => {
   if (!value || !publishedAt.value) return null
   const edited = new Date(value.updated_at).getTime() - new Date(publishedAt.value).getTime()
   return edited > 60_000 ? value.updated_at : null
-})
-
-/** Why the author sees a post that others do not. */
-const statusHint = computed(() => {
-  const value = post.value
-  if (!value || value.status === 'published') return null
-  if (value.status === 'hidden') {
-    return value.hidden_reason === 'rejected'
-      ? t('post.statusHint.rejected')
-      : t('post.statusHint.hidden')
-  }
-  return t(`post.statusHint.${value.status}`)
 })
 
 // --- Delete -----------------------------------------------------------------------------------
@@ -181,7 +170,7 @@ async function confirmDelete() {
           >
             {{ post.category.name }}
           </ULink>
-          <PostStatusBadge :status="post.status" />
+          <StatusBadge :status="post.status" :hidden-reason="post.hidden_reason" />
         </div>
 
         <h1
@@ -192,13 +181,11 @@ async function confirmDelete() {
           {{ post.title }}
         </h1>
 
-        <UAlert
-          v-if="statusHint"
-          data-testid="status-hint"
-          color="warning"
-          variant="subtle"
-          icon="i-lucide-info"
-          :title="statusHint"
+        <PendingBanner
+          kind="post"
+          :status="post.status"
+          :hidden-reason="post.hidden_reason"
+          :for-author="isAuthor"
         />
 
         <div class="flex flex-wrap items-center justify-between gap-4">
@@ -232,18 +219,27 @@ async function confirmDelete() {
             </div>
           </div>
 
-          <div v-if="canManage" class="flex gap-2">
-            <UButton
-              :to="`/blog/${post.slug}/edit`"
-              icon="i-lucide-pencil"
-              color="neutral"
-              variant="outline"
-            >
-              {{ t('post.edit') }}
-            </UButton>
-            <UButton icon="i-lucide-trash-2" color="error" variant="outline" @click="askDelete">
-              {{ t('post.delete') }}
-            </UButton>
+          <div class="flex flex-wrap items-center gap-2">
+            <template v-if="canManage">
+              <UButton
+                :to="`/blog/${post.slug}/edit`"
+                icon="i-lucide-pencil"
+                color="neutral"
+                variant="outline"
+              >
+                {{ t('post.edit') }}
+              </UButton>
+              <UButton icon="i-lucide-trash-2" color="error" variant="outline" @click="askDelete">
+                {{ t('post.delete') }}
+              </UButton>
+            </template>
+            <ReportButton
+              content-type="post"
+              :content-id="post.id"
+              :author-id="post.author?.id ?? null"
+              :status="post.status"
+              size="sm"
+            />
           </div>
         </div>
       </header>

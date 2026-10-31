@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 
 import RelativeTime from '@/components/common/RelativeTime.vue'
 import SafeHtml from '@/components/common/SafeHtml.vue'
+import ReportButton from '@/components/moderation/ReportButton.vue'
+import { useCanReport } from '@/composables/useReportedContent'
 import { COMMENT_EDIT_WINDOW_MS } from '@/constants/blog'
 import type { CommentOut } from '@/services/comments'
 import { useAuthStore } from '@/stores/auth'
@@ -39,6 +41,11 @@ const canEdit = computed(() => {
   return isAuthor.value && age < COMMENT_EDIT_WINDOW_MS
 })
 const canDelete = computed(() => saved.value && (auth.isAdmin || isAuthor.value))
+const canReport = useCanReport(() => ({
+  authorId: props.comment.author?.id ?? null,
+  status: props.comment.status,
+  contentId: props.comment.id,
+}))
 </script>
 
 <template>
@@ -87,7 +94,7 @@ const canDelete = computed(() => saved.value && (auth.isAdmin || isAuthor.value)
       <SafeHtml v-else data-testid="comment-body" :html="comment.body_html" class="content-prose" />
 
       <div
-        v-if="(canEdit || canDelete) && !editing"
+        v-if="(canEdit || canDelete || canReport) && !editing"
         data-testid="comment-actions"
         class="mt-2 flex flex-wrap gap-1"
       >
@@ -111,6 +118,12 @@ const canDelete = computed(() => saved.value && (auth.isAdmin || isAuthor.value)
         >
           {{ t('comments.delete') }}
         </UButton>
+        <ReportButton
+          content-type="comment"
+          :content-id="comment.id"
+          :author-id="comment.author?.id ?? null"
+          :status="comment.status"
+        />
       </div>
     </article>
   </li>

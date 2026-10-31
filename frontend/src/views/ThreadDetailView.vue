@@ -5,13 +5,15 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from '@nuxt/ui/composables'
 
 import KnowbaseLinkCard from '@/components/blog/KnowbaseLinkCard.vue'
-import PostStatusBadge from '@/components/blog/PostStatusBadge.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import RelativeTime from '@/components/common/RelativeTime.vue'
 import SafeHtml from '@/components/common/SafeHtml.vue'
 import ReplyForm from '@/components/forum/ReplyForm.vue'
 import ReplyList from '@/components/forum/ReplyList.vue'
 import ThreadFlags from '@/components/forum/ThreadFlags.vue'
+import PendingBanner from '@/components/moderation/PendingBanner.vue'
+import ReportButton from '@/components/moderation/ReportButton.vue'
+import StatusBadge from '@/components/moderation/StatusBadge.vue'
 import { useApiErrors } from '@/composables/useApiErrors'
 import { usePageHead } from '@/composables/usePageHead'
 import { ApiError } from '@/services/api'
@@ -63,25 +65,12 @@ usePageHead(() =>
     : null,
 )
 
-const canManage = computed(
-  () =>
-    !!thread.value &&
-    (auth.isAdmin || (auth.user !== null && auth.user.id === thread.value.author?.id)),
+const isAuthor = computed(
+  () => !!thread.value && auth.user !== null && auth.user.id === thread.value.author?.id,
 )
+const canManage = computed(() => !!thread.value && (auth.isAdmin || isAuthor.value))
 
 const startedAt = computed(() => thread.value?.published_at ?? thread.value?.created_at ?? '')
-
-/** Why the author sees a thread that others do not. */
-const statusHint = computed(() => {
-  const value = thread.value
-  if (!value || value.status === 'published') return null
-  if (value.status === 'hidden') {
-    return value.hidden_reason === 'rejected'
-      ? t('thread.statusHint.rejected')
-      : t('thread.statusHint.hidden')
-  }
-  return t(`thread.statusHint.${value.status}`)
-})
 
 const published = computed(() => thread.value?.status === 'published')
 const replyCount = computed(() =>
@@ -197,7 +186,7 @@ async function confirmDelete() {
             >
               {{ thread.category.name }}
             </ULink>
-            <PostStatusBadge :status="thread.status" />
+            <StatusBadge :status="thread.status" :hidden-reason="thread.hidden_reason" />
           </div>
 
           <h1
@@ -208,13 +197,11 @@ async function confirmDelete() {
             {{ thread.title }}
           </h1>
 
-          <UAlert
-            v-if="statusHint"
-            data-testid="status-hint"
-            color="warning"
-            variant="subtle"
-            icon="i-lucide-info"
-            :title="statusHint"
+          <PendingBanner
+            kind="thread"
+            :status="thread.status"
+            :hidden-reason="thread.hidden_reason"
+            :for-author="isAuthor"
           />
 
           <div class="flex flex-wrap items-center justify-between gap-4">
@@ -283,6 +270,13 @@ async function confirmDelete() {
                   {{ t('thread.delete') }}
                 </UButton>
               </template>
+              <ReportButton
+                content-type="thread"
+                :content-id="thread.id"
+                :author-id="thread.author?.id ?? null"
+                :status="thread.status"
+                size="sm"
+              />
             </div>
           </div>
         </header>

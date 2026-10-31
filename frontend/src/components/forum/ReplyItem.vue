@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 
 import RelativeTime from '@/components/common/RelativeTime.vue'
 import SafeHtml from '@/components/common/SafeHtml.vue'
+import ReportButton from '@/components/moderation/ReportButton.vue'
+import { useCanReport } from '@/composables/useReportedContent'
 import { REPLY_EDIT_WINDOW_MS } from '@/constants/forum'
 import type { ReplyOut } from '@/services/replies'
 import { useAuthStore } from '@/stores/auth'
@@ -48,7 +50,14 @@ const canEdit = computed(() => {
   return isAuthor.value && !props.locked && age < REPLY_EDIT_WINDOW_MS
 })
 const canDelete = computed(() => !deleted.value && saved.value && (auth.isAdmin || isAuthor.value))
-const hasActions = computed(() => canReply.value || canEdit.value || canDelete.value)
+const canReport = useCanReport(() => ({
+  authorId: props.reply.author?.id ?? null,
+  status: props.reply.status,
+  contentId: props.reply.id,
+}))
+const hasActions = computed(
+  () => canReply.value || canEdit.value || canDelete.value || canReport.value,
+)
 </script>
 
 <template>
@@ -140,6 +149,12 @@ const hasActions = computed(() => canReply.value || canEdit.value || canDelete.v
           >
             {{ t('reply.delete') }}
           </UButton>
+          <ReportButton
+            content-type="reply"
+            :content-id="reply.id"
+            :author-id="reply.author?.id ?? null"
+            :status="reply.status"
+          />
         </div>
       </template>
     </article>

@@ -2,9 +2,9 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import StatusBadge from '@/components/moderation/StatusBadge.vue'
 import type { PostSummary } from '@/services/posts'
 import { formatDate, formatDateTime } from '@/utils/datetime'
-import PostStatusBadge from './PostStatusBadge.vue'
 
 /** One post in the blog list (the KNOWBASE card style): cover, category, title, meta, tags. */
 const props = defineProps<{ post: PostSummary }>()
@@ -52,7 +52,7 @@ const organisation = computed(() => props.post.author?.organisation?.name ?? nul
           <span class="sr-only">{{ `${t('post.event.label')}: ` }}</span>
           {{ formatDateTime(post.event_at, locale) }}
         </UBadge>
-        <PostStatusBadge :status="post.status" />
+        <StatusBadge :status="post.status" />
       </div>
 
       <h2 class="text-base leading-snug font-semibold" :lang="post.locale">

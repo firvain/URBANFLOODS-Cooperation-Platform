@@ -102,7 +102,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | 4c | reports endpoint + auto-hide | done | 89d39a1 | 62 pytest | POST /reports/ (20/day) + admin GET/resolve/dismiss under /reports/ (PLAN updated); content locked FOR UPDATE, content-before-report lock order; int-range guard in get_content | | | |
 | 4d | moderation + admin endpoints incl. stats CSV export | done | 4ab2184 + 0a7fa8d | 88 pytest (1360 total) | /moderation/queue, /{type}/{id}/<action>, /log (prefix filter); /admin/stats (KnowbaseStatus reused), /admin/knowbase/cache/clear, /admin/stats/export.csv (users by country/org, content, contributors, sign-ins from audit rows, RCO87 incl. free-text orgs) | | | |
 | 4e | digest + scheduler (+ AUTO_APPROVE_AFTER_DAYS sweep) + `cli digest` | done | | 84 pytest (1369 total) | APScheduler 3.11 AsyncIOScheduler (one worker); admin digest per frequency (daily window since last run, weekly 7 days), run not recorded if every send fails; maintenance: expired sessions/tokens, unverified purge (UNVERIFIED_PURGE_DAYS), orphan uploads (files deleted after commit), auto-approve sweep; `cli digest [--force]`, `cli maintenance` | | | |
-| 4f | FE report/status components | todo | | | |
+| 4f | FE report/status components | done | | 47 vitest | ReportButton/ReportDialog (session-remembered, code-mapped toasts), StatusBadge replaces PostStatusBadge, PendingBanner with reasons + contact; placed on posts, threads, replies, comments | | | |
 | 4g | FE admin views | todo | | | |
 | 4h | Playwright `moderation.spec.ts` | todo | | | |
 

@@ -942,5 +942,393 @@
   },
   "common": {
     "cancel": "Cancel"
+  },
+  "report": {
+    "button": "Report",
+    "reported": "Reported",
+    "title": {
+      "post": "Report this post",
+      "thread": "Report this discussion",
+      "reply": "Report this reply",
+      "comment": "Report this comment"
+    },
+    "description": "Tell the admins what is wrong with it. They will review your report.",
+    "reason": "Reason",
+    "reasonRequired": "Choose a reason.",
+    "reasons": {
+      "spam": "Spam or advertising",
+      "abuse": "Abusive or offensive",
+      "off_topic": "Off-topic",
+      "misinformation": "Misleading or false information",
+      "other": "Something else"
+    },
+    "details": "Details (optional)",
+    "detailsHint": "Anything that helps the admins understand the problem.",
+    "submit": "Send report",
+    "cancel": "Cancel",
+    "sent": "Thanks, we'll look at it.",
+    "autoHidden": "This content has been hidden pending review.",
+    "alreadyReported": "You have already reported this.",
+    "errors": {
+      "ownContent": "You cannot report your own content.",
+      "contentNotFound": "This content is no longer available.",
+      "rateLimited": "You have sent many reports today. Please try again tomorrow."
+    }
+  },
+  "status": {
+    "title": {
+      "pending": "Waiting for an admin to approve it. Only the author and the admins can see it.",
+      "hidden": "Hidden from other members. Only the author and the admins can see it.",
+      "deleted": "Deleted. Other members can no longer see it."
+    },
+    "reason": {
+      "auto_reports": "It was hidden automatically after reports from several members; an admin will review it.",
+      "admin": "An admin hid it.",
+      "rejected": "An admin did not approve it."
+    },
+    "banner": {
+      "firstApproval": "After your first approval, what you post is published immediately.",
+      "contact": "If you think this is a mistake, contact {email}."
+    }
+  },
+  "admin": {
+    "title": "Administration",
+    "menu": "Admin",
+    "nav": {
+      "label": "Administration sections",
+      "section": "Section",
+      "dashboard": "Dashboard",
+      "queue": "Approval queue",
+      "reports": "Reports",
+      "users": "Users",
+      "categories": "Categories",
+      "tags": "Tags",
+      "log": "Audit log"
+    },
+    "common": {
+      "all": "All",
+      "any": "Any",
+      "yes": "Yes",
+      "no": "No",
+      "actions": "Actions",
+      "created": "Created",
+      "loading": "Loading…",
+      "loadError": "This list could not be loaded.",
+      "retry": "Try again",
+      "pagination": "Pages",
+      "count": "No items | 1 item | {count} items",
+      "untitled": "(untitled)",
+      "system": "System",
+      "view": "Open on the site"
+    },
+    "contentType": {
+      "post": "Post",
+      "thread": "Discussion",
+      "reply": "Reply",
+      "comment": "Comment"
+    },
+    "contentStatus": {
+      "pending": "Pending",
+      "published": "Published",
+      "hidden": "Hidden",
+      "deleted": "Deleted"
+    },
+    "role": {
+      "member": "Member",
+      "admin": "Admin",
+      "superadmin": "Superadmin"
+    },
+    "errors": {
+      "auth": {
+        "forbidden": "You do not have permission to do this."
+      },
+      "admin": {
+        "last_superadmin": "This is the last active superadmin: the platform needs at least one, so this change is not allowed.",
+        "cannot_change_own_role": "You cannot change your own role.",
+        "cannot_ban_self": "You cannot ban yourself.",
+        "user_deleted": "This account has been deleted and cannot be changed.",
+        "invalid_role_change": "The user already has this role.",
+        "already_verified": "This email address is already verified.",
+        "email_not_sent": "The email could not be sent. Try again later."
+      },
+      "moderation": {
+        "invalid_transition": "This item has changed in the meantime. Reload the list and try again.",
+        "content_not_found": "The item no longer exists."
+      },
+      "report": {
+        "not_open": "This report has already been handled.",
+        "not_found": "The report no longer exists."
+      },
+      "categories": {
+        "slug_taken": "Another category of this kind already uses this slug.",
+        "slug_locked": "The slug of a category with posts cannot change.",
+        "last_active": "The last active category of a kind cannot be archived.",
+        "not_found": "The category no longer exists."
+      },
+      "tags": {
+        "same": "A tag cannot be merged into itself.",
+        "not_found": "The tag no longer exists."
+      }
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "intro": "Platform activity at a glance, the KNOWBASE connection and the reporting export.",
+      "loadError": "The dashboard could not be loaded.",
+      "users": {
+        "heading": "Users",
+        "total": "Accounts",
+        "verified": "Verified",
+        "trusted": "Trusted",
+        "admins": "Administrators",
+        "new30d": "New in the last 30 days"
+      },
+      "content": {
+        "heading": "Content",
+        "posts": "Published posts",
+        "threads": "Published discussions",
+        "replies": "Replies",
+        "comments": "Comments",
+        "pending": "Awaiting approval"
+      },
+      "reports": {
+        "heading": "Moderation",
+        "open": "Open reports"
+      },
+      "knowbase": {
+        "heading": "KNOWBASE connection",
+        "reachable": "Reachable",
+        "unreachable": "Unreachable",
+        "lastSuccess": "Last successful request",
+        "lastErrorAt": "Last error",
+        "lastError": "Error message",
+        "never": "Never",
+        "cache": "Cached responses",
+        "lists": "Lists",
+        "details": "Details",
+        "lookups": "Lookups",
+        "stale": "Stale copies",
+        "clear": "Clear KNOWBASE cache",
+        "clearTitle": "Clear the KNOWBASE cache?",
+        "clearDescription": "Every cached KNOWBASE response is dropped; the next visitors fetch fresh data from the KNOWBASE.",
+        "clearConfirm": "Clear cache",
+        "cleared": "The cache was already empty. | 1 cached response cleared. | {count} cached responses cleared."
+      },
+      "export": {
+        "heading": "Reporting export",
+        "description": "A CSV with registrations by country and organisation, published content, active users and contributing organisations for the chosen days (inclusive).",
+        "from": "From",
+        "to": "To",
+        "download": "Download CSV",
+        "invalidRange": "The start date must not be after the end date.",
+        "failed": "The export could not be downloaded. Try again."
+      }
+    },
+    "queue": {
+      "title": "Approval queue",
+      "intro": "First posts and discussions of members who are not yet trusted. Approving one publishes it and makes its author trusted.",
+      "caption": "Content awaiting approval, oldest first",
+      "empty": "Nothing is waiting for approval.",
+      "type": "Type",
+      "item": "Item",
+      "author": "Author",
+      "category": "Category",
+      "trusted": "Trusted",
+      "approve": "Approve",
+      "reject": "Reject",
+      "approveLabel": "Approve “{title}”",
+      "rejectLabel": "Reject “{title}”",
+      "approved": "“{title}” is published.",
+      "rejected": "“{title}” was rejected.",
+      "rejectTitle": "Reject “{title}”?",
+      "rejectDescription": "The item is hidden from everyone except its author. The reason is recorded in the audit log only.",
+      "reason": "Reason (optional)",
+      "reasonHelp": "Recorded in the audit log; the author is not shown it."
+    },
+    "reports": {
+      "title": "Reports",
+      "intro": "Content reported by members. Act on the content, then resolve the report, or dismiss it.",
+      "caption": "Reports, newest first",
+      "empty": "No reports match these filters.",
+      "status": "Status",
+      "type": "Content type",
+      "statuses": {
+        "open": "Open",
+        "resolved": "Resolved",
+        "dismissed": "Dismissed"
+      },
+      "reasons": {
+        "spam": "Spam",
+        "abuse": "Abuse",
+        "off_topic": "Off-topic",
+        "misinformation": "Misinformation",
+        "other": "Other"
+      },
+      "reason": "Reason",
+      "content": "Reported content",
+      "reporter": "Reporter",
+      "deletedAccount": "Deleted account",
+      "contentGone": "The content is no longer available.",
+      "resolve": "Resolve",
+      "dismiss": "Dismiss",
+      "hide": "Hide content",
+      "unhide": "Unhide content",
+      "delete": "Delete content",
+      "actionsFor": "Actions for report {id}",
+      "viewLog": "Audit log for this type",
+      "resolved": "Report resolved.",
+      "dismissed": "Report dismissed.",
+      "hidden": "The content is hidden.",
+      "unhidden": "The content is published again.",
+      "deleted": "The content is deleted.",
+      "hideTitle": "Hide this content?",
+      "hideDescription": "It disappears for everyone except its author and the administrators.",
+      "unhideTitle": "Publish this content again?",
+      "unhideDescription": "It becomes visible to everyone who could see it before.",
+      "deleteTitle": "Delete this content?",
+      "deleteDescription": "It is soft-deleted: hidden from everyone, and it can be restored from the database only."
+    },
+    "users": {
+      "title": "Users",
+      "intro": "Every account, including banned and deleted ones. Role changes, bans and trust are recorded in the audit log.",
+      "caption": "User accounts, newest first",
+      "empty": "No accounts match these filters.",
+      "search": "Search",
+      "searchPlaceholder": "Name or email",
+      "role": "Role",
+      "verified": "Verified",
+      "trusted": "Trusted",
+      "active": "Active",
+      "user": "User",
+      "you": "you",
+      "deleted": "Deleted",
+      "banned": "Banned",
+      "menu": "Actions for {name}",
+      "actions": {
+        "makeAdmin": "Make admin",
+        "makeSuperadmin": "Make superadmin",
+        "makeMember": "Make member",
+        "demoteToAdmin": "Demote to admin",
+        "ban": "Ban",
+        "unban": "Unban",
+        "trust": "Mark trusted",
+        "untrust": "Remove trusted mark",
+        "resend": "Resend verification email"
+      },
+      "confirm": {
+        "makeAdmin": "Make {name} an administrator?",
+        "makeSuperadmin": "Make {name} a superadmin?",
+        "makeMember": "Make {name} a regular member?",
+        "demoteToAdmin": "Demote {name} to administrator?",
+        "ban": "Ban {name}?",
+        "unban": "Unban {name}?",
+        "trust": "Mark {name} as trusted?",
+        "untrust": "Remove the trusted mark from {name}?",
+        "resend": "Send {name} a new verification email?"
+      },
+      "descriptions": {
+        "makeAdmin": "Administrators moderate content and manage users, categories and tags.",
+        "makeSuperadmin": "Superadmins can also manage other superadmins.",
+        "makeMember": "They lose access to the administration area.",
+        "demoteToAdmin": "They keep the administration area but can no longer manage superadmins.",
+        "ban": "The account is deactivated and signed out everywhere.",
+        "unban": "The account can sign in again.",
+        "trust": "Their posts and discussions publish without review.",
+        "untrust": "Their next post or discussion waits for approval.",
+        "resend": "Older verification links stop working."
+      },
+      "done": {
+        "makeAdmin": "{name} is now an administrator.",
+        "makeSuperadmin": "{name} is now a superadmin.",
+        "makeMember": "{name} is now a member.",
+        "demoteToAdmin": "{name} is now an administrator.",
+        "ban": "{name} is banned.",
+        "unban": "{name} is no longer banned.",
+        "trust": "{name} is trusted.",
+        "untrust": "{name} is no longer trusted.",
+        "resend": "A new verification email was sent to {name}."
+      }
+    },
+    "categories": {
+      "title": "Categories",
+      "intro": "Blog and forum categories. Archived categories are hidden from lists; their posts stay.",
+      "caption": "Categories by kind and order",
+      "empty": "No categories yet.",
+      "create": "New category",
+      "kind": "Kind",
+      "kinds": {
+        "blog": "Blog",
+        "forum": "Forum"
+      },
+      "name": "Name",
+      "slug": "Slug",
+      "slugHelp": "Lower-case letters, digits and hyphens. Left empty, it is made from the name.",
+      "description": "Description",
+      "sortOrder": "Order",
+      "adminOnly": "Administrators only",
+      "adminOnlyHelp": "Only administrators can publish in this category.",
+      "posts": "Posts",
+      "archived": "Archived",
+      "edit": "Edit",
+      "editLabel": "Edit {name}",
+      "archive": "Archive",
+      "archiveLabel": "Archive {name}",
+      "unarchive": "Restore",
+      "unarchiveLabel": "Restore {name}",
+      "createTitle": "New category",
+      "editTitle": "Edit “{name}”",
+      "save": "Save",
+      "archiveTitle": "Archive “{name}”?",
+      "archiveDescription": "It disappears from the lists and editors; its posts keep it.",
+      "created": "Category “{name}” created.",
+      "updated": "Category “{name}” saved.",
+      "archivedDone": "Category “{name}” archived.",
+      "restored": "Category “{name}” restored.",
+      "validation": {
+        "nameRequired": "Enter a name of at least {min} characters.",
+        "nameTooLong": "The name can be at most {max} characters.",
+        "slugInvalid": "Use lower-case letters, digits and single hyphens only.",
+        "descriptionTooLong": "The description can be at most {max} characters.",
+        "sortOrderInvalid": "Enter a whole number from 0 to {max}."
+      }
+    },
+    "tags": {
+      "title": "Tags",
+      "intro": "Tags of posts and discussions. Merge duplicates into one tag; delete tags nobody uses.",
+      "caption": "Tags by name",
+      "empty": "No tags match.",
+      "search": "Search",
+      "name": "Name",
+      "slug": "Slug",
+      "usage": "Used",
+      "merge": "Merge",
+      "mergeLabel": "Merge {name} into another tag",
+      "delete": "Delete",
+      "deleteLabel": "Delete {name}",
+      "mergeTitle": "Merge “{name}” into another tag",
+      "mergeTarget": "Merge into",
+      "mergeTargetPlaceholder": "Choose a tag",
+      "mergeWarning": "“{source}” is deleted and its {count} uses move to “{target}”. This cannot be undone.",
+      "mergeConfirm": "Merge tags",
+      "merged": "“{source}” was merged into “{target}”.",
+      "deleteTitle": "Delete “{name}”?",
+      "deleteDescription": "The tag is not used by any post or discussion.",
+      "deleted": "Tag “{name}” deleted."
+    },
+    "log": {
+      "title": "Audit log",
+      "intro": "Every moderation, administration, report and sign-in event, newest first.",
+      "caption": "Audit log entries, newest first",
+      "empty": "No entries match these filters.",
+      "action": "Action",
+      "actionPlaceholder": "e.g. moderation.hide or admin.",
+      "actionHelp": "Ending with a dot matches every action with that prefix.",
+      "quick": "Quick filters",
+      "actor": "Actor ID",
+      "targetType": "Target type",
+      "target": "Target",
+      "details": "Details",
+      "when": "When",
+      "clear": "Clear filters"
+    }
   }
 }
