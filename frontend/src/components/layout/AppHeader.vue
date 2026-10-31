@@ -50,7 +50,7 @@ function linkAttrs(item: NavLink) {
 <template>
   <!--
     Project logo (docs/branding.md): the official horizontal image, on white, never narrower than
-    240 px (384 px from lg). Fixed widths + matching min-widths + max-w-none keep it from
+    240 px (300 px from lg, 384 px from xl). Fixed widths + matching min-widths + max-w-none keep it from
     shrinking; the navigation collapses into the menu instead. py-3/pe-4 plus the header height
     (main.css) keep clear space of at least half the EU emblem height around it.
   -->
@@ -68,7 +68,7 @@ function linkAttrs(item: NavLink) {
         :alt="t('app.logoAlt')"
         width="1481"
         height="258"
-        class="block h-auto w-[240px] min-w-[240px] max-w-none shrink-0 lg:w-[384px] lg:min-w-[384px]"
+        class="block h-auto w-[240px] min-w-[240px] max-w-none shrink-0 lg:w-[300px] lg:min-w-[300px] xl:w-[384px] xl:min-w-[384px]"
       />
     </template>
 
@@ -81,6 +81,7 @@ function linkAttrs(item: NavLink) {
         :variant="isActive(item) ? 'soft' : 'ghost'"
         :color="isActive(item) ? 'primary' : 'neutral'"
         size="sm"
+        class="whitespace-nowrap"
       >
         {{ item.label }}
         <span v-if="item.external" class="sr-only">{{ ` ${t('a11y.opensInNewTab')}` }}</span>

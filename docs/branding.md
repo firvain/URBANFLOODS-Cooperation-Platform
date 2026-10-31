@@ -28,7 +28,7 @@ the sibling KNOWBASE app. Non-compliance can have financial consequences for the
   2026-10-30 (same as the KNOWBASE app):
   - Footer and About page: the **stacked** logo rendered at 560 px (lg) / 448 px (below lg) image
     width, which gives ≥ 300 / ≥ 240 px on the measured part. Literal compliance.
-  - Header: the **horizontal** logo at 384 px (lg) / 240 px (below lg) image width. Measured
+  - Header: the **horizontal** logo at 384 px (xl, ≥ 1280 px) / 300 px (lg) / 240 px (below lg) image width. Measured
     literally this is ≈ 120 / 75 px, because the measured part is only ~31 % of the horizontal
     image; a literally compliant header logo would be ~960 px wide, which no header can carry.
     Precedent: the programme's own project website (urbanfloods.interreg-ipa-adrion.eu) renders

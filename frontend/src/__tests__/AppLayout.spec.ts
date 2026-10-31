@@ -66,16 +66,18 @@ describe('header branding', () => {
     expect(document.querySelector('header')?.textContent).not.toContain('Cooperation Platform')
   })
 
-  // Minimum on-screen width (docs/branding.md): 240 px below lg, 384 px from lg, never shrunk.
+  // Minimum on-screen width (docs/branding.md): 240 px below lg, 300 px from lg, 384 px from xl.
   // Enforced with fixed Tailwind widths + matching min-widths + max-w-none on the <img>.
-  it('declares the minimum logo width: 240 px, 384 px from lg, never shrinking', async () => {
+  it('declares the minimum logo width: 240 px, 300 px from lg, 384 px from xl, never shrinking', async () => {
     await mountApp()
     const classes = headerLogo().classList
     for (const cls of [
       'w-[240px]',
       'min-w-[240px]',
-      'lg:w-[384px]',
-      'lg:min-w-[384px]',
+      'lg:w-[300px]',
+      'lg:min-w-[300px]',
+      'xl:w-[384px]',
+      'xl:min-w-[384px]',
       'max-w-none',
       'shrink-0',
     ]) {

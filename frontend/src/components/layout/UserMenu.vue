@@ -53,6 +53,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
       variant="ghost"
       :size="mobile ? 'md' : 'sm'"
       :block="mobile"
+      class="whitespace-nowrap"
     >
       {{ t('nav.login') }}
     </UButton>
