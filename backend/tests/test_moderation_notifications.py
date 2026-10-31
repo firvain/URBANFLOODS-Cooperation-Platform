@@ -63,6 +63,12 @@ H = ContentStatus.HIDDEN
 # --- helpers ----------------------------------------------------------------------------------
 
 
+async def _member(db, **kwargs) -> User:
+    """A verified member who has switched the member notifications on (they are off by default
+    since 2026-10-31; see the "preference" section)."""
+    return await create_verified_user(db, notify=True, **kwargs)
+
+
 async def _content(db, content_type: ContentType, author: User | None, *, status, **kwargs):
     if content_type == ContentType.POST:
         category = await create_category(db)
@@ -86,13 +92,13 @@ async def _content(db, content_type: ContentType, author: User | None, *, status
 
 
 async def _approved(db, content_type: ContentType = ContentType.POST, **user_kwargs):
-    author = await create_verified_user(db, display_name="Petra Poster", **user_kwargs)
+    author = await _member(db, display_name="Petra Poster", **user_kwargs)
     content = await _content(db, content_type, author, status=PUB)
     return author, content
 
 
 async def _rejected(db, content_type: ContentType = ContentType.POST, **user_kwargs):
-    author = await create_verified_user(db, display_name="Petra Poster", **user_kwargs)
+    author = await _member(db, display_name="Petra Poster", **user_kwargs)
     content = await _content(
         db, content_type, author, status=H, hidden_reason=HiddenReason.REJECTED
     )
@@ -107,14 +113,15 @@ def _link(content_type: ContentType, slug: str) -> str:
 # --- preference -------------------------------------------------------------------------------
 
 
-async def test_preference_defaults_to_on(db_session) -> None:
+async def test_preference_defaults_to_off(db_session) -> None:
     user = await create_verified_user(db_session)
     preferences = await db_session.get(NotificationPreference, user.id)
     await db_session.refresh(preferences)
-    assert preferences.moderation_decisions is True
+    assert preferences.moderation_decisions is False
 
 
-async def test_migration_adds_column_with_default_true(db_session) -> None:
+async def test_column_default_is_false(db_session) -> None:
+    """Migration 0009 switched the server default from true to false."""
     row = (
         await db_session.execute(
             text(
@@ -126,7 +133,25 @@ async def test_migration_adds_column_with_default_true(db_session) -> None:
     ).one()
     assert row.data_type == "boolean"
     assert row.is_nullable == "NO"
-    assert row.column_default == "true"
+    assert row.column_default == "false"
+
+
+@pytest.mark.parametrize(
+    ("decision", "status", "extra"),
+    [("approved", PUB, {}), ("rejected", H, {"hidden_reason": HiddenReason.REJECTED})],
+)
+async def test_default_preferences_get_no_decision_email(
+    db_session, outbox, decision, status, extra
+) -> None:
+    author = await create_verified_user(db_session)
+    post = await _content(db_session, ContentType.POST, author, status=status, **extra)
+
+    sent = await notify_moderation_decision(
+        db_session, content=post, decision=decision, newly_trusted=True
+    )
+
+    assert sent is None
+    assert outbox == []
 
 
 async def test_preference_off_sends_nothing(db_session, outbox) -> None:
@@ -143,7 +168,7 @@ async def test_preference_off_sends_nothing(db_session, outbox) -> None:
     assert outbox == []
 
 
-async def test_missing_preferences_row_counts_as_on(db_session, outbox) -> None:
+async def test_missing_preferences_row_counts_as_the_defaults(db_session, outbox) -> None:
     author, post = await _approved(db_session)
     await db_session.delete(await db_session.get(NotificationPreference, author.id))
     await db_session.flush()
@@ -152,7 +177,8 @@ async def test_missing_preferences_row_counts_as_on(db_session, outbox) -> None:
         db_session, content=post, decision="approved", newly_trusted=False
     )
 
-    assert sent is not None
+    assert sent is None
+    assert outbox == []
 
 
 # --- email content ----------------------------------------------------------------------------
@@ -392,7 +418,7 @@ async def test_unknown_decision_is_an_error(db_session, outbox) -> None:
 
 async def test_approve_reports_whether_the_author_became_trusted(db_session) -> None:
     admin = await create_admin(db_session)
-    author = await create_verified_user(db_session)
+    author = await _member(db_session)
     first = await _content(db_session, ContentType.POST, author, status=P)
     second = await _content(db_session, ContentType.THREAD, author, status=P)
 
@@ -410,7 +436,7 @@ async def test_unhide_reports_whether_the_author_became_trusted(
     db_session, reason, expected
 ) -> None:
     admin = await create_admin(db_session)
-    author = await create_verified_user(db_session)
+    author = await _member(db_session)
     post = await _content(db_session, ContentType.POST, author, status=H, hidden_reason=reason)
     if reason == HiddenReason.ADMIN:
         post.published_at = NOW
@@ -473,7 +499,7 @@ async def test_content_without_author_sends_nothing(db_session, outbox) -> None:
 async def test_decision_that_no_longer_holds_sends_nothing(
     db_session, outbox, status, decision, extra
 ) -> None:
-    author = await create_verified_user(db_session)
+    author = await _member(db_session)
     post = await _content(db_session, ContentType.POST, author, status=status, **extra)
 
     sent = await notify_moderation_decision(
@@ -512,7 +538,7 @@ async def test_runner_ignores_missing_content(database_url, outbox) -> None:
 async def test_runner_reads_committed_state_only(db_session, outbox) -> None:
     """The runner opens its own session: an approval not yet committed is not seen, so nothing
     goes out before the commit."""
-    author = await create_verified_user(db_session)
+    author = await _member(db_session)
     post = await _content(db_session, ContentType.POST, author, status=P)
     await moderation.approve(db_session, content=post, actor=author)
     assert post.status == PUB  # flushed in this (uncommitted) transaction only
@@ -550,8 +576,8 @@ def env(db_session, cleanup_users, cleanup_forum_categories):
     return Env
 
 
-async def _user(env, factory=create_verified_user, **kwargs) -> User:
-    user = await factory(env.db, **kwargs)
+async def _user(env, factory=None, **kwargs) -> User:
+    user = await (factory or _member)(env.db, **kwargs)
     env.users.add(user.email)
     await env.db.commit()
     return user
@@ -726,6 +752,20 @@ async def test_endpoint_respects_preference(client, env, outbox) -> None:
     assert outbox == []
 
 
+@pytest.mark.parametrize("action", ["approve", "reject"])
+async def test_endpoint_sends_nothing_with_default_preferences(client, env, outbox, action) -> None:
+    """A member who never opened the Notifications tab gets no approval or rejection email."""
+    author = await _user(env, factory=create_verified_user)
+    post = await _committed(env, ContentType.POST, author, status=P)
+    await _admin(client, env)
+
+    body = {"reason": "Off topic"} if action == "reject" else None
+    response = await client.post(_url(ContentType.POST, post.id, action), json=body)
+
+    assert response.status_code == 200, response.text
+    assert outbox == []
+
+
 async def test_endpoint_survives_send_failure(client, env, outbox, monkeypatch) -> None:
     author = await _user(env)
     post = await _committed(env, ContentType.POST, author, status=P)
@@ -771,8 +811,8 @@ async def tx_factory(database_url: str) -> AsyncIterator[Callable[[], AsyncSessi
 
 async def test_auto_approve_collects_decisions(db_session, monkeypatch) -> None:
     monkeypatch.setattr(settings, "AUTO_APPROVE_AFTER_DAYS", 2)
-    author = await create_verified_user(db_session)
-    trusted = await create_verified_user(db_session, trusted_at=NOW - timedelta(days=9))
+    author = await _member(db_session)
+    trusted = await _member(db_session, trusted_at=NOW - timedelta(days=9))
     old = await _content(
         db_session, ContentType.POST, author, status=P, created_at=NOW - timedelta(days=3)
     )
@@ -796,7 +836,7 @@ async def test_auto_approve_collects_decisions(db_session, monkeypatch) -> None:
 
 async def test_sweep_emails_authors_after_commit(tx_factory, outbox, monkeypatch) -> None:
     async with tx_factory() as db:
-        author = await create_verified_user(db, display_name="Petra Poster")
+        author = await _member(db, display_name="Petra Poster")
         category = await create_category(db)
         post = await create_post(
             db,
@@ -830,7 +870,7 @@ async def test_sweep_emails_authors_after_commit(tx_factory, outbox, monkeypatch
 
 async def test_sweep_rolled_back_sends_nothing(tx_factory, outbox, monkeypatch) -> None:
     async with tx_factory() as db:
-        author = await create_verified_user(db)
+        author = await _member(db)
         category = await create_category(db)
         await create_post(
             db,

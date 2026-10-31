@@ -94,6 +94,15 @@ class SeedRefused(SeedError):
 # --- accounts ---------------------------------------------------------------------------------
 
 
+# The member notifications a demo persona switches on (``AccountSpec.notifications_on``).
+MEMBER_NOTIFICATIONS = (
+    "reply_to_my_thread",
+    "comment_on_my_post",
+    "reply_to_my_reply",
+    "moderation_decisions",
+)
+
+
 @dataclass(frozen=True)
 class AccountSpec:
     key: str
@@ -112,6 +121,12 @@ class AccountSpec:
     expertise: tuple[str, ...] = ()  # expertise tag slugs
     show_email: bool = False
     show_in_directory: bool = True
+    # Member notifications (replies, comments, moderation decisions) are off by default for new
+    # accounts since 2026-10-31. The demo personas opt in so the e2e suite (forum.spec.ts: the
+    # reply email to the editor, the notifications-tab switches) and the manual QA in Mailpit
+    # keep working; the "minimal" persona keeps the defaults of a fresh account. Production
+    # never runs this seed.
+    notifications_on: bool = True
 
 
 ACCOUNTS: tuple[AccountSpec, ...] = (
@@ -243,6 +258,7 @@ ACCOUNTS: tuple[AccountSpec, ...] = (
         key="minimal",
         email="petra.vidmar@urbanfloods.example",
         display_name="Petra Vidmar",
+        notifications_on=False,
     ),
 )
 
@@ -915,6 +931,11 @@ async def _create_account(
             "show_in_directory": spec.show_in_directory,
         },
     )
+    if spec.notifications_on:
+        preferences = await crud_user.get_notification_preferences(db, user=user)
+        for name in MEMBER_NOTIFICATIONS:
+            setattr(preferences, name, True)
+        await db.flush()
     if spec.verified:
         await crud_user.mark_verified(db, user=user, now=now)
     await crud_user.set_role(db, user=user, role=spec.role)

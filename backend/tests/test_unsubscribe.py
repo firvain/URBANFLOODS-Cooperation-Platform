@@ -127,7 +127,9 @@ async def bare(client: httpx.AsyncClient) -> AsyncIterator[httpx.AsyncClient]:
 
 @pytest.fixture
 async def member(db_session, cleanup_users):
-    user = await create_verified_user(db_session)
+    """A member who switched the member notifications on (off by default since 2026-10-31), so
+    every preference starts on and an unsubscribe has something to switch off."""
+    user = await create_verified_user(db_session, notify=True)
     cleanup_users.add(user.email)
     await db_session.commit()
     return user
@@ -196,7 +198,9 @@ async def test_missing_preferences_row_is_created_with_that_switch_off(
     preferences = await _preferences(db_session, member.id)
     assert preferences is not None
     assert preferences.moderation_decisions is False
-    assert preferences.reply_to_my_thread is True
+    # The other switches have the defaults of a new row.
+    assert preferences.reply_to_my_thread is False
+    assert preferences.admin_digest is True
 
 
 async def test_works_without_body_too(bare, db_session, member) -> None:
@@ -271,7 +275,7 @@ async def test_session_cookie_without_header_and_foreign_origin_pass(
     """A webmail page or client may POST cross-origin, even from a browser that holds a
     session; the CSRF middleware must not block it, and the session is ignored: the token
     alone decides whose preference changes."""
-    other = await create_verified_user(db_session)
+    other = await create_verified_user(db_session, notify=True)
     cleanup_users.add(other.email)
     await db_session.commit()
     await login_as(client, other)

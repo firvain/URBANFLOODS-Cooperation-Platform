@@ -36,6 +36,9 @@ docker compose exec backend python -m scripts.seed_dev [--reset]
 
 Every demo account's password is **`Urbanfloods-2026`** (the script never prints it). The
 e2e suite logs in as the four accounts marked **e2e** (`frontend/e2e/helpers/demo.ts`).
+Member notifications are off by default for new accounts, so the seed switches them on for every
+persona except Petra Vidmar (the minimal one keeps the defaults of a fresh account): the e2e
+suite and the manual QA read reply, comment and approval emails in Mailpit.
 
 | Name | Email | Role | State | Use it for |
 |---|---|---|---|---|

@@ -210,7 +210,7 @@ The platform never changes the KNOWBASE. Problems with KNOWBASE content go to th
 
 ## 9. When email fails
 
-The platform sends: the verification link, the welcome email, password reset links, the
+The platform sends: the verification link, password reset links, the
 email-change confirmation, reply and comment notifications, the **decision emails** to authors
 when a post or discussion is approved or rejected (see the
 [moderation guide](moderation-guide.md#emails-to-the-author)) and the admin digest. Messages come
@@ -218,7 +218,12 @@ from `SMTP_FROM` through Brevo's SMTP relay and carry a `Reply-To` header set to
 (default `urbanfloods@uowm.gr`; empty = no header), so answers reach a monitored address instead
 of the no-reply sender. Templates exist in English, with Greek versions of the verification and
 reply-to-discussion emails; every other language receives English. Notifications and decision
-emails respect each member's switches under Account → Notifications.
+emails respect each member's switches under Account → Notifications. For accounts created since
+2026-10-31 the four member switches (*Replies to my discussions*, *Comments on my posts*,
+*Replies to my replies*, *Decisions on my posts and discussions*) are **off by default**: a member
+gets these emails only after switching them on. The *Moderation digest* stays on by default
+(daily). Accounts that existed before keep the preferences they had. Verifying an email address
+sends no email (there is no welcome email since 2026-10-31).
 
 To keep the mail out of junk folders, every message carries `Auto-Submitted: auto-generated`
 (RFC 3834: automated mail, auto-responders stay quiet), and links in the HTML part never show a web

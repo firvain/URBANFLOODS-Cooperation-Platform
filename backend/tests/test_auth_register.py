@@ -103,6 +103,13 @@ async def test_register_happy_path(client, db_session, outbox, cleanup_users):
     assert user.locale == "en"
     prefs = await db_session.get(NotificationPreference, user.id)
     assert prefs is not None
+    # Owner decision 2026-10-31: member notifications are opt-in; the admin digest stays on.
+    assert prefs.reply_to_my_thread is False
+    assert prefs.comment_on_my_post is False
+    assert prefs.reply_to_my_reply is False
+    assert prefs.moderation_decisions is False
+    assert prefs.admin_digest is True
+    assert prefs.digest_frequency.value == "daily"
 
     assert len(outbox) == 1
     message = outbox[0]
@@ -285,10 +292,23 @@ async def test_verify_email_happy_path(client, db_session, outbox, cleanup_users
     assert len(sessions) == 1
     assert sessions[0].user_agent == "Test/1.0"
 
-    assert len(outbox) == 2
-    assert outbox[1].to == email
-    assert "Welcome" in outbox[1].subject
+    # Verifying sends no email at all (the welcome email was removed on 2026-10-31): the only
+    # message is the verification link itself.
+    assert len(outbox) == 1
     assert "auth.email_verified" in await _audit_actions(db_session, user.id)
+
+
+async def test_verify_email_sends_no_email(client, db_session, outbox, cleanup_users):
+    _, response = await _register(client, cleanup_users)
+    assert response.status_code == 201
+    raw = _token_from(outbox[0])
+    outbox.clear()
+
+    response = await client.post(VERIFY, json={"token": raw})
+
+    assert response.status_code == 200, response.text
+    assert response.json()["is_verified"] is True
+    assert outbox == []
 
 
 async def test_verify_email_with_organisation_returns_summary(
@@ -383,7 +403,7 @@ async def test_verify_email_already_verified_user_is_logged_in(
     assert response.status_code == 200, response.text
     assert response.json()["is_verified"] is True
     assert settings.SESSION_COOKIE_NAME in response.headers["set-cookie"]
-    assert outbox == []  # no second welcome email
+    assert outbox == []
 
 
 # --- resend verification ----------------------------------------------------------------------

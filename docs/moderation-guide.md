@@ -65,7 +65,8 @@ The author is emailed about each decision, after it has been saved:
   any other item, delete, restore and delete permanently send no email.
 - No email is sent when an admin decides on their own content, when the author is banned,
   deleted or unverified, or when the author has turned off *Decisions on my posts and
-  discussions* (Account → Notifications; on by default).
+  discussions* (Account → Notifications; off by default for accounts created since 2026-10-31,
+  so a new member gets decision emails only after switching it on).
 - The decision emails are in English for every interface language.
 - One automatic sweep emails at most 100 authors; items beyond that are published without an
   email.

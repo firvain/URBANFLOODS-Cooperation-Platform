@@ -141,3 +141,74 @@ async def test_autogenerate_produces_no_diff(empty_engine):
 
     async with empty_engine.connect() as conn:
         assert await conn.run_sync(diff) == []
+
+
+MEMBER_NOTIFICATION_COLUMNS = (
+    "reply_to_my_thread",
+    "comment_on_my_post",
+    "reply_to_my_reply",
+    "moderation_decisions",
+)
+
+
+async def _preference_defaults(engine: AsyncEngine) -> dict[str, str]:
+    async with engine.connect() as conn:
+        rows = await conn.execute(
+            text(
+                "SELECT column_name, column_default FROM information_schema.columns "
+                "WHERE table_name = 'notification_preferences' AND column_default IS NOT NULL"
+            )
+        )
+        return {row.column_name: row.column_default for row in rows}
+
+
+async def test_0009_switches_member_notification_defaults_off_and_keeps_rows(empty_engine):
+    """0009: new rows get the four member notifications off; existing rows keep their values;
+    the admin digest stays on; downgrade restores the old defaults."""
+    from alembic import command
+
+    from app.db.migrations import alembic_config
+
+    def to(revision: str, *, down: bool = False):
+        def run(sync_conn):
+            step = command.downgrade if down else command.upgrade
+            step(alembic_config(sync_conn), revision)
+
+        return run
+
+    insert_user = text(
+        "INSERT INTO users (email, password_hash, display_name) "
+        "VALUES (:email, 'x', 'Member') RETURNING id"
+    )
+    select_prefs = text(
+        "SELECT reply_to_my_thread, comment_on_my_post, reply_to_my_reply, "
+        "moderation_decisions, admin_digest FROM notification_preferences WHERE user_id = :id"
+    )
+
+    async with empty_engine.begin() as conn:
+        await conn.run_sync(to("0008"))
+        old_id = (await conn.execute(insert_user, {"email": "old@example.org"})).scalar_one()
+        await conn.execute(
+            text("INSERT INTO notification_preferences (user_id) VALUES (:id)"), {"id": old_id}
+        )
+
+    async with empty_engine.begin() as conn:
+        await conn.run_sync(to("0009"))
+        new_id = (await conn.execute(insert_user, {"email": "new@example.org"})).scalar_one()
+        await conn.execute(
+            text("INSERT INTO notification_preferences (user_id) VALUES (:id)"), {"id": new_id}
+        )
+        old = (await conn.execute(select_prefs, {"id": old_id})).one()
+        new = (await conn.execute(select_prefs, {"id": new_id})).one()
+
+    assert tuple(old) == (True, True, True, True, True)  # existing member keeps everything
+    assert tuple(new) == (False, False, False, False, True)  # admin_digest stays on
+    defaults = await _preference_defaults(empty_engine)
+    assert all(defaults[column] == "false" for column in MEMBER_NOTIFICATION_COLUMNS)
+    assert defaults["admin_digest"] == "true"
+    assert defaults["digest_frequency"].startswith("'daily'")
+
+    async with empty_engine.begin() as conn:
+        await conn.run_sync(to("0008", down=True))
+    defaults = await _preference_defaults(empty_engine)
+    assert all(defaults[column] == "true" for column in MEMBER_NOTIFICATION_COLUMNS)

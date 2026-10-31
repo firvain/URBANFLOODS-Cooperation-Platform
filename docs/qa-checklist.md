@@ -188,11 +188,11 @@ Use a real inbox for the real-mail variant (section 1.3). Otherwise use any addr
 |---|---|---|---|
 | N-01 | `/register`: display name, email, password, organisation "other" + free text, country, locale, open the expertise picker and pick two tags, tick consent (Terms/Privacy links open) | Field errors are announced (password under 10 characters, a common password, missing consent). On success: "Check your email" | AF-1, AF-9 |
 | N-02 | Mailpit → the verification email | Subject "Verify your email address for the URBANFLOODS Cooperation Platform". The link goes to `http://localhost:5173/verify-email?token=…`. Reply-To is `urbanfloods@uowm.gr`. Plain-text and HTML parts both present. EU co-funding line in the footer. A user with locale `el` gets the Greek template | AF-1 |
-| N-03 | Click the link | Verified and signed in. A welcome email arrives. A "complete your profile" nudge appears if expertise is empty. Opening the link a second time gives a clear "invalid or used" message | AF-1 |
+| N-03 | Click the link | Verified and signed in. No email is sent (the welcome email was removed on 2026-10-31). A "complete your profile" nudge appears if expertise is empty. Opening the link a second time gives a clear "invalid or used" message | AF-1 |
 | N-04 | `/account` → Profile: edit bio, organisation, country, expertise, "show my email", "show me in the directory"; save and reload | The values persist. `/network` now shows the directory, and your card shows your expertise. Suggested collaborators appear on Home once expertise is set | AF-6, M-3 |
 | N-05 | `/blog/new`: write a first post (Best practices) and save | The post is created as **pending**. The post page shows the pending banner with the contact address. It is not in `/blog` for others (check in a private window). Members cannot choose the Resources category | AF-1 |
 | N-06 | `/forum/new`: start a first thread | Also pending, with the same banner | AF-5 |
-| N-07 | As an admin (A-01), approve the post. Back as the new member, check Mailpit | Email "Your post “…” is now public", with the newly-trusted sentence. The next thread or post publishes immediately | AF-1 |
+| N-07 | As the new member, Account → Notifications: the four member switches (replies to my discussions, comments on my posts, replies to my replies, decisions on my posts and discussions) are **off** by default; switch on "Decisions on my posts and discussions" and save. As an admin (A-01), approve the post. Back as the new member, check Mailpit | Without the switch no email would arrive. With it: email "Your post “…” is now public", with the newly-trusted sentence. The next thread or post publishes immediately | AF-1 |
 | N-08 | Account → Sessions: sign in from a second browser, then revoke it from the first | The revoked session is signed out on its next request | AF-9 |
 | N-09 | Keep this account for T-14 (account deletion) | — | — |
 
@@ -313,7 +313,7 @@ For each of en, el, it, sl, hr, sr, mk, sq, bs, at 390 px and 1280 px:
 
 ### 4.4 Email content
 
-Collect one of each from Mailpit (or a real inbox, section 1.3): verify_email, welcome,
+Collect one of each from Mailpit (or a real inbox, section 1.3): verify_email,
 reset_password, reply_to_thread, reply_to_reply, comment_on_post, content_approved,
 content_rejected, admin_digest (change_email from Account → Password & email).
 
@@ -552,7 +552,7 @@ the KNOWBASE item pages had no `h1` in the load-error state.
 | Scenario | Result | Notes |
 |---|---|---|
 | V-01–V-15 | pass | V-14: signed-out visitors are sent to `/login?next=` for the admin URLs; a signed-in member sees the 404 page (wording corrected) |
-| N-01–N-08 | pass | via the API and Mailpit; weak password → `auth.password_too_common`; verification link single-use; welcome mail; revoked session → 401 |
+| N-01–N-08 | pass | via the API and Mailpit; weak password → `auth.password_too_common`; verification link single-use; welcome mail (removed 2026-10-31); revoked session → 401 |
 | T-09, T-10, T-11, T-12, T-13 | pass | export v2 complete without secrets; unused image deleted, used image refused; the five upload rejections; directory filter, mailto for the opted-in email, admin badge, free-text organisation card |
 | T-01–T-08 | pass | by `blog.spec.ts` and `forum.spec.ts` (image → WebP, cover, KNOWBASE link, edit guard, nesting, notifications) plus the toolbar and image-dialog checks by hand |
 | T-14 | pass | wrong password 400, right one 204, login afterwards 401, no mail or log line with the address |
@@ -564,6 +564,6 @@ the KNOWBASE item pages had no `h1` in the load-error state.
 | 4.1 accessibility | partial | skip link, focus on h1, Esc, toolbar `aria-pressed`, dialog focus trap and return, reduced motion (no animations), axe 0 violations. Open: hover contrast (statement §3.1); text-only zoom 200 % at 1280 px to confirm by hand in Firefox (Tailwind breakpoints are rem-based, so the header should collapse; the simulated check cannot tell). Screen-reader spot check still to do by a person |
 | 4.2 responsiveness | pass | no horizontal scroll at 390, 768, 1280 and 1536 px on home, blog, post, editor, thread, network, about, account, register; toolbar wraps at 390 px |
 | 4.3 locales | pass | nine locales switch and persist; `lang` follows; no raw keys; no overflow at 390 px in el, sq, mk. Partner confirmation of the flagged translations still open |
-| 4.4 email | pass | verify, welcome, reset, reply, approval, digest and change-email checked: `From noreply@`, `Reply-To urbanfloods@uowm.gr`, HTML + text, EU line, absolute links, opt-out where relevant; the rejection mail names the contact address without the reason (by `test_moderation_notifications.py`) |
+| 4.4 email | pass | verify, welcome (removed 2026-10-31), reset, reply, approval, digest and change-email checked: `From noreply@`, `Reply-To urbanfloods@uowm.gr`, HTML + text, EU line, absolute links, opt-out where relevant; the rejection mail names the contact address without the reason (by `test_moderation_notifications.py`) |
 | 4.5 security | pass | X-S1, X-S2, X-S3 (429 with `Retry-After: 60` and `rate.limited`), X-S4 (HttpOnly, Lax), X-S5 (WebP, nosniff, no EXIF), X-S6, X-S7; X-S8 after M6. Accepted: the uvicorn access log keeps query strings, so admin user searches by email (`/admin/users/?q=`) appear in the server log |
 | 4.6 performance and outage | pass | every page under 1.3 s in dev; the editor is a separate 400 kB chunk in the production build; KNOWBASE unreachable: stored titles, error + Try again (now with an h1), dashboard Unreachable with the error, picker "could not be searched", the rest of the site unaffected |

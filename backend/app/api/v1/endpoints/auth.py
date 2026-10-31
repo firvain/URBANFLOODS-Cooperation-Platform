@@ -232,11 +232,7 @@ async def verify_email(
         db, user_id=user.id, user_agent=request.headers.get("user-agent")
     )
     _set_session_cookie(response, raw_session)
-
-    if newly_verified:
-        await _send_quietly(
-            user=user, template="welcome", context={"display_name": user.display_name}
-        )
+    # No email here: the welcome email was removed (owner decision 2026-10-31).
     return UserMe.model_validate(user)
 
 

@@ -33,6 +33,7 @@ from app.db.models import (
     Category,
     Comment,
     KnowbaseLink,
+    NotificationPreference,
     Post,
     Reply,
     Report,
@@ -260,6 +261,18 @@ async def test_seed_account_states(db_session, upstream, knowbase):
     minimal = users[MINIMAL]
     assert minimal.organisation_id is None and minimal.organisation_other is None
     assert not minimal.expertise and minimal.bio is None
+
+    # Notifications: the demo personas opted in to the member notifications (the e2e suite and
+    # the manual QA read reply/comment/approval emails in Mailpit); the minimal persona keeps
+    # the defaults of a new account (member notifications off, admin digest on).
+    member_switches = factories.MEMBER_NOTIFICATIONS
+    for email in LIVE_EMAILS:
+        prefs = await db_session.get(
+            NotificationPreference, users[email].id, populate_existing=True
+        )
+        expected_on = email != MINIMAL
+        assert all(getattr(prefs, name) is expected_on for name in member_switches), email
+        assert prefs.admin_digest is True, email
 
     # Anonymised: personal data erased, row kept.
     gone = users[ANONYMISED]

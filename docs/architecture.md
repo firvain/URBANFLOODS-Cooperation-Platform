@@ -89,7 +89,7 @@ and comments), `created_at`/`updated_at` timestamps, soft delete via `status` + 
 | `expertise_tags`, `user_expertise` | seeded expertise vocabulary and the member junction (matchmaking) |
 | `sessions` | opaque session tokens (SHA-256 hash stored), expiry, last seen, user agent, revoked |
 | `email_tokens` | verify (48 h), reset (1 h), change-email (24 h) tokens, hashed, single use |
-| `notification_preferences` | per-user email switches and `admin_digest` / `digest_frequency` |
+| `notification_preferences` | per-user email switches (the four member notifications off by default since migration 0009; existing rows unchanged) and `admin_digest` (on) / `digest_frequency` (daily) |
 | `audit_log` | actor, action, target, JSON metadata for every status, role and account change |
 | `categories` | blog and forum categories (9 seeded; "Resources" is `admin_only`); archived, never deleted |
 | `tags`, `post_tags`, `thread_tags` | free tags with `usage_count` (published content only) |
@@ -218,10 +218,9 @@ compose sends to Mailpit. Production relays through Brevo (EU, free plan, 300/da
 | Template | Sent when |
 |---|---|
 | `verify_email` | registration, resend, admin resend |
-| `welcome` | after verification |
 | `reset_password` | forgot password |
 | `change_email` | email change requested (to the new address) |
-| `reply_to_thread`, `reply_to_reply`, `comment_on_post` | notifications, honouring the recipient's preferences; sent as background tasks after commit |
+| `reply_to_thread`, `reply_to_reply`, `comment_on_post` | notifications, honouring the recipient's preferences (off by default for new accounts); sent as background tasks after commit |
 | `admin_digest` | scheduler or `python -m app.cli digest` |
 
 Account emails that fail are logged (`auth.email_not_sent`, `email.send_failed`) and do not fail

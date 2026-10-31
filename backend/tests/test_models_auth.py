@@ -91,11 +91,12 @@ async def test_user_defaults(db_session):
     db_session.add(prefs)
     await db_session.flush()
     await db_session.refresh(prefs)
-    assert prefs.reply_to_my_thread is True
-    assert prefs.comment_on_my_post is True
-    assert prefs.reply_to_my_reply is True
+    # Member notifications are opt-in (migration 0009); the admin digest stays on.
+    assert prefs.reply_to_my_thread is False
+    assert prefs.comment_on_my_post is False
+    assert prefs.reply_to_my_reply is False
     assert prefs.admin_digest is True
-    assert prefs.moderation_decisions is True
+    assert prefs.moderation_decisions is False
     assert prefs.digest_frequency is DigestFrequency.DAILY
     await db_session.refresh(user, ["notification_preferences"])
     assert user.notification_preferences is prefs

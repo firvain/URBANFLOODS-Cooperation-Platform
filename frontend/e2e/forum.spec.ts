@@ -244,7 +244,8 @@ test.afterAll(async () => {
 
 test('1. a reply to the editor’s discussion emails the editor a link to it', async () => {
   await loginViaForm(editor, EDITOR)
-  // The notification needs the (default-on) preference; fail clearly if a run left it off.
+  // The notification needs the preference, which is off for new accounts but switched on for
+  // the demo personas by the dev seed; fail clearly if a run left it off.
   const prefs = await editorContext.request.get(`${API_URL}/api/v1/auth/me/notifications`, {
     headers: API_HEADERS,
   })

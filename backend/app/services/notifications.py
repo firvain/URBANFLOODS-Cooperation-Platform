@@ -8,8 +8,9 @@ read-only session. Failures are logged (``notification.failed``, kind and ids on
 swallowed: a notification never fails the request that caused it.
 
 A recipient is skipped when they are the actor, have no account any more (author removed), are
-inactive, deleted or unverified, or have turned the matching preference off. A missing
-preferences row counts as the defaults (all on); it is not created here (read-only session).
+inactive, deleted or unverified, or have not switched the matching preference on. These four
+member notifications are opt-in (off by default since 2026-10-31), so a missing preferences row
+counts as the defaults: nothing is sent. It is not created here (read-only session).
 
 A nested reply notifies the parent reply's author (``reply_to_reply``) and the thread author
 (``reply_to_thread``). When they are the same person they get one email: ``reply_to_reply`` if
@@ -80,8 +81,8 @@ async def _recipient(
     if user is None or not user.is_active or not user.is_verified or user.deleted_at is not None:
         return None
     preferences = await db.get(NotificationPreference, user_id)
-    if preferences is not None and not getattr(preferences, preference):
-        return None
+    if preferences is None or not getattr(preferences, preference):
+        return None  # opt-in: a missing row means the defaults, which are off
     return user
 
 

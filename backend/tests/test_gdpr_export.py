@@ -339,7 +339,8 @@ async def test_export_includes_organisation_and_expertise(world):
     assert user["organisation"]["short_name"] == "UOWM"
     assert len(user["expertise"]) == 2
     assert world.body["notification_preferences"]["digest_frequency"] == "daily"
-    assert world.body["notification_preferences"]["moderation_decisions"] is True
+    assert world.body["notification_preferences"]["moderation_decisions"] is False
+    assert world.body["notification_preferences"]["admin_digest"] is True
 
 
 # --- export: posts ----------------------------------------------------------------------------

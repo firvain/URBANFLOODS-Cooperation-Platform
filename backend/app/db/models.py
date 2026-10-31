@@ -209,23 +209,26 @@ class EmailToken(Base):
 
 
 class NotificationPreference(Base):
+    """One row per user. The four member notifications are opt-in (off for new accounts since
+    migration 0009, owner decision 2026-10-31); the admin digest is on by default."""
+
     __tablename__ = "notification_preferences"
 
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
     reply_to_my_thread: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default=text("true")
+        Boolean, nullable=False, server_default=text("false")
     )
     comment_on_my_post: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default=text("true")
+        Boolean, nullable=False, server_default=text("false")
     )
     reply_to_my_reply: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default=text("true")
+        Boolean, nullable=False, server_default=text("false")
     )
     admin_digest: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     moderation_decisions: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default=text("true")
+        Boolean, nullable=False, server_default=text("false")
     )
     digest_frequency: Mapped[DigestFrequency] = mapped_column(
         digest_frequency_enum, nullable=False, server_default=text("'daily'")

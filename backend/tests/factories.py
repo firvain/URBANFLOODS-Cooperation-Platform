@@ -35,6 +35,15 @@ DEFAULT_PASSWORD = "correct-horse-battery-staple"
 LOGIN_PATH = f"{settings.API_V1_PREFIX}/auth/login"
 
 
+# The member notifications that are off by default for new accounts (owner decision 2026-10-31).
+MEMBER_NOTIFICATIONS = (
+    "reply_to_my_thread",
+    "comment_on_my_post",
+    "reply_to_my_reply",
+    "moderation_decisions",
+)
+
+
 def unique_email(prefix: str = "user") -> str:
     """A fresh address, so tests never collide even if a cleanup was missed."""
     return f"{prefix}-{uuid.uuid4().hex[:12]}@example.org"
@@ -49,9 +58,13 @@ async def create_user(
     is_verified: bool = False,
     is_active: bool = True,
     role: UserRole = UserRole.MEMBER,
+    notify: bool = False,
     **fields: Any,
 ) -> User:
-    """Insert a user (with notification preferences) and flush. Unverified by default."""
+    """Insert a user (with notification preferences) and flush. Unverified by default.
+
+    The preferences row has the database defaults (member notifications off) unless ``notify``
+    is true, which switches the four member notifications on, as a member who opted in."""
     user = User(
         email=email or unique_email(),
         password_hash=hash_password(password),
@@ -61,7 +74,8 @@ async def create_user(
         role=role,
         **fields,
     )
-    user.notification_preferences = NotificationPreference()
+    opted_in = dict.fromkeys(MEMBER_NOTIFICATIONS, True) if notify else {}
+    user.notification_preferences = NotificationPreference(**opted_in)
     db.add(user)
     await db.flush()
     return user

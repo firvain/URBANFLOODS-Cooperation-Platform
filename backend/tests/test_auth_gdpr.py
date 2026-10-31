@@ -67,12 +67,13 @@ COOKIE = settings.SESSION_COOKIE_NAME
 NOT_AUTHENTICATED = "auth.not_authenticated"
 FILENAME_RE = re.compile(r'^attachment; filename="urbanfloods-account-(\d+)-(\d{8})\.json"$')
 FORBIDDEN_KEYS = {"password_hash", "token_hash", "password", "token"}
+# A new account's preferences: member notifications off (2026-10-31), admin digest on, daily.
 DEFAULT_PREFERENCES = {
-    "reply_to_my_thread": True,
-    "comment_on_my_post": True,
-    "reply_to_my_reply": True,
+    "reply_to_my_thread": False,
+    "comment_on_my_post": False,
+    "reply_to_my_reply": False,
     "admin_digest": True,
-    "moderation_decisions": True,
+    "moderation_decisions": False,
     "digest_frequency": "daily",
 }
 

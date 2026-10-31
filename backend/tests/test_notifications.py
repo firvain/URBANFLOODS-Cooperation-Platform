@@ -59,6 +59,12 @@ async def _post(db, author: User, **kwargs):
     return await create_post(db, category_id=category.id, author_id=author.id, **kwargs)
 
 
+async def _member(db, **kwargs) -> User:
+    """A verified member who has switched the member notifications on (they are off by default
+    since 2026-10-31; the default is tested in the "defaults" section)."""
+    return await create_verified_user(db, notify=True, **kwargs)
+
+
 async def _set_preference(db, user: User, name: str, value: bool) -> None:
     preferences = await db.get(NotificationPreference, user.id)
     setattr(preferences, name, value)
@@ -67,8 +73,8 @@ async def _set_preference(db, user: User, name: str, value: bool) -> None:
 
 async def _forum_setup(db):
     """A thread by ``owner`` and a top-level reply on it by ``actor`` (both verified)."""
-    owner = await create_verified_user(db, display_name="Olga Owner")
-    actor = await create_verified_user(db, display_name="Andrej Actor")
+    owner = await _member(db, display_name="Olga Owner")
+    actor = await _member(db, display_name="Andrej Actor")
     thread = await _thread(db, owner, title=THREAD_TITLE)
     reply = await create_reply(
         db, thread_id=thread.id, author_id=actor.id, body="We used swales and a basin."
@@ -125,7 +131,7 @@ async def test_reply_to_thread_emails_thread_author(db_session, outbox) -> None:
 
 
 async def test_reply_to_thread_by_thread_author_sends_nothing(db_session, outbox) -> None:
-    owner = await create_verified_user(db_session)
+    owner = await _member(db_session)
     thread = await _thread(db_session, owner)
     reply = await create_reply(db_session, thread_id=thread.id, author_id=owner.id)
 
@@ -161,7 +167,7 @@ async def test_reply_to_thread_skips_ineligible_recipient(db_session, outbox, ch
 
 
 async def test_reply_to_thread_without_thread_author_sends_nothing(db_session, outbox) -> None:
-    actor = await create_verified_user(db_session)
+    actor = await _member(db_session)
     category = await create_category(db_session, kind=CategoryKind.FORUM)
     thread = await create_thread(db_session, category_id=category.id, author_id=None)
     reply = await create_reply(db_session, thread_id=thread.id, author_id=actor.id)
@@ -171,8 +177,8 @@ async def test_reply_to_thread_without_thread_author_sends_nothing(db_session, o
 
 
 async def test_reply_to_thread_uses_greek_template(db_session, outbox) -> None:
-    owner = await create_verified_user(db_session, locale="el")
-    actor = await create_verified_user(db_session, display_name="Andrej Actor")
+    owner = await _member(db_session, locale="el")
+    actor = await _member(db_session, display_name="Andrej Actor")
     thread = await _thread(db_session, owner, title=THREAD_TITLE)
     reply = await create_reply(db_session, thread_id=thread.id, author_id=actor.id)
 
@@ -188,8 +194,8 @@ async def test_reply_to_thread_uses_greek_template(db_session, outbox) -> None:
 
 
 async def test_long_reply_is_truncated_in_email(db_session, outbox) -> None:
-    owner = await create_verified_user(db_session)
-    actor = await create_verified_user(db_session)
+    owner = await _member(db_session)
+    actor = await _member(db_session)
     thread = await _thread(db_session, owner)
     long_body = "flood " * 120 + "SECRET-TAIL"
     reply = await create_reply(db_session, thread_id=thread.id, author_id=actor.id, body=long_body)
@@ -207,7 +213,7 @@ async def test_long_reply_is_truncated_in_email(db_session, outbox) -> None:
 
 async def test_nested_reply_notifies_parent_and_thread_authors(db_session, outbox) -> None:
     owner, parent_author, thread, parent = await _forum_setup(db_session)
-    actor = await create_verified_user(db_session, display_name="Nina Nested")
+    actor = await _member(db_session, display_name="Nina Nested")
     reply = await create_reply(
         db_session, thread_id=thread.id, author_id=actor.id, parent_reply_id=parent.id
     )
@@ -227,8 +233,8 @@ async def test_nested_reply_notifies_parent_and_thread_authors(db_session, outbo
 
 
 async def test_nested_reply_same_person_gets_one_email(db_session, outbox) -> None:
-    owner = await create_verified_user(db_session)
-    actor = await create_verified_user(db_session)
+    owner = await _member(db_session)
+    actor = await _member(db_session)
     thread = await _thread(db_session, owner)
     parent = await create_reply(db_session, thread_id=thread.id, author_id=owner.id)
     reply = await create_reply(
@@ -245,8 +251,8 @@ async def test_nested_reply_same_person_gets_one_email(db_session, outbox) -> No
 
 async def test_nested_reply_same_person_falls_back_to_thread_email(db_session, outbox) -> None:
     """With ``reply_to_my_reply`` off but ``reply_to_my_thread`` on, the thread email goes out."""
-    owner = await create_verified_user(db_session)
-    actor = await create_verified_user(db_session)
+    owner = await _member(db_session)
+    actor = await _member(db_session)
     thread = await _thread(db_session, owner)
     parent = await create_reply(db_session, thread_id=thread.id, author_id=owner.id)
     reply = await create_reply(
@@ -281,7 +287,7 @@ async def test_top_level_reply_has_no_reply_to_reply_email(db_session, outbox) -
 
 async def test_reply_to_reply_respects_preference(db_session, outbox) -> None:
     _, parent_author, thread, parent = await _forum_setup(db_session)
-    actor = await create_verified_user(db_session)
+    actor = await _member(db_session)
     reply = await create_reply(
         db_session, thread_id=thread.id, author_id=actor.id, parent_reply_id=parent.id
     )
@@ -292,9 +298,9 @@ async def test_reply_to_reply_respects_preference(db_session, outbox) -> None:
 
 
 async def test_reply_to_reply_skips_unverified_parent_author(db_session, outbox) -> None:
-    owner = await create_verified_user(db_session)
-    parent_author = await create_user(db_session)  # unverified
-    actor = await create_verified_user(db_session)
+    owner = await _member(db_session)
+    parent_author = await create_user(db_session, notify=True)  # unverified
+    actor = await _member(db_session)
     thread = await _thread(db_session, owner)
     parent = await create_reply(db_session, thread_id=thread.id, author_id=parent_author.id)
     reply = await create_reply(
@@ -306,9 +312,9 @@ async def test_reply_to_reply_skips_unverified_parent_author(db_session, outbox)
 
 
 async def test_reply_to_reply_falls_back_to_english_for_greek(db_session, outbox) -> None:
-    owner = await create_verified_user(db_session)
-    parent_author = await create_verified_user(db_session, locale="el")
-    actor = await create_verified_user(db_session)
+    owner = await _member(db_session)
+    parent_author = await _member(db_session, locale="el")
+    actor = await _member(db_session)
     thread = await _thread(db_session, owner)
     parent = await create_reply(db_session, thread_id=thread.id, author_id=parent_author.id)
     reply = await create_reply(
@@ -326,8 +332,8 @@ async def test_reply_to_reply_falls_back_to_english_for_greek(db_session, outbox
 
 
 async def test_comment_on_post_emails_post_author(db_session, outbox) -> None:
-    author = await create_verified_user(db_session, display_name="Petra Poster")
-    actor = await create_verified_user(db_session, display_name="Andrej Actor")
+    author = await _member(db_session, display_name="Petra Poster")
+    actor = await _member(db_session, display_name="Andrej Actor")
     post = await _post(db_session, author, title=POST_TITLE)
     comment = await create_comment(
         db_session, post_id=post.id, author_id=actor.id, body="Thanks for sharing."
@@ -351,7 +357,7 @@ async def test_comment_on_post_emails_post_author(db_session, outbox) -> None:
 
 
 async def test_comment_by_post_author_sends_nothing(db_session, outbox) -> None:
-    author = await create_verified_user(db_session)
+    author = await _member(db_session)
     post = await _post(db_session, author)
     comment = await create_comment(db_session, post_id=post.id, author_id=author.id)
 
@@ -360,8 +366,8 @@ async def test_comment_by_post_author_sends_nothing(db_session, outbox) -> None:
 
 
 async def test_comment_on_post_respects_preference(db_session, outbox) -> None:
-    author = await create_verified_user(db_session)
-    actor = await create_verified_user(db_session)
+    author = await _member(db_session)
+    actor = await _member(db_session)
     post = await _post(db_session, author)
     comment = await create_comment(db_session, post_id=post.id, author_id=actor.id)
     await _set_preference(db_session, author, "comment_on_my_post", False)
@@ -371,8 +377,8 @@ async def test_comment_on_post_respects_preference(db_session, outbox) -> None:
 
 
 async def test_comment_on_post_skips_inactive_author(db_session, outbox) -> None:
-    author = await create_verified_user(db_session, is_active=False)
-    actor = await create_verified_user(db_session)
+    author = await _member(db_session, is_active=False)
+    actor = await _member(db_session)
     post = await _post(db_session, author)
     comment = await create_comment(db_session, post_id=post.id, author_id=actor.id)
 
@@ -381,8 +387,8 @@ async def test_comment_on_post_skips_inactive_author(db_session, outbox) -> None
 
 
 async def test_comment_on_post_falls_back_to_english_for_greek(db_session, outbox) -> None:
-    author = await create_verified_user(db_session, locale="el")
-    actor = await create_verified_user(db_session)
+    author = await _member(db_session, locale="el")
+    actor = await _member(db_session)
     post = await _post(db_session, author)
     comment = await create_comment(db_session, post_id=post.id, author_id=actor.id)
 
@@ -436,11 +442,58 @@ async def test_runner_logs_and_swallows_failures(database_url, outbox, monkeypat
     assert all(e["log_level"] == "error" for e in failed)
 
 
+# --- defaults: member notifications are off for new accounts (owner decision 2026-10-31) ------
+
+
+async def test_default_preferences_get_no_reply_to_thread_email(db_session, outbox) -> None:
+    owner = await create_verified_user(db_session)
+    actor = await create_verified_user(db_session)
+    thread = await _thread(db_session, owner)
+    reply = await create_reply(db_session, thread_id=thread.id, author_id=actor.id)
+
+    assert await notify_reply_to_thread(db_session, reply=reply) is None
+    assert outbox == []
+
+
+async def test_default_preferences_get_no_reply_to_reply_email(db_session, outbox) -> None:
+    owner = await create_verified_user(db_session)
+    parent_author = await create_verified_user(db_session)
+    actor = await create_verified_user(db_session)
+    thread = await _thread(db_session, owner)
+    parent = await create_reply(db_session, thread_id=thread.id, author_id=parent_author.id)
+    reply = await create_reply(
+        db_session, thread_id=thread.id, author_id=actor.id, parent_reply_id=parent.id
+    )
+
+    assert await notify_reply_to_reply(db_session, reply=reply) is None
+    assert await notify_reply_to_thread(db_session, reply=reply) is None
+    assert outbox == []
+
+
+async def test_default_preferences_get_no_comment_email(db_session, outbox) -> None:
+    author = await create_verified_user(db_session)
+    actor = await create_verified_user(db_session)
+    post = await _post(db_session, author)
+    comment = await create_comment(db_session, post_id=post.id, author_id=actor.id)
+
+    assert await notify_comment_on_post(db_session, comment=comment) is None
+    assert outbox == []
+
+
+async def test_missing_preferences_row_counts_as_the_defaults(db_session, outbox) -> None:
+    owner, _, _, reply = await _forum_setup(db_session)
+    await db_session.delete(await db_session.get(NotificationPreference, owner.id))
+    await db_session.flush()
+
+    assert await notify_reply_to_thread(db_session, reply=reply) is None
+    assert outbox == []
+
+
 # --- endpoints --------------------------------------------------------------------------------
 
 
 async def _committed(db, cleanup_users, **kwargs) -> User:
-    user = await create_verified_user(db, **kwargs)
+    user = await _member(db, **kwargs)
     cleanup_users.add(user.email)
     await db.commit()
     return user
@@ -568,6 +621,33 @@ async def test_create_comment_endpoint_sends_notification(
     assert f"{FRONTEND}/blog/{post.slug}#comment-{comment_id}" in msg.text
 
 
+async def test_reply_and_comment_endpoints_send_nothing_with_default_preferences(
+    client, db_session, cleanup_users, cleanup_forum_categories, cleanup_categories, outbox
+) -> None:
+    """A member who never opened the Notifications tab gets no reply or comment emails."""
+    owner = await create_verified_user(db_session)
+    cleanup_users.add(owner.email)
+    await db_session.commit()
+    actor = await _committed(db_session, cleanup_users)
+    thread = await _committed_thread(db_session, cleanup_forum_categories, owner)
+    category = await create_category(db_session)
+    cleanup_categories.add(category.id)
+    post = await create_post(db_session, category_id=category.id, author_id=owner.id)
+    await db_session.commit()
+    await login_as(client, actor)
+
+    reply = await client.post(
+        f"{API}/threads/{thread.id}/replies/", json={"body_html": "<p>Try a swale.</p>"}
+    )
+    comment = await client.post(
+        f"{API}/posts/{post.id}/comments/", json={"body_html": "<p>Very useful.</p>"}
+    )
+
+    assert reply.status_code == 201, reply.text
+    assert comment.status_code == 201, comment.text
+    assert outbox == []
+
+
 # --- one-click unsubscribe header -------------------------------------------------------------
 
 
@@ -591,7 +671,7 @@ async def test_reply_to_thread_carries_its_unsubscribe_token(db_session, outbox)
 
 async def test_reply_to_reply_carries_its_unsubscribe_token(db_session, outbox) -> None:
     owner, parent_author, thread, parent = await _forum_setup(db_session)
-    actor = await create_verified_user(db_session)
+    actor = await _member(db_session)
     reply = await create_reply(
         db_session, thread_id=thread.id, author_id=actor.id, parent_reply_id=parent.id
     )
@@ -604,8 +684,8 @@ async def test_reply_to_reply_carries_its_unsubscribe_token(db_session, outbox) 
 
 
 async def test_comment_on_post_carries_its_unsubscribe_token(db_session, outbox) -> None:
-    author = await create_verified_user(db_session)
-    actor = await create_verified_user(db_session)
+    author = await _member(db_session)
+    actor = await _member(db_session)
     post = await _post(db_session, author)
     comment = await create_comment(db_session, post_id=post.id, author_id=actor.id)
 

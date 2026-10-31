@@ -73,7 +73,7 @@ def test_render_reset_password_en() -> None:
     assert "If you did not request this, ignore this email" in text
 
 
-def test_render_change_email_and_welcome_en() -> None:
+def test_render_change_email_en() -> None:
     confirm_path = "/account/confirm-email?token=c1"
     confirm_url = settings.FRONTEND_URL + confirm_path
     subject, text, html = render_email(
@@ -90,23 +90,26 @@ def test_render_change_email_and_welcome_en() -> None:
     assert "new@example.org" in text
     assert "old@example.org" in text and "old@example.org" in html
 
-    login_url = settings.FRONTEND_URL + "/login"
-    subject, text, html = render_email("welcome", "en", {"display_name": "Maria"})
-    assert "Welcome" in subject
-    assert login_url in text and f'<a href="{login_url}"' in html
+
+def test_welcome_template_is_gone() -> None:
+    """Owner decision 2026-10-31: no welcome email after verification."""
+    with pytest.raises(EmailTemplateNotFound):
+        render_email("welcome", "en", {"display_name": "Maria"})
+
+
+_RESET_CTX = {"display_name": "M", "reset_url": "/reset-password?token=r1"}
 
 
 def test_common_context_injected() -> None:
-    _, text, html = render_email("welcome", "en", {"display_name": "M"})
+    _, text, html = render_email("reset_password", "en", _RESET_CTX)
     assert settings.FRONTEND_URL in text
     assert settings.FRONTEND_URL in html
 
 
 def test_locale_fallback_to_english_when_template_missing() -> None:
-    subject, _, _ = render_email("welcome", "el", {"display_name": "Maria"})
-    en_subject, _, _ = render_email("welcome", "en", {"display_name": "Maria"})
+    subject, _, _ = render_email("reset_password", "el", _RESET_CTX)
+    en_subject, _, _ = render_email("reset_password", "en", _RESET_CTX)
     assert subject == en_subject
-    assert "Welcome" in subject
 
 
 def test_greek_template_used_when_present() -> None:
@@ -169,12 +172,12 @@ async def test_send_email_with_explicit_outbox_backend() -> None:
 async def test_send_email_records_effective_locale(outbox) -> None:
     msg = await send_email(
         to="m@example.org",
-        template="welcome",
+        template="reset_password",
         locale="el",
-        context={"display_name": "M"},
+        context=_RESET_CTX,
     )
     assert outbox == [msg]
-    assert msg.locale == "en"  # no Greek welcome template yet
+    assert msg.locale == "en"  # no Greek reset_password template yet
 
 
 async def test_outbox_fixture_uses_default_backend(outbox) -> None:
@@ -405,9 +408,9 @@ async def test_send_email_passes_list_unsubscribe_to_the_backend() -> None:
     backend = OutboxBackend()
     msg = await send_email(
         to="maria@example.org",
-        template="welcome",
+        template="reset_password",
         locale="en",
-        context={"display_name": "Maria"},
+        context=_RESET_CTX,
         backend=backend,
         list_unsubscribe=UNSUBSCRIBE_URL,
     )
@@ -419,9 +422,9 @@ async def test_send_email_has_no_list_unsubscribe_by_default() -> None:
     backend = OutboxBackend()
     msg = await send_email(
         to="maria@example.org",
-        template="welcome",
+        template="reset_password",
         locale="en",
-        context={"display_name": "Maria"},
+        context=_RESET_CTX,
         backend=backend,
     )
     assert msg.list_unsubscribe is None
@@ -432,9 +435,9 @@ async def test_send_email_rejects_a_list_unsubscribe_that_is_not_https_or_has_a_
         with pytest.raises(ValueError):
             await send_email(
                 to="maria@example.org",
-                template="welcome",
+                template="reset_password",
                 locale="en",
-                context={"display_name": "Maria"},
+                context=_RESET_CTX,
                 backend=OutboxBackend(),
                 list_unsubscribe=bad,
             )
