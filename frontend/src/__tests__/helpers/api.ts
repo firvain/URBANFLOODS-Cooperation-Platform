@@ -32,6 +32,12 @@ export function replyError(
   return reply(status, { detail: { code, message, ...(fields ? { fields } : {}) } })
 }
 
+/** Handler that answers each call in turn from `handlers` (the last one repeats). */
+export function sequence(...handlers: Handler[]): Handler {
+  let call = 0
+  return (request) => handlers[Math.min(call++, handlers.length - 1)]!(request)
+}
+
 function parseBody(body: BodyInit | null | undefined): unknown {
   if (typeof body !== 'string') return body ?? undefined
   try {

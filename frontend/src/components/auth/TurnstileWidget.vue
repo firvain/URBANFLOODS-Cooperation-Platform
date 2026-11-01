@@ -1,62 +1,107 @@
+<script lang="ts">
+import { TURNSTILE_ONLOAD, TURNSTILE_SCRIPT_SRC } from '@/constants/turnstile'
+
+type TurnstileParams = {
+  sitekey: string
+  language: string
+  callback: (token: string) => void
+  'expired-callback': () => void
+  'error-callback': () => void
+}
+type TurnstileApi = {
+  render: (container: HTMLElement, params: TurnstileParams) => string | undefined
+  reset: (widgetId: string) => void
+  remove: (widgetId: string) => void
+}
+type TurnstileWindow = Window & {
+  turnstile?: TurnstileApi
+  [TURNSTILE_ONLOAD]?: () => void
+}
+
+// Shared by every instance: the script is added at most once per page.
+let loading: Promise<TurnstileApi> | null = null
+
+function loadTurnstile(): Promise<TurnstileApi> {
+  const w = window as TurnstileWindow
+  if (w.turnstile) return Promise.resolve(w.turnstile)
+  loading ??= new Promise<TurnstileApi>((resolve, reject) => {
+    w[TURNSTILE_ONLOAD] = () => {
+      delete w[TURNSTILE_ONLOAD]
+      resolve(w.turnstile!)
+    }
+    const script = document.createElement('script')
+    script.src = TURNSTILE_SCRIPT_SRC
+    script.async = true
+    script.defer = true
+    script.onerror = () => {
+      // Let a later mount try again.
+      loading = null
+      script.remove()
+      reject(new Error('turnstile.load_failed'))
+    }
+    document.head.appendChild(script)
+  })
+  return loading
+}
+</script>
+
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { turnstileSiteKey } from '@/constants/turnstile'
+
 /**
- * Cloudflare Turnstile, rendered only when `VITE_TURNSTILE_SITE_KEY` is set (absent in dev and
- * tests, where the backend runs with `TURNSTILE_ENABLED=false`). Loads the script once and
- * exposes the token through `v-model:token` (null when it expires).
+ * Cloudflare Turnstile, rendered explicitly and only when `VITE_TURNSTILE_SITE_KEY` is set (absent
+ * in dev and tests). Exposes the token through `v-model:token` (null until solved, and again when
+ * it expires or errors) and `reset()`: tokens are single-use, so forms call it after every request
+ * that may have spent one.
  */
 const token = defineModel<string | null>('token', { default: null })
 
-const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
-const CALLBACK = 'ufTurnstileCallback'
-const EXPIRED_CALLBACK = 'ufTurnstileExpired'
-
-type TurnstileApi = { render: (el: HTMLElement) => void }
-type TurnstileWindow = Window & {
-  turnstile?: TurnstileApi
-  [CALLBACK]?: (value: string) => void
-  [EXPIRED_CALLBACK]?: () => void
-}
-
-const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY
+const siteKey = turnstileSiteKey()
 const container = useTemplateRef<HTMLElement>('container')
 const { locale } = useI18n()
 
-onMounted(() => {
-  if (!siteKey) return
-  const w = window as TurnstileWindow
-  w[CALLBACK] = (value) => (token.value = value)
-  w[EXPIRED_CALLBACK] = () => (token.value = null)
+let api: TurnstileApi | null = null
+let widgetId: string | null = null
+let unmounted = false
 
-  if (w.turnstile && container.value) {
-    // Script already loaded by an earlier mount: implicit rendering will not rescan the page.
-    w.turnstile.render(container.value)
-  } else if (!document.querySelector(`script[src="${SCRIPT_SRC}"]`)) {
-    const script = document.createElement('script')
-    script.src = SCRIPT_SRC
-    script.async = true
-    script.defer = true
-    document.head.appendChild(script)
+onMounted(async () => {
+  if (!siteKey) return
+  try {
+    const loaded = await loadTurnstile()
+    if (unmounted || !container.value) return
+    widgetId =
+      loaded.render(container.value, {
+        sitekey: siteKey,
+        language: locale.value,
+        callback: (value) => (token.value = value),
+        'expired-callback': () => (token.value = null),
+        'error-callback': () => (token.value = null),
+      }) ?? null
+    api = loaded
+  } catch {
+    // Script blocked or failed: the token stays null and the backend answers captcha_failed.
   }
 })
 
 onBeforeUnmount(() => {
-  const w = window as TurnstileWindow
-  delete w[CALLBACK]
-  delete w[EXPIRED_CALLBACK]
+  unmounted = true
+  if (api && widgetId !== null) api.remove(widgetId)
+  api = null
+  widgetId = null
 })
+
+/** Forget the (spent) token and ask Cloudflare for a new one. */
+function reset() {
+  token.value = null
+  if (api && widgetId !== null) api.reset(widgetId)
+}
+
+defineExpose({ reset })
 </script>
 
 <template>
-  <div
-    v-if="siteKey"
-    ref="container"
-    class="cf-turnstile"
-    :data-sitekey="siteKey"
-    :data-callback="CALLBACK"
-    :data-expired-callback="EXPIRED_CALLBACK"
-    :data-language="locale"
-  />
+  <div v-if="siteKey" ref="container" class="cf-turnstile" />
 </template>

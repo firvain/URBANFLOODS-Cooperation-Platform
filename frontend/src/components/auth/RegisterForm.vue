@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { FormError, FormSubmitEvent } from '@nuxt/ui'
 
@@ -10,6 +10,7 @@ import OrganisationPicker from '@/components/common/OrganisationPicker.vue'
 import { useApiErrors } from '@/composables/useApiErrors'
 import { OTHER_COUNTRY, useCountries } from '@/composables/useCountries'
 import { EXPERTISE_MAX, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/constants/auth'
+import { turnstileRequired } from '@/constants/turnstile'
 import { SUPPORTED_LOCALES, isSupportedLocale, type LocaleCode } from '@/i18n'
 import { ApiError } from '@/services/api'
 import type { RegisterPayload } from '@/services/auth'
@@ -35,10 +36,16 @@ const state = reactive({
 })
 type State = typeof state
 
-const turnstileToken = ref<string | null>(null)
 /** The optional expertise picker stays folded away so the form fits on one screen. */
 const expertiseOpen = ref(false)
 const pending = ref(false)
+// Turnstile tokens are single-use: every request resets the widget for a fresh one, and submit
+// waits for a solved challenge while Turnstile is on.
+const turnstile = useTemplateRef<InstanceType<typeof TurnstileWidget>>('turnstile')
+const turnstileToken = ref<string | null>(null)
+const canSubmit = computed(
+  () => !pending.value && (!turnstileRequired() || turnstileToken.value !== null),
+)
 const formError = ref('')
 /**
  * Server-side errors per backend field name (the organisation picker's fields are
@@ -86,6 +93,7 @@ function validate(s: Partial<State>): FormError[] {
 }
 
 async function onSubmit(event: FormSubmitEvent<State>) {
+  if (!canSubmit.value) return
   const data = event.data
   const payload: RegisterPayload = {
     email: data.email.trim(),
@@ -117,6 +125,7 @@ async function onSubmit(event: FormSubmitEvent<State>) {
       ? t('errors.api.validation.failed')
       : errorMessage(e)
   } finally {
+    turnstile.value?.reset()
     pending.value = false
   }
 }
@@ -233,9 +242,15 @@ async function onSubmit(event: FormSubmitEvent<State>) {
       </UCheckbox>
     </UFormField>
 
-    <TurnstileWidget v-model:token="turnstileToken" />
+    <TurnstileWidget ref="turnstile" v-model:token="turnstileToken" />
 
-    <UButton type="submit" block :loading="pending" icon="i-lucide-user-plus">
+    <UButton
+      type="submit"
+      block
+      :loading="pending"
+      :disabled="!canSubmit"
+      icon="i-lucide-user-plus"
+    >
       {{ t('auth.registerPage.submit') }}
     </UButton>
   </UForm>

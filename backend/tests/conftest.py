@@ -22,6 +22,7 @@ import pytest
 
 if TYPE_CHECKING:
     import httpx
+    import respx
     from sqlalchemy.ext.asyncio import AsyncSession
 
 # Test environment, set before anything under ``app`` is imported.
@@ -504,3 +505,29 @@ async def cleanup_attachments(database_url: str) -> AsyncIterator[set[int]]:
         return
     async with AsyncSessionLocal() as session, session.begin():
         await session.execute(delete(Attachment).where(Attachment.id.in_(ids)))
+
+
+TURNSTILE_GOOD_TOKEN = "good-token"
+
+
+@pytest.fixture
+def turnstile_on(monkeypatch: pytest.MonkeyPatch) -> Iterator[respx.MockRouter]:
+    """Turnstile enabled (as in production) with Cloudflare's siteverify mocked: only the token
+    ``good-token`` passes. The router is yielded so tests can assert whether it was called."""
+    from urllib.parse import parse_qs
+
+    import httpx
+    import respx
+
+    from app.core.config import settings
+    from app.services.turnstile import SITEVERIFY_URL
+
+    def siteverify(request: httpx.Request) -> httpx.Response:
+        response = parse_qs(request.content.decode()).get("response")
+        return httpx.Response(200, json={"success": response == [TURNSTILE_GOOD_TOKEN]})
+
+    monkeypatch.setattr(settings, "TURNSTILE_ENABLED", True)
+    monkeypatch.setattr(settings, "TURNSTILE_SECRET_KEY", "test-turnstile-secret")
+    with respx.mock(assert_all_called=False, assert_all_mocked=True) as router:
+        router.post(SITEVERIFY_URL).mock(side_effect=siteverify)
+        yield router

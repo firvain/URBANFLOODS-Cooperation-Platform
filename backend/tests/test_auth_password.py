@@ -205,6 +205,47 @@ async def test_forgot_password_turnstile_failure(
     assert await _tokens(db_session, user.id, TokenPurpose.RESET_PASSWORD) == []
 
 
+async def test_forgot_password_turnstile_on_without_token_is_rejected(
+    client, db_session, outbox, cleanup_users, turnstile_on
+):
+    user = await _committed(db_session, cleanup_users)
+
+    response = await client.post(FORGOT, json={"email": user.email})
+
+    _assert_error(response, 400, "auth.captcha_failed")
+    assert outbox == []
+    assert not turnstile_on.calls.called
+
+
+async def test_forgot_password_turnstile_on_with_valid_token_sends(
+    client, db_session, outbox, cleanup_users, turnstile_on
+):
+    user = await _committed(db_session, cleanup_users)
+
+    response = await client.post(
+        FORGOT, json={"email": user.email, "turnstile_token": "good-token"}
+    )
+
+    assert response.status_code == 202, response.text
+    assert response.json() == RESET_SENT
+    assert [m.to for m in outbox] == [user.email]
+    assert RESET_LINK_RE.search(outbox[0].text)
+    assert turnstile_on.calls.call_count == 1
+
+
+async def test_forgot_password_turnstile_on_signed_in_still_needs_token(
+    client, db_session, outbox, cleanup_users, turnstile_on
+):
+    """The session exemption is for resend verification only."""
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+
+    response = await client.post(FORGOT, json={"email": user.email})
+
+    _assert_error(response, 400, "auth.captcha_failed")
+    assert outbox == []
+
+
 async def test_forgot_password_invalid_email_is_validation_error(client, outbox):
     response = await client.post(FORGOT, json={"email": "not-an-email"})
     _assert_validation(response, "email")

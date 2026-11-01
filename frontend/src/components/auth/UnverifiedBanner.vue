@@ -5,7 +5,10 @@ import { useI18n } from 'vue-i18n'
 import { useApiErrors } from '@/composables/useApiErrors'
 import { useAuthStore } from '@/stores/auth'
 
-/** Shown to logged-in users who have not verified their email yet (they can read, not post). */
+/**
+ * Shown to logged-in users who have not verified their email yet (they can read, not post). The
+ * resend needs no Turnstile token: the backend accepts the session of the account being resent.
+ */
 const { t } = useI18n()
 const auth = useAuthStore()
 const { errorMessage } = useApiErrors()

@@ -236,6 +236,13 @@ async def verify_email(
     return UserMe.model_validate(user)
 
 
+def _is_own_unverified_address(user: User | None, email: str) -> bool:
+    """Whether ``email`` is the signed-in, still unverified user's own address (compared
+    case-insensitively, like the CITEXT ``users.email`` column)."""
+    return user is not None and not user.is_verified and user.email.lower() == email.lower()
+
+
+# Rate limited by app.core.rate_limit.ROUTE_LIMITS (auth.resend_verification: 3/hour per IP).
 @router.post(
     "/resend-verification",
     response_model=MessageResponse,
@@ -243,10 +250,16 @@ async def verify_email(
     responses=_error_responses(400, 422),
 )
 async def resend_verification(
-    body: ResendVerificationRequest, request: Request, db: DbTx
+    body: ResendVerificationRequest, request: Request, current: CurrentUser, db: DbTx
 ) -> MessageResponse:
-    """Email a new verification link. Always 202, whether or not the address is registered."""
-    await _check_turnstile(body.turnstile_token, request)
+    """Email a new verification link. Always 202, whether or not the address is registered.
+
+    The bot check is skipped when the request is signed in as the unverified account being
+    resent (the banner shown to a signed-in unverified member): the session already proves a real
+    browser. Anyone else, including a signed-in user asking for another address, needs a token.
+    """
+    if not _is_own_unverified_address(current, body.email):
+        await _check_turnstile(body.turnstile_token, request)
     user = await crud_user.get_user_by_email(db, email=body.email)
     if user is not None and user.is_active and user.deleted_at is None and not user.is_verified:
         await _send_verification(db, user=user)

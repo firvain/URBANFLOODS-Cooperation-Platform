@@ -18,7 +18,7 @@ from app.crud.token import consume_email_token, create_email_token
 from app.db.enums import TokenPurpose
 from app.db.models import AuditLog, NotificationPreference, Organisation, Session, User
 from app.services.email import get_backend
-from tests.factories import create_user, create_verified_user, unique_email
+from tests.factories import create_user, create_verified_user, login_as, unique_email
 
 API = settings.API_V1_PREFIX
 REGISTER = f"{API}/auth/register"
@@ -481,6 +481,100 @@ async def test_resend_turnstile_failure(client, outbox, monkeypatch):
     response = await client.post(RESEND, json={"email": unique_email()})
 
     assert response.status_code == 400
+    assert response.json()["detail"]["code"] == "auth.captcha_failed"
+
+
+# Increment 7d: Turnstile on (as in production) for resend verification.
+
+
+async def _committed_unverified(db, cleanup_users) -> User:
+    user = await create_user(db)
+    cleanup_users.add(user.email)
+    await db.commit()
+    return user
+
+
+async def test_resend_turnstile_on_anonymous_without_token_is_rejected(
+    client, db_session, outbox, cleanup_users, turnstile_on
+):
+    user = await _committed_unverified(db_session, cleanup_users)
+
+    response = await client.post(RESEND, json={"email": user.email})
+
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"]["code"] == "auth.captcha_failed"
+    assert outbox == []
+    assert not turnstile_on.calls.called
+
+
+async def test_resend_turnstile_on_anonymous_with_valid_token_sends(
+    client, db_session, outbox, cleanup_users, turnstile_on
+):
+    user = await _committed_unverified(db_session, cleanup_users)
+
+    response = await client.post(
+        RESEND, json={"email": user.email, "turnstile_token": "good-token"}
+    )
+
+    assert response.status_code == 202, response.text
+    assert response.json() == RESENT
+    assert [m.to for m in outbox] == [user.email]
+    assert TOKEN_RE.search(outbox[0].text)
+    assert turnstile_on.calls.call_count == 1
+
+
+async def test_resend_turnstile_on_anonymous_with_rejected_token(
+    client, db_session, outbox, cleanup_users, turnstile_on
+):
+    user = await _committed_unverified(db_session, cleanup_users)
+
+    response = await client.post(RESEND, json={"email": user.email, "turnstile_token": "bad-token"})
+
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"]["code"] == "auth.captcha_failed"
+    assert outbox == []
+
+
+async def test_resend_turnstile_on_signed_in_same_unverified_user_needs_no_token(
+    client, db_session, outbox, cleanup_users, turnstile_on
+):
+    user = await _committed_unverified(db_session, cleanup_users)
+    await login_as(client, user)
+
+    # Different case: the address comparison is case-insensitive, like the CITEXT column.
+    response = await client.post(RESEND, json={"email": user.email.upper()})
+
+    assert response.status_code == 202, response.text
+    assert response.json() == RESENT
+    assert [m.to for m in outbox] == [user.email]
+    assert not turnstile_on.calls.called
+
+
+async def test_resend_turnstile_on_signed_in_other_address_needs_token(
+    client, db_session, outbox, cleanup_users, turnstile_on
+):
+    signed_in = await _committed_unverified(db_session, cleanup_users)
+    other = await _committed_unverified(db_session, cleanup_users)
+    await login_as(client, signed_in)
+
+    response = await client.post(RESEND, json={"email": other.email})
+
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"]["code"] == "auth.captcha_failed"
+    assert outbox == []
+
+
+async def test_resend_turnstile_on_signed_in_verified_user_needs_token(
+    client, db_session, outbox, cleanup_users, turnstile_on
+):
+    user = await create_verified_user(db_session)
+    cleanup_users.add(user.email)
+    await db_session.commit()
+    await login_as(client, user)
+
+    response = await client.post(RESEND, json={"email": user.email})
+
+    assert response.status_code == 400, response.text
     assert response.json()["detail"]["code"] == "auth.captcha_failed"
 
 
