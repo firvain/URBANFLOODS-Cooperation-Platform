@@ -69,6 +69,27 @@ describe('ProfileView', () => {
     expect(wrapper.text()).toContain(t('profile.memberSince', { date: 'October 2026' }))
   })
 
+  it('shows the free-text "other" area as one more badge after the areas', async () => {
+    const member = makeMemberDetail(5, {
+      expertise: EXPERTISE.slice(0, 2),
+      expertise_other: 'Coastal engineering',
+    })
+    mockApi({ [MEMBER]: reply(200, member) })
+    const { wrapper } = await mountWithApp(ProfileView, { path: '/u/5' })
+    const expertise = wrapper.findAll('[data-testid="profile-expertise"] li').map((li) => li.text())
+    expect(expertise).toEqual(['Hydrology', 'Civil protection', 'Coastal engineering'])
+  })
+
+  it('shows the expertise row for a member with only the free-text area', async () => {
+    mockApi({
+      [MEMBER]: reply(200, makeMemberDetail(5, { expertise: [], expertise_other: 'Coastal' })),
+    })
+    const { wrapper } = await mountWithApp(ProfileView, { path: '/u/5' })
+    expect(wrapper.text()).toContain(t('profile.expertise'))
+    const expertise = wrapper.findAll('[data-testid="profile-expertise"] li').map((li) => li.text())
+    expect(expertise).toEqual(['Coastal'])
+  })
+
   it('has no email link when the member does not share it, and handles a missing bio', async () => {
     mockApi({ [MEMBER]: reply(200, makeMemberDetail(5, { email: null, bio: null })) })
     const { wrapper } = await mountWithApp(ProfileView, { path: '/u/5' })

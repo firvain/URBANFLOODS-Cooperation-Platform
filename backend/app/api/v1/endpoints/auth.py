@@ -173,6 +173,7 @@ async def register(body: RegisterRequest, request: Request, db: DbTx) -> Registe
             country=body.country,
             locale=body.locale,
             expertise_ids=body.expertise_ids,
+            expertise_other=body.expertise_other,
         )
     except PasswordPolicyError as exc:
         raise validation_error({"password": exc.code}) from None

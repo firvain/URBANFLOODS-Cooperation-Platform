@@ -38,6 +38,12 @@ describe('CompleteProfileBanner', () => {
     expect(banner()).toBeNull()
   })
 
+  it('is hidden for users whose only expertise is the free-text "other" area', async () => {
+    mockApi({ [ME]: reply(200, makeUser({ expertise_other: 'Coastal engineering' })) })
+    await mountWithApp(CompleteProfileBanner)
+    expect(banner()).toBeNull()
+  })
+
   it('asks a verified user without expertise to add some, linking to the profile tab', async () => {
     mockApi({ [ME]: reply(200, makeUser()) })
     await mountWithApp(CompleteProfileBanner)

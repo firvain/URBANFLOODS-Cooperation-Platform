@@ -48,9 +48,9 @@ async def list_members(
     """``(total, users)`` of the directory, newest first, with ``organisation`` and
     ``expertise`` loaded.
 
-    ``q`` is a case-insensitive substring of the display name, the free-text organisation, or
-    the listed organisation's name or short name. ``expertise_ids`` matches users with any of
-    the tags.
+    ``q`` is a case-insensitive substring of the display name, the free-text organisation, the
+    free-text area of expertise, or the listed organisation's name or short name.
+    ``expertise_ids`` matches users with any of the tags (never the free-text area).
     """
     conditions = list(_in_directory())
     if q:
@@ -65,6 +65,7 @@ async def list_members(
             or_(
                 User.display_name.ilike(pattern, escape="\\"),
                 User.organisation_other.ilike(pattern, escape="\\"),
+                User.expertise_other.ilike(pattern, escape="\\"),
                 User.organisation_id.in_(matching_orgs),
             )
         )

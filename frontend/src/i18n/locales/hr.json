@@ -726,7 +726,10 @@
     },
     "expertiseLabel": "Područja stručnosti (nije obavezno, najviše {max})",
     "expertiseHint": "Pomaže članovima koji se bave istim temama upravljanja poplavama da Vas pronađu. Možete ih kasnije promijeniti u svom profilu.",
-    "expertisePlaceholder": "Odaberite svoja područja stručnosti"
+    "expertisePlaceholder": "Odaberite svoja područja stručnosti",
+    "expertiseOtherLabel": "Drugo područje stručnosti (nije obavezno)",
+    "expertiseOtherHint": "Ako vašeg područja nema na popisu",
+    "expertiseOtherCount": "{count}/{max}"
   },
   "account": {
     "intro": "Upravljajte svojim profilom, lozinkom, uređajima na kojima ste prijavljeni, obavijestima e-poštom i svojim podacima.",

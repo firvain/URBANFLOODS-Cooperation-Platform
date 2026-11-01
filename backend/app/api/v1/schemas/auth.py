@@ -66,6 +66,12 @@ OrganisationOther = Annotated[
     StringConstraints(strip_whitespace=True, max_length=200),
     AfterValidator(blank_to_none),
 ]
+# A free-text area of expertise not in the list (blank becomes None).
+ExpertiseOther = Annotated[
+    str | None,
+    StringConstraints(strip_whitespace=True, max_length=200),
+    AfterValidator(blank_to_none),
+]
 Bio = Annotated[
     str | None,
     StringConstraints(strip_whitespace=True, max_length=2000),
@@ -100,6 +106,7 @@ class RegisterRequest(OrganisationFieldsMixin):
     locale: Locale = "en"
     # Duplicates collapse; unknown or inactive ids are rejected in crud (``not_found``).
     expertise_ids: Annotated[list[int], Field(max_length=MAX_EXPERTISE)] = []
+    expertise_other: ExpertiseOther = None
     accept_terms: bool
     turnstile_token: TurnstileToken = None
 
@@ -162,6 +169,7 @@ class UserMe(BaseModel):
     trusted_at: datetime | None
     created_at: datetime
     expertise: list[ExpertiseTagOut]
+    expertise_other: str | None
     show_email: bool
     show_in_directory: bool
     # Read from ``user.avatar.storage_path`` (the relationship must be eagerly loaded); served as
@@ -189,13 +197,15 @@ class UpdateMeRequest(OrganisationFieldsMixin):
     """Partial profile update. Only fields present in the body are applied (``model_fields_set``
     / ``exclude_unset``); an explicit ``null`` clears a nullable field. ``display_name``,
     ``locale``, the visibility flags and ``expertise_ids`` cannot be ``null``; ``expertise_ids``
-    replaces the whole set (``[]`` clears it)."""
+    replaces the whole set (``[]`` clears it). ``expertise_other`` may be ``null`` (or blank) to
+    clear it."""
 
     display_name: DisplayName | None = None
     country: Country = None
     locale: Locale | None = None
     bio: Bio = None
     expertise_ids: Annotated[list[int], Field(max_length=MAX_EXPERTISE)] | None = None
+    expertise_other: ExpertiseOther = None
     show_email: bool | None = None
     show_in_directory: bool | None = None
 
@@ -304,6 +314,7 @@ class ExportUser(BaseModel):
     updated_at: datetime
     last_login_at: datetime | None
     expertise: list[ExpertiseTagOut]
+    expertise_other: str | None
     show_email: bool
     show_in_directory: bool
 

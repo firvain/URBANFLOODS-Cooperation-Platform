@@ -726,7 +726,10 @@
     },
     "expertiseLabel": "Fushat e ekspertizës (opsionale, deri në {max})",
     "expertiseHint": "U ndihmon anëtarëve që punojnë në të njëjtat tema të menaxhimit të përmbytjeve t'ju gjejnë. Mund t'i ndryshoni më vonë në profilin tuaj.",
-    "expertisePlaceholder": "Zgjidhni fushat tuaja të ekspertizës"
+    "expertisePlaceholder": "Zgjidhni fushat tuaja të ekspertizës",
+    "expertiseOtherLabel": "Fushë tjetër e ekspertizës (opsionale)",
+    "expertiseOtherHint": "Nëse fusha juaj nuk është në listë",
+    "expertiseOtherCount": "{count}/{max}"
   },
   "account": {
     "intro": "Menaxhoni profilin, fjalëkalimin, pajisjet ku keni hyrë, njoftimet me email dhe të dhënat tuaja.",

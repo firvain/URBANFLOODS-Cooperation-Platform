@@ -90,6 +90,7 @@ export function makeUser(overrides: Partial<UserMe> = {}): UserMe {
     locale: 'en',
     bio: null,
     expertise: [],
+    expertise_other: null,
     show_email: false,
     show_in_directory: true,
     role: 'member',

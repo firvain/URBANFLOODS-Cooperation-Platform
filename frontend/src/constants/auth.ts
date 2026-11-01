@@ -10,3 +10,6 @@ export const AUTH_REDIRECT_DELAY_MS = 2500
 
 /** Mirrors the backend limit on `expertise_ids` (registration and profile). */
 export const EXPERTISE_MAX = 8
+
+/** Mirrors the backend `ExpertiseOther` limit (free-text "other" area of expertise). */
+export const EXPERTISE_OTHER_MAX_LENGTH = 200

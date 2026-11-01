@@ -879,3 +879,47 @@ async def test_crud_create_user_with_expertise(db_session):
         )
     assert excinfo.value.status_code == 422
     assert excinfo.value.fields == {"expertise_ids": "not_found"}
+
+
+# --- free-text "other" area of expertise (increment 7f) ---------------------------------------
+
+
+async def test_register_with_expertise_other(client, db_session, outbox, cleanup_users):
+    email, response = await _register(
+        client, cleanup_users, expertise_other="  Coastal sediment transport  "
+    )
+
+    assert response.status_code == 201, response.text
+    assert (await _user(db_session, email)).expertise_other == "Coastal sediment transport"
+    me = await _verify_and_get_me(client, outbox)
+    assert me["expertise_other"] == "Coastal sediment transport"
+
+
+@pytest.mark.parametrize("value", ["", "   ", None])
+async def test_register_blank_expertise_other_is_null(client, db_session, cleanup_users, value):
+    email, response = await _register(client, cleanup_users, expertise_other=value)
+
+    assert response.status_code == 201, response.text
+    assert (await _user(db_session, email)).expertise_other is None
+
+
+async def test_register_without_expertise_other(client, db_session, outbox, cleanup_users):
+    _, response = await _register(client, cleanup_users)
+
+    assert response.status_code == 201, response.text
+    assert (await _verify_and_get_me(client, outbox))["expertise_other"] is None
+
+
+async def test_register_expertise_other_too_long(client, db_session, outbox, cleanup_users):
+    email, response = await _register(client, cleanup_users, expertise_other="e" * 201)
+
+    _assert_validation(response, "expertise_other")
+    assert await _user(db_session, email) is None
+    assert outbox == []
+
+
+async def test_register_expertise_other_at_limit(client, db_session, cleanup_users):
+    email, response = await _register(client, cleanup_users, expertise_other="e" * 200)
+
+    assert response.status_code == 201, response.text
+    assert (await _user(db_session, email)).expertise_other == "e" * 200

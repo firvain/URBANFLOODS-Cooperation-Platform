@@ -271,6 +271,7 @@ async def test_export_contents(client, db_session, cleanup_users, cleanup_user_i
         "updated_at",
         "last_login_at",
         "expertise",
+        "expertise_other",
         "show_email",
         "show_in_directory",
     }
@@ -336,7 +337,11 @@ async def test_export_includes_revoked_sessions_and_no_organisation(
     client, db_session, cleanup_users, cleanup_user_ids
 ):
     user = await _committed(
-        db_session, cleanup_users, cleanup_user_ids, organisation_other="Some NGO"
+        db_session,
+        cleanup_users,
+        cleanup_user_ids,
+        organisation_other="Some NGO",
+        expertise_other="Coastal engineering",
     )
     old, _ = await create_session(db_session, user_id=user.id, user_agent="Old/1.0")
     await revoke_session(db_session, session_id=old.id)
@@ -347,6 +352,7 @@ async def test_export_includes_revoked_sessions_and_no_organisation(
 
     assert body["user"]["organisation"] is None
     assert body["user"]["organisation_other"] == "Some NGO"
+    assert body["user"]["expertise_other"] == "Coastal engineering"
     assert len(body["sessions"]) == 2
     revoked = next(item for item in body["sessions"] if item["id"] == str(old.id))
     assert revoked["revoked_at"] is not None
@@ -483,7 +489,7 @@ async def test_delete_account_anonymises(
     assert again.json()["id"] != user.id
 
 
-async def test_delete_clears_free_text_organisation_and_role(
+async def test_delete_clears_free_text_fields_and_role(
     client, db_session, cleanup_users, cleanup_user_ids
 ):
     user = await _signed_in(
@@ -493,12 +499,14 @@ async def test_delete_clears_free_text_organisation_and_role(
         cleanup_user_ids,
         factory=create_admin,
         organisation_other="Some NGO",
+        expertise_other="Coastal engineering",
     )
 
     assert (await _delete_me(client)).status_code == 204
 
     stored = await _reload_user(db_session, user.id)
     assert stored.organisation_other is None
+    assert stored.expertise_other is None
     assert stored.role == UserRole.MEMBER
 
 

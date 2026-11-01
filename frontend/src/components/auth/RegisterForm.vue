@@ -32,6 +32,7 @@ const state = reactive({
   country: undefined as string | undefined,
   locale: (isSupportedLocale(locale.value) ? locale.value : 'en') as LocaleCode,
   expertise_ids: [] as number[],
+  expertise_other: '',
   accept_terms: false,
 })
 type State = typeof state
@@ -101,6 +102,7 @@ async function onSubmit(event: FormSubmitEvent<State>) {
     organisation_other: data.organisation.organisation_other?.trim() || null,
     country: data.country && data.country !== OTHER_COUNTRY ? data.country : null,
     locale: data.locale,
+    expertise_other: data.expertise_other.trim() || null,
     accept_terms: true,
     turnstile_token: turnstileToken.value,
   }
@@ -202,6 +204,8 @@ async function onSubmit(event: FormSubmitEvent<State>) {
       :help="t('auth.expertiseHint')"
       :placeholder="t('auth.expertisePlaceholder')"
       :error="serverErrors.expertise_ids"
+      v-model:other="state.expertise_other"
+      :other-error="serverErrors.expertise_other"
     />
 
     <UFormField name="accept_terms" :error="serverErrors.accept_terms">

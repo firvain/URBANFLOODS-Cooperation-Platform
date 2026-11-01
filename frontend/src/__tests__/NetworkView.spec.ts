@@ -128,6 +128,41 @@ describe('NetworkView', () => {
     expect(three!.find('[data-testid="expertise-more"]').exists()).toBe(false)
   })
 
+  it('shows the free-text "other" area as one more badge after the areas', async () => {
+    const members = {
+      total: 2,
+      items: [
+        makeMember(1, { expertise: EXPERTISE.slice(0, 2), expertise_other: 'Coastal engineering' }),
+        makeMember(2, { expertise: [], expertise_other: 'Sediment transport' }),
+      ],
+    }
+    mockApi(routes(reply(200, members)))
+    const { wrapper } = await mountNetwork()
+    const [withTags, onlyOther] = cards(wrapper)
+    expect(withTags!.findAll('[data-testid="expertise-badge"]').map((b) => b.text())).toEqual([
+      'Hydrology',
+      'Civil protection',
+      'Coastal engineering',
+    ])
+    expect(onlyOther!.findAll('[data-testid="expertise-badge"]').map((b) => b.text())).toEqual([
+      'Sediment transport',
+    ])
+  })
+
+  it('counts the free-text area towards the cap of 4 badges', async () => {
+    const members = {
+      total: 1,
+      items: [makeMember(1, { expertise: EXPERTISE.slice(0, 4), expertise_other: 'Coastal' })],
+    }
+    mockApi(routes(reply(200, members)))
+    const { wrapper } = await mountNetwork()
+    const card = cards(wrapper)[0]!
+    expect(card.findAll('[data-testid="expertise-badge"]')).toHaveLength(4)
+    const more = card.find('[data-testid="expertise-more"]')
+    expect(more.text()).toContain('+1')
+    expect(more.text()).toContain('Coastal')
+  })
+
   it('reads the filters and page from the URL into the request', async () => {
     const fetchMock = mockApi(routes())
     await mountNetwork(
@@ -290,6 +325,20 @@ describe('NetworkView', () => {
       expect(t('account.nudge.ownCard')).toBe('Add your expertise')
       expect(ownLink(other!).exists()).toBe(false)
       expect(other!.find('[data-testid="expertise-badge"]').exists()).toBe(false)
+    })
+
+    it('own card with only the free-text area shows it, not the link', async () => {
+      const members = {
+        total: 1,
+        items: [makeMember(1, { expertise: [], expertise_other: 'Coastal engineering' })],
+      }
+      mockApi({ ...routes(reply(200, members)), [ME]: reply(200, makeUser({ id: 1 })) })
+      const { wrapper } = await mountNetwork()
+      const own = cards(wrapper)[0]!
+      expect(ownLink(own).exists()).toBe(false)
+      expect(own.findAll('[data-testid="expertise-badge"]').map((b) => b.text())).toEqual([
+        'Coastal engineering',
+      ])
     })
 
     it('own card with expertise shows the badges, not the link', async () => {

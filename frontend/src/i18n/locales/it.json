@@ -726,7 +726,10 @@
     },
     "expertiseLabel": "Aree di competenza (facoltativo, fino a {max})",
     "expertiseHint": "Aiuta i membri che si occupano degli stessi temi di gestione delle alluvioni a trovarti. Puoi modificarle in seguito nel tuo profilo.",
-    "expertisePlaceholder": "Seleziona le tue aree di competenza"
+    "expertisePlaceholder": "Seleziona le tue aree di competenza",
+    "expertiseOtherLabel": "Altra area di competenza (facoltativo)",
+    "expertiseOtherHint": "Se il tuo settore non è nell'elenco",
+    "expertiseOtherCount": "{count}/{max}"
   },
   "account": {
     "intro": "Gestisci il tuo profilo, la password, i dispositivi su cui hai effettuato l'accesso, le notifiche via email e i tuoi dati.",

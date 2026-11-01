@@ -17,7 +17,10 @@ const auth = useAuthStore()
 const organisation = computed(() => memberOrganisation(props.member))
 /** The signed-in member's own card, still without expertise: invite them to add some. */
 const addOwnExpertise = computed(
-  () => auth.user?.id === props.member.id && !props.member.expertise.length,
+  () =>
+    auth.user?.id === props.member.id &&
+    !props.member.expertise.length &&
+    !props.member.expertise_other,
 )
 </script>
 
@@ -61,7 +64,7 @@ const addOwnExpertise = computed(
       <UIcon name="i-lucide-plus" class="size-4" aria-hidden="true" />
       {{ t('account.nudge.ownCard') }}
     </ULink>
-    <MemberExpertise v-else :expertise="member.expertise" />
+    <MemberExpertise v-else :expertise="member.expertise" :other="member.expertise_other" />
     <p v-if="member.bio_excerpt" class="line-clamp-3 text-sm text-gray-700">
       {{ member.bio_excerpt }}
     </p>

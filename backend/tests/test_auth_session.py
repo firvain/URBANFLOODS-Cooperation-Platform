@@ -520,6 +520,51 @@ async def test_patch_me_both_organisation_fields_conflict(client, db_session, cl
     assert response.json()["detail"]["code"] == "validation.failed"
 
 
+async def test_me_returns_expertise_other(client, db_session, cleanup_users):
+    user = await _committed(db_session, cleanup_users, expertise_other="Coastal engineering")
+    await login_as(client, user)
+
+    response = await client.get(ME)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["expertise_other"] == "Coastal engineering"
+
+
+async def test_patch_me_sets_expertise_other(client, db_session, cleanup_users):
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+
+    response = await client.patch(ME, json={"expertise_other": "  Coastal engineering  "})
+
+    assert response.status_code == 200, response.text
+    assert response.json()["expertise_other"] == "Coastal engineering"
+    assert (await _reload_user(db_session, user.id)).expertise_other == "Coastal engineering"
+    (entry,) = await _audit(db_session, user.id, "auth.profile_updated")
+    assert entry.metadata_ == {"fields": ["expertise_other"]}
+
+
+@pytest.mark.parametrize("value", [None, "", "   "])
+async def test_patch_me_clears_expertise_other(client, db_session, cleanup_users, value):
+    user = await _committed(db_session, cleanup_users, expertise_other="Coastal engineering")
+    await login_as(client, user)
+
+    response = await client.patch(ME, json={"expertise_other": value})
+
+    assert response.status_code == 200, response.text
+    assert response.json()["expertise_other"] is None
+    assert (await _reload_user(db_session, user.id)).expertise_other is None
+
+
+async def test_patch_me_omitted_expertise_other_is_kept(client, db_session, cleanup_users):
+    user = await _committed(db_session, cleanup_users, expertise_other="Coastal engineering")
+    await login_as(client, user)
+
+    response = await client.patch(ME, json={"expertise_ids": []})
+
+    assert response.status_code == 200, response.text
+    assert response.json()["expertise_other"] == "Coastal engineering"
+
+
 async def test_patch_me_unknown_organisation(client, db_session, cleanup_users):
     user = await _committed(db_session, cleanup_users)
     await login_as(client, user)
@@ -541,6 +586,7 @@ async def test_patch_me_unknown_organisation(client, db_session, cleanup_users):
         ({"country": "GRC"}, "country"),
         ({"bio": "b" * 2001}, "bio"),
         ({"organisation_other": "o" * 201}, "organisation_other"),
+        ({"expertise_other": "e" * 201}, "expertise_other"),
     ],
 )
 async def test_patch_me_validation(client, db_session, cleanup_users, payload, field):

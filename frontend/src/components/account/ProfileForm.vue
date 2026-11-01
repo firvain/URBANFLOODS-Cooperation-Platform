@@ -36,6 +36,7 @@ function stateFrom(user: UserMe) {
     locale: (isSupportedLocale(user.locale) ? user.locale : 'en') as LocaleCode,
     bio: user.bio ?? '',
     expertise_ids: user.expertise.map((tag) => tag.id),
+    expertise_other: user.expertise_other ?? '',
     show_email: user.show_email,
     show_in_directory: user.show_in_directory,
   }
@@ -108,6 +109,8 @@ function changedFields(data: State, user: UserMe): UpdateMePayload {
   const expertiseIds = sortedIds(data.expertise_ids)
   const currentIds = sortedIds(user.expertise.map((tag) => tag.id))
   if (expertiseIds.join() !== currentIds.join()) changes.expertise_ids = expertiseIds
+  const expertiseOther = data.expertise_other.trim() || null
+  if (expertiseOther !== user.expertise_other) changes.expertise_other = expertiseOther
   if (data.show_email !== user.show_email) changes.show_email = data.show_email
   if (data.show_in_directory !== user.show_in_directory)
     changes.show_in_directory = data.show_in_directory
@@ -228,6 +231,8 @@ async function onSubmit(event: FormSubmitEvent<State>) {
       :placeholder="t('account.profile.expertisePlaceholder')"
       :error="serverErrors.expertise_ids"
       :known="auth.user?.expertise"
+      v-model:other="state.expertise_other"
+      :other-error="serverErrors.expertise_other"
     />
 
     <fieldset class="space-y-4 rounded border border-default p-4">

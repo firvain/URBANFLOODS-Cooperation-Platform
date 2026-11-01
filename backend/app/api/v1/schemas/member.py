@@ -44,6 +44,7 @@ def member_fields(user: User) -> dict[str, Any]:
         "country": user.country,
         "bio_excerpt": bio_excerpt(user.bio),
         "expertise": [ExpertiseTagOut.model_validate(tag) for tag in user.expertise],
+        "expertise_other": user.expertise_other,
         "email": user.email if user.show_email else None,
         "created_at": user.created_at,
         "is_admin": user.role in ADMIN_ROLES,
@@ -58,6 +59,8 @@ class MemberOut(BaseModel):
     country: str | None
     bio_excerpt: str | None
     expertise: list[ExpertiseTagOut]
+    # Free-text area of expertise not in the list (shown after the tags).
+    expertise_other: str | None
     # Only when the member chose to show it.
     email: str | None
     created_at: datetime

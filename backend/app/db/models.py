@@ -131,6 +131,9 @@ class User(TimestampMixin, SoftDeleteMixin, Base):
         ForeignKey("organisations.id", ondelete="SET NULL"), nullable=True, index=True
     )
     organisation_other: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    # Free-text area of expertise for a field not in ``expertise_tags`` (shown and searchable,
+    # never a filter or used for suggestions).
+    expertise_other: Mapped[str | None] = mapped_column(String(200), nullable=True)
     country: Mapped[str | None] = mapped_column(String(2), nullable=True)
     locale: Mapped[str] = mapped_column(String(5), nullable=False, server_default=text("'en'"))
     bio: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -147,6 +147,11 @@ are seeded by migration 0003. The page lists active and deactivated areas.
 - Changes are audited as `expertise.created` and `expertise.updated` (target type
   `expertise_tag`). The API fallback is `POST /api/v1/expertise/` and
   `PATCH /api/v1/expertise/{id}`.
+- **"Other" area of expertise:** a member whose field is not in the list can type it under the
+  areas (*Other area of expertise*, up to 200 characters) at registration or on their profile. It
+  shows on their profile and member card and the Network search box finds it, but it is not a
+  filter and does not count for suggested collaborators. When the same entry comes up often,
+  create it as a real area here; members then pick it and clear their free text themselves.
 
 ## 7. The dashboard (`/admin`)
 

@@ -48,6 +48,7 @@ PROFILE_FIELDS = frozenset(
         "show_email",
         "show_in_directory",
         "expertise_ids",
+        "expertise_other",
     }
 )
 
@@ -100,9 +101,10 @@ async def create_user(
     country: str | None = None,
     locale: str = "en",
     expertise_ids: Iterable[int] | None = None,
+    expertise_other: str | None = None,
 ) -> User:
     """Create an unverified member with default notification preferences and the given
-    expertise (duplicates collapse).
+    expertise (duplicates collapse) and free-text "other" area of expertise.
 
     Raises ``PasswordPolicyError`` for a weak password, ``AppError`` 422 (``fields.
     organisation_id = "not_found"``) for an unknown organisation or (``fields.expertise_ids =
@@ -124,6 +126,7 @@ async def create_user(
         organisation_other=organisation_other,
         country=country,
         locale=locale,
+        expertise_other=expertise_other,
     )
     user.notification_preferences = NotificationPreference()
     user.expertise = tags
@@ -560,6 +563,7 @@ async def anonymise_user(
     user.password_hash = ""
     user.organisation_id = None
     user.organisation_other = None
+    user.expertise_other = None
     user.country = None
     user.bio = None
     user.avatar_attachment_id = None

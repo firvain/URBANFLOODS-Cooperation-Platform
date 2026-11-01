@@ -96,6 +96,10 @@ export interface paths {
         /**
          * Resend Verification
          * @description Email a new verification link. Always 202, whether or not the address is registered.
+         *
+         *     The bot check is skipped when the request is signed in as the unverified account being
+         *     resent (the banner shown to a signed-in unverified member): the session already proves a real
+         *     browser. Anyone else, including a signed-in user asking for another address, needs a token.
          */
         post: operations["resend_verification_api_v1_auth_resend_verification_post"];
         delete?: never;
@@ -2177,6 +2181,8 @@ export interface components {
             created_at: string;
             /** Expertise */
             expertise: components["schemas"]["ExpertiseTagOut"][];
+            /** Expertise Other */
+            expertise_other: string | null;
             /** Show Email */
             show_email: boolean;
             /** Show In Directory */
@@ -2936,6 +2942,8 @@ export interface components {
             last_login_at: string | null;
             /** Expertise */
             expertise: components["schemas"]["ExpertiseTagOut"][];
+            /** Expertise Other */
+            expertise_other: string | null;
             /** Show Email */
             show_email: boolean;
             /** Show In Directory */
@@ -3363,6 +3371,8 @@ export interface components {
             bio_excerpt: string | null;
             /** Expertise */
             expertise: components["schemas"]["ExpertiseTagOut"][];
+            /** Expertise Other */
+            expertise_other: string | null;
             /** Email */
             email: string | null;
             /**
@@ -3397,6 +3407,8 @@ export interface components {
             bio_excerpt: string | null;
             /** Expertise */
             expertise: components["schemas"]["ExpertiseTagOut"][];
+            /** Expertise Other */
+            expertise_other: string | null;
             /** Email */
             email: string | null;
             /**
@@ -3867,6 +3879,8 @@ export interface components {
              * @default []
              */
             expertise_ids: number[];
+            /** Expertise Other */
+            expertise_other?: string | null;
             /** Accept Terms */
             accept_terms: boolean;
             /** Turnstile Token */
@@ -4089,6 +4103,8 @@ export interface components {
             bio_excerpt: string | null;
             /** Expertise */
             expertise: components["schemas"]["ExpertiseTagOut"][];
+            /** Expertise Other */
+            expertise_other: string | null;
             /** Email */
             email: string | null;
             /**
@@ -4304,7 +4320,8 @@ export interface components {
          * @description Partial profile update. Only fields present in the body are applied (``model_fields_set``
          *     / ``exclude_unset``); an explicit ``null`` clears a nullable field. ``display_name``,
          *     ``locale``, the visibility flags and ``expertise_ids`` cannot be ``null``; ``expertise_ids``
-         *     replaces the whole set (``[]`` clears it).
+         *     replaces the whole set (``[]`` clears it). ``expertise_other`` may be ``null`` (or blank) to
+         *     clear it.
          */
         UpdateMeRequest: {
             /** Organisation Id */
@@ -4321,6 +4338,8 @@ export interface components {
             bio?: string | null;
             /** Expertise Ids */
             expertise_ids?: number[] | null;
+            /** Expertise Other */
+            expertise_other?: string | null;
             /** Show Email */
             show_email?: boolean | null;
             /** Show In Directory */
@@ -4409,6 +4428,8 @@ export interface components {
             created_at: string;
             /** Expertise */
             expertise: components["schemas"]["ExpertiseTagOut"][];
+            /** Expertise Other */
+            expertise_other: string | null;
             /** Show Email */
             show_email: boolean;
             /** Show In Directory */

@@ -59,6 +59,7 @@ export function makeAdminUser(overrides: Partial<AdminUser> = {}): AdminUser {
     trusted_at: null,
     created_at: '2026-09-15T10:00:00Z',
     expertise: [],
+    expertise_other: null,
     show_email: false,
     show_in_directory: true,
     avatar_url: null,

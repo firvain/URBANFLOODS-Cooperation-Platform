@@ -221,12 +221,15 @@ const dateOf = (item: { published_at: string | null; created_at: string }) =>
               <dt class="font-semibold text-secondary">{{ t('profile.country') }}</dt>
               <dd class="text-gray-800"><PartnerCountry :code="member.country" /></dd>
             </template>
-            <template v-if="member.expertise.length">
+            <template v-if="member.expertise.length || member.expertise_other">
               <dt class="font-semibold text-secondary">{{ t('profile.expertise') }}</dt>
               <dd>
                 <ul data-testid="profile-expertise" class="flex flex-wrap gap-1.5">
                   <li v-for="tag in member.expertise" :key="tag.id">
                     <UBadge color="secondary" variant="subtle">{{ tag.label }}</UBadge>
+                  </li>
+                  <li v-if="member.expertise_other">
+                    <UBadge color="secondary" variant="subtle">{{ member.expertise_other }}</UBadge>
                   </li>
                 </ul>
               </dd>

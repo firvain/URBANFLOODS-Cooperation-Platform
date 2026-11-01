@@ -37,6 +37,7 @@ MEMBER_KEYS = {
     "country",
     "bio_excerpt",
     "expertise",
+    "expertise_other",
     "email",
     "created_at",
     "is_admin",
@@ -146,6 +147,7 @@ async def test_verified_member_can_list(client, db_session, cleanup_users):
     assert item["organisation"] is None
     assert item["bio_excerpt"] == "Flood modeller."
     assert [tag["slug"] for tag in item["expertise"]] == ["hydrology", "meteorology"]
+    assert item["expertise_other"] is None
     assert item["email"] is None
 
 
@@ -241,6 +243,46 @@ async def test_filter_q_matches_name_and_organisation(
     org_item = next(item for item in body["items"] if item["id"] == by_org.id)
     assert org_item["organisation"]["name"] == org.name
     assert set(org_item["organisation"]) == {"id", "short_name", "name", "country", "type"}
+
+
+@pytest.mark.usefixtures("signed_in")
+async def test_filter_q_matches_expertise_other(client, db_session, cleanup_users):
+    token = _token()
+    by_other = await _member(
+        db_session,
+        cleanup_users,
+        display_name="Coastal Person",
+        expertise_other=f"Coastal sediment {token}",
+        tags=("hydrology",),
+    )
+    # Directory visibility still applies: a hidden member is not found by their free text.
+    await _member(
+        db_session,
+        cleanup_users,
+        display_name="Hidden Coastal Person",
+        expertise_other=f"Coastal sediment {token}",
+        show_in_directory=False,
+    )
+    await _member(db_session, cleanup_users, display_name="Unrelated Person")
+
+    body = await _list(client, q=token.upper())
+
+    assert body["total"] == 1
+    (item,) = body["items"]
+    assert item["id"] == by_other.id
+    assert item["expertise_other"] == f"Coastal sediment {token}"
+    assert [tag["slug"] for tag in item["expertise"]] == ["hydrology"]
+
+
+@pytest.mark.usefixtures("signed_in")
+async def test_expertise_ids_filter_ignores_expertise_other(client, db_session, cleanup_users):
+    token = _token()
+    await _member(
+        db_session, cleanup_users, display_name=f"Free {token}", expertise_other="Hydrology"
+    )
+    (hydrology,) = await _tag_ids(db_session, "hydrology")
+
+    assert (await _list(client, q=token, expertise_ids=[hydrology]))["total"] == 0
 
 
 @pytest.mark.usefixtures("signed_in")
@@ -395,6 +437,17 @@ async def test_detail(client, db_session, cleanup_users):
     assert len(body["bio_excerpt"]) <= 200
     assert body["email"] == user.email
     assert [tag["slug"] for tag in body["expertise"]] == ["hydrology"]
+    assert body["expertise_other"] is None
+
+
+@pytest.mark.usefixtures("signed_in")
+async def test_detail_shows_expertise_other(client, db_session, cleanup_users):
+    user = await _member(db_session, cleanup_users, expertise_other="Coastal engineering")
+
+    response = await client.get(f"{MEMBERS}{user.id}")
+
+    assert response.status_code == 200, response.text
+    assert response.json()["expertise_other"] == "Coastal engineering"
 
 
 @pytest.mark.usefixtures("signed_in")

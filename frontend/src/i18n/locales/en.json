@@ -726,7 +726,10 @@
     },
     "expertiseLabel": "Areas of expertise (optional, up to {max})",
     "expertiseHint": "Helps members working on the same flood management topics find you. You can change them later in your profile.",
-    "expertisePlaceholder": "Select your areas of expertise"
+    "expertisePlaceholder": "Select your areas of expertise",
+    "expertiseOtherLabel": "Other area of expertise (optional)",
+    "expertiseOtherHint": "If your field is not in the list",
+    "expertiseOtherCount": "{count}/{max}"
   },
   "account": {
     "intro": "Manage your profile, your password, the devices where you are signed in, your email notifications and your data.",

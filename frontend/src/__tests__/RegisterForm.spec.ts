@@ -209,6 +209,53 @@ describe('RegisterForm', () => {
       expect(body).not.toHaveProperty('expertise_ids')
     })
 
+    it('sends the trimmed free-text "other" area as expertise_other', async () => {
+      const fetchMock = mockApi(routes({ 'POST /api/v1/auth/register': reply(201, CREATED) }))
+      const wrapper = await mountForm()
+      await fillRequired(wrapper)
+      await wrapper.find('input[name="expertise_other"]').setValue('  Coastal engineering  ')
+      await acceptTerms(wrapper)
+      await submit(wrapper)
+
+      const body = callsTo(fetchMock, 'POST /api/v1/auth/register')[0]!.body
+      expect(body).toMatchObject({ expertise_other: 'Coastal engineering' })
+    })
+
+    it('sends expertise_other as null when it is blank', async () => {
+      const fetchMock = mockApi(routes({ 'POST /api/v1/auth/register': reply(201, CREATED) }))
+      const wrapper = await mountForm()
+      await fillRequired(wrapper)
+      await wrapper.find('input[name="expertise_other"]').setValue('   ')
+      await acceptTerms(wrapper)
+      await submit(wrapper)
+
+      const body = callsTo(fetchMock, 'POST /api/v1/auth/register')[0]!.body
+      expect(body).toMatchObject({ expertise_other: null })
+    })
+
+    it('maps a server fields.expertise_other error onto the text input', async () => {
+      mockApi(
+        routes({
+          'POST /api/v1/auth/register': replyError(422, 'validation.failed', {
+            expertise_other: 'string_too_long',
+          }),
+        }),
+      )
+      const wrapper = await mountForm()
+      await fillRequired(wrapper)
+      await wrapper.find('input[name="expertise_other"]').setValue('Coastal engineering')
+      await acceptTerms(wrapper)
+      await submit(wrapper)
+
+      const input = wrapper.find('input[name="expertise_other"]').element
+      expect(input.getAttribute('aria-invalid')).toBe('true')
+      const described = (input.getAttribute('aria-describedby') ?? '')
+        .split(' ')
+        .map((id) => document.getElementById(id)?.textContent ?? '')
+        .join(' ')
+      expect(described).toContain(t('errors.fields.string_too_long'))
+    })
+
     it('maps a server fields.expertise_ids error onto the picker', async () => {
       mockApi(
         routes({

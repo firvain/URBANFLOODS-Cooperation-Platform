@@ -19,6 +19,8 @@ export interface UserMe {
   bio: string | null
   /** Expertise areas (Collaboration Network matchmaking). */
   expertise: ExpertiseTag[]
+  /** Free-text area of expertise not in the list (shown and searchable, never matched on). */
+  expertise_other: components['schemas']['UserMe']['expertise_other']
   /** Opt-in: other members see the email address in the directory and on the profile. */
   show_email: boolean
   /** Whether the member appears in the Collaboration Network directory. */
@@ -42,6 +44,7 @@ export interface RegisterPayload {
   turnstile_token?: string | null
   /** Optional expertise areas (at most 8). */
   expertise_ids?: number[]
+  expertise_other?: components['schemas']['RegisterRequest']['expertise_other']
 }
 
 export interface RegisterResponse {
@@ -61,6 +64,8 @@ export interface UpdateMePayload {
   bio?: string | null
   /** Replaces the whole set (at most 8). */
   expertise_ids?: number[]
+  /** `null` clears it. */
+  expertise_other?: components['schemas']['UpdateMeRequest']['expertise_other']
   show_email?: boolean
   show_in_directory?: boolean
 }

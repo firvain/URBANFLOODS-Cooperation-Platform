@@ -15,7 +15,8 @@ import { useAuthStore } from '@/stores/auth'
 
 /**
  * Profile-completion reminder for verified members whose profile lists no expertise areas (so
- * matchmaking and the network filters cannot find them). Dismissible for the session.
+ * matchmaking and the network filters cannot find them). A free-text "other" area alone counts as
+ * expertise: the member has said what they work on. Dismissible for the session.
  */
 const { t } = useI18n()
 const { user, isVerified } = storeToRefs(useAuthStore())
@@ -36,7 +37,11 @@ function readDismissed(): boolean {
 const dismissed = ref(readDismissed())
 
 const visible = computed(
-  () => isVerified.value && user.value!.expertise.length === 0 && !dismissed.value,
+  () =>
+    isVerified.value &&
+    user.value!.expertise.length === 0 &&
+    !user.value!.expertise_other &&
+    !dismissed.value,
 )
 
 function dismiss() {

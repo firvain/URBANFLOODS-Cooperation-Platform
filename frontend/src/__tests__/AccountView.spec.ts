@@ -256,6 +256,70 @@ describe('AccountView', () => {
         )
       })
 
+      it('prefills the free-text "other" area', async () => {
+        mockApi(routes({ [ME]: reply(200, { ...EXPERT, expertise_other: 'Coastal engineering' }) }))
+        const { wrapper } = await mountAccount()
+        const input = controlFor(wrapper, t('auth.expertiseOtherLabel')) as HTMLInputElement
+        expect(input.getAttribute('name')).toBe('expertise_other')
+        expect(input.value).toBe('Coastal engineering')
+      })
+
+      it('sends the trimmed expertise_other when it changes', async () => {
+        const fetchMock = mockApi(
+          routes({
+            [ME]: reply(200, EXPERT),
+            [PATCH_ME]: reply(200, { ...EXPERT, expertise_other: 'Coastal engineering' }),
+          }),
+        )
+        const { wrapper, auth } = await mountAccount()
+        await wrapper.find('input[name="expertise_other"]').setValue('  Coastal engineering ')
+        await submit(wrapper)
+        const calls = callsTo(fetchMock, PATCH_ME)
+        expect(calls).toHaveLength(1)
+        expect(calls[0]!.body).toEqual({ expertise_other: 'Coastal engineering' })
+        expect(auth.user?.expertise_other).toBe('Coastal engineering')
+      })
+
+      it('clears expertise_other with null when emptied', async () => {
+        const fetchMock = mockApi(
+          routes({
+            [ME]: reply(200, { ...EXPERT, expertise_other: 'Coastal engineering' }),
+            [PATCH_ME]: reply(200, { ...EXPERT, expertise_other: null }),
+          }),
+        )
+        const { wrapper } = await mountAccount()
+        await wrapper.find('input[name="expertise_other"]').setValue('  ')
+        await submit(wrapper)
+        expect(callsTo(fetchMock, PATCH_ME)[0]!.body).toEqual({ expertise_other: null })
+      })
+
+      it('sends nothing when the free text only gains surrounding spaces', async () => {
+        const fetchMock = mockApi(
+          routes({ [ME]: reply(200, { ...EXPERT, expertise_other: 'Coastal engineering' }) }),
+        )
+        const { wrapper } = await mountAccount()
+        await wrapper.find('input[name="expertise_other"]').setValue(' Coastal engineering ')
+        await submit(wrapper)
+        expect(callsTo(fetchMock, PATCH_ME)).toHaveLength(0)
+      })
+
+      it('maps a server fields.expertise_other error onto the text input', async () => {
+        mockApi(
+          routes({
+            [ME]: reply(200, EXPERT),
+            [PATCH_ME]: replyError(422, 'validation.failed', {
+              expertise_other: 'string_too_long',
+            }),
+          }),
+        )
+        const { wrapper } = await mountAccount()
+        await wrapper.find('input[name="expertise_other"]').setValue('Coastal engineering')
+        await submit(wrapper)
+        const input = wrapper.find('input[name="expertise_other"]').element
+        expect(input.getAttribute('aria-invalid')).toBe('true')
+        expect(describedText(input)).toContain(t('errors.fields.string_too_long'))
+      })
+
       it('allows at most 8 expertise areas', async () => {
         const full = { ...EXPERT, expertise: EXPERTISE.slice(0, 8) }
         mockApi(routes({ [ME]: reply(200, full) }))
