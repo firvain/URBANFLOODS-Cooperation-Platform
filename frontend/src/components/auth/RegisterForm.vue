@@ -36,8 +36,6 @@ const state = reactive({
 })
 type State = typeof state
 
-/** The optional expertise picker stays folded away so the form fits on one screen. */
-const expertiseOpen = ref(false)
 const pending = ref(false)
 // Turnstile tokens are single-use: every request resets the widget for a fresh one, and submit
 // waits for a solved challenge while Turnstile is on.
@@ -120,7 +118,6 @@ async function onSubmit(event: FormSubmitEvent<State>) {
     for (const [field, message] of Object.entries(fields)) {
       serverErrors[field] = message
     }
-    if (fields.expertise_ids) expertiseOpen.value = true
     formError.value = Object.keys(fields).length
       ? t('errors.api.validation.failed')
       : errorMessage(e)
@@ -199,33 +196,13 @@ async function onSubmit(event: FormSubmitEvent<State>) {
       </UFormField>
     </div>
 
-    <UCollapsible v-model:open="expertiseOpen">
-      <UButton
-        color="primary"
-        variant="link"
-        icon="i-lucide-plus"
-        trailing-icon="i-lucide-chevron-down"
-        class="px-0"
-        :ui="{
-          trailingIcon: expertiseOpen ? 'rotate-180 transition-transform' : 'transition-transform',
-        }"
-      >
-        {{ t('auth.expertiseToggle') }}
-        <UBadge v-if="state.expertise_ids.length" color="secondary" variant="subtle" size="sm">
-          {{ t('auth.expertiseSelected', { count: state.expertise_ids.length }) }}
-        </UBadge>
-      </UButton>
-      <template #content>
-        <ExpertisePicker
-          v-model="state.expertise_ids"
-          class="pt-2"
-          :label="t('auth.expertiseLabel', { max: EXPERTISE_MAX })"
-          :help="t('auth.expertiseHint')"
-          :placeholder="t('auth.expertisePlaceholder')"
-          :error="serverErrors.expertise_ids"
-        />
-      </template>
-    </UCollapsible>
+    <ExpertisePicker
+      v-model="state.expertise_ids"
+      :label="t('auth.expertiseLabel', { max: EXPERTISE_MAX })"
+      :help="t('auth.expertiseHint')"
+      :placeholder="t('auth.expertisePlaceholder')"
+      :error="serverErrors.expertise_ids"
+    />
 
     <UFormField name="accept_terms" :error="serverErrors.accept_terms">
       <UCheckbox v-model="state.accept_terms" required>

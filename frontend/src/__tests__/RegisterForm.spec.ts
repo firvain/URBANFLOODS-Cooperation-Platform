@@ -174,33 +174,19 @@ describe('RegisterForm', () => {
     const label = () => t('auth.expertiseLabel', { max: 8 })
     const labelled = (wrapper: Awaited<ReturnType<typeof mountForm>>) =>
       wrapper.findAll('label').some((l) => l.text().startsWith(label()))
-    const toggle = (wrapper: Awaited<ReturnType<typeof mountForm>>) =>
-      wrapper.findAll('button').find((b) => b.text().includes(t('auth.expertiseToggle')))!
-
-    async function openPicker(wrapper: Awaited<ReturnType<typeof mountForm>>) {
-      await toggle(wrapper).trigger('click')
-      await flushPromises()
-    }
-
-    it('hides the picker behind a toggle until it is clicked', async () => {
+    it('shows the picker straight away, without a toggle to open it', async () => {
       mockApi(routes())
       const wrapper = await mountForm()
-      const button = toggle(wrapper)
-      expect(button.exists()).toBe(true)
-      expect(button.attributes('aria-expanded')).toBe('false')
-      expect(labelled(wrapper)).toBe(false)
-
-      await openPicker(wrapper)
-      expect(toggle(wrapper).attributes('aria-expanded')).toBe('true')
       expect(labelled(wrapper)).toBe(true)
       expect(label()).toBe('Areas of expertise (optional, up to 8)')
+      // The old fold-out toggle is gone.
+      expect(wrapper.text()).not.toContain('Add your areas of expertise')
     })
 
     it('sends the chosen areas as sorted expertise_ids', async () => {
       const fetchMock = mockApi(routes({ 'POST /api/v1/auth/register': reply(201, CREATED) }))
       const wrapper = await mountForm()
       await fillRequired(wrapper)
-      await openPicker(wrapper)
       await openSelect(wrapper, label())
       await clickOption('Urban planning')
       await clickOption('Hydrology')
@@ -233,7 +219,6 @@ describe('RegisterForm', () => {
       )
       const wrapper = await mountForm()
       await fillRequired(wrapper)
-      await openPicker(wrapper)
       await openSelect(wrapper, label())
       await clickOption('Hydrology')
       await acceptTerms(wrapper)

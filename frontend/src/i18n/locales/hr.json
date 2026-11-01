@@ -724,8 +724,6 @@
     "menu": {
       "signedInAs": "Prijavljeni ste kao {name}"
     },
-    "expertiseToggle": "Dodajte svoja područja stručnosti",
-    "expertiseSelected": "Odabrano: {count}",
     "expertiseLabel": "Područja stručnosti (nije obavezno, najviše {max})",
     "expertiseHint": "Pomaže članovima koji se bave istim temama upravljanja poplavama da Vas pronađu. Možete ih kasnije promijeniti u svom profilu.",
     "expertisePlaceholder": "Odaberite svoja područja stručnosti"

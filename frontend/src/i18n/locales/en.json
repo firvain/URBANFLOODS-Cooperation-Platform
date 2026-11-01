@@ -724,8 +724,6 @@
     "menu": {
       "signedInAs": "Signed in as {name}"
     },
-    "expertiseToggle": "Add your areas of expertise",
-    "expertiseSelected": "{count} selected",
     "expertiseLabel": "Areas of expertise (optional, up to {max})",
     "expertiseHint": "Helps members working on the same flood management topics find you. You can change them later in your profile.",
     "expertisePlaceholder": "Select your areas of expertise"

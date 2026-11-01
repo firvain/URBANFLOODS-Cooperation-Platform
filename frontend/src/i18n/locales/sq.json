@@ -724,8 +724,6 @@
     "menu": {
       "signedInAs": "Keni hyrë si {name}"
     },
-    "expertiseToggle": "Shtoni fushat tuaja të ekspertizës",
-    "expertiseSelected": "{count} të zgjedhura",
     "expertiseLabel": "Fushat e ekspertizës (opsionale, deri në {max})",
     "expertiseHint": "U ndihmon anëtarëve që punojnë në të njëjtat tema të menaxhimit të përmbytjeve t'ju gjejnë. Mund t'i ndryshoni më vonë në profilin tuaj.",
     "expertisePlaceholder": "Zgjidhni fushat tuaja të ekspertizës"
