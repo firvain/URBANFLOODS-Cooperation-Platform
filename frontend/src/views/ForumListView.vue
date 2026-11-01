@@ -115,14 +115,31 @@ watch(
         </h1>
         <div class="h-1 w-20 rounded bg-secondary-500" />
       </div>
-      <UButton
-        v-if="isVerified"
-        to="/forum/new"
-        icon="i-lucide-message-square-plus"
-        class="shrink-0 self-start"
-      >
-        {{ t('forum.start') }}
-      </UButton>
+      <div class="flex shrink-0 flex-wrap gap-2 self-start">
+        <!-- `external`: a full page load of the XML; /feeds is served by the backend, not the SPA. -->
+        <UButton
+          to="/feeds/threads.atom"
+          external
+          color="neutral"
+          variant="outline"
+          data-testid="forum-feed-link"
+        >
+          <template #leading>
+            <!-- The classic web-feed badge (white waves on orange); decorative, the label names it. -->
+            <span
+              aria-hidden="true"
+              data-testid="feed-badge"
+              class="inline-flex size-5 shrink-0 items-center justify-center rounded bg-[#F78422]"
+            >
+              <UIcon name="i-lucide-rss" class="size-3.5 text-white" />
+            </span>
+          </template>
+          {{ t('forum.feed') }}
+        </UButton>
+        <UButton v-if="isVerified" to="/forum/new" icon="i-lucide-message-square-plus">
+          {{ t('forum.start') }}
+        </UButton>
+      </div>
     </div>
 
     <section aria-labelledby="forum-filters-heading" class="mb-6 space-y-4">

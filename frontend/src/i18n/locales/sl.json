@@ -58,6 +58,7 @@
   "blog": {
     "title": "Blog",
     "write": "Napiši objavo",
+    "feed": "Vir Atom",
     "loading": "Nalaganje objav …",
     "count": "Ni objav | {count} objava | {count} objavi | {count} objave | {count} objav",
     "empty": "Nobena objava ne ustreza tem filtrom.",
@@ -130,6 +131,7 @@
   "forum": {
     "title": "Forum",
     "start": "Začni razpravo",
+    "feed": "Vir Atom",
     "loading": "Nalaganje razprav …",
     "count": "Ni razprav | {count} razprava | {count} razpravi | {count} razprave | {count} razprav",
     "empty": "Nobena razprava ne ustreza tem filtrom.",

@@ -228,6 +228,47 @@ describe('ForumListView', () => {
     expect(t('forum.start')).toBe('Start a discussion')
   })
 
+  it('links the forum Atom feed for everyone, as a plain same-tab link that leaves the SPA', async () => {
+    mockApi(routes())
+    let { wrapper } = await mountForum()
+    const expectFeedLink = () => {
+      const feed = wrapper.find('[data-testid="forum-feed-link"]')
+      expect(feed.exists()).toBe(true)
+      expect(feed.element.tagName).toBe('A')
+      expect(feed.attributes('href')).toBe('/feeds/threads.atom')
+      expect(feed.attributes('target')).toBeUndefined()
+      expect(feed.text()).toBe(t('forum.feed'))
+    }
+    expectFeedLink()
+    expect(t('forum.feed')).toBe('Atom feed')
+    unmountAll()
+
+    mockApi(routes(threadPages(3), { [ME]: reply(200, makeUser()) }))
+    ;({ wrapper } = await mountForum())
+    expectFeedLink()
+    expect(wrapper.find('a[href="/forum/new"]').exists()).toBe(true)
+  })
+
+  it('shows the feed icon as the classic orange feed badge, hidden from screen readers', async () => {
+    mockApi(routes())
+    const { wrapper } = await mountForum()
+    const feed = wrapper.find('[data-testid="forum-feed-link"]')
+    const badge = feed.find('[data-testid="feed-badge"]')
+    expect(badge.exists()).toBe(true)
+    expect(badge.attributes('aria-hidden')).toBe('true')
+    expect(badge.classes()).toContain('bg-[#F78422]')
+    expect(badge.find('.text-white').exists()).toBe(true)
+    expect(feed.text()).toBe(t('forum.feed'))
+  })
+
+  it('clicking the feed link does not navigate the SPA router', async () => {
+    mockApi(routes())
+    const { wrapper, router } = await mountForum()
+    const push = vi.spyOn(router, 'push')
+    await wrapper.find('[data-testid="forum-feed-link"]').trigger('click')
+    expect(push).not.toHaveBeenCalled()
+  })
+
   it('shows a status badge on the viewer’s own pending thread', async () => {
     mockApi(
       routes(() =>

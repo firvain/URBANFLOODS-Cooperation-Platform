@@ -239,6 +239,47 @@ describe('BlogListView', () => {
     expect(write.text()).toBe(t('blog.write'))
   })
 
+  it('links the blog Atom feed for everyone, as a plain same-tab link that leaves the SPA', async () => {
+    mockApi(routes())
+    let { wrapper } = await mountBlog()
+    const expectFeedLink = () => {
+      const feed = wrapper.find('[data-testid="blog-feed-link"]')
+      expect(feed.exists()).toBe(true)
+      expect(feed.element.tagName).toBe('A')
+      expect(feed.attributes('href')).toBe('/feeds/posts.atom')
+      expect(feed.attributes('target')).toBeUndefined()
+      expect(feed.text()).toBe(t('blog.feed'))
+    }
+    expectFeedLink()
+    expect(t('blog.feed')).toBe('Atom feed')
+    unmountAll()
+
+    mockApi(routes(postPages(30), { [ME]: reply(200, makeUser()) }))
+    ;({ wrapper } = await mountBlog())
+    expectFeedLink()
+    expect(wrapper.find('a[href="/blog/new"]').exists()).toBe(true)
+  })
+
+  it('shows the feed icon as the classic orange feed badge, hidden from screen readers', async () => {
+    mockApi(routes())
+    const { wrapper } = await mountBlog()
+    const feed = wrapper.find('[data-testid="blog-feed-link"]')
+    const badge = feed.find('[data-testid="feed-badge"]')
+    expect(badge.exists()).toBe(true)
+    expect(badge.attributes('aria-hidden')).toBe('true')
+    expect(badge.classes()).toContain('bg-[#F78422]')
+    expect(badge.find('.text-white').exists()).toBe(true)
+    expect(feed.text()).toBe(t('blog.feed'))
+  })
+
+  it('clicking the feed link does not navigate the SPA router', async () => {
+    mockApi(routes())
+    const { wrapper, router } = await mountBlog()
+    const push = vi.spyOn(router, 'push')
+    await wrapper.find('[data-testid="blog-feed-link"]').trigger('click')
+    expect(push).not.toHaveBeenCalled()
+  })
+
   it('shows a status badge on a pending post the viewer can see', async () => {
     mockApi(
       routes(() =>

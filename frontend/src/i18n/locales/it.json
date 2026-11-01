@@ -58,6 +58,7 @@
   "blog": {
     "title": "Blog",
     "write": "Scrivi un articolo",
+    "feed": "Feed Atom",
     "loading": "Caricamento degli articoli…",
     "count": "Nessun articolo | 1 articolo | {count} articoli",
     "empty": "Nessun articolo corrisponde a questi filtri.",
@@ -130,6 +131,7 @@
   "forum": {
     "title": "Forum",
     "start": "Avvia una discussione",
+    "feed": "Feed Atom",
     "loading": "Caricamento delle discussioni…",
     "count": "Nessuna discussione | 1 discussione | {count} discussioni",
     "empty": "Nessuna discussione corrisponde a questi filtri.",

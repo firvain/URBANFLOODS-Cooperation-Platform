@@ -141,6 +141,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 | Inc | Scope | Status | Commit | Tests | Notes |
 |---|---|---|---|---|---|
 | 7a | deleted content kept 7 days then purged automatically; admin "Deleted" page with restore/purge; audit-log targets link to their items | done | | pytest 1823, vitest 1122 | `DELETED_CONTENT_RETENTION_DAYS=7` (0 = off); maintenance step `deleted_content` (cap 200/run, files after commit, system `moderation.purge` with `reason: retention`); a deleted reply waits while any child is not yet due; `GET /moderation/deleted/` with deleted_by and purge_at; `/admin/deleted` with Restore / Delete permanently; audit-log `target_path` links |
+| 7b | Atom feeds discoverable: autodiscovery links in index.html; "Atom feed" button on /blog and /forum for everyone | done | | 7 vitest (1131) | `<link rel="alternate" type="application/atom+xml">` for /feeds/posts.atom and /feeds/threads.atom; outline UButton with `external` (full page load, not the router) beside Write/Start, with the classic orange feed badge (#F78422, decorative, owner's choice); keys `blog.feed`/`forum.feed` in 9 locales ("Atom" kept in Latin script in el/mk/sr, added to the i18n script allow-list) |
 
 ## 3. Session log
 
@@ -217,6 +218,12 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - a11y fix from scenario 4.6: the KNOWBASE measure and document pages had no h1 in the load-error state (KNOWBASE unreachable); the generic page title is now the h1 above the alert, with a 503 test per view (1040 vitest).
 - Seed fix: the green-roofs post linked KNOWBASE measures 1 and 2; id 1 does not exist upstream (ids are offset from the measure codes), so the seed stored a placeholder title. Now links 14 (green roofs) and 17 (detention basins); blog e2e and the QA checklist follow. Curl checks V-12, X-S1, X-S6, X-S7 pass on the dev stack.
 
+### 2026-11-01 — 5th-meeting deck, starter content, 7b
+- AF check of the 3rd-meeting deck: consistent; fixed in the new deck "succinct" (not "compact"), the full Activity 5.1 text, and Output 5.1 / RCO87 (target 22) shown explicitly.
+- Deck for the 5th Project Meeting (Sarajevo, 17–18/11/2026) in `docs/` (owner-edited version and a plain-language v2): platform presented as a beta for partner testing, QR to /register, partner asks.
+- Production starter content (owner's go, posted through the owner's session and the API): 8 posts and 2 threads summarising project-website news (newsletters 1–4, Tirana, ICED2026, Rimini, nine-site modelling, Albania Lana, Sarajevo event) with links back and credited covers; "Beta feedback" thread pinned. Not test data.
+- 7b (user request): the feeds were only listed on /open-data. Now autodiscoverable and linked from the blog and forum headers. Not deployed yet.
+
 ### Current state and next steps (updated 2026-10-31, late evening)
 
 **Live:** https://cooperation.urbanfloods.app since 2026-10-31 (deployed commit is the latest on `main`; check with `ssh knowbase 'cd ~/URBANFLOODS-Cooperation-Platform && git log --oneline -1'`). Same server as the KNOWBASE (untouched; its containers show "Up 3 months"). Runbook: `docs/deployment.md`. CI on GitHub Actions is green.
@@ -225,7 +232,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 
 **Production state:** accounts `info@xtc.codes` (superadmin, owner) and `aff01040@uowm.gr` (the owner's member/test account); no content (test items purged). Nightly backups 03:15 to `~/backups/cooperation` (14 days; restore test passed). Brevo SMTP (existing key; anonymous tracking on; Brevo rewrites links and cannot be stopped); Turnstile Managed; HSTS; catch-all for unknown hostnames; Portainer only through `ssh -L 9443:127.0.0.1:9443 knowbase`. Settings decided: `AUTO_APPROVE_AFTER_DAYS=5`, `ENABLE_DOCS=true`, `DELETED_CONTENT_RETENTION_DAYS=7`; member notifications opt-in for new accounts, admin digest on; no welcome email; legal texts accepted as they are (do not edit `docs/legal/` without the owner).
 
-**Test counts on `main`:** backend 1823, vitest 1123, e2e 32, a11y 4 (26 pages incl. /admin/deleted).
+**Test counts on `main`:** backend 1823, vitest 1131, e2e 32, a11y 4 (26 pages incl. /admin/deleted).
 
 **Next steps (in priority order):**
 1. **Second superadmin from another partner** (sustainability): they register and verify, then `ssh knowbase 'cd ~/URBANFLOODS-Cooperation-Platform && docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T backend python -m app.cli promote --email <address> --to superadmin'`. Admins from several partners after that.

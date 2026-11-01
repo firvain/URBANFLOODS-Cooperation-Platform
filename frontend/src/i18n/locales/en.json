@@ -58,6 +58,7 @@
   "blog": {
     "title": "Blog",
     "write": "Write a post",
+    "feed": "Atom feed",
     "loading": "Loading the posts…",
     "count": "No posts | 1 post | {count} posts",
     "empty": "No posts match these filters.",
@@ -130,6 +131,7 @@
   "forum": {
     "title": "Forum",
     "start": "Start a discussion",
+    "feed": "Atom feed",
     "loading": "Loading the discussions…",
     "count": "No discussions | 1 discussion | {count} discussions",
     "empty": "No discussions match these filters.",

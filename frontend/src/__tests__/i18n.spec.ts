@@ -268,7 +268,7 @@ const expectedForms = (code: LocaleCode, englishForms: number) =>
 
 /** Latin words allowed inside Greek, Macedonian and Serbian (Cyrillic) strings. */
 const LATIN_ALLOWED =
-  /URBANFLOODS|KNOWBASE|COOPERATION|PLATFORM|Interreg|IPA|ADRION|Unified|DSS|LinkedIn|JPEG|PNG|WebP|MB|JSON|EUR|ZEP|\bI\b|SO2|https?|mailto|Enter|\{\w+\}/g
+  /URBANFLOODS|KNOWBASE|COOPERATION|PLATFORM|Interreg|IPA|ADRION|Unified|DSS|LinkedIn|JPEG|PNG|WebP|MB|JSON|Atom|EUR|ZEP|\bI\b|SO2|https?|mailto|Enter|\{\w+\}/g
 const NON_LATIN_SCRIPT: Partial<Record<TranslatedLocale, RegExp>> = {
   el: /\p{Script=Greek}/u,
   mk: /\p{Script=Cyrillic}/u,

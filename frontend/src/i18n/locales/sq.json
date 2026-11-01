@@ -58,6 +58,7 @@
   "blog": {
     "title": "Blogu",
     "write": "Shkruaj një postim",
+    "feed": "Burim Atom",
     "loading": "Po ngarkohen postimet…",
     "count": "Asnjë postim | 1 postim | {count} postime",
     "empty": "Asnjë postim nuk përputhet me këto filtra.",
@@ -130,6 +131,7 @@
   "forum": {
     "title": "Forumi",
     "start": "Fillo një diskutim",
+    "feed": "Burim Atom",
     "loading": "Po ngarkohen diskutimet…",
     "count": "Asnjë diskutim | 1 diskutim | {count} diskutime",
     "empty": "Asnjë diskutim nuk përputhet me këto filtra.",

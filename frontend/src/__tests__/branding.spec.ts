@@ -148,6 +148,17 @@ describe('logo and favicon assets', () => {
       expect(html).toContain(snippet)
     }
   })
+
+  it('index.html advertises the blog and forum Atom feeds for autodiscovery', () => {
+    // Prettier may wrap the attributes over several lines.
+    const html = readFileSync(projectFile('index.html'), 'utf8').replace(/\s+/g, ' ')
+    for (const snippet of [
+      '<link rel="alternate" type="application/atom+xml" title="URBANFLOODS Cooperation Platform: blog" href="/feeds/posts.atom"',
+      '<link rel="alternate" type="application/atom+xml" title="URBANFLOODS Cooperation Platform: forum" href="/feeds/threads.atom"',
+    ]) {
+      expect(html).toContain(snippet)
+    }
+  })
 })
 
 describe('footer statement translations', () => {

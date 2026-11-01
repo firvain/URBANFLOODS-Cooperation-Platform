@@ -124,14 +124,31 @@ watch(
         </h1>
         <div class="h-1 w-20 rounded bg-secondary-500" />
       </div>
-      <UButton
-        v-if="isVerified"
-        to="/blog/new"
-        icon="i-lucide-pen-line"
-        class="shrink-0 self-start"
-      >
-        {{ t('blog.write') }}
-      </UButton>
+      <div class="flex shrink-0 flex-wrap gap-2 self-start">
+        <!-- `external`: a full page load of the XML; /feeds is served by the backend, not the SPA. -->
+        <UButton
+          to="/feeds/posts.atom"
+          external
+          color="neutral"
+          variant="outline"
+          data-testid="blog-feed-link"
+        >
+          <template #leading>
+            <!-- The classic web-feed badge (white waves on orange); decorative, the label names it. -->
+            <span
+              aria-hidden="true"
+              data-testid="feed-badge"
+              class="inline-flex size-5 shrink-0 items-center justify-center rounded bg-[#F78422]"
+            >
+              <UIcon name="i-lucide-rss" class="size-3.5 text-white" />
+            </span>
+          </template>
+          {{ t('blog.feed') }}
+        </UButton>
+        <UButton v-if="isVerified" to="/blog/new" icon="i-lucide-pen-line">
+          {{ t('blog.write') }}
+        </UButton>
+      </div>
     </div>
 
     <section aria-labelledby="blog-filters-heading" class="mb-6 space-y-4">

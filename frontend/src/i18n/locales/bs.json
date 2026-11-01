@@ -58,6 +58,7 @@
   "blog": {
     "title": "Blog",
     "write": "Napiši objavu",
+    "feed": "Atom kanal",
     "loading": "Učitavanje objava…",
     "count": "Nema objava | {count} objava | {count} objave | {count} objava",
     "empty": "Nijedna objava ne odgovara ovim filterima.",
@@ -130,6 +131,7 @@
   "forum": {
     "title": "Forum",
     "start": "Započni diskusiju",
+    "feed": "Atom kanal",
     "loading": "Učitavanje diskusija…",
     "count": "Nema diskusija | {count} diskusija | {count} diskusije | {count} diskusija",
     "empty": "Nijedna diskusija ne odgovara ovim filterima.",
