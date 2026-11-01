@@ -90,7 +90,7 @@ export function makeThreadDetail(overrides: Partial<ThreadDetail> = {}): ThreadD
       {
         kb_type: 'measure',
         kb_id: 2,
-        title_en: 'Early warning systems',
+        title_en: 'early warning systems',
         title_local: null,
         url: '/knowbase/measures/2',
       },

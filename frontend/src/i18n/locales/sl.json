@@ -16,6 +16,7 @@
     "forum": "Forum",
     "knowbase": "KNOWBASE",
     "network": "Mreža",
+    "measures": "Ukrepi",
     "dss": "Unified DSS",
     "about": "O projektu",
     "login": "Prijava",
@@ -363,7 +364,6 @@
     }
   },
   "knowbase": {
-    "openInKnowbase": "Odpri v zbirki KNOWBASE",
     "loading": "Nalaganje …",
     "retry": "Poskusi znova",
     "notFoundHint": "Morda je bil odstranjen iz zbirke KNOWBASE ali pa je povezava napačna.",
@@ -405,6 +405,37 @@
         "webLinks": "Spletne povezave",
         "comments": "Opombe"
       }
+    },
+    "glance": {
+      "title": "Ukrepi na prvi pogled",
+      "intro": "Strnjen seznam protipoplavnih ukrepov iz zbirke KNOWBASE projekta URBANFLOODS. Odprite ukrep, da si ogledate njegove podrobnosti ter objave in razprave, ki ga omenjajo.",
+      "filters": "Filtriraj ukrepe",
+      "phase": "Faza",
+      "scale": "Obseg",
+      "all": "Vsi",
+      "clearFilters": "Počisti filtre",
+      "shown": "Prikazani ukrepi: {count}",
+      "empty": "Noben ukrep ne ustreza tem filtrom.",
+      "loadError": "Ukrepov ni bilo mogoče naložiti."
+    },
+    "types": {
+      "NBS": "Na naravi temelječe rešitve",
+      "STR": "Strukturni",
+      "NS": "Nestrukturni",
+      "HYB": "Hibridni",
+      "other": "Drugo"
+    },
+    "phases": {
+      "PRO": "Zaščita",
+      "PRE": "Pripravljenost",
+      "REC": "Obnova",
+      "MIT": "Blaženje"
+    },
+    "scales": {
+      "PROP": "Nepremičnina",
+      "LOC": "Lokalni",
+      "REG": "Regionalni",
+      "NAT": "Nacionalni"
     }
   },
   "profile": {

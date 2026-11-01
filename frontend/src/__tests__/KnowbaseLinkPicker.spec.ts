@@ -14,8 +14,8 @@ const DOCUMENTS = 'GET /api/v1/knowbase/documents/'
 const MEASURE_PAGE = {
   total: 2,
   items: [
-    { id: 5, measure_code: 'NBS-04', title_en: 'Green roofs' },
-    { id: 9, measure_code: 'STR-11', title_en: 'Green retention basin' },
+    { id: 5, measure_code: 'NBS-04', title_en: 'green roofs' },
+    { id: 9, measure_code: 'STR-11', title_en: 'green retention basin' },
   ],
 }
 const DOCUMENT_PAGE = {
@@ -83,7 +83,7 @@ describe('KnowbaseLinkPicker', () => {
     expect(calls).toHaveLength(1)
     expect(paramsOf(calls[0]!.url).get('q')).toBe('green')
     expect(paramsOf(calls[0]!.url).get('limit')).toBe('10')
-    expect(wrapper.text()).toContain('Green roofs')
+    expect(wrapper.text()).toContain('Green Roofs')
     expect(wrapper.text()).toContain('NBS-04')
   })
 
@@ -102,23 +102,23 @@ describe('KnowbaseLinkPicker', () => {
     expect(calls).toHaveLength(1)
     expect(paramsOf(calls[0]!.url).get('q')).toBe('water')
     expect(wrapper.text()).toContain('Law on Waters')
-    expect(wrapper.text()).not.toContain('Green roofs')
+    expect(wrapper.text()).not.toContain('Green Roofs')
   })
 
   it('adds a result as a chip and removes it again', async () => {
     const wrapper = await mountPicker()
     await search(wrapper, 'green')
     await settle()
-    buttonIn(wrapper.element as HTMLElement, 'Add Green roofs').click()
+    buttonIn(wrapper.element as HTMLElement, 'Add Green Roofs').click()
     await flushPromises()
-    expect(lastValue(wrapper)).toEqual([{ kb_type: 'measure', kb_id: 5, title: 'Green roofs' }])
-    const added = buttonIn(wrapper.element as HTMLElement, 'Add Green roofs')
+    expect(lastValue(wrapper)).toEqual([{ kb_type: 'measure', kb_id: 5, title: 'green roofs' }])
+    const added = buttonIn(wrapper.element as HTMLElement, 'Add Green Roofs')
     expect(added.disabled).toBe(true)
 
-    buttonIn(wrapper.element as HTMLElement, 'Remove Green roofs').click()
+    buttonIn(wrapper.element as HTMLElement, 'Remove Green Roofs').click()
     await flushPromises()
     expect(lastValue(wrapper)).toEqual([])
-    expect(wrapper.find('[aria-label="Remove Green roofs"]').exists()).toBe(false)
+    expect(wrapper.find('[aria-label="Remove Green Roofs"]').exists()).toBe(false)
   })
 
   it('adds documents with their document type', async () => {
@@ -135,7 +135,7 @@ describe('KnowbaseLinkPicker', () => {
     const wrapper = await mountPicker(linked(10))
     await search(wrapper, 'green')
     await settle()
-    buttonIn(wrapper.element as HTMLElement, 'Add Green roofs').click()
+    buttonIn(wrapper.element as HTMLElement, 'Add Green Roofs').click()
     await flushPromises()
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
     expect(wrapper.find('[role="status"]').text()).toContain(

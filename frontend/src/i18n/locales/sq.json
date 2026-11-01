@@ -16,6 +16,7 @@
     "forum": "Forumi",
     "knowbase": "KNOWBASE",
     "network": "Rrjeti",
+    "measures": "Masat",
     "dss": "Unified DSS",
     "about": "Rreth nesh",
     "login": "Hyr",
@@ -363,7 +364,6 @@
     }
   },
   "knowbase": {
-    "openInKnowbase": "Hape në KNOWBASE",
     "loading": "Po ngarkohet…",
     "retry": "Provo përsëri",
     "notFoundHint": "Mund të jetë hequr nga KNOWBASE ose lidhja është e gabuar.",
@@ -405,6 +405,37 @@
         "webLinks": "Lidhjet në internet",
         "comments": "Komente"
       }
+    },
+    "glance": {
+      "title": "Masat me një shikim",
+      "intro": "Lista përmbledhëse e masave për përmbytjet nga KNOWBASE i URBANFLOODS. Hapni një masë për të parë detajet e saj dhe postimet e diskutimet që e përmendin.",
+      "filters": "Filtro masat",
+      "phase": "Faza",
+      "scale": "Shkalla",
+      "all": "Të gjitha",
+      "clearFilters": "Pastro filtrat",
+      "shown": "Masa të shfaqura: {count}",
+      "empty": "Asnjë masë nuk përputhet me këto filtra.",
+      "loadError": "Masat nuk mund të ngarkoheshin."
+    },
+    "types": {
+      "NBS": "Zgjidhje të bazuara në natyrë",
+      "STR": "Strukturore",
+      "NS": "Jostrukturore",
+      "HYB": "Hibride",
+      "other": "Të tjera"
+    },
+    "phases": {
+      "PRO": "Mbrojtje",
+      "PRE": "Gatishmëri",
+      "REC": "Rimëkëmbje",
+      "MIT": "Zbutje"
+    },
+    "scales": {
+      "PROP": "Pronë",
+      "LOC": "Lokale",
+      "REG": "Rajonale",
+      "NAT": "Kombëtare"
     }
   },
   "profile": {

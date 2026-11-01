@@ -376,7 +376,7 @@ describe('main navigation and the Unified DSS', () => {
   }
   const label = (a: Element) => a.textContent?.replace(t('a11y.opensInNewTab'), '').trim()
 
-  it('orders the items Home, Blog, Forum, Network, KNOWBASE, Unified DSS, About', async () => {
+  it('orders the items Home, Blog, Forum, Network, Measures, KNOWBASE, Unified DSS, About', async () => {
     vi.stubEnv('VITE_DSS_URL', DSS)
     await mountApp()
     expect(t('nav.network')).toBe('Network')
@@ -387,6 +387,7 @@ describe('main navigation and the Unified DSS', () => {
       t('nav.blog'),
       t('nav.forum'),
       t('nav.network'),
+      t('nav.measures'),
       t('nav.knowbase'),
       t('nav.dss'),
       t('nav.about'),
@@ -395,7 +396,32 @@ describe('main navigation and the Unified DSS', () => {
     expect(navLinks()[1]!.getAttribute('href')).toBe('/blog')
     expect(navLinks()[2]!.getAttribute('href')).toBe('/forum')
     expect(navLinks()[3]!.getAttribute('href')).toBe('/network')
-    expect(navLinks()[4]!.getAttribute('href')).toBe(EXTERNAL_LINKS.knowbase)
+    expect(navLinks()[4]!.getAttribute('href')).toBe('/knowbase/measures')
+    expect(navLinks()[5]!.getAttribute('href')).toBe(EXTERNAL_LINKS.knowbase)
+  })
+
+  it('links "Measures" to the measures page in the same tab, active there and on a measure page', async () => {
+    vi.stubEnv('VITE_DSS_URL', DSS)
+    expect(t('nav.measures')).toBe('Measures')
+    // The active item has the same styling as Blog on /blog; inactive items look like Network.
+    await mountApp('/blog')
+    const activeClass = navLinks().find((a) => label(a) === t('nav.blog'))!.className
+    const inactiveClass = navLinks().find((a) => label(a) === t('nav.network'))!.className
+    expect(activeClass).not.toBe(inactiveClass)
+    let measures = navLinks().find((a) => label(a) === t('nav.measures'))!
+    expect(measures.className).toBe(inactiveClass)
+    unmountAll()
+
+    await mountApp('/knowbase/measures')
+    measures = navLinks().find((a) => label(a) === t('nav.measures'))!
+    expect(measures.getAttribute('href')).toBe('/knowbase/measures')
+    expect(measures.getAttribute('target')).toBeNull()
+    expect(measures.className).toBe(activeClass)
+    unmountAll()
+
+    await mountApp('/knowbase/measures/2')
+    measures = navLinks().find((a) => label(a) === t('nav.measures'))!
+    expect(measures.className).toBe(activeClass)
   })
 
   it('links the KNOWBASE site in a new tab, announced, with the arrow, like the DSS', async () => {
@@ -447,6 +473,7 @@ describe('main navigation and the Unified DSS', () => {
       t('nav.blog'),
       t('nav.forum'),
       t('nav.network'),
+      t('nav.measures'),
       t('nav.knowbase'),
       t('nav.about'),
     ])

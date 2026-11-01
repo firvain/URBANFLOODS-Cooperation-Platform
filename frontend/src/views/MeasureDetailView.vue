@@ -3,12 +3,11 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
-import ExternalLink from '@/components/common/ExternalLink.vue'
 import KnowbaseField from '@/components/knowbase/KnowbaseField.vue'
 import KnowbaseMentions from '@/components/knowbase/KnowbaseMentions.vue'
-import { EXTERNAL_LINKS } from '@/constants/links'
 import { ApiError } from '@/services/api'
 import { knowbaseService, type Measure } from '@/services/knowbase'
+import { measureTitle } from '@/utils/knowbase'
 
 /** One KNOWBASE flood management measure, with the platform posts that mention it. */
 const { t } = useI18n()
@@ -42,7 +41,9 @@ watch(
   { immediate: true },
 )
 
-const title = computed(() => measure.value?.title_en || t('knowbase.measures.untitled'))
+const title = computed(
+  () => measureTitle(measure.value?.title_en ?? '') || t('knowbase.measures.untitled'),
+)
 /** The original-language title, when it differs from the English one. */
 const localTitle = computed(() => {
   const local = measure.value?.title_local
@@ -56,14 +57,23 @@ const localDescription = computed(() => {
 
 <template>
   <UContainer class="pt-8 pb-16 lg:pb-24">
-    <!-- The list is browsed on the KNOWBASE site itself (user decision 2026-10-31). -->
+    <!--
+      Back to the platform's "Measures at a glance" (7c); browsing and searching the library stay
+      on the KNOWBASE site itself (user decision 2026-10-31).
+    -->
     <p class="mb-6 text-sm">
-      <ExternalLink
-        :href="`${EXTERNAL_LINKS.knowbase}/measures`"
-        trailing-icon="i-lucide-arrow-up-right"
+      <RouterLink
+        to="/knowbase/measures"
+        class="inline-flex items-center gap-1 font-medium text-primary-700 underline-offset-2 hover:underline focus-visible:underline"
       >
+        <UIcon
+          name="i-lucide-arrow-left"
+          data-icon="i-lucide-arrow-left"
+          class="size-4 shrink-0"
+          aria-hidden="true"
+        />
         {{ t('knowbase.measures.back') }}
-      </ExternalLink>
+      </RouterLink>
     </p>
 
     <div v-if="state === 'loading'" aria-busy="true" class="space-y-4">
@@ -177,15 +187,6 @@ const localDescription = computed(() => {
       </KnowbaseField>
 
       <KnowbaseMentions :key="measure.id" kb-type="measure" :kb-id="measure.id" />
-
-      <p>
-        <ExternalLink
-          :href="`${EXTERNAL_LINKS.knowbase}/measures`"
-          trailing-icon="i-lucide-arrow-up-right"
-        >
-          {{ t('knowbase.openInKnowbase') }}
-        </ExternalLink>
-      </p>
     </article>
   </UContainer>
 </template>

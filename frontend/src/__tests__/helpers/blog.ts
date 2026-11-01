@@ -112,7 +112,7 @@ export function makePostDetail(overrides: Partial<PostDetail> = {}): PostDetail 
       {
         kb_type: 'measure',
         kb_id: 2,
-        title_en: 'Rain gardens',
+        title_en: 'rain gardens',
         title_local: null,
         url: '/knowbase/measures/2',
       },

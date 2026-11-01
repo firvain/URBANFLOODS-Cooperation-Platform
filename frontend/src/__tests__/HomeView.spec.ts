@@ -54,7 +54,7 @@ describe('HomeView profile nudge', () => {
 describe('HomeView section cards', () => {
   const t = i18n.global.t
 
-  it('the KNOWBASE card is shaped like the DSS one: plain title, description, no internal link', async () => {
+  it('the KNOWBASE card has a plain title, the description and Open', async () => {
     mockApi()
     const { wrapper } = await mountWithApp(HomeView)
     const card = wrapper.find('[data-testid="home-card-knowbase"]')
@@ -66,7 +66,8 @@ describe('HomeView section cards', () => {
     expect(t('home.cards.knowbase.description')).toBe(
       'Browse legislation, policies and flood-protection measures.',
     )
-    // Browsing happens on the KNOWBASE site (user decision 2026-10-31): its only link is the button.
+    // Browsing happens on the KNOWBASE site (user decision 2026-10-31); the platform's measures
+    // page is reached from the header menu ("Measures"), not from this card (owner, 7c).
     expect(card.findAll('a').map((a) => a.attributes('href'))).toEqual([
       'https://knowbase.urbanfloods.app',
     ])

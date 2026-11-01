@@ -24,6 +24,7 @@ describe('routes', () => {
     ['/privacy', 'privacy'],
     ['/accessibility', 'accessibility'],
     ['/open-data', 'open-data'],
+    ['/knowbase/measures', 'knowbase-measures'],
     ['/knowbase/measures/12', 'knowbase-measure'],
     ['/knowbase/documents/34', 'knowbase-document'],
     ['/blog', 'blog'],
@@ -79,7 +80,7 @@ it('the network route is titled nav.network; the profile route takes an id and n
   expect(router.resolve('/network').meta.auth).toBeUndefined()
 })
 
-it('the KNOWBASE item routes are public and take an id; the library pages are gone', () => {
+it('the KNOWBASE item routes are public and take an id; only the measures glance page lists', () => {
   const router = createAppRouter(createMemoryHistory())
   const measure = router.resolve('/knowbase/measures/12')
   const doc = router.resolve('/knowbase/documents/34')
@@ -89,11 +90,17 @@ it('the KNOWBASE item routes are public and take an id; the library pages are go
   expect(doc.params.id).toBe('34')
   expect(measure.meta.auth).toBeUndefined()
   expect(doc.meta.auth).toBeUndefined()
-  // Browsing happens on the KNOWBASE site itself (user decision 2026-10-31).
-  for (const path of ['/knowbase', '/knowbase/measures', '/knowbase/documents']) {
+  // Browsing happens on the KNOWBASE site itself (user decision 2026-10-31); 7c adds back one
+  // read-only page, "Measures at a glance", not a library.
+  const glance = router.resolve('/knowbase/measures')
+  expect(glance.name).toBe('knowbase-measures')
+  expect(glance.meta.title).toBe('knowbase.glance.title')
+  expect(glance.meta.auth).toBeUndefined()
+  expect(glance.matched[0]!.components!.default).not.toBe(measure.matched[0]!.components!.default)
+  for (const path of ['/knowbase', '/knowbase/documents']) {
     expect(router.resolve(path).name).toBe('not-found')
   }
-  for (const name of ['knowbase', 'knowbase-measures', 'knowbase-documents']) {
+  for (const name of ['knowbase', 'knowbase-documents']) {
     expect(router.hasRoute(name)).toBe(false)
   }
 })

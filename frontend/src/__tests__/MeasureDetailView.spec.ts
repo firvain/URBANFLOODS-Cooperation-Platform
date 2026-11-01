@@ -73,21 +73,18 @@ describe('MeasureDetailView', () => {
     )
   })
 
-  it('links to the measures list on the KNOWBASE site and out to the KNOWBASE, in new tabs', async () => {
+  it('links back to the measures glance page and not out to the KNOWBASE', async () => {
     mockApi(routes())
     const { wrapper } = await mountDetail()
-    // The list lives on the KNOWBASE site only (user decision 2026-10-31).
-    expect(wrapper.find('a[href="/knowbase/measures"]').exists()).toBe(false)
-    const links = wrapper.findAll('a[href="https://knowbase.urbanfloods.app/measures"]')
-    expect(links).toHaveLength(2)
-    const [back, out] = links
-    expect(back!.text()).toContain(t('knowbase.measures.back'))
-    expect(out!.text()).toContain(t('knowbase.openInKnowbase'))
-    for (const link of links) {
-      expect(link.attributes('target')).toBe('_blank')
-      expect(link.attributes('rel')).toContain('noopener')
-      expect(link.find('.sr-only').text()).toBe(t('a11y.opensInNewTab'))
-    }
+    // 7c: "All measures" is the platform's "Measures at a glance" page.
+    const back = wrapper.find('a[href="/knowbase/measures"]')
+    expect(back.exists()).toBe(true)
+    expect(back.text()).toContain(t('knowbase.measures.back'))
+    expect(back.attributes('target')).toBeUndefined()
+    expect(back.find('[data-icon="i-lucide-arrow-left"]').exists()).toBe(true)
+    // The KNOWBASE has no address for one measure (it opens them as pop-ups), so a link out could
+    // only reach its general list: there is none (owner's decision); the header has the KNOWBASE.
+    expect(wrapper.find('a[href^="https://knowbase.urbanfloods.app"]').exists()).toBe(false)
   })
 
   it('lists the posts that mention the measure', async () => {
@@ -117,9 +114,17 @@ describe('MeasureDetailView', () => {
     mockApi({ [MEASURE]: replyError(404, 'knowbase.not_found') })
     const { wrapper } = await mountDetail()
     expect(wrapper.text()).toContain(t('knowbase.measures.notFound'))
-    const back = wrapper.find('a[href="https://knowbase.urbanfloods.app/measures"]')
+    const back = wrapper.find('a[href="/knowbase/measures"]')
     expect(back.text()).toContain(t('knowbase.measures.back'))
-    expect(back.attributes('target')).toBe('_blank')
+  })
+
+  it('shows the measure name in title case, as the KNOWBASE shows it', async () => {
+    mockApi({
+      ...routes(),
+      [MEASURE]: kbReply(makeMeasure(7, { title_en: 'water squares (urban water plazas)' })),
+    })
+    const { wrapper } = await mountDetail()
+    expect(wrapper.find('h1').text()).toBe('Water Squares (Urban Water Plazas)')
   })
 
   it('keeps one focusable h1 with the page title when the KNOWBASE is unavailable', async () => {

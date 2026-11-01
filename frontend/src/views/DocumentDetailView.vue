@@ -174,15 +174,6 @@ function linkLabel(url: string): string {
       </KnowbaseField>
 
       <KnowbaseMentions :key="doc.id" kb-type="document" :kb-id="doc.id" />
-
-      <p>
-        <ExternalLink
-          :href="`${EXTERNAL_LINKS.knowbase}/legislation`"
-          trailing-icon="i-lucide-arrow-up-right"
-        >
-          {{ t('knowbase.openInKnowbase') }}
-        </ExternalLink>
-      </p>
     </article>
   </UContainer>
 </template>

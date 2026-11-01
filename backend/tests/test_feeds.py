@@ -33,6 +33,7 @@ STATIC_PATHS = [
     "/privacy",
     "/accessibility",
     "/open-data",
+    "/knowbase/measures",
 ]
 
 
@@ -287,8 +288,11 @@ async def test_sitemap_static_pages(client, corpus):
     for path in STATIC_PATHS:
         expected = f"{FRONTEND}/" if path == "/" else f"{FRONTEND}{path}"
         assert expected in locs
-    # Browsing the KNOWBASE happens on its own site (user decision 2026-10-31): no library page.
-    assert not any(loc.startswith(f"{FRONTEND}/knowbase") for loc in locs)
+    # Browsing the KNOWBASE happens on its own site (user decision 2026-10-31): the only KNOWBASE
+    # page listed is "Measures at a glance" (7c), not a library.
+    assert [loc for loc in locs if loc.startswith(f"{FRONTEND}/knowbase")] == [
+        f"{FRONTEND}/knowbase/measures"
+    ]
     # The partners are a section of /about (user decision 2026-10-31); /partners only redirects.
     assert f"{FRONTEND}/partners" not in locs
 

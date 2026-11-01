@@ -280,7 +280,7 @@ describe('ThreadEditorView edit', () => {
       'Sirens or SMS for flood warnings?',
     )
     expect(editorOf(wrapper).getHTML()).toContain('faster')
-    expect(wrapper.text()).toContain('Early warning systems')
+    expect(wrapper.text()).toContain('Early Warning Systems')
     expect(wrapper.find('[data-testid="untrusted-note"]').exists()).toBe(false)
   })
 

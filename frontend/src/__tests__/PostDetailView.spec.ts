@@ -90,10 +90,13 @@ describe('PostDetailView', () => {
     expect(cards).toHaveLength(2)
     const measure = cards[0]!
     expect(measure.find('a').attributes('href')).toBe('/knowbase/measures/2')
-    expect(measure.text()).toContain('Rain gardens')
+    // Measure names are stored in lower case; shown in title case, as the KNOWBASE shows them.
+    expect(measure.find('a').text()).toBe('Rain Gardens')
     expect(measure.text()).toContain(t('post.knowbase.measure'))
     expect(cards[1]!.find('a').attributes('href')).toBe('/knowbase/documents/1')
     expect(cards[1]!.text()).toContain(t('post.knowbase.document'))
+    // Document names are shown exactly as stored.
+    expect(cards[1]!.find('a').text()).toBe('Water Framework Directive')
   })
 
   it('shows the event date and its external link', async () => {
@@ -166,7 +169,12 @@ describe('PostDetailView', () => {
   it('lets the author of a rejected post read the note, edit it and resubmit it', async () => {
     const fetchMock = mockApi(
       routes(
-        { status: 'hidden', hidden_reason: 'rejected', published_at: null, moderation_note: 'Add sources' },
+        {
+          status: 'hidden',
+          hidden_reason: 'rejected',
+          published_at: null,
+          moderation_note: 'Add sources',
+        },
         {
           [ME]: reply(200, makeUser({ id: 11 })),
           'POST /api/v1/moderation/post/42/resubmit': reply(200, {
@@ -207,7 +215,10 @@ describe('PostDetailView', () => {
         { status: 'hidden', hidden_reason: 'rejected', published_at: null },
         {
           [ME]: reply(200, makeUser({ id: 11 })),
-          'POST /api/v1/moderation/post/42/resubmit': replyError(409, 'moderation.invalid_transition'),
+          'POST /api/v1/moderation/post/42/resubmit': replyError(
+            409,
+            'moderation.invalid_transition',
+          ),
         },
       ),
     )

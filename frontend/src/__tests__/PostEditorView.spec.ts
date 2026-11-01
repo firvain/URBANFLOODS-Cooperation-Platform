@@ -345,7 +345,7 @@ describe('PostEditorView edit', () => {
     expect(wrapper.find('[data-testid="cover-preview"] img').attributes('alt')).toBe(
       'Rain garden in a school yard',
     )
-    expect(wrapper.text()).toContain('Rain gardens')
+    expect(wrapper.text()).toContain('Rain Gardens')
     expect(wrapper.text()).toContain('urban drainage')
     expect(wrapper.find('[data-testid="untrusted-note"]').exists()).toBe(false)
   })

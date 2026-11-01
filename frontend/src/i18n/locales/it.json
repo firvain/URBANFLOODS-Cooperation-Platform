@@ -16,6 +16,7 @@
     "forum": "Forum",
     "knowbase": "KNOWBASE",
     "network": "Rete",
+    "measures": "Misure",
     "dss": "Unified DSS",
     "about": "Il progetto",
     "login": "Accedi",
@@ -363,7 +364,6 @@
     }
   },
   "knowbase": {
-    "openInKnowbase": "Apri in KNOWBASE",
     "loading": "Caricamento…",
     "retry": "Riprova",
     "notFoundHint": "Potrebbe essere stato rimosso da KNOWBASE, oppure il link è errato.",
@@ -405,6 +405,37 @@
         "webLinks": "Link web",
         "comments": "Note"
       }
+    },
+    "glance": {
+      "title": "Le misure in sintesi",
+      "intro": "L'elenco sintetico delle misure contro le alluvioni della KNOWBASE di URBANFLOODS. Apri una misura per vederne i dettagli e gli articoli e le discussioni che la citano.",
+      "filters": "Filtra le misure",
+      "phase": "Fase",
+      "scale": "Scala",
+      "all": "Tutte",
+      "clearFilters": "Azzera i filtri",
+      "shown": "Misure mostrate: {count}",
+      "empty": "Nessuna misura corrisponde a questi filtri.",
+      "loadError": "Non è stato possibile caricare le misure."
+    },
+    "types": {
+      "NBS": "Soluzioni basate sulla natura",
+      "STR": "Strutturali",
+      "NS": "Non strutturali",
+      "HYB": "Ibride",
+      "other": "Altre"
+    },
+    "phases": {
+      "PRO": "Protezione",
+      "PRE": "Preparazione",
+      "REC": "Ripristino",
+      "MIT": "Mitigazione"
+    },
+    "scales": {
+      "PROP": "Proprietà",
+      "LOC": "Locale",
+      "REG": "Regionale",
+      "NAT": "Nazionale"
     }
   },
   "profile": {

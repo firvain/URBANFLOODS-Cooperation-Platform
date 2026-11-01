@@ -3,7 +3,8 @@ import { EXTERNAL_LINKS } from './links'
 /**
  * Primary navigation (header). Labels are i18n keys. `external` items are other sites: they open
  * in a new tab and are never marked active. The KNOWBASE is browsed on its own site (user decision
- * 2026-10-31); the platform keeps only its item pages (`/knowbase/measures/:id`, `.../documents/:id`).
+ * 2026-10-31); the platform keeps its item pages and, since 7c, "Measures at a glance"
+ * (`/knowbase/measures`, the "Measures" item, active on the measure pages too).
  * The partners are a section of About (`/about#partnership`), not a nav item (same decision date).
  */
 export const NAV_ITEMS = [
@@ -11,6 +12,7 @@ export const NAV_ITEMS = [
   { name: 'blog', labelKey: 'nav.blog', to: '/blog' },
   { name: 'forum', labelKey: 'nav.forum', to: '/forum' },
   { name: 'network', labelKey: 'nav.network', to: '/network' },
+  { name: 'measures', labelKey: 'nav.measures', to: '/knowbase/measures' },
   { name: 'knowbase', labelKey: 'nav.knowbase', to: EXTERNAL_LINKS.knowbase, external: true },
   { name: 'about', labelKey: 'nav.about', to: '/about' },
 ] as const

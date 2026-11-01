@@ -16,6 +16,7 @@
     "forum": "Forum",
     "knowbase": "KNOWBASE",
     "network": "Mreža",
+    "measures": "Mjere",
     "dss": "Unified DSS",
     "about": "O projektu",
     "login": "Prijava",
@@ -363,7 +364,6 @@
     }
   },
   "knowbase": {
-    "openInKnowbase": "Otvori u bazi KNOWBASE",
     "loading": "Učitavanje…",
     "retry": "Pokušaj ponovno",
     "notFoundHint": "Možda je uklonjeno iz baze KNOWBASE ili je poveznica pogrešna.",
@@ -405,6 +405,37 @@
         "webLinks": "Mrežne poveznice",
         "comments": "Komentari"
       }
+    },
+    "glance": {
+      "title": "Mjere na prvi pogled",
+      "intro": "Sažeti popis mjera za poplave iz baze KNOWBASE projekta URBANFLOODS. Otvorite mjeru kako biste vidjeli njezine pojedinosti te objave i rasprave koje je spominju.",
+      "filters": "Filtriranje mjera",
+      "phase": "Faza",
+      "scale": "Mjerilo",
+      "all": "Sve",
+      "clearFilters": "Očisti filtre",
+      "shown": "Prikazane mjere: {count}",
+      "empty": "Nijedna mjera ne odgovara ovim filtrima.",
+      "loadError": "Mjere nije moguće učitati."
+    },
+    "types": {
+      "NBS": "Rješenja temeljena na prirodi",
+      "STR": "Strukturne",
+      "NS": "Nestrukturne",
+      "HYB": "Hibridne",
+      "other": "Ostalo"
+    },
+    "phases": {
+      "PRO": "Zaštita",
+      "PRE": "Pripravnost",
+      "REC": "Oporavak",
+      "MIT": "Ublažavanje"
+    },
+    "scales": {
+      "PROP": "Imovina",
+      "LOC": "Lokalno",
+      "REG": "Regionalno",
+      "NAT": "Nacionalno"
     }
   },
   "profile": {

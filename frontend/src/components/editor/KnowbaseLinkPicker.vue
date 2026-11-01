@@ -18,6 +18,7 @@ import { computed, onBeforeUnmount, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { knowbaseService } from '@/services/knowbase'
+import { kbTitle } from '@/utils/knowbase'
 
 /**
  * Link KNOWBASE measures or documents to a post or thread: debounced search through the proxy,
@@ -148,13 +149,13 @@ onBeforeUnmount(() => clearTimeout(timer))
             class="size-4 shrink-0 text-muted"
             aria-hidden="true"
           />
-          <span>{{ item.title }}</span>
+          <span>{{ kbTitle(item.kb_type, item.title) }}</span>
           <UButton
             icon="i-lucide-x"
             color="neutral"
             variant="ghost"
             size="xs"
-            :aria-label="t('editor.kb.remove', { title: item.title })"
+            :aria-label="t('editor.kb.remove', { title: kbTitle(item.kb_type, item.title) })"
             @click="remove(item)"
           />
         </li>
@@ -209,7 +210,9 @@ onBeforeUnmount(() => clearTimeout(timer))
         class="flex items-center justify-between gap-3 px-3 py-2"
       >
         <span class="min-w-0">
-          <span class="block text-sm text-default">{{ result.title }}</span>
+          <span class="block text-sm text-default">{{
+            kbTitle(result.kb_type, result.title)
+          }}</span>
           <span v-if="result.detail" class="block text-xs text-muted">{{ result.detail }}</span>
         </span>
         <UButton
@@ -217,7 +220,7 @@ onBeforeUnmount(() => clearTimeout(timer))
           :variant="isSelected(result) ? 'ghost' : 'outline'"
           :icon="isSelected(result) ? 'i-lucide-check' : 'i-lucide-plus'"
           :disabled="isSelected(result)"
-          :aria-label="t('editor.kb.addItem', { title: result.title })"
+          :aria-label="t('editor.kb.addItem', { title: kbTitle(result.kb_type, result.title) })"
           @click="add(result)"
         >
           {{ isSelected(result) ? t('editor.kb.added') : t('editor.kb.add') }}

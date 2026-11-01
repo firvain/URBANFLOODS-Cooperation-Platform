@@ -16,6 +16,7 @@
     "forum": "Forum",
     "knowbase": "KNOWBASE",
     "network": "Network",
+    "measures": "Measures",
     "dss": "Unified DSS",
     "about": "About",
     "login": "Log in",
@@ -363,7 +364,6 @@
     }
   },
   "knowbase": {
-    "openInKnowbase": "Open in the KNOWBASE",
     "loading": "Loading…",
     "retry": "Try again",
     "notFoundHint": "It may have been removed from the KNOWBASE, or the link is wrong.",
@@ -405,6 +405,37 @@
         "webLinks": "Web links",
         "comments": "Comments"
       }
+    },
+    "glance": {
+      "title": "Measures at a glance",
+      "intro": "The succinct list of flood measures from the URBANFLOODS KNOWBASE. Open a measure to see its details and the posts and discussions that mention it.",
+      "filters": "Filter the measures",
+      "phase": "Phase",
+      "scale": "Scale",
+      "all": "All",
+      "clearFilters": "Clear filters",
+      "shown": "Measures shown: {count}",
+      "empty": "No measures match these filters.",
+      "loadError": "The measures could not be loaded."
+    },
+    "types": {
+      "NBS": "Nature-based solutions",
+      "STR": "Structural",
+      "NS": "Non-structural",
+      "HYB": "Hybrid",
+      "other": "Other"
+    },
+    "phases": {
+      "PRO": "Protection",
+      "PRE": "Preparedness",
+      "REC": "Recovery",
+      "MIT": "Mitigation"
+    },
+    "scales": {
+      "PROP": "Property",
+      "LOC": "Local",
+      "REG": "Regional",
+      "NAT": "National"
     }
   },
   "profile": {

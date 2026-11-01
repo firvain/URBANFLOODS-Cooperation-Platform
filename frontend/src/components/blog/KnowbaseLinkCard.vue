@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import type { components } from '@/types/api-schema'
+import { kbTitle } from '@/utils/knowbase'
 
 type KnowbaseLinkOut = components['schemas']['KnowbaseLinkOut']
 
@@ -13,6 +14,7 @@ const { t } = useI18n()
 
 /** Built from the type and id (not the API's `url`), so it always stays inside the app. */
 const to = computed(() => `/knowbase/${props.link.kb_type}s/${props.link.kb_id}`)
+const title = computed(() => kbTitle(props.link.kb_type, props.link.title_en))
 const localTitle = computed(() => {
   const local = props.link.title_local
   return local && local !== props.link.title_en ? local : null
@@ -38,7 +40,7 @@ const localTitle = computed(() => {
         raw
         class="block font-medium text-primary-700 underline underline-offset-2 hover:text-primary-800"
       >
-        {{ link.title_en }}
+        {{ title }}
       </ULink>
       <p v-if="localTitle" lang="" class="text-sm text-gray-700 italic">{{ localTitle }}</p>
     </div>

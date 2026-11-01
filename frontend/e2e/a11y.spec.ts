@@ -30,6 +30,8 @@ const PUBLIC_PAGES = [
   // A seeded post with tags and KNOWBASE link cards (backend/scripts/seed_dev.py).
   '/blog/green-roofs-and-retention-basins-what-two-years-of-pilot-data-show',
   '/network',
+  // "Measures at a glance" (7c): the KNOWBASE measures through the proxy.
+  '/knowbase/measures',
   '/search?q=flood',
   '/accessibility',
   '/open-data',
@@ -41,6 +43,9 @@ const MEMBER_PAGES = ['/account', '/network', '/blog/new']
 const READY: Record<string, (page: Page) => ReturnType<Page['locator']>> = {
   // The rich-text editor (a lazy chunk): its editing surface and toolbar.
   '/blog/new': (page) => page.getByRole('textbox', { name: 'Text', exact: true }),
+  // The measures load after the h1; with the KNOWBASE unreachable the alert is scanned instead.
+  '/knowbase/measures': (page) =>
+    page.locator('[data-testid="measure-group"], [role="alert"]').first(),
 }
 
 const ADMIN_PAGES = [

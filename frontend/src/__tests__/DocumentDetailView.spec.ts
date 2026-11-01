@@ -76,14 +76,13 @@ describe('DocumentDetailView', () => {
     expect(section.find('a[href="/blog/post-9"]').exists()).toBe(true)
     // The list lives on the KNOWBASE site only (user decision 2026-10-31).
     expect(wrapper.find('a[href="/knowbase/documents"]').exists()).toBe(false)
+    // Only the "all documents" link goes to the KNOWBASE list; no "Open in the KNOWBASE", because
+    // the KNOWBASE has no address for one document (owner's decision).
     const links = wrapper.findAll('a[href="https://knowbase.urbanfloods.app/legislation"]')
-    expect(links).toHaveLength(2)
+    expect(links).toHaveLength(1)
     expect(links[0]!.text()).toContain(t('knowbase.documents.back'))
-    expect(links[1]!.text()).toContain(t('knowbase.openInKnowbase'))
-    for (const link of links) {
-      expect(link.attributes('target')).toBe('_blank')
-      expect(link.find('.sr-only').text()).toBe(t('a11y.opensInNewTab'))
-    }
+    expect(links[0]!.attributes('target')).toBe('_blank')
+    expect(links[0]!.find('.sr-only').text()).toBe(t('a11y.opensInNewTab'))
   })
 
   it('shows a not-found message for an unknown document', async () => {
