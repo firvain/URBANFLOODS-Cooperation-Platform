@@ -407,7 +407,7 @@
       }
     },
     "glance": {
-      "title": "Mjere na prvi pogled",
+      "title": "Mjere upravljanja poplavama",
       "intro": "Sažeta lista mjera za poplave iz baze KNOWBASE projekta URBANFLOODS. Otvorite mjeru da vidite njene detalje te objave i diskusije koje je spominju.",
       "filters": "Filtriraj mjere",
       "phase": "Faza",

@@ -3,7 +3,7 @@ import { EXTERNAL_LINKS } from './links'
 /**
  * Primary navigation (header). Labels are i18n keys. `external` items are other sites: they open
  * in a new tab and are never marked active. The KNOWBASE is browsed on its own site (user decision
- * 2026-10-31); the platform keeps its item pages and, since 7c, "Measures at a glance"
+ * 2026-10-31); the platform keeps its item pages and, since 7c, "Flood Management Measures"
  * (`/knowbase/measures`, the "Measures" item, active on the measure pages too).
  * The partners are a section of About (`/about#partnership`), not a nav item (same decision date).
  */

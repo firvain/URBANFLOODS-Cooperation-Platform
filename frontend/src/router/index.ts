@@ -126,7 +126,7 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.network' },
   },
   {
-    // "Measures at a glance" (7c): one read-only page; browsing stays on the KNOWBASE site.
+    // "Flood Management Measures" (7c): one read-only page; browsing stays on the KNOWBASE site.
     path: '/knowbase/measures',
     name: 'knowbase-measures',
     component: () => import('@/views/MeasuresGlanceView.vue'),

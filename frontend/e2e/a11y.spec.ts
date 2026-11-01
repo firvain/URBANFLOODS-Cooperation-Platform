@@ -30,7 +30,7 @@ const PUBLIC_PAGES = [
   // A seeded post with tags and KNOWBASE link cards (backend/scripts/seed_dev.py).
   '/blog/green-roofs-and-retention-basins-what-two-years-of-pilot-data-show',
   '/network',
-  // "Measures at a glance" (7c): the KNOWBASE measures through the proxy.
+  // "Flood Management Measures" (7c): the KNOWBASE measures through the proxy.
   '/knowbase/measures',
   '/search?q=flood',
   '/accessibility',

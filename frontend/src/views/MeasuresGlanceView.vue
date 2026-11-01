@@ -7,7 +7,7 @@ import { useQueryFilters } from '@/composables/useQueryFilters'
 import { knowbaseService, type Measure, type MeasureRef } from '@/services/knowbase'
 
 /**
- * "Measures at a glance" (7c): the KNOWBASE's succinct list of measures, grouped by type and
+ * "Flood Management Measures" (7c): the KNOWBASE's succinct list of measures, grouped by type and
  * filterable by phase and scale. Deliberately small and read-only: one request for all measures,
  * filtered and grouped in the browser; no search, no paging (browsing stays on the KNOWBASE).
  */

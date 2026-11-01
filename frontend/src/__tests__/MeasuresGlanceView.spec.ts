@@ -102,7 +102,7 @@ describe('MeasuresGlanceView', () => {
     const headings = wrapper.findAll('h1')
     expect(headings).toHaveLength(1)
     expect(headings[0]!.text()).toBe(t('knowbase.glance.title'))
-    expect(t('knowbase.glance.title')).toBe('Measures at a glance')
+    expect(t('knowbase.glance.title')).toBe('Flood Management Measures')
     expect(headings[0]!.attributes('tabindex')).toBe('-1')
     expect(wrapper.text()).toContain(t('knowbase.glance.intro'))
     // The KNOWBASE stays one click away in the header menu and on each measure page.

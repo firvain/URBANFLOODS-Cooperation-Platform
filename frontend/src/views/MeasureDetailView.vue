@@ -58,7 +58,7 @@ const localDescription = computed(() => {
 <template>
   <UContainer class="pt-8 pb-16 lg:pb-24">
     <!--
-      Back to the platform's "Measures at a glance" (7c); browsing and searching the library stay
+      Back to the platform's "Flood Management Measures" (7c); browsing and searching the library stay
       on the KNOWBASE site itself (user decision 2026-10-31).
     -->
     <p class="mb-6 text-sm">

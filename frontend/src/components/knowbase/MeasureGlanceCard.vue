@@ -6,7 +6,7 @@ import type { Measure } from '@/services/knowbase'
 import { measureTitle } from '@/utils/knowbase'
 
 /**
- * One measure on "Measures at a glance": photo, linked title and the phase and scale badges.
+ * One measure on "Flood Management Measures": photo, linked title and the phase and scale badges.
  * The view passes the badge labels already translated by code.
  */
 const props = defineProps<{ measure: Measure; phases: string[]; scales: string[] }>()

@@ -407,7 +407,7 @@
       }
     },
     "glance": {
-      "title": "Ukrepi na prvi pogled",
+      "title": "Ukrepi za upravljanje poplav",
       "intro": "Strnjen seznam protipoplavnih ukrepov iz zbirke KNOWBASE projekta URBANFLOODS. Odprite ukrep, da si ogledate njegove podrobnosti ter objave in razprave, ki ga omenjajo.",
       "filters": "Filtriraj ukrepe",
       "phase": "Faza",

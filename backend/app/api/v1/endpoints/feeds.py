@@ -48,7 +48,7 @@ STATIC_PATHS = (
     "/privacy",
     "/accessibility",
     "/open-data",
-    # "Measures at a glance" (7c), the platform's one KNOWBASE list page.
+    # "Flood Management Measures" (7c), the platform's one KNOWBASE list page.
     "/knowbase/measures",
 )
 ROBOTS_DISALLOW = ("/account", "/admin")

@@ -91,7 +91,7 @@ it('the KNOWBASE item routes are public and take an id; only the measures glance
   expect(measure.meta.auth).toBeUndefined()
   expect(doc.meta.auth).toBeUndefined()
   // Browsing happens on the KNOWBASE site itself (user decision 2026-10-31); 7c adds back one
-  // read-only page, "Measures at a glance", not a library.
+  // read-only page, "Flood Management Measures", not a library.
   const glance = router.resolve('/knowbase/measures')
   expect(glance.name).toBe('knowbase-measures')
   expect(glance.meta.title).toBe('knowbase.glance.title')

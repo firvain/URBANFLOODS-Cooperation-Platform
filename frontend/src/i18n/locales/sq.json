@@ -407,7 +407,7 @@
       }
     },
     "glance": {
-      "title": "Masat me një shikim",
+      "title": "Masat për menaxhimin e përmbytjeve",
       "intro": "Lista përmbledhëse e masave për përmbytjet nga KNOWBASE i URBANFLOODS. Hapni një masë për të parë detajet e saj dhe postimet e diskutimet që e përmendin.",
       "filters": "Filtro masat",
       "phase": "Faza",

@@ -407,7 +407,7 @@
       }
     },
     "glance": {
-      "title": "Measures at a glance",
+      "title": "Flood Management Measures",
       "intro": "The succinct list of flood measures from the URBANFLOODS KNOWBASE. Open a measure to see its details and the posts and discussions that mention it.",
       "filters": "Filter the measures",
       "phase": "Phase",

@@ -76,7 +76,7 @@ describe('MeasureDetailView', () => {
   it('links back to the measures glance page and not out to the KNOWBASE', async () => {
     mockApi(routes())
     const { wrapper } = await mountDetail()
-    // 7c: "All measures" is the platform's "Measures at a glance" page.
+    // 7c: "All measures" is the platform's "Flood Management Measures" page.
     const back = wrapper.find('a[href="/knowbase/measures"]')
     expect(back.exists()).toBe(true)
     expect(back.text()).toContain(t('knowbase.measures.back'))
