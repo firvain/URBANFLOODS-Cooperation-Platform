@@ -222,7 +222,8 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - AF check of the 3rd-meeting deck: consistent; fixed in the new deck "succinct" (not "compact"), the full Activity 5.1 text, and Output 5.1 / RCO87 (target 22) shown explicitly.
 - Deck for the 5th Project Meeting (Sarajevo, 17–18/11/2026) in `docs/` (owner-edited version and a plain-language v2): platform presented as a beta for partner testing, QR to /register, partner asks.
 - Production starter content (owner's go, posted through the owner's session and the API): 8 posts and 2 threads summarising project-website news (newsletters 1–4, Tirana, ICED2026, Rimini, nine-site modelling, Albania Lana, Sarajevo event) with links back and credited covers; "Beta feedback" thread pinned. Not test data.
-- 7b (user request): the feeds were only listed on /open-data. Now autodiscoverable and linked from the blog and forum headers. Not deployed yet.
+- 7b (user request): the feeds were only listed on /open-data. Now autodiscoverable and linked from the blog and forum headers, with the classic orange feed badge. **Deployed 2026-11-01 12:33** (CI green on 8a34173; KNOWBASE containers unchanged; feed links verified on production).
+- KNOWBASE `/docs` now serves Swagger UI (fixed by the owner in the KNOWBASE repo, 2026-11-01); the follow-up "KNOWBASE live `/docs` is served as the SPA" is closed.
 
 ### Current state and next steps (updated 2026-10-31, late evening)
 
