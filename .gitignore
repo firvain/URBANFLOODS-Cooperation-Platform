@@ -46,3 +46,8 @@ IPA-ADRION00374_V4.0_images/
 
 # Playwright MCP screenshots/snapshots
 .playwright-mcp/
+
+# Meeting presentations stay out of git (owner edits them in PowerPoint)
+docs/*.pptx
+# PowerPoint/Office lock files
+~$*

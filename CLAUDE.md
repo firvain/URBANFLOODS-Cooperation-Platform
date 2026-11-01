@@ -40,6 +40,13 @@ public REST API only, server-to-server, through `backend/app/services/knowbase.p
 - **No paid services.** Everything must stay free/open source.
 - Commit messages: conventional (`feat(auth): …`, `test(posts): …`, `chore: …`), ending with
   `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
+- **No personal data of real users** (email addresses, names of members) in commits,
+  `PROGRESS.md`, docs or test fixtures. Describe incidents generically ("a uowm.gr member").
+- **Meeting presentations are not committed.** `docs/*.pptx` stay out of git (ignored); the owner
+  edits them by hand in PowerPoint, so read the latest file before changing it and never
+  regenerate over it. Partner-facing material avoids technical detail.
+- **Reviews:** `docs/review-notes.md` lists the deliberate decisions, known limitations and risk
+  areas; read it before reviewing and keep it current when a decision or limitation changes.
 
 ## 3. Stack and commands
 
@@ -132,7 +139,13 @@ core/                            config, security, deps, csrf, rate_limit, loggi
 - Frontend: vitest for stores, composables, `SafeHtml`, editor output. Playwright e2e per
   milestone in `frontend/e2e/`, run against the dev compose stack using the Mailpit API to read
   verification links. axe checks from M5.
-- CI (`.github/workflows/ci.yml`) must be green before a commit is considered done.
+- CI (`.github/workflows/ci.yml`) must be green before a commit is considered done. It includes
+  the **production-mode smoke test** (job `smoke`, `scripts/smoke.sh`, 7g): the real production
+  stack with Cloudflare's Turnstile test keys and Mailpit. Run `./scripts/smoke.sh` locally before
+  pushing changes to auth, forms, nginx, uploads or settings.
+- Any setting that differs between dev and production needs at least one test that runs with the
+  production value (table in `docs/testing.md` §6). The 7d bug (Turnstile tokens never sent)
+  passed every test because tests ran with Turnstile off.
 
 ## 8. Deployment (live since 2026-10-31)
 
@@ -142,7 +155,7 @@ its `.env.prod` (mode 600, never printed or committed). Ports: frontend `127.0.0
 `127.0.0.1:8002`, Postgres **not** published. Runbook: `docs/deployment.md`; current state and next
 steps: the last session-log entry of `PROGRESS.md`.
 
-- **Redeploy routine:** CI green on `main` first, then
+- **Redeploy routine:** CI green on `main` first (including the smoke job), then
   `ssh knowbase 'cd ~/URBANFLOODS-Cooperation-Platform && ./deploy.sh'` (pull, backup, build,
   start, wait for health; never `down`; migrations run in the backend entrypoint). Afterwards check
   that the `urbanfloods-knowbase-*` containers are unchanged. Deploy only with the owner's go.
