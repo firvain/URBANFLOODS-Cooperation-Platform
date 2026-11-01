@@ -3,6 +3,8 @@
 .env.*
 !.env.example
 !.env.prod.example
+# Test-only values for scripts/smoke.sh (no secrets; never used in production).
+!.env.smoke
 backend/.env
 frontend/.env.local
 
@@ -24,6 +26,8 @@ frontend/test-results/
 frontend/playwright-report/
 frontend/blob-report/
 frontend/playwright/.cache/
+# scripts/smoke.sh with SMOKE_LOG_DIR (CI)
+smoke-logs/
 
 # Uploads / runtime
 backend/uploads/

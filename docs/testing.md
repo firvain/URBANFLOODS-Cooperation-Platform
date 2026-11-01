@@ -2,10 +2,11 @@
 
 This document explains how to run the platform's automated tests: the backend suite (pytest
 against a real Postgres), the frontend unit tests (vitest), the end-to-end tests (Playwright
-against the development stack, with Mailpit for email), and what CI runs on every push. The
+against the development stack, with Mailpit for email), the production-mode smoke test
+(Playwright against the real production stack), and what CI runs on every push. The
 project works test-first: every increment lands with its tests (see the root `CLAUDE.md`).
 
-Last updated: 2026-10-31
+Last updated: 2026-11-02
 
 ## 1. Backend (pytest)
 
@@ -159,7 +160,85 @@ resets them.
 |---|---|
 | Backend (ruff + pytest) | Python 3.11 via uv; `uv sync --all-extras --frozen`; `ruff check`; `ruff format --check`; `pytest --cov=app` against a Postgres 16 service container (`TEST_DATABASE_URL`); coverage XML uploaded as an artifact |
 | Frontend (lint, types, vitest, build) | Node 22; `npm ci`; `lint:check`; `build-only` (generates `components.d.ts`); `type-check`; `test` |
-| Docker images build | on `main` only, after both jobs: builds the backend image and the frontend dev image (no push) |
+| Docker images build | on `main` only, after both jobs: builds the backend image, the frontend dev image and the frontend production image (no push) |
+| Production-mode smoke test | after both jobs, on every push and pull request: Node 22, `npm ci`, `npx playwright install --with-deps chromium`, `scripts/smoke.sh` (section 6); on failure the Playwright report and the container logs are uploaded as artifacts |
 
-Playwright does not run in CI; run it locally against the dev stack before closing a milestone.
+The development e2e suite (section 4) does not run in CI; run it locally against the dev stack
+before closing a milestone. The smoke suite (section 6) does.
 An increment is done only when CI is green.
+
+## 6. Production-mode smoke test
+
+The suites above run with the production protections switched off: Turnstile disabled, no CSP,
+the Vite dev server instead of nginx, email into an outbox. Bugs that live only in the production
+configuration slipped through that way (on 2026-11-01 "resend verification" and "forgot
+password" always failed because only the register form sent a Turnstile token; earlier, `.webp`
+uploads were served with the wrong MIME type only by the production image). The smoke test
+starts the **real production stack** and drives it with a short Playwright suite, so such bugs
+fail CI before `deploy.sh`.
+
+**What runs.** `docker-compose.prod.yml` (nginx with the built SPA, the backend image, Postgres)
+plus the override `docker-compose.smoke.yml` with the test values in `.env.smoke` (committed, no
+secrets). The override only adds a Mailpit service and renames the project, containers, images,
+volumes and network (`ufsmoke*`), so a run can never touch the development or production stack.
+Everything else is production: `ENV=prod`, Secure cookies, `TRUST_PROXY_HEADERS`, Turnstile on
+(Cloudflare's official test keys: the widget renders and always passes, and the backend still
+calls Cloudflare's siteverify, so a form that sends no token fails), real SMTP sending (to
+Mailpit), the nginx CSP and headers, migrations in the backend entrypoint on an empty database,
+the real KNOWBASE public API (GET only).
+
+```bash
+cd frontend && npm ci && npx playwright install chromium && cd ..
+scripts/smoke.sh                  # build, start, create the superadmin, run, always `down -v`
+scripts/smoke.sh -- auth          # only the specs matching "auth" (arguments after -- go to Playwright)
+SMOKE_KEEP=1 scripts/smoke.sh     # keep the stack afterwards (http://localhost:3002, Mailpit :8026)
+scripts/smoke.sh --down           # remove a kept stack
+```
+
+`scripts/smoke.sh` needs Docker, Node 22 and free ports 127.0.0.1:3002, :8002 (the production
+ports, so it refuses to run on the production server) and :8026 (Mailpit's API; the development
+stack's Mailpit keeps :8025, so both stacks can run side by side; override with
+`SMOKE_MAILPIT_PORT`). It creates a superadmin with the backend CLI
+(`python -m app.cli create-superadmin`) with a random per-run password, runs
+`npm run e2e:smoke` (Playwright project `smoke`, only `frontend/e2e/smoke/*.smoke.spec.ts`;
+`npm run e2e` never runs these and the smoke run never runs the development specs), prints the
+container logs on failure (`SMOKE_LOG_DIR` also writes them to files) and always tears the stack
+down with `down -v` (the `:smoke`-tagged images stay, so the next build is cached). On
+2026-11-02 a local run took 47 s with warm Docker caches (stack healthy after about 30 s, the 10
+tests 16 s); cold image builds, as in CI, add a few minutes.
+
+The suite creates its own data (no seed) and stays inside the real rate limits (3 registrations,
+3 logins, 1 password reset request and 1 resend per run), so it runs without retries.
+
+| Spec | Tests | Verifies |
+|---|---|---|
+| `auth.smoke.spec.ts` | 4 | 1. register through the form: the Turnstile widget renders, submit waits for the token, the request carries it, 201; verification email in Mailpit, link, verify button, signed in. 2. log in and out through the UI; `uf_session` is Secure, HttpOnly, SameSite=Lax and is gone after logout. 3. forgot password through the form (token sent, 202) → email → reset page → signed in → log in with the new password. 4. resend verification from the anonymous form on `/verify-email` (token sent, 202) → a second verification email |
+| `content.smoke.spec.ts` | 2 | 5. a new member's first post with a cover image (PNG upload) is pending and invisible to anonymous visitors; the cover loads in the page and is served through nginx `/static/uploads/…webp` as `image/webp` with exactly one `nosniff`. 6. the superadmin approves it in `/admin/queue`; the post and its cover are public |
+| `public.smoke.spec.ts` | 4 | 7. `/` and a hashed `/assets/` bundle carry the CSP (Turnstile, KNOWBASE images, no framing) and every nginx security header; the home page boots with one `h1`. 8. `/feeds/posts.atom` and `/feeds/threads.atom` (200, `application/atom+xml`), `/sitemap.xml`, `/robots.txt` with its `Sitemap:` line, `/api/v1/openapi.json`. 9. `/knowbase/measures` renders its `h1`, then the measures or its error state (KNOWBASE unreachable), never a blank page. 10. client routes fall back to the SPA (its "Page not found"), a missing `/assets/` file is a real 404 |
+
+**CSP guard.** Every browser context of every smoke test is watched (`e2e/smoke/fixtures.ts`):
+any console message about a Content Security Policy violation, and any `securitypolicyviolation`
+event in a document of our origin, fails the test. Messages located inside
+`challenges.cloudflare.com` are ignored: Cloudflare's Turnstile iframe logs CSP noise of its own,
+which our policy neither causes nor can fix.
+
+### Development vs production settings
+
+| Concern | Development stack and pytest | Production | Production value covered by |
+|---|---|---|---|
+| Turnstile | off (`TURNSTILE_ENABLED=false`, no site key: no widget, forms send no token) | on: widget on register, resend verification and forgot password; backend verifies every token with Cloudflare | smoke 1, 3, 4 (widget, token in the request, 201/202); the deliberate removal of the forgot-password token fails smoke 3 with 400 `auth.captcha_failed` |
+| Session cookie | `COOKIE_SECURE=false` | `uf_session` Secure, HttpOnly, SameSite=Lax | smoke 2 |
+| CSP and security headers | none (Vite dev server) | `frontend/nginx.conf`: CSP, `nosniff`, `X-Frame-Options: DENY`, Referrer-Policy, Permissions-Policy (HSTS from the host nginx) | smoke 7, and the CSP guard on all 10 tests |
+| Web server and proxy paths | Vite on :5173, backend on :8000 (cross-origin, CORS) | one origin: nginx serves the built SPA and proxies `/api/`, `/static/`, `/feeds/`, `/sitemap.xml`, `/robots.txt`, `/docs`, `/health` | every smoke test runs through :3002; smoke 7, 8, 10 |
+| Proxy headers | `TRUST_PROXY_HEADERS=false` | `true`: scheme from `X-Forwarded-Proto` (CSRF origin check), client IP from `CF-Connecting-IP` (rate limits, Turnstile) | every form POST behind nginx (smoke 1-6); `CF-Connecting-IP` from Cloudflare is not (no Cloudflare in front) |
+| Email transport | pytest: in-memory outbox; dev: SMTP to Mailpit | SMTP to Brevo (STARTTLS on 587, login) | smoke 1, 3, 4, 5 send real SMTP from the production image to Mailpit; TLS, login and delivery through Brevo are not covered |
+| KNOWBASE | pytest: mocked with `respx`; dev: real public API | real public API, server-to-server through the backend proxy | smoke 9 |
+| Upload serving | pytest: test client; dev: backend directly | backend image's static files behind nginx `/static/` (7-day cache, one `nosniff`) | smoke 5, 6 (`image/webp`, WebP bytes, loads in the page) |
+| Build and runtime | Vite dev build, `ENV=dev`, hot reload | `vite build` with baked `VITE_*`, `ENV=prod`, single uvicorn worker, scheduler on | all smoke tests (the production images) |
+| Migrations | applied once per pytest session / by the dev entrypoint | backend entrypoint on every start | the smoke stack starts from an empty database |
+| Rate limits | on (dev), per test where needed (pytest) | on | the smoke suite runs inside the real budgets |
+
+Not covered anywhere automatically: the host nginx (TLS, HSTS), Cloudflare in front of the
+origin, the production Turnstile keys and hostname, real delivery through Brevo, `deploy.sh` and
+backups. Those stay on the manual production smoke test
+([deployment.md §7](deployment.md#7-smoke-test-on-production)).

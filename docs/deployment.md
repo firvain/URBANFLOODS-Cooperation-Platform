@@ -204,6 +204,10 @@ From the [QA checklist §6 "After first start"](qa-checklist.md#6-go--no-go-for-
 
 ## 8. Updating later [ssh user]
 
+Only deploy a commit whose CI run on `main` is green, **including the "Production-mode smoke
+test" job** (the production stack with Turnstile, CSP and nginx, see
+[testing.md §6](testing.md#6-production-mode-smoke-test)).
+
 ```bash
 cd ~/URBANFLOODS-Cooperation-Platform
 git pull

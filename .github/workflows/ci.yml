@@ -147,3 +147,57 @@ jobs:
           tags: urbanfloods-cooperation-frontend:ci-prod
           cache-from: type=gha,scope=frontend-prod
           cache-to: type=gha,scope=frontend-prod,mode=max
+
+  # Production-mode smoke test: the real production stack (docker-compose.prod.yml: nginx + built
+  # SPA, backend, Postgres) with test settings (docker-compose.smoke.yml, .env.smoke: Mailpit,
+  # Cloudflare's Turnstile test keys), driven by the Playwright suite in frontend/e2e/smoke.
+  # Catches what the unit tests cannot (they run with Turnstile, CSP and nginx off). It also runs
+  # on pull requests: a few minutes (mostly the cold image builds), no secrets needed.
+  smoke:
+    name: Production-mode smoke test
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      # Builds both production images, starts the stack, creates the superadmin, runs the suite
+      # and always deletes the stack (down -v). Logs go to smoke-logs/ on failure.
+      - name: Smoke test
+        env:
+          SMOKE_LOG_DIR: ${{ github.workspace }}/smoke-logs
+        run: scripts/smoke.sh
+
+      - name: Upload Playwright report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-playwright-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload container logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-compose-logs
+          path: smoke-logs
+          if-no-files-found: ignore
+          retention-days: 14

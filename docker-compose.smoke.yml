@@ -1,0 +1,62 @@
+# Production-mode smoke test: an override for docker-compose.prod.yml, never used on its own and
+# never on the production server. scripts/smoke.sh runs it (locally and in CI):
+#
+#   docker compose -p ufsmoke -f docker-compose.prod.yml -f docker-compose.smoke.yml \
+#       --env-file .env.smoke up -d --build
+#
+# Everything that matters for production stays as docker-compose.prod.yml defines it: the same
+# images (nginx + built SPA, backend), ENV=prod, Secure cookies, Turnstile on (Cloudflare's test
+# keys, .env.smoke), real SMTP sending, CSP and the other nginx headers, migrations in the backend
+# entrypoint, the same host ports (127.0.0.1:3002 frontend, 127.0.0.1:8002 backend). No value in
+# its `environment:` block needed overriding.
+#
+# What this file changes, and why:
+#   - its own project, container, image, volume and network names: a smoke run can never reuse,
+#     replace or delete anything of the production stack (whose names are fixed in the base file),
+#     of the development stack, or of anything else on the machine. Because the host ports are
+#     the production ones, a smoke run on the production server would fail to start instead of
+#     touching it.
+#   - a Mailpit service that receives the emails (SMTP_HOST=mailpit in .env.smoke) and exposes its
+#     REST API on 127.0.0.1:${SMOKE_MAILPIT_PORT:-8026} for the Playwright suite (8026, not 8025:
+#     the development stack's Mailpit may be running).
+#   - the backend reads .env.smoke instead of .env.prod (COOPERATION_ENV_FILE in .env.smoke).
+
+name: ufsmoke
+
+services:
+  postgres:
+    container_name: ufsmoke-db
+    restart: "no"
+
+  backend-uploads-init:
+    container_name: ufsmoke-uploads-init
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ufsmoke-mailpit
+    restart: "no"
+    ports:
+      - "127.0.0.1:${SMOKE_MAILPIT_PORT:-8026}:8025"
+
+  backend:
+    image: urbanfloods-cooperation-backend:smoke
+    container_name: ufsmoke-backend
+    restart: "no"
+    depends_on:
+      mailpit:
+        condition: service_started
+
+  frontend:
+    image: urbanfloods-cooperation-frontend:smoke
+    container_name: ufsmoke-frontend
+    restart: "no"
+
+volumes:
+  postgres_data:
+    name: ufsmoke_postgres
+  backend_uploads:
+    name: ufsmoke_uploads
+
+networks:
+  default:
+    name: ufsmoke-network

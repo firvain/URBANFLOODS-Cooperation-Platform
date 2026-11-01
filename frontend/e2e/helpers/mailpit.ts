@@ -97,3 +97,10 @@ export function extractLink(message: Message, pathPrefix: string): string {
   if (!url) throw new Error(`No link starting with ${prefix} in "${message.Subject}"`)
   return url
 }
+
+/** How many messages to `address` the mailbox holds (optionally only those whose subject contains `subjectIncludes`). */
+export async function countEmailsTo(address: string, subjectIncludes?: string): Promise<number> {
+  const query = new URLSearchParams({ query: `to:"${address}"`, limit: '50' })
+  const { messages } = await api<MessagesResponse>(`/search?${query}`)
+  return messages.filter((m) => !subjectIncludes || m.Subject.includes(subjectIncludes)).length
+}
