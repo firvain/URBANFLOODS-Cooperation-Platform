@@ -60,7 +60,7 @@
     "eslint-plugin-vuejs-accessibility": "^2.6.3",
     "happy-dom": "^21.0.4",
     "jiti": "^2.7.0",
-    "npm-run-all2": "^8.0.4",
+    "npm-run-all2": "^9.0.4",
     "openapi-typescript": "^7.13.0",
     "prettier": "^3.9.10",
     "typescript": "~5.9.3",
