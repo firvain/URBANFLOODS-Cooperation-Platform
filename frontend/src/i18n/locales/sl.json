@@ -816,7 +816,7 @@
       "retry": "Poskusi znova"
     },
     "uploads": {
-      "intro": "Slike, ki ste jih naložili. Slike, uporabljene v objavi, razpravi, odgovoru ali komentarju, tukaj ni mogoče izbrisati: najprej jo odstranite iz te vsebine.",
+      "intro": "Slike, ki ste jih naložili. Slike, uporabljene v vaši objavi, razpravi, odgovoru ali komentarju, tukaj ni mogoče izbrisati: najprej jo odstranite iz te vsebine.",
       "loading": "Nalaganje naloženih slik …",
       "loadError": "Naloženih slik ni bilo mogoče naložiti.",
       "retry": "Poskusi znova",
@@ -825,10 +825,12 @@
       "notUsed": "Ni uporabljena v nobeni vsebini.",
       "inUse": "V uporabi: najprej jo odstranite iz vsebine.",
       "onlyDeleted": "Uporabljena je samo v izbrisani vsebini: če bo ta obnovljena, bo prikazana brez te slike.",
+      "usedByOthers": "Uporabljajo jo drugi člani: lahko jo izbrišete in izginila bo iz njihove vsebine.",
       "delete": "Izbriši",
       "deleteLabel": "Izbriši sliko: {alt}",
       "deleteTitle": "Želite izbrisati to sliko?",
       "deleteDescription": "Slika bo trajno odstranjena. Tega ni mogoče razveljaviti.",
+      "deleteOthersWarning": "To sliko uporabljajo drugi člani. Če jo izbrišete, bo odstranjena iz njihovih objav.",
       "deleteConfirm": "Izbriši sliko",
       "deleted": "Slika je bila izbrisana.",
       "loadMore": "Naloži več",

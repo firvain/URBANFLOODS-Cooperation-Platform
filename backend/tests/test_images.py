@@ -154,6 +154,70 @@ def test_tiny_image_is_not_upscaled():
     assert _open(result.thumb_bytes).size == (10, 10)
 
 
+# --- 7m: fewer full-size copies -----------------------------------------------------------------
+
+
+@pytest.fixture
+def pillow_calls(monkeypatch) -> dict[str, int]:
+    """Counts ``Image.copy`` and ``Image.convert`` calls (each one is a full copy of the
+    pixels) while ``process_image`` runs."""
+    calls = {"copy": 0, "convert": 0}
+    real_copy = Image.Image.copy
+    real_convert = Image.Image.convert
+
+    def copy(self):
+        calls["copy"] += 1
+        return real_copy(self)
+
+    def convert(self, *args, **kwargs):
+        calls["convert"] += 1
+        return real_convert(self, *args, **kwargs)
+
+    monkeypatch.setattr(Image.Image, "copy", copy)
+    monkeypatch.setattr(Image.Image, "convert", convert)
+    return calls
+
+
+def test_rgb_image_is_processed_without_copies(pillow_calls):
+    source = _encode(Image.new("RGB", (4000, 3000), (10, 20, 30)), "PNG")
+
+    result = _process(source)
+
+    assert pillow_calls == {"copy": 0, "convert": 0}
+    assert (result.width, result.height) == (1920, 1440)
+    assert _open(result.main_bytes).size == (1920, 1440)
+    assert _open(result.thumb_bytes).size == (480, 360)
+
+
+def test_rgba_image_is_not_converted(pillow_calls):
+    im = Image.new("RGBA", (30, 30), (0, 128, 0, 255))
+    im.paste((0, 0, 0, 0), (0, 0, 15, 30))
+
+    result = _process(_encode(im, "PNG"))
+
+    assert pillow_calls == {"copy": 0, "convert": 0}
+    out = _open(result.main_bytes)
+    assert out.mode == "RGBA"
+    assert out.getpixel((2, 2))[3] == 0
+
+
+def test_exif_orientation_is_applied_in_place(pillow_calls):
+    result = _process(_jpeg_with_orientation_and_gps())
+
+    assert pillow_calls["copy"] == 0
+    assert (result.width, result.height) == (20, 40)
+    assert _open(result.thumb_bytes).size == (20, 40)
+
+
+def test_palette_image_is_converted_once(pillow_calls):
+    im = Image.new("P", (16, 16), 1)
+    im.putpalette([0, 0, 0, 255, 0, 0] + [0] * 762)
+
+    _process(_encode(im, "PNG", transparency=0))
+
+    assert pillow_calls == {"copy": 0, "convert": 1}
+
+
 def test_webp_input_is_accepted():
     result = _process(_encode(Image.new("RGB", (50, 40)), "WEBP"))
 

@@ -7,7 +7,7 @@ import json
 from functools import lru_cache
 from typing import Annotated, Any, Literal
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -69,6 +69,9 @@ class Settings(BaseSettings):
     UPLOAD_THUMB_PX: int = 480
     UPLOAD_MAX_PX: int = 1920
     UPLOAD_URL_PREFIX: str = "/static/uploads"
+    # Images decoded at once (process-wide). Each can take a few hundred MB at the 40 MP limit, on a
+    # server shared with the KNOWBASE; further uploads wait for a slot.
+    UPLOAD_DECODE_CONCURRENCY: int = Field(default=2, ge=1)
 
     # Moderation
     REPORT_AUTO_HIDE_THRESHOLD: int = 3

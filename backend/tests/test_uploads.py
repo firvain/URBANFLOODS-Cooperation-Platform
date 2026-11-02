@@ -8,23 +8,32 @@ removed by ``cleanup_users``; attachments they own are deleted first by the auto
 
 from __future__ import annotations
 
+import asyncio
 import io
 import os
+import threading
+import time
 from collections.abc import AsyncIterator, Iterator
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 from PIL import Image
-from sqlalchemy import delete, select
+from sqlalchemy import delete, event, select
 
 from app.api.v1.endpoints import uploads as uploads_endpoints
 from app.core import rate_limit
 from app.core.config import settings
-from app.db.models import Attachment, AuditLog, User
+from app.crud import attachment as crud_attachment
+from app.db.enums import CategoryKind, ContentStatus
+from app.db.models import Attachment, AuditLog, Post, User
 from app.db.session import AsyncSessionLocal
+from app.services import images
 from tests.factories import (
     create_admin,
     create_attachment,
+    create_category,
+    create_post,
     create_user,
     create_verified_user,
     login_as,
@@ -477,6 +486,97 @@ async def test_avatar_upload_sets_and_replaces_avatar(
     assert [item["id"] for item in (await client.get(MINE)).json()["items"]] == [second["id"]]
 
 
+async def test_replacing_an_unused_avatar_audits_its_deletion(client, db_session, cleanup_users):
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+    first = (await _upload(client, kind="avatar")).json()
+
+    await _upload(client, kind="avatar")
+
+    rows = await _audit(db_session, "upload.deleted", first["id"])
+    assert [row.metadata_ for row in rows] == [
+        {"attachment_id": first["id"], "reason": "avatar_replaced"}
+    ]
+
+
+async def _avatar_in_use(db, user: User, attachment_id: int, how: str, categories: set[int]):
+    """Make the attachment used by the user's own post (``cover``/``body``/``deleted_body``) or
+    only by another member's post (``others_body``/``others_cover``) or only mentioned as text
+    (``mention``). Returns the post's author id and the post id."""
+    attachment = await _attachment(db, attachment_id)
+    category = await create_category(db, kind=CategoryKind.BLOG)
+    categories.add(category.id)
+    author_id = user.id
+    if how.startswith("others_"):
+        other = await create_verified_user(db)
+        author_id = other.id
+    status = ContentStatus.DELETED if how == "deleted_body" else ContentStatus.PUBLISHED
+    post = await create_post(
+        db,
+        category_id=category.id,
+        author_id=author_id,
+        status=status,
+        cover_attachment_id=attachment_id if how.endswith("cover") else None,
+    )
+    path = f"{settings.UPLOAD_URL_PREFIX}/{attachment.storage_path}"
+    if how == "mention":
+        post.body_html = f"<p>{path}</p>"
+    elif not how.endswith("cover"):
+        post.body_html = f'<p><img src="{path}" alt="Me"></p>'
+    await db.commit()
+    return author_id, post.id
+
+
+@pytest.mark.parametrize("how", ["cover", "body"])
+async def test_replacing_an_avatar_still_in_use_only_unlinks_it(
+    client, db_session, cleanup_users, cleanup_categories, upload_dir, how
+):
+    """7m: the previous avatar stays as an ordinary upload when the member's own live content
+    uses it: no soft delete, no file deletion, no ``upload.deleted`` row."""
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+    first = (await _upload(client, kind="avatar")).json()
+    await _avatar_in_use(db_session, user, first["id"], how, cleanup_categories)
+
+    second = (await _upload(client, _png(color=(200, 0, 0)), kind="avatar")).json()
+
+    assert (await client.get(ME)).json()["avatar_url"] == second["url"]
+    old = await _attachment(db_session, first["id"])
+    assert old.deleted_at is None
+    assert all(path.exists() for path in _files_of(upload_dir, old))
+    assert await _audit(db_session, "upload.deleted", first["id"]) == []
+    listed = {item["id"] for item in (await client.get(MINE)).json()["items"]}
+    assert listed == {first["id"], second["id"]}
+
+
+@pytest.mark.parametrize("how", ["others_body", "others_cover", "mention", "deleted_body"])
+async def test_replacing_an_avatar_used_only_elsewhere_deletes_it(
+    client, db_session, cleanup_users, cleanup_categories, upload_dir, how
+):
+    """Another member's embed or cover, a plain-text mention, or the member's own deleted
+    content (as for the member's own delete) does not keep the previous avatar. Another
+    member's post loses the cover."""
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+    first = (await _upload(client, kind="avatar")).json()
+    author_id, post_id = await _avatar_in_use(
+        db_session, user, first["id"], how, cleanup_categories
+    )
+    if author_id != user.id:
+        other = await db_session.get(User, author_id)
+        assert other is not None
+        cleanup_users.add(other.email)
+    old_files = _files_of(upload_dir, await _attachment(db_session, first["id"]))
+
+    await _upload(client, _png(color=(200, 0, 0)), kind="avatar")
+
+    assert (await _attachment(db_session, first["id"])).deleted_at is not None
+    assert all(not path.exists() for path in old_files)
+    post = await db_session.get(Post, post_id, populate_existing=True)
+    assert post is not None
+    assert post.cover_attachment_id is None
+
+
 async def test_non_avatar_upload_keeps_avatar(client, db_session, cleanup_users):
     user = await _committed(db_session, cleanup_users)
     await login_as(client, user)
@@ -529,6 +629,131 @@ async def test_daily_cap_per_user(client, db_session, cleanup_users, monkeypatch
 
 async def test_daily_cap_defaults_to_thirty():
     assert uploads_endpoints.DAILY_UPLOAD_CAP == 30
+
+
+async def test_daily_cap_holds_under_concurrent_uploads(
+    client, db_session, cleanup_users, monkeypatch
+):
+    """7m: parallel uploads of one member are serialised by an advisory lock taken before the
+    count, so they cannot all see the same count and all pass."""
+    monkeypatch.setattr(uploads_endpoints, "DAILY_UPLOAD_CAP", 2)
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+
+    responses = await asyncio.gather(*(_upload(client) for _ in range(5)))
+
+    assert sorted(r.status_code for r in responses) == [201, 201, 409, 409, 409]
+    assert len(await _attachments_of(db_session, user.id)) == 2
+
+
+async def test_upload_locks_the_member_before_the_second_count(client, db_session, cleanup_users):
+    """A cheap count without the lock first (fast 409), then, after decoding, the two-int
+    advisory lock (uploads namespace, user id) and the count again, then the insert."""
+    from app.db.session import engine
+
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+    statements: list[tuple[str, Any]] = []
+
+    def capture(conn, cursor, statement, parameters, context, executemany):
+        statements.append((" ".join(statement.split()), parameters))
+
+    event.listen(engine.sync_engine, "before_cursor_execute", capture)
+    try:
+        assert (await _upload(client)).status_code == 201
+    finally:
+        event.remove(engine.sync_engine, "before_cursor_execute", capture)
+
+    locks = [i for i, (s, _) in enumerate(statements) if "pg_advisory_xact_lock" in s]
+    counts = [
+        i
+        for i, (s, _) in enumerate(statements)
+        if s.startswith("SELECT count(attachments.id)") and "attachments.uploader_id" in s
+    ]
+    inserts = [i for i, (s, _) in enumerate(statements) if s.startswith("INSERT INTO attachments")]
+    assert len(locks) == 1 and len(counts) == 2 and len(inserts) == 1, statements
+    assert counts[0] < locks[0] < counts[1] < inserts[0]
+    params = statements[locks[0]][1]
+    assert crud_attachment.UPLOAD_LOCK_NAMESPACE in tuple(params)
+    assert user.id in tuple(params)
+
+
+async def test_upload_decodes_before_taking_the_lock(
+    client, db_session, cleanup_users, monkeypatch
+):
+    """The lock is not held while the image is decoded."""
+    order: list[str] = []
+    real_process = uploads_endpoints._process
+    real_lock = crud_attachment.lock_uploads_of
+
+    async def process(data: bytes):
+        order.append("decode")
+        return await real_process(data)
+
+    async def lock(db, *, user_id: int) -> None:
+        order.append("lock")
+        await real_lock(db, user_id=user_id)
+
+    monkeypatch.setattr(uploads_endpoints, "_process", process)
+    monkeypatch.setattr(crud_attachment, "lock_uploads_of", lock)
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+
+    assert (await _upload(client)).status_code == 201
+    assert order == ["decode", "lock"]
+
+
+async def test_cap_reached_after_decoding_leaves_no_files(
+    client, db_session, cleanup_users, upload_dir, monkeypatch
+):
+    """The re-count under the lock can still refuse (a parallel upload won): 409, and nothing
+    was written."""
+    counts = iter([0, uploads_endpoints.DAILY_UPLOAD_CAP])
+
+    async def count(db, *, user_id: int, now=None) -> int:
+        return next(counts)
+
+    monkeypatch.setattr(crud_attachment, "count_uploads_today", count)
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+    before = sorted(p for p in upload_dir.rglob("*") if p.is_file())
+
+    _assert_error(await _upload(client), 409, "uploads.daily_limit")
+
+    assert sorted(p for p in upload_dir.rglob("*") if p.is_file()) == before
+    assert await _attachments_of(db_session, user.id) == []
+
+
+# --- 7m: decoding concurrency -----------------------------------------------------------------
+
+
+@pytest.mark.parametrize("size", [1, 2, 3])
+async def test_image_decoding_is_capped_by_the_setting(monkeypatch, size):
+    monkeypatch.setattr(settings, "UPLOAD_DECODE_CONCURRENCY", size)
+    guard = threading.Lock()
+    state = {"running": 0, "peak": 0}
+
+    def slow_process(data: bytes, *, max_px: int, thumb_px: int) -> images.ProcessedImage:
+        with guard:
+            state["running"] += 1
+            state["peak"] = max(state["peak"], state["running"])
+        time.sleep(0.05)
+        with guard:
+            state["running"] -= 1
+        return images.ProcessedImage(main_bytes=b"m", thumb_bytes=b"t", width=1, height=1)
+
+    monkeypatch.setattr(images, "process_image", slow_process)
+
+    results = await asyncio.gather(*(uploads_endpoints._process(b"x") for _ in range(6)))
+
+    assert len(results) == 6
+    assert state["peak"] == size
+
+
+async def test_decode_concurrency_defaults_to_two():
+    from app.core.config import Settings
+
+    assert Settings.model_fields["UPLOAD_DECODE_CONCURRENCY"].default == 2
 
 
 async def test_ip_rate_limit_is_429(client, db_session, cleanup_users, limits):

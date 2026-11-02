@@ -816,7 +816,7 @@
       "retry": "Riprova"
     },
     "uploads": {
-      "intro": "Le immagini che hai caricato. Un'immagine usata in un articolo, una discussione, una risposta o un commento non può essere eliminata qui: rimuovila prima da quel contenuto.",
+      "intro": "Le immagini che hai caricato. Un'immagine usata in un tuo articolo, una tua discussione, risposta o commento non può essere eliminata qui: rimuovila prima da quel contenuto.",
       "loading": "Caricamento delle tue immagini…",
       "loadError": "Non è stato possibile caricare le tue immagini.",
       "retry": "Riprova",
@@ -825,10 +825,12 @@
       "notUsed": "Non usata in alcun contenuto.",
       "inUse": "In uso: rimuovila prima dal contenuto.",
       "onlyDeleted": "Usata solo in contenuti eliminati: se vengono ripristinati, appariranno senza questa immagine.",
+      "usedByOthers": "Usata da altri membri: puoi eliminarla e scomparirà dai loro contenuti.",
       "delete": "Elimina",
       "deleteLabel": "Elimina immagine: {alt}",
       "deleteTitle": "Eliminare questa immagine?",
       "deleteDescription": "L'immagine viene rimossa definitivamente. L'operazione non può essere annullata.",
+      "deleteOthersWarning": "Altri membri usano questa immagine. Eliminandola, verrà rimossa dai loro contenuti.",
       "deleteConfirm": "Elimina immagine",
       "deleted": "L'immagine è stata eliminata.",
       "loadMore": "Carica altro",

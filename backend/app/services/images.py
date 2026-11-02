@@ -111,11 +111,9 @@ def _encode_webp(im: Image.Image, quality: int) -> bytes:
     return buf.getvalue()
 
 
-def _bounded(im: Image.Image, max_px: int) -> Image.Image:
-    """A copy whose longest edge is at most ``max_px`` (never upscaled)."""
-    copy = im.copy()
-    copy.thumbnail((max_px, max_px), Image.Resampling.LANCZOS)
-    return copy
+def _bound_in_place(im: Image.Image, max_px: int) -> None:
+    """Shrink ``im`` in place so its longest edge is at most ``max_px`` (never upscaled)."""
+    im.thumbnail((max_px, max_px), Image.Resampling.LANCZOS)
 
 
 def process_image(data: bytes, *, max_px: int, thumb_px: int) -> ProcessedImage:
@@ -126,15 +124,22 @@ def process_image(data: bytes, *, max_px: int, thumb_px: int) -> ProcessedImage:
     """
     im = _open_checked(data)
     try:
-        im = ImageOps.exif_transpose(im)
-        im = im.convert("RGBA" if _has_alpha(im) else "RGB")
-        main = _bounded(im, max_px)
-        thumb = _bounded(main, thumb_px)
+        # Work on the one decoded image: every step below is in place, so at most one more
+        # full-size bitmap (a rotation, a mode conversion or the downscale) exists at a time.
+        ImageOps.exif_transpose(im, in_place=True)
+        mode = "RGBA" if _has_alpha(im) else "RGB"
+        if im.mode != mode:
+            im = im.convert(mode)
+        _bound_in_place(im, max_px)
+        width, height = im.size
+        main_bytes = _encode_webp(im, MAIN_QUALITY)
+        # The thumbnail is made from the bounded main image, which is no longer needed.
+        _bound_in_place(im, thumb_px)
         return ProcessedImage(
-            main_bytes=_encode_webp(main, MAIN_QUALITY),
-            thumb_bytes=_encode_webp(thumb, THUMB_QUALITY),
-            width=main.width,
-            height=main.height,
+            main_bytes=main_bytes,
+            thumb_bytes=_encode_webp(im, THUMB_QUALITY),
+            width=width,
+            height=height,
         )
     except (OSError, SyntaxError, ValueError) as exc:
         raise ImageError(INVALID_IMAGE) from exc

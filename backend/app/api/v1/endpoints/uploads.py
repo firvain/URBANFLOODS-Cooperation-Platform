@@ -13,8 +13,12 @@ import mimetypes
 import os
 import uuid
 from datetime import UTC, datetime
+from functools import partial
 from typing import Annotated, Any
 
+import anyio
+import anyio.to_thread
+from anyio.lowlevel import RunVar
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -44,6 +48,7 @@ from app.core.exceptions import AppError, error_body
 from app.core.rate_limit import limit
 from app.crud import attachment as crud_attachment
 from app.crud import audit as crud_audit
+from app.crud.attachment import UsageScope
 from app.db.models import Attachment, User
 from app.services import images
 from app.services.images import ALLOWED_MIME, ImageError
@@ -111,17 +116,43 @@ async def _read_limited(file: UploadFile, max_bytes: int) -> bytes:
     return b"".join(chunks)
 
 
-async def _process(data: bytes) -> images.ProcessedImage:
+# One limiter per event loop (``RunVar``), created on first use: a limiter is bound to the loop
+# that runs it, and tests start a new loop per test.
+_decode_limiter: RunVar[anyio.CapacityLimiter] = RunVar("upload_decode_limiter")
+
+
+def _get_decode_limiter() -> anyio.CapacityLimiter:
+    """The process-wide limiter on images decoded at once (``UPLOAD_DECODE_CONCURRENCY``)."""
+    size = settings.UPLOAD_DECODE_CONCURRENCY
     try:
-        return await run_in_threadpool(
-            images.process_image,
-            data,
-            max_px=settings.UPLOAD_MAX_PX,
-            thumb_px=settings.UPLOAD_THUMB_PX,
-        )
+        limiter = _decode_limiter.get()
+    except LookupError:
+        limiter = anyio.CapacityLimiter(size)
+        _decode_limiter.set(limiter)
+    if limiter.total_tokens != size:
+        limiter.total_tokens = size
+    return limiter
+
+
+async def _process(data: bytes) -> images.ProcessedImage:
+    """Decode and re-encode in a worker thread; at most ``UPLOAD_DECODE_CONCURRENCY`` images are
+    decoded at once (a full-size bitmap is large), the others wait for a slot."""
+    work = partial(
+        images.process_image,
+        data,
+        max_px=settings.UPLOAD_MAX_PX,
+        thumb_px=settings.UPLOAD_THUMB_PX,
+    )
+    try:
+        return await anyio.to_thread.run_sync(work, limiter=_get_decode_limiter())
     except ImageError as exc:
         status_code, message = _IMAGE_ERRORS.get(exc.code, (422, "The image is invalid."))
         raise AppError(status_code, exc.code, message) from exc
+
+
+async def _check_daily_cap(db: DbTx, *, user_id: int) -> None:
+    if await crud_attachment.count_uploads_today(db, user_id=user_id) >= DAILY_UPLOAD_CAP:
+        raise AppError(409, "uploads.daily_limit", "You have reached today's upload limit.")
 
 
 def _schedule_file_deletion(background: BackgroundTasks, attachment: Attachment) -> None:
@@ -134,10 +165,18 @@ def _schedule_file_deletion(background: BackgroundTasks, attachment: Attachment)
 async def _replace_avatar(
     db: DbTx, *, user: User, attachment: Attachment, background: BackgroundTasks
 ) -> None:
+    """Make ``attachment`` the avatar. The previous one is deleted (files after commit) unless
+    its uploader's own content that is not deleted uses it (a cover, or embedded in a body):
+    then it is only unlinked and stays an ordinary upload, which the member can delete later.
+    "In use" means the same as for the uploader's own delete (``delete_upload``)."""
     previous = user.avatar
     user.avatar = attachment
     await db.flush()
     if previous is not None and previous.deleted_at is None:
+        if await crud_attachment.is_used_in_content(
+            db, attachment_id=previous.id, scope=UsageScope.UPLOADER, live_only=True
+        ):
+            return
         await crud_attachment.soft_delete_attachment(db, attachment=previous)
         await crud_audit.log_action(
             db,
@@ -167,13 +206,21 @@ async def upload_image(
 ) -> UploadOut:
     """Upload an image (verified users). It is re-encoded to WebP (longest edge at most
     ``UPLOAD_MAX_PX``) with a thumbnail, and stripped of all metadata. ``kind=avatar`` also
-    makes it the user's avatar, replacing (and deleting) the previous one."""
+    makes it the user's avatar, replacing the previous one, which is deleted unless the
+    member's own content that is not deleted uses it (then it stays as an ordinary upload). At
+    most ``DAILY_UPLOAD_CAP`` uploads per member and UTC day."""
     if _media_type(file.content_type) not in ALLOWED_MIME:
         raise _unsupported_type()
-    if await crud_attachment.count_uploads_today(db, user_id=user.id) >= DAILY_UPLOAD_CAP:
-        raise AppError(409, "uploads.daily_limit", "You have reached today's upload limit.")
+    # A cheap check first, without the lock: a member at the cap gets 409 before any decoding.
+    await _check_daily_cap(db, user_id=user.id)
     data = await _read_limited(file, settings.MAX_UPLOAD_MB * MIB)
     processed = await _process(data)
+    # Then, after decoding, the per-member advisory lock (held until commit) and the count
+    # again: parallel uploads of one member cannot all pass the cap. The lock is not held while
+    # decoding; the request still holds its database connection from authentication meanwhile.
+    # Nothing is written before this check, so a 409 here leaves no files behind.
+    await crud_attachment.lock_uploads_of(db, user_id=user.id)
+    await _check_daily_cap(db, user_id=user.id)
 
     upload_dir = settings.UPLOAD_DIR
     rel_path = images.storage_relative_path(datetime.now(UTC), uuid.uuid4())
@@ -259,21 +306,27 @@ async def delete_upload(
 ) -> None:
     """Delete an upload (its uploader, or an admin). If it is someone's avatar, the avatar is
     cleared. Someone else's upload answers 404 to a member, as if it did not exist. An upload
-    still used by content (a post cover or an image in a body) is 409 ``uploads.in_use``:
-    deleting it would break the content (admins remove such images by editing or purging the
-    content).
+    still used by content (a post cover or an image embedded in a body) is 409
+    ``uploads.in_use``: deleting it would break the content (admins remove such images by
+    editing or purging the content).
 
-    For the uploader's own delete, content whose status is ``deleted`` does not count, so a
-    member can free an image that only their deleted posts still show; if such content is
-    restored later, the image is missing from it. For anyone else's upload (an admin), every
-    status counts. The orphan sweep stays stricter: it never removes an image that any content,
-    deleted or not, references."""
+    For the uploader's own delete, only the uploader's own content counts, and not when its
+    status is ``deleted``: the uploader owns the image, so another member embedding it does not
+    stop the delete (their content then shows a broken image), and a member can free an image
+    that only their deleted posts still show (if such content is restored later, the image is
+    missing from it). For anyone else's upload (an admin), anyone's content in every status
+    counts. When the uploader deletes an image another member's post has as its cover, that
+    post loses the cover. The orphan sweep stays stricter: it never removes an image that any
+    content, deleted or not, embeds."""
     attachment = await crud_attachment.get_attachment(db, attachment_id=attachment_id)
     is_admin = user.role in ADMIN_ROLES and user.is_verified
     own = attachment is not None and attachment.uploader_id == user.id
     if attachment is None or (not own and not is_admin):
         raise _not_found()
-    if await crud_attachment.is_used_in_content(db, attachment_id=attachment.id, live_only=own):
+    scope = UsageScope.UPLOADER if own else UsageScope.ANYONE
+    if await crud_attachment.is_used_in_content(
+        db, attachment_id=attachment.id, scope=scope, live_only=own
+    ):
         raise AppError(409, "uploads.in_use", "The image is still used by a post or discussion.")
     await crud_attachment.soft_delete_attachment(db, attachment=attachment)
     await crud_audit.log_action(

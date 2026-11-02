@@ -816,7 +816,7 @@
       "retry": "Pokušaj ponovo"
     },
     "uploads": {
-      "intro": "Slike koje ste otpremili. Slika koja se koristi u objavi, diskusiji, odgovoru ili komentaru ne može se ovdje izbrisati: prvo je uklonite iz tog sadržaja.",
+      "intro": "Slike koje ste otpremili. Slika koja se koristi u vašoj objavi, diskusiji, odgovoru ili komentaru ne može se ovdje izbrisati: prvo je uklonite iz tog sadržaja.",
       "loading": "Učitavanje Vaših otpremljenih slika…",
       "loadError": "Vaše otpremljene slike nije moguće učitati.",
       "retry": "Pokušaj ponovo",
@@ -825,10 +825,12 @@
       "notUsed": "Ne koristi se ni u jednom sadržaju.",
       "inUse": "U upotrebi: prvo je uklonite iz sadržaja.",
       "onlyDeleted": "Koristi se samo u izbrisanom sadržaju: ako se vrati, prikazivat će se bez ove slike.",
+      "usedByOthers": "Koriste je drugi članovi: možete je izbrisati i nestat će iz njihovog sadržaja.",
       "delete": "Izbriši",
       "deleteLabel": "Izbriši sliku: {alt}",
       "deleteTitle": "Izbrisati ovu sliku?",
       "deleteDescription": "Slika se trajno uklanja. Ovo se ne može poništiti.",
+      "deleteOthersWarning": "Drugi članovi koriste ovu sliku. Ako je izbrišete, bit će uklonjena iz njihovih objava.",
       "deleteConfirm": "Izbriši sliku",
       "deleted": "Slika je izbrisana.",
       "loadMore": "Učitaj još",

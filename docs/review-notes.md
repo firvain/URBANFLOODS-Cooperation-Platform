@@ -101,6 +101,21 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
   `GET /auth/me` and `POST /auth/login` clears the store, so a 401 to `PATCH` or
   `DELETE /auth/me` does too. The method is the one fetch uses (`options.method` over a
   `Request` object's own).
+- **An uploader may delete their image even if another member embeds it** (7m). The uploader
+  owns the image; the other member's content then shows a broken image, and a post that had it
+  as its cover loses the cover. The uploader's delete and avatar replacement count only the
+  uploader's own content that is not deleted; account deletion counts the uploader's own content
+  in any status, and deletes their images even when other members embed them. A replaced
+  avatar their own live content still uses is only unlinked. The uploads panel lists every use
+  (`by_uploader` per use), blocks the delete only for the member's own live content and warns
+  in the confirmation when other members use the image. The orphan sweep and the moderators'
+  purge count anyone's content and **never delete an image anyone embeds**. A mention of the
+  path as text (or a link to it) is not a use. An admin's delete of someone else's upload still
+  counts anyone's content (409).
+- **The daily upload cap is counted twice** (7m): without a lock before decoding (a fast 409),
+  then under a per-member advisory lock after decoding. The lock is not held while decoding,
+  but the request keeps its database connection (from authentication) meanwhile; decoding is
+  bounded by `UPLOAD_DECODE_CONCURRENCY`.
 - **Admins see soft-deleted content by URL** (with a Deleted badge); lists, search, feeds and
   exports never include it.
 
@@ -110,7 +125,9 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
 - `/admin/deleted`: the per-row "Delete permanently" button fails axe
   `label-content-name-mismatch` (WCAG 2.5.3) once the bin has rows (logged 2026-11-01).
 - Turnstile script blocked → submit stays disabled without an explanation (see above).
-- Orphan-upload and usage detection by substring scan (fine at current scale).
+- Upload usage detection scans bodies (a `strpos` filter guarding, through a `CASE`, a Postgres
+  regex for a real `<img src="…<UPLOAD_URL_PREFIX>/<path>">` embed, relative or absolute; 7m).
+  No index; fine at current scale.
 - Partner translations not yet confirmed by native speakers.
 
 ## Out of scope for code review

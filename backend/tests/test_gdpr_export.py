@@ -793,6 +793,103 @@ async def test_delete_keeps_avatar_used_as_a_post_cover(
     assert stored.avatar_attachment_id is None
 
 
+def _embed(stored: Stored) -> str:
+    return f'<p><img src="{settings.UPLOAD_URL_PREFIX}/{stored.storage_path}" alt="Inline"></p>'
+
+
+async def test_delete_keeps_avatar_embedded_in_own_content(
+    client,
+    db_session,
+    cleanup_users,
+    cleanup_user_ids,
+    cleanup_attachments,
+    cleanup_forum_categories,
+    upload_dir,
+):
+    db = db_session
+    user = await _member(db, cleanup_users, cleanup_user_ids)
+    forum = await create_category(db, kind=CategoryKind.FORUM)
+    cleanup_forum_categories.add(forum.id)
+    avatar = await _with_files(db, upload_dir, uploader_id=user.id)
+    cleanup_attachments.add(avatar.id)
+    user.avatar_attachment_id = avatar.id
+    thread = await create_thread(db, category_id=forum.id, author_id=user.id)
+    thread.body_html = _embed(avatar)
+    await db.commit()
+    await login_as(client, user)
+
+    assert (await _delete_me(client)).status_code == 204
+
+    assert await _attachment_exists(db, avatar.id)
+    assert _files_exist(upload_dir, avatar) == (True, True)
+
+
+async def test_another_members_embed_does_not_keep_the_erased_members_images(
+    client,
+    db_session,
+    cleanup_users,
+    cleanup_user_ids,
+    cleanup_attachments,
+    cleanup_forum_categories,
+    upload_dir,
+):
+    """7m: erasure counts only the member's own content; another member embedding the avatar
+    (or any other upload of the member) does not keep it on disk and public."""
+    db = db_session
+    user = await _member(db, cleanup_users, cleanup_user_ids)
+    other = await _member(db, cleanup_users, cleanup_user_ids)
+    blog = await create_category(db, kind=CategoryKind.BLOG)
+    cleanup_forum_categories.add(blog.id)
+    avatar = await _with_files(db, upload_dir, uploader_id=user.id)
+    inline = await _with_files(db, upload_dir, uploader_id=user.id)
+    cleanup_attachments.update({avatar.id, inline.id})
+    user.avatar_attachment_id = avatar.id
+    theirs = await create_post(
+        db, category_id=blog.id, author_id=other.id, cover_attachment_id=inline.id
+    )
+    theirs.body_html = _embed(avatar) + _embed(inline)
+    await db.commit()
+    await login_as(client, user)
+
+    assert (await _delete_me(client)).status_code == 204
+
+    for gone in (avatar, inline):
+        assert not await _attachment_exists(db, gone.id)
+        assert _files_exist(upload_dir, gone) == (False, False)
+    stored_post = await db.get(Post, theirs.id, populate_existing=True)
+    assert stored_post is not None
+    assert stored_post.cover_attachment_id is None
+    row = await _deletion_audit(db, user.id)
+    assert row.metadata_["attachments_deleted"] == 2
+
+
+async def test_delete_removes_an_avatar_only_mentioned_in_own_content(
+    client,
+    db_session,
+    cleanup_users,
+    cleanup_user_ids,
+    cleanup_attachments,
+    cleanup_forum_categories,
+    upload_dir,
+):
+    db = db_session
+    user = await _member(db, cleanup_users, cleanup_user_ids)
+    blog = await create_category(db, kind=CategoryKind.BLOG)
+    cleanup_forum_categories.add(blog.id)
+    avatar = await _with_files(db, upload_dir, uploader_id=user.id)
+    cleanup_attachments.add(avatar.id)
+    user.avatar_attachment_id = avatar.id
+    post = await create_post(db, category_id=blog.id, author_id=user.id)
+    post.body_html = f"<p>My avatar: {settings.UPLOAD_URL_PREFIX}/{avatar.storage_path}</p>"
+    await db.commit()
+    await login_as(client, user)
+
+    assert (await _delete_me(client)).status_code == 204
+
+    assert not await _attachment_exists(db, avatar.id)
+    assert _files_exist(upload_dir, avatar) == (False, False)
+
+
 async def test_delete_unlinks_but_keeps_an_avatar_uploaded_by_another_member(
     client, db_session, cleanup_users, cleanup_user_ids, cleanup_attachments, upload_dir
 ):

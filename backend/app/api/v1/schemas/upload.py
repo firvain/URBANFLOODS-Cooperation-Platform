@@ -47,8 +47,8 @@ class UploadOut(BaseModel):
 
 
 class UploadUsage(BaseModel):
-    """Content that uses an upload (cover or inline image), any status. For a reply or comment,
-    ``title``/``slug`` are those of the thread/post it belongs to."""
+    """Content that uses an upload (cover or inline image), anyone's, any status. For a reply or
+    comment, ``title``/``slug`` are those of the thread/post it belongs to."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -57,6 +57,10 @@ class UploadUsage(BaseModel):
     title: str | None
     slug: str | None
     status: ContentStatus
+    by_uploader: bool = Field(
+        description="The content's author is the upload's uploader. Only such content (not "
+        "deleted) keeps the uploader from deleting the image."
+    )
 
 
 class MyUploadOut(UploadOut):

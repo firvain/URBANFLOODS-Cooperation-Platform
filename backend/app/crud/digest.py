@@ -159,8 +159,8 @@ async def delete_orphan_attachments(
     db: AsyncSession, *, cutoff: datetime
 ) -> list[tuple[str, str | None]]:
     """Hard-delete attachments created before ``cutoff`` that nothing uses: not a post cover,
-    not an avatar, and not referenced by path in the body of any post, thread, reply or comment
-    (whatever its status: deleted content can be restored). Soft-deleted rows qualify too.
+    not an avatar, and not embedded (an ``<img>`` src) in the body of any post, thread, reply or
+    comment (whatever its status: deleted content can be restored). Soft-deleted rows qualify too.
     Returns the ``(storage_path, thumb_path)`` of each deleted row; the caller removes files."""
     stmt = (
         delete(Attachment)

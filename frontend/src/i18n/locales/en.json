@@ -816,7 +816,7 @@
       "retry": "Try again"
     },
     "uploads": {
-      "intro": "The images you uploaded. An image used in a post, discussion, reply or comment cannot be deleted here: remove it from that content first.",
+      "intro": "The images you uploaded. An image used in your own post, discussion, reply or comment cannot be deleted here: remove it from that content first.",
       "loading": "Loading your uploads…",
       "loadError": "Your uploads could not be loaded.",
       "retry": "Try again",
@@ -825,10 +825,12 @@
       "notUsed": "Not used in any content.",
       "inUse": "In use: remove it from the content first.",
       "onlyDeleted": "Used only by deleted content: if it is restored, it will show without this image.",
+      "usedByOthers": "Used by other members: you can delete it, and it will disappear from their content.",
       "delete": "Delete",
       "deleteLabel": "Delete image: {alt}",
       "deleteTitle": "Delete this image?",
       "deleteDescription": "The image is removed for good. This cannot be undone.",
+      "deleteOthersWarning": "Other members use this image. Deleting it removes it from their posts.",
       "deleteConfirm": "Delete image",
       "deleted": "The image has been deleted.",
       "loadMore": "Load more",

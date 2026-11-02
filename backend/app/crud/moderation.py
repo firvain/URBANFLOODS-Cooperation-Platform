@@ -667,7 +667,7 @@ async def purge(
       wait: its foreign-key check needs a key-share lock on it);
     - open reports on all of them are resolved by ``actor``, each with its ``report.resolve``
       audit row (the reports stay);
-    - attachments the deleted rows used (a post's cover, paths in any deleted body) are
+    - attachments the deleted rows used (a post's cover, images embedded in any deleted body) are
       hard-deleted when nothing else uses them any more (any uploader); their files are the
       caller's to remove after commit (:attr:`PurgeResult.files`);
     - tag usage is recounted; the reply/comment counters follow by trigger;

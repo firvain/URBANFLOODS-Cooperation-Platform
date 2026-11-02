@@ -850,10 +850,12 @@ async def delete_me(
     background: BackgroundTasks,
 ) -> None:
     """Delete the account (current password required): personal data is erased and the account
-    disabled; published content stays, attributed to "Deleted user". The member's own uploads
-    that no content uses (not a cover, not in any body), the avatar included, are deleted with
-    their files; images used by contributions stay with them, and an avatar someone else
-    uploaded is only unlinked. Every session ends and the cookie is cleared.
+    disabled; published content stays, attributed to "Deleted user". The member's own uploads,
+    the avatar included, are deleted with their files unless the member's own content (any
+    status) uses them as a post cover or embeds them in a body: images of contributions stay
+    with them. Another member embedding one of these images does not keep it (that content then
+    shows a broken image). An avatar someone else uploaded is only unlinked. Every session ends
+    and the cookie is cleared.
     The last superadmin cannot delete their account."""
     await _check_current_password(
         db, user=user, password=body.current_password, failed_action="auth.delete_failed"

@@ -40,6 +40,7 @@ const USED = makeUpload(8, {
       title: 'Rain gardens in Kozani',
       slug: 'rain-gardens-in-kozani',
       status: 'published',
+      by_uploader: true,
     },
     {
       content_type: 'reply',
@@ -47,6 +48,7 @@ const USED = makeUpload(8, {
       title: 'Sirens or SMS?',
       slug: 'sirens-or-sms',
       status: 'deleted',
+      by_uploader: true,
     },
   ],
 })
@@ -123,6 +125,7 @@ describe('Account uploads tab', () => {
           title: 'An old post',
           slug: 'an-old-post',
           status: 'deleted',
+          by_uploader: true,
         },
       ],
     })
@@ -144,6 +147,74 @@ describe('Account uploads tab', () => {
     expect(rows()).toHaveLength(0)
   })
 
+  it('allows deleting an image only other members use, warning that it leaves their content', async () => {
+    const othersOnly = makeUpload(10, {
+      used_in: [
+        {
+          content_type: 'thread',
+          id: 61,
+          title: 'Their discussion',
+          slug: 'their-discussion',
+          status: 'published',
+          by_uploader: false,
+        },
+        {
+          content_type: 'post',
+          id: 62,
+          title: 'My old post',
+          slug: 'my-old-post',
+          status: 'deleted',
+          by_uploader: true,
+        },
+      ],
+    })
+    const route = 'DELETE /api/v1/uploads/10'
+    const { fetchMock } = await mountUploads({
+      [MINE]: reply(200, { total: 1, items: [othersOnly] }),
+      [route]: reply(204),
+    })
+    const row = rows()[0]!
+    const button = deleteButton(row)
+    expect(button.disabled).toBe(false)
+    const hint = document.getElementById(button.getAttribute('aria-describedby')!)!
+    expect(hint.textContent).toContain(t('account.uploads.usedByOthers'))
+    button.click()
+    await flushPromises()
+    expect(dialog().textContent).toContain(t('account.uploads.deleteOthersWarning'))
+    buttonIn(dialog(), t('account.uploads.deleteConfirm')).click()
+    await flushPromises()
+    expect(callsTo(fetchMock, route)).toHaveLength(1)
+    expect(rows()).toHaveLength(0)
+  })
+
+  it("blocks the delete when the member's own live content uses it, whoever else does", async () => {
+    const mixed = makeUpload(11, {
+      used_in: [
+        {
+          content_type: 'post',
+          id: 71,
+          title: 'Mine',
+          slug: 'mine',
+          status: 'pending',
+          by_uploader: true,
+        },
+        {
+          content_type: 'post',
+          id: 72,
+          title: 'Theirs',
+          slug: 'theirs',
+          status: 'published',
+          by_uploader: false,
+        },
+      ],
+    })
+    await mountUploads({ [MINE]: reply(200, { total: 1, items: [mixed] }) })
+    const button = deleteButton(rows()[0]!)
+    expect(button.disabled).toBe(true)
+    const hint = document.getElementById(button.getAttribute('aria-describedby')!)!
+    expect(hint.textContent).toContain(t('account.uploads.inUse'))
+  })
+
   it('shows an empty state', async () => {
     await mountUploads({ [MINE]: reply(200, { total: 0, items: [] }) })
     expect(rows()).toHaveLength(0)
@@ -156,6 +227,7 @@ describe('Account uploads tab', () => {
     await flushPromises()
     const box = dialog()
     expect(box.textContent).toContain(t('account.uploads.deleteTitle'))
+    expect(box.textContent).not.toContain(t('account.uploads.deleteOthersWarning'))
     expect(callsTo(fetchMock, DELETE_FREE)).toHaveLength(0)
     buttonIn(box, t('account.uploads.deleteConfirm')).click()
     await flushPromises()

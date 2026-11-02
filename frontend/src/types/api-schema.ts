@@ -178,10 +178,12 @@ export interface paths {
         /**
          * Delete Me
          * @description Delete the account (current password required): personal data is erased and the account
-         *     disabled; published content stays, attributed to "Deleted user". The member's own uploads
-         *     that no content uses (not a cover, not in any body), the avatar included, are deleted with
-         *     their files; images used by contributions stay with them, and an avatar someone else
-         *     uploaded is only unlinked. Every session ends and the cookie is cleared.
+         *     disabled; published content stays, attributed to "Deleted user". The member's own uploads,
+         *     the avatar included, are deleted with their files unless the member's own content (any
+         *     status) uses them as a post cover or embeds them in a body: images of contributions stay
+         *     with them. Another member embedding one of these images does not keep it (that content then
+         *     shows a broken image). An avatar someone else uploaded is only unlinked. Every session ends
+         *     and the cookie is cleared.
          *     The last superadmin cannot delete their account.
          */
         delete: operations["delete_me_api_v1_auth_me_delete"];
@@ -1426,7 +1428,9 @@ export interface paths {
          * Upload Image
          * @description Upload an image (verified users). It is re-encoded to WebP (longest edge at most
          *     ``UPLOAD_MAX_PX``) with a thumbnail, and stripped of all metadata. ``kind=avatar`` also
-         *     makes it the user's avatar, replacing (and deleting) the previous one.
+         *     makes it the user's avatar, replacing the previous one, which is deleted unless the
+         *     member's own content that is not deleted uses it (then it stays as an ordinary upload). At
+         *     most ``DAILY_UPLOAD_CAP`` uploads per member and UTC day.
          */
         post: operations["upload_image_api_v1_uploads_images__post"];
         delete?: never;
@@ -1470,15 +1474,18 @@ export interface paths {
          * Delete Upload
          * @description Delete an upload (its uploader, or an admin). If it is someone's avatar, the avatar is
          *     cleared. Someone else's upload answers 404 to a member, as if it did not exist. An upload
-         *     still used by content (a post cover or an image in a body) is 409 ``uploads.in_use``:
-         *     deleting it would break the content (admins remove such images by editing or purging the
-         *     content).
+         *     still used by content (a post cover or an image embedded in a body) is 409
+         *     ``uploads.in_use``: deleting it would break the content (admins remove such images by
+         *     editing or purging the content).
          *
-         *     For the uploader's own delete, content whose status is ``deleted`` does not count, so a
-         *     member can free an image that only their deleted posts still show; if such content is
-         *     restored later, the image is missing from it. For anyone else's upload (an admin), every
-         *     status counts. The orphan sweep stays stricter: it never removes an image that any content,
-         *     deleted or not, references.
+         *     For the uploader's own delete, only the uploader's own content counts, and not when its
+         *     status is ``deleted``: the uploader owns the image, so another member embedding it does not
+         *     stop the delete (their content then shows a broken image), and a member can free an image
+         *     that only their deleted posts still show (if such content is restored later, the image is
+         *     missing from it). For anyone else's upload (an admin), anyone's content in every status
+         *     counts. When the uploader deletes an image another member's post has as its cover, that
+         *     post loses the cover. The orphan sweep stays stricter: it never removes an image that any
+         *     content, deleted or not, embeds.
          */
         delete: operations["delete_upload_api_v1_uploads__attachment_id__delete"];
         options?: never;
@@ -4397,8 +4404,8 @@ export interface components {
         };
         /**
          * UploadUsage
-         * @description Content that uses an upload (cover or inline image), any status. For a reply or comment,
-         *     ``title``/``slug`` are those of the thread/post it belongs to.
+         * @description Content that uses an upload (cover or inline image), anyone's, any status. For a reply or
+         *     comment, ``title``/``slug`` are those of the thread/post it belongs to.
          */
         UploadUsage: {
             content_type: components["schemas"]["ContentType"];
@@ -4409,6 +4416,11 @@ export interface components {
             /** Slug */
             slug: string | null;
             status: components["schemas"]["ContentStatus"];
+            /**
+             * By Uploader
+             * @description The content's author is the upload's uploader. Only such content (not deleted) keeps the uploader from deleting the image.
+             */
+            by_uploader: boolean;
         };
         /**
          * UserMe

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToast } from '@nuxt/ui/composables'
 
@@ -11,9 +11,11 @@ import { formatDate } from '@/utils/datetime'
 
 /**
  * The member's own uploads (`GET /uploads/mine/`): thumbnail, alt text, size, date and the content
- * that uses each image. An image still used by content that is not deleted cannot be deleted (the
- * button is disabled, with the reason as visible text next to it; the server answers 409
- * `uploads.in_use` anyway); the others are deleted after confirming.
+ * that uses each image (anyone's). An image still used by the member's own content that is not
+ * deleted cannot be deleted (the button is disabled, with the reason as visible text next to it;
+ * the server answers 409 `uploads.in_use` anyway). The member owns their images: one that only
+ * other members use can be deleted, and the confirmation warns that it leaves their content. The
+ * others are deleted after confirming.
  */
 const PAGE_SIZE = 50
 
@@ -71,9 +73,18 @@ function formatSize(bytes: number): string {
 
 const usageLink = (usage: UploadUsage) =>
   contentLink(usage.content_type, usage.id, usage.slug) ?? undefined
-/** Live content still uses it. Content in status `deleted` does not block the owner's delete
- * (the server agrees); the hint then says a restore would show it without the image. */
-const blocked = (upload: MyUpload) => upload.used_in.some((usage) => usage.status !== 'deleted')
+/** The member's own live content still uses it. Their content in status `deleted` and other
+ * members' content do not block the delete (the server agrees). */
+const blocked = (upload: MyUpload) =>
+  upload.used_in.some((usage) => usage.by_uploader && usage.status !== 'deleted')
+/** Other members' content (not deleted) uses it: deleting it removes it from their content. */
+const usedByOthers = (upload: MyUpload | null) =>
+  !!upload?.used_in.some((usage) => !usage.by_uploader && usage.status !== 'deleted')
+function usageHint(upload: MyUpload): string {
+  if (blocked(upload)) return t('account.uploads.inUse')
+  if (usedByOthers(upload)) return t('account.uploads.usedByOthers')
+  return t('account.uploads.onlyDeleted')
+}
 const usageTitle = (usage: UploadUsage) =>
   usage.title || t(`account.uploads.types.${usage.content_type}`)
 
@@ -83,6 +94,11 @@ const target = ref<MyUpload | null>(null)
 const deleteOpen = ref(false)
 const deleting = ref(false)
 const deleteError = ref('')
+const deleteDescription = computed(() =>
+  usedByOthers(target.value)
+    ? `${t('account.uploads.deleteOthersWarning')} ${t('account.uploads.deleteDescription')}`
+    : t('account.uploads.deleteDescription'),
+)
 
 function askDelete(upload: MyUpload) {
   target.value = upload
@@ -209,7 +225,7 @@ async function confirmDelete() {
               data-testid="upload-hint"
               class="text-xs text-muted"
             >
-              {{ blocked(upload) ? t('account.uploads.inUse') : t('account.uploads.onlyDeleted') }}
+              {{ usageHint(upload) }}
             </p>
           </div>
         </li>
@@ -224,7 +240,7 @@ async function confirmDelete() {
     <ConfirmDialog
       v-model:open="deleteOpen"
       :title="t('account.uploads.deleteTitle')"
-      :description="t('account.uploads.deleteDescription')"
+      :description="deleteDescription"
       :confirm-label="t('account.uploads.deleteConfirm')"
       color="error"
       :loading="deleting"

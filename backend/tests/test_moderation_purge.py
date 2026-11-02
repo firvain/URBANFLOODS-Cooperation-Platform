@@ -725,6 +725,7 @@ async def test_mine_used_in_lists_cover_and_inline_posts(client, env):
                 "title": as_cover.title,
                 "slug": as_cover.slug,
                 "status": "published",
+                "by_uploader": True,
             },
             {
                 "content_type": "post",
@@ -732,6 +733,7 @@ async def test_mine_used_in_lists_cover_and_inline_posts(client, env):
                 "title": inline.title,
                 "slug": inline.slug,
                 "status": "deleted",
+                "by_uploader": True,
             },
         ],
         key=lambda u: u["id"],
@@ -761,6 +763,7 @@ async def test_mine_used_in_lists_threads_replies_and_comments_with_parent(clien
         "title": thread.title,
         "slug": thread.slug,
         "status": "published",
+        "by_uploader": False,
     }
     # Replies and comments point at their thread/post (the page they are shown on).
     assert by_type["reply"]["id"] == reply.id
@@ -789,7 +792,10 @@ async def test_delete_upload_used_inline_in_a_hidden_reply_is_409(client, env):
     member = await _signed_in(client, env, factory=create_verified_user)
     stored = await _file(env, uploader_id=member.id)
     thread = await _thread(env)
-    reply = await create_reply(db, thread_id=thread.id, status=H, hidden_reason=HiddenReason.ADMIN)
+    # 7m: the uploader's own reply (another member's content no longer blocks the uploader).
+    reply = await create_reply(
+        db, thread_id=thread.id, author_id=member.id, status=H, hidden_reason=HiddenReason.ADMIN
+    )
     reply.body_html = _img(stored, thumb=True)
     await db.commit()
 
@@ -1071,3 +1077,227 @@ async def test_admin_purge_audit_has_no_reason(client, env):
     row = await _purge_audit(env.db, ContentType.POST, post.id)
     assert row.actor_id == admin.id
     assert "reason" not in row.metadata_
+
+
+# --- 7m: only real embeds count; the uploader's delete counts only their own content ----------
+
+
+ORIGIN = "https://cooperation.urbanfloods.app"
+
+
+def _mentions(stored: Stored) -> list[str]:
+    """Bodies that mention the image's path without embedding it (as nh3 stores them)."""
+    path = f"{PREFIX}/{stored.storage_path}"
+    return [
+        f"<p>The file is at {path}</p>",
+        f'<p>&lt;img src="{path}"&gt;</p>',
+        f'<p><a href="{path}" rel="nofollow noopener noreferrer">the image</a></p>',
+        f'<p><img src="{PREFIX}/other/{stored.storage_path}" alt="x"></p>',
+        f'<p><img src="{path}.png" alt="x"></p>',
+        f'<p><img src="https://example.org/mirror{path}" alt="x"></p>',
+    ]
+
+
+def _embeds(stored: Stored) -> dict[str, str]:
+    return {
+        "relative": f'<p><img src="{PREFIX}/{stored.storage_path}" alt="Flood"></p>',
+        "absolute": f'<p><img src="{ORIGIN}{PREFIX}/{stored.storage_path}" alt="Flood"></p>',
+        "http": f'<p><img alt="Flood" src="http://localhost:5173{PREFIX}/{stored.storage_path}"></p>',
+        "upper_scheme": (
+            f'<p><img src="HTTPS://Cooperation.urbanfloods.app{PREFIX}/{stored.storage_path}"'
+            ' alt="F"></p>'
+        ),
+        "mixed_scheme": (
+            f'<p><img src="Http://localhost{PREFIX}/{stored.storage_path}" alt="F"></p>'
+        ),
+        "thumbnail": f'<p><img src="{PREFIX}/{stored.thumb_path}" alt="Flood"></p>',
+        "after_attrs": (
+            f'<p><img alt="a &quot;b&quot;" width="10" src="{PREFIX}/{stored.storage_path}"'
+            ' height="4"></p>'
+        ),
+    }
+
+
+@pytest.mark.parametrize("index", range(6))
+async def test_a_mention_of_the_path_is_not_a_use(client, env, index):
+    db = env.db
+    member = await _signed_in(client, env, factory=create_verified_user)
+    stored = await _file(env, uploader_id=member.id)
+    post = await _post(env, author_id=member.id)
+    post.body_html = _mentions(stored)[index]
+    await db.commit()
+
+    assert _item((await client.get(MINE)).json(), stored.id)["used_in"] == []
+    response = await client.delete(f"{API}/uploads/{stored.id}")
+
+    assert response.status_code == 204, response.text
+    assert _files_exist(env, stored) == (False, False)
+
+
+@pytest.mark.parametrize(
+    "form",
+    ["relative", "absolute", "http", "upper_scheme", "mixed_scheme", "thumbnail", "after_attrs"],
+)
+async def test_a_real_embed_in_own_content_blocks_the_delete(client, env, form):
+    db = env.db
+    member = await _signed_in(client, env, factory=create_verified_user)
+    stored = await _file(env, uploader_id=member.id)
+    thread = await _thread(env)
+    reply = await create_reply(db, thread_id=thread.id, author_id=member.id)
+    reply.body_html = _embeds(stored)[form]
+    await db.commit()
+
+    used_in = _item((await client.get(MINE)).json(), stored.id)["used_in"]
+    assert [(u["content_type"], u["id"]) for u in used_in] == [("reply", reply.id)]
+    _assert_error(await client.delete(f"{API}/uploads/{stored.id}"), 409, "uploads.in_use")
+    assert _files_exist(env, stored) == (True, True)
+
+
+async def test_another_members_embed_does_not_block_the_uploaders_delete(client, env):
+    db = env.db
+    member = await _signed_in(client, env, factory=create_verified_user)
+    other = await _user(env)
+    stored = await _file(env, uploader_id=member.id)
+    theirs = await _post(env, author_id=other.id, cover_attachment_id=stored.id)
+    theirs.body_html = _img(stored)
+    comment = await create_comment(db, post_id=theirs.id, author_id=other.id)
+    comment.body_html = _img(stored, thumb=True)
+    await db.commit()
+
+    # The uploads panel still shows where the image is used, and that it is not the uploader's
+    # content ...
+    used_in = _item((await client.get(MINE)).json(), stored.id)["used_in"]
+    assert {(u["content_type"], u["id"], u["by_uploader"]) for u in used_in} == {
+        ("post", theirs.id, False),
+        ("comment", comment.id, False),
+    }
+    # ... but the uploader owns the image and may delete it.
+    response = await client.delete(f"{API}/uploads/{stored.id}")
+
+    assert response.status_code == 204, response.text
+    assert (await _reload(db, Attachment, stored.id)).deleted_at is not None
+    assert _files_exist(env, stored) == (False, False)
+    # 7m (#6): the other member's post no longer points at the deleted image.
+    assert (await _reload(db, Post, theirs.id)).cover_attachment_id is None
+
+
+async def test_admin_delete_still_counts_anyones_content(client, env):
+    db = env.db
+    member = await _user(env)
+    other = await _user(env)
+    stored = await _file(env, uploader_id=member.id)
+    post = await _post(env, author_id=other.id)
+    post.body_html = _img(stored)
+    await db.commit()
+    await _signed_in(client, env)
+
+    _assert_error(await client.delete(f"{API}/uploads/{stored.id}"), 409, "uploads.in_use")
+
+
+async def test_purge_does_not_collect_an_image_its_body_only_mentions(client, env):
+    db = env.db
+    mentioned = await _file(env, uploader_id=None)
+    post = await _post(env)
+    post.body_html = _mentions(mentioned)[0]
+    await db.commit()
+    await _signed_in(client, env)
+
+    response = await _purge(client, "post", post.id)
+
+    assert response.json()["attachments_deleted"] == 0
+    assert await _exists(db, Attachment, mentioned.id)
+
+
+async def test_mine_used_in_says_whether_the_uploader_authored_the_content(client, env):
+    db = env.db
+    member = await _signed_in(client, env, factory=create_verified_user)
+    other = await _user(env)
+    stored = await _file(env, uploader_id=member.id)
+    own = await _post(env, author_id=member.id, cover_attachment_id=stored.id)
+    theirs = await _thread(env, author_id=other.id)
+    theirs.body_html = _img(stored)
+    anonymous = await _post(env)
+    anonymous.body_html = _img(stored, thumb=True)
+    await db.commit()
+
+    used_in = _item((await client.get(MINE)).json(), stored.id)["used_in"]
+
+    assert {(u["content_type"], u["id"], u["by_uploader"]) for u in used_in} == {
+        ("post", own.id, True),
+        ("thread", theirs.id, False),
+        ("post", anonymous.id, False),
+    }
+
+
+async def test_uploaders_delete_clears_foreign_covers_so_the_sweep_can_collect_it(client, env):
+    """7m (#6): a soft-deleted image that another member's post had as its cover is no longer a
+    cover, so the orphan sweep removes the row later. The uploader's own (deleted) post keeps
+    its cover link, as before."""
+    from app.crud.digest import delete_orphan_attachments
+
+    db = env.db
+    member = await _signed_in(client, env, factory=create_verified_user)
+    other = await _user(env)
+    stored = await _file(env, uploader_id=member.id)
+    theirs = await _post(env, author_id=other.id, cover_attachment_id=stored.id)
+    own_gone = await _post(env, D, author_id=member.id, cover_attachment_id=stored.id)
+    await db.commit()
+
+    assert (await client.delete(f"{API}/uploads/{stored.id}")).status_code == 204
+
+    assert (await _reload(db, Post, theirs.id)).cover_attachment_id is None
+    assert (await _reload(db, Post, own_gone.id)).cover_attachment_id == stored.id
+    # Once the own deleted post is gone too, nothing holds the row any more.
+    await db.delete(await _reload(db, Post, own_gone.id))
+    await db.flush()
+    removed = await delete_orphan_attachments(db, cutoff=datetime.now(UTC) + timedelta(hours=1))
+    await db.commit()
+    assert (stored.storage_path, stored.thumb_path) in removed
+    assert not await _exists(db, Attachment, stored.id)
+
+
+# --- 7m: the matcher's URL prefix and evaluation order -------------------------------------------
+
+
+def test_sanitizer_prefix_matches_the_upload_url_prefix():
+    from app.services import sanitize
+
+    assert sanitize.UPLOADS_PREFIX == settings.UPLOAD_URL_PREFIX.rstrip("/") + "/"
+
+
+@pytest.mark.parametrize("configured", ["/media/files", "/media/files/"])
+async def test_embeds_are_matched_under_the_configured_url_prefix(env, monkeypatch, configured):
+    from app.crud import attachment as crud_attachment
+
+    db = env.db
+    stored = await _file(env, uploader_id=None)
+    post = await _post(env)
+    post.body_html = f'<p><img src="/media/files/{stored.storage_path}" alt="x"></p>'
+    other = await _file(env, uploader_id=None)
+    old_style = await _post(env)
+    old_style.body_html = _img(other)
+    await db.flush()
+    monkeypatch.setattr(settings, "UPLOAD_URL_PREFIX", configured)
+
+    assert await crud_attachment.is_used_in_content(db, attachment_id=stored.id)
+    assert not await crud_attachment.is_used_in_content(db, attachment_id=other.id)
+
+
+def test_the_cheap_strpos_filter_guards_the_regex():
+    """``CASE WHEN strpos(...) > 0 THEN body ~ pattern ELSE false END``: the regex is evaluated
+    only for bodies that contain the path (an ``AND`` could be reordered by the planner)."""
+    from sqlalchemy import or_
+    from sqlalchemy.dialects import postgresql
+
+    from app.crud import attachment as crud_attachment
+
+    sql = " ".join(
+        str(
+            select(Attachment.id)
+            .where(or_(*crud_attachment.content_usage_conditions()))
+            .compile(dialect=postgresql.dialect())
+        ).split()
+    )
+    assert sql.count("CASE WHEN (strpos(") == 8, sql
+    assert sql.count(" ~ ") == 8, sql
+    assert "ELSE false END" in sql, sql

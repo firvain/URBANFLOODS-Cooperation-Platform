@@ -816,7 +816,7 @@
       "retry": "Provo përsëri"
     },
     "uploads": {
-      "intro": "Imazhet që keni ngarkuar. Një imazh që përdoret në një postim, diskutim, përgjigje ose koment nuk mund të fshihet këtu: hiqeni fillimisht nga ajo përmbajtje.",
+      "intro": "Imazhet që keni ngarkuar. Një imazh që përdoret në postimin, diskutimin, përgjigjen ose komentin tuaj nuk mund të fshihet këtu: hiqeni fillimisht nga ajo përmbajtje.",
       "loading": "Po ngarkohen ngarkimet tuaja…",
       "loadError": "Ngarkimet tuaja nuk mund të ngarkoheshin.",
       "retry": "Provo përsëri",
@@ -825,10 +825,12 @@
       "notUsed": "Nuk përdoret në asnjë përmbajtje.",
       "inUse": "Në përdorim: hiqeni fillimisht nga përmbajtja.",
       "onlyDeleted": "Përdoret vetëm në përmbajtje të fshirë: nëse rikthehet, do të shfaqet pa këtë imazh.",
+      "usedByOthers": "Përdoret nga anëtarë të tjerë: mund ta fshini dhe do të zhduket nga përmbajtja e tyre.",
       "delete": "Fshi",
       "deleteLabel": "Fshi imazhin: {alt}",
       "deleteTitle": "Ta fshini këtë imazh?",
       "deleteDescription": "Imazhi hiqet përgjithmonë. Ky veprim nuk mund të zhbëhet.",
+      "deleteOthersWarning": "Anëtarë të tjerë e përdorin këtë imazh. Nëse e fshini, do të hiqet nga postimet e tyre.",
       "deleteConfirm": "Fshi imazhin",
       "deleted": "Imazhi u fshi.",
       "loadMore": "Ngarko më shumë",

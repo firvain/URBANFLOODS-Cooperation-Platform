@@ -291,6 +291,38 @@ async def test_sweep_keeps_images_referenced_by_deleted_content(db_session, uplo
     assert await _exists(db_session, Attachment, inline.id)
 
 
+async def test_sweep_keeps_an_image_another_member_embeds(db_session, uploads) -> None:
+    """7m: the sweep counts anyone's content, whoever uploaded the image."""
+    uploader = await create_verified_user(db_session)
+    other = await create_verified_user(db_session)
+    inline = await _upload(db_session, uploads, age=OLD, uploader=uploader)
+    category = await create_category(db_session)
+    post = await create_post(db_session, category_id=category.id, author_id=other.id)
+    post.body_html = (
+        f'<p><img src="https://cooperation.urbanfloods.app{settings.UPLOAD_URL_PREFIX}/'
+        f'{inline.storage_path}" alt="A map"></p>'
+    )
+    await db_session.flush()
+
+    await sweep_orphan_uploads(db_session, now=NOW, files=[])
+
+    assert await _exists(db_session, Attachment, inline.id)
+
+
+async def test_sweep_deletes_an_image_only_mentioned_as_text(db_session, uploads) -> None:
+    """7m: a plain-text mention of the path is not a use."""
+    mentioned = await _upload(db_session, uploads, age=OLD)
+    await _body_with(
+        db_session,
+        "post",
+        f"<p>Saved at {settings.UPLOAD_URL_PREFIX}/{mentioned.storage_path}</p>",
+    )
+
+    await sweep_orphan_uploads(db_session, now=NOW, files=[])
+
+    assert not await _exists(db_session, Attachment, mentioned.id)
+
+
 async def test_sweep_removes_soft_deleted_orphan_rows(db_session, uploads) -> None:
     gone = await _upload(db_session, uploads, age=OLD)
     gone.deleted_at = NOW - OLD

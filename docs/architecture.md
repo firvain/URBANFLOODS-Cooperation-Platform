@@ -242,7 +242,7 @@ misfire grace.
 
 | Job | Schedule | What it does | Settings |
 |---|---|---|---|
-| `maintenance` | daily at `DIGEST_HOUR_UTC − 1`:00 UTC (05:00 by default) | deletes sessions and email tokens expired/used/revoked more than 7 days ago; hard-deletes unverified **members** registered more than `UNVERIFIED_PURGE_DAYS` (30) days ago; hard-deletes attachments older than `ORPHAN_UPLOAD_HOURS` (24) that are no cover, no avatar and not referenced in any body (files removed after commit); auto-approves pending posts/threads older than `AUTO_APPROVE_AFTER_DAYS` (0 = off) whose author is active and not erased and that were never rejected (`rejected_at`), in one `FOR UPDATE … SKIP LOCKED` query so a concurrent admin decision or ban wins; purges posts, threads, replies and comments soft-deleted more than `DELETED_CONTENT_RETENTION_DAYS` (7; 0 = off) days ago through the admin purge with no actor (oldest first, at most 200 per run; a deleted reply still holding replies that are not due is skipped; files removed after commit) | `UNVERIFIED_PURGE_DAYS`, `ORPHAN_UPLOAD_HOURS`, `AUTO_APPROVE_AFTER_DAYS`, `DELETED_CONTENT_RETENTION_DAYS` |
+| `maintenance` | daily at `DIGEST_HOUR_UTC − 1`:00 UTC (05:00 by default) | deletes sessions and email tokens expired/used/revoked more than 7 days ago; hard-deletes unverified **members** registered more than `UNVERIFIED_PURGE_DAYS` (30) days ago; hard-deletes attachments older than `ORPHAN_UPLOAD_HOURS` (24) that are no cover, no avatar and not embedded in any body of anyone's content, any status (an `<img>` whose `src` is the upload's URL; a mention of the path does not count; files removed after commit); auto-approves pending posts/threads older than `AUTO_APPROVE_AFTER_DAYS` (0 = off) whose author is active and not erased and that were never rejected (`rejected_at`), in one `FOR UPDATE … SKIP LOCKED` query so a concurrent admin decision or ban wins; purges posts, threads, replies and comments soft-deleted more than `DELETED_CONTENT_RETENTION_DAYS` (7; 0 = off) days ago through the admin purge with no actor (oldest first, at most 200 per run; a deleted reply still holding replies that are not due is skipped; files removed after commit) | `UNVERIFIED_PURGE_DAYS`, `ORPHAN_UPLOAD_HOURS`, `AUTO_APPROVE_AFTER_DAYS`, `DELETED_CONTENT_RETENTION_DAYS` |
 | `admin_digest` | daily at `DIGEST_HOUR_UTC`:00 UTC (06:00 by default) | emails pending items, open reports, new members and new content to admins (see [moderation-guide.md](moderation-guide.md#5-the-admin-digest)) | `DIGEST_HOUR_UTC` |
 
 Each maintenance step runs in its own transaction; a failed step is logged and reported as `-1`.
@@ -324,6 +324,21 @@ minutes after the guessing stops); password reset by email keeps working through
   (`components/common/SafeHtml.vue`).
 - Uploads: JPEG/PNG/WebP only (sniffed by Pillow), ≤ `MAX_UPLOAD_MB` (5 MiB), ≤ 40 megapixels,
   re-encoded to WebP (metadata incl. EXIF/GPS dropped), random names, served with `nosniff`.
+  At most `UPLOAD_DECODE_CONCURRENCY` (2) images are decoded at once, process-wide; further
+  uploads wait. The daily cap (30 per member) is checked twice: a quick count before decoding,
+  then, after decoding and before any file is written, again under a per-member advisory lock
+  held until commit, so parallel uploads cannot all pass it.
+- Upload usage (`crud/attachment.py`): a post cover, or a real embed in a body (an `<img>` whose
+  `src` is the upload's URL under `UPLOAD_URL_PREFIX`, relative or after an http(s) origin in
+  any case); a mention of the path is not a use. The uploader owns the image: the uploader's
+  own delete and avatar replacement count only the uploader's own content that is not deleted,
+  and account deletion only the uploader's own content (any status), so another member
+  embedding an image does not stop its uploader deleting it. Deleting it also clears it as the
+  cover of other members' posts. The orphan sweep, the moderators' purge, an admin's delete and
+  the uploads panel ("used in", each use flagged `by_uploader`) count anyone's content. The
+  panel blocks the delete only for the member's own live content and warns when other members
+  use the image. A replaced avatar that the member's own live content still uses is only
+  unlinked and stays an ordinary upload.
 - Authorisation: role dependencies in `core/deps.py`; last-superadmin and self-change guards in
   the admin endpoints; every mutating endpoint has owner/admin/superadmin tests.
 - Audit log for moderation, role, trust, ban, consent, login, export and account deletion.
