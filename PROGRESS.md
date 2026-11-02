@@ -262,7 +262,8 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - 7n: bounded ids and invalid values, export ETag, images only from uploads and the KNOWBASE, test network guard; see the board row. **All ultra review findings 1–19 fixed** (7h–7n); cleanups 20–23 remain. Tell the KNOWBASE maintainers: huge ids in its filters answer 500 instead of 400.
 
 - 7o (owner's request after seeing two "Deleted user" rows in /admin/users): deleted accounts hidden by default with a "Show deleted accounts" switch; see the board row.
-- **7n + 7o deployed 2026-11-02 17:23.** All ultra review findings 1–19 are fixed and live. **Next:** owner's choice: the low-priority cleanups 20–23 (hand-written auth API types, a shared Turnstile composable with the "script blocked" message, shared `_error_responses`, `backup.sh` env parsing), the `/admin/deleted` accessible-name fix, or the Sarajevo preparations; tell the KNOWBASE maintainers about the 500 on huge filter ids. Ask the owner before each step.
+- **7n + 7o deployed 2026-11-02 17:23.** All ultra review findings 1–19 are fixed and live. **Next:** owner's choice: the low-priority cleanups 20–23 (hand-written auth API types, a shared Turnstile composable with the "script blocked" message, shared `_error_responses`, `backup.sh` env parsing), the `/admin/deleted` accessible-name fix, or the Sarajevo preparations; Ask the owner before each step.
+- KNOWBASE side (2026-11-02 evening): the owner passed on the 500-on-huge-ids report; the KNOWBASE fixed it in b597517 (bounded ids, NUL rejected, route-walk guard and real-DB handler tests), deployed 19:43. Verified read-only: the five reported URLs, path ids, `skip`=2^63 and NUL in text filters now answer 422; normal requests and every KNOWBASE call the platform makes (proxy endpoints, 8 lookups, the 200-item measures page) still answer 200. Closed.
 
 ### Current state and next steps (updated 2026-11-02, after 7o)
 
