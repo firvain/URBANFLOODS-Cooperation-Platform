@@ -269,6 +269,20 @@ def test_bucket_allows_burst_then_refills():
     assert store.hit("k", 10, 900) > 0
 
 
+def test_float_rounding_never_refuses_an_allowed_hit():
+    """``(now + 60) - 60`` can round to just above ``now`` (CI flake 2026-11-02 on a 1/60 s limit):
+    the first hit of a fresh key, and a hit exactly one interval later, must still pass."""
+    clock = FakeClock()
+    clock.now = 1000.0000000000003  # (now + 60.0) - 60.0 > now for this value
+    assert (clock.now + 60.0) - 60.0 > clock.now
+    store = BucketStore(clock=clock)
+
+    assert store.hit("k", 1, 60) == 0
+    assert store.hit("k", 1, 60) > 0
+    clock.now += 60
+    assert store.hit("k", 1, 60) == 0
+
+
 def test_rejected_hits_do_not_extend_the_wait():
     clock = FakeClock()
     store = BucketStore(clock=clock)

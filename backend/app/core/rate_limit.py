@@ -80,6 +80,10 @@ ROUTE_LIMITS: dict[tuple[str, str], Limit] = {
 DEFAULT_LIMIT = Limit("api.default", 300, 60)
 
 
+# Floating-point slack when comparing times (far below any real limit's interval).
+_TOLERANCE_SECONDS = 1e-6
+
+
 class BucketStore:
     """GCRA buckets: key -> theoretical arrival time, in least-recently-used order.
 
@@ -122,7 +126,9 @@ class BucketStore:
         allow_at = new_tat - seconds
         if stored is not None:
             self._tat.move_to_end(key)
-        if now < allow_at:
+        # ``allow_at`` is computed as ``(now + interval) - seconds``, which can round to a few ulps
+        # above ``now``: a tolerance keeps that from refusing a hit that is exactly on time.
+        if allow_at - now > _TOLERANCE_SECONDS:
             return allow_at - now
         if stored is None:
             while len(self._tat) >= self.max_keys:

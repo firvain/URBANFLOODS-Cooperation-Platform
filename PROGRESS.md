@@ -244,7 +244,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - 7i: auto-approve gates (findings 2a–2d), migration 0011 (`rejected_at`); see the board row. Not deployed yet (needs CI green and the owner's go; the migration runs in the backend entrypoint).
 
 - 7j: moderation edge cases (findings 3, 10–12); see the board row.
-- **7i + 7j deployed 2026-11-02 06:44** by Claude with the owner's go (`./deploy.sh`; health ok; migration 0011; KNOWBASE unchanged). CI on 48e74e0 first failed on `test_rate_limit.py::test_cors_preflight_is_not_counted` (429): a float-rounding edge in the GCRA limiter, `(now + 60) − 60 > now` for rare clock values, refuses the first request when a limit allows only 1 per window (only tests use such a limit); green on re-run. Follow-up: compare with a small tolerance. Owner asked to be consulted before each next step (increment, commit, deploy).
+- **7i + 7j deployed 2026-11-02 06:44** by Claude with the owner's go (`./deploy.sh`; health ok; migration 0011; KNOWBASE unchanged). CI on 48e74e0 first failed on `test_rate_limit.py::test_cors_preflight_is_not_counted` (429): a float-rounding edge in the GCRA limiter, `(now + 60) − 60 > now` for rare clock values, refuses the first request when a limit allows only 1 per window (only tests use such a limit); green on re-run. Fixed afterwards: `BucketStore.hit` compares with a 1 µs tolerance (`_TOLERANCE_SECONDS`), test `test_float_rounding_never_refuses_an_allowed_hit` with a clock value that rounds up (red before the fix); backend 1959. Owner asked to be consulted before each next step (increment, commit, deploy).
 
 ### Current state and next steps (updated 2026-11-02, after 7j)
 
@@ -256,11 +256,11 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 
 **Done since 2026-10-31:** 7a bin; 7b Atom feed links; 7c "Flood Management Measures" page + "Measures" menu item; 7d Turnstile on resend/forgot-password (production bug) + widget rewrite; 7e expertise picker shown directly; 7f free-text "other" expertise; 7g production-mode smoke test in CI; 7h deploy prune limited to this project; 7i auto-approve gates and 7j moderation edge cases (deployed 2026-11-02). KNOWBASE `/docs` fixed by the owner. 5th-meeting deck (Sarajevo, 17–18/11/2026) in `docs/` (not in git).
 
-**Test counts on `main`:** backend 1958, vitest 1210, e2e 36 (incl. 4 opt-in a11y), smoke 10.
+**Test counts on `main`:** backend 1959, vitest 1210, e2e 36 (incl. 4 opt-in a11y), smoke 10.
 
 **Next steps (in priority order):**
 1. **Ultra review fixes:** work through `docs/ultra-review-2026-11-02.md` in order: ~~7i auto-approve gates~~ (deployed), ~~7j restore keeps hidden + moderation edge cases~~ (deployed) + moderation edge cases, 7k email tokens/sessions/rate limits, 7l session cookie refresh + frontend 401 handling, 7m uploads, 7n bounded ids, export ETag, sanitisers keep only uploads and KNOWBASE images (decided 2026-11-02). Each: failing test first, `/code-review` medium, update the finding's status. Deploy with the owner's go.
-2. **Small follow-ups:** rate limiter float tolerance (flaky `test_cors_preflight_is_not_counted`, see the 2026-11-02 log); `/admin/deleted` "Delete permanently" accessible name (axe `label-content-name-mismatch`, WCAG 2.5.3); a message when the Turnstile script is blocked (submit stays disabled today).
+2. **Small follow-ups:** `/admin/deleted` "Delete permanently" accessible name (axe `label-content-name-mismatch`, WCAG 2.5.3); a message when the Turnstile script is blocked (submit stays disabled today).
 3. **Before Sarajevo (17–18/11):** RCO87 count on the meeting morning (admin dashboard/export); second superadmin and admins from other partners; ask partner IT (UOWM first) to allow-list `cooperation.urbanfloods.app` (Junk placement, mail scanners clicking links); ask RDA Backa when the WP3 policy recommendations reach the KNOWBASE (Policy Toolkit is a Period 6 next step in the deck).
 4. **D.5.1.1 report** from `docs/report-D5.1.1-outline.md` (due by 31/08/2027).
 5. **Link from the project website** to the platform (AF-12).
