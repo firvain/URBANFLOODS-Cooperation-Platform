@@ -248,6 +248,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 - **7i + 7j deployed 2026-11-02 06:44** by Claude with the owner's go (`./deploy.sh`; health ok; migration 0011; KNOWBASE unchanged). CI on 48e74e0 first failed on `test_rate_limit.py::test_cors_preflight_is_not_counted` (429): a float-rounding edge in the GCRA limiter, `(now + 60) − 60 > now` for rare clock values, refuses the first request when a limit allows only 1 per window (only tests use such a limit); green on re-run. Fixed afterwards: `BucketStore.hit` compares with a 1 µs tolerance (`_TOLERANCE_SECONDS`), test `test_float_rounding_never_refuses_an_allowed_hit` with a clock value that rounds up (red before the fix); backend 1959. Owner asked to be consulted before each next step (increment, commit, deploy).
 
 - 7k: email tokens, sessions, per-account login limits, raised per-IP budgets (owner's decision for the Sarajevo QR registration); see the board row.
+- 7k CI green on 0d86473 (incl. smoke); the owner gave the go to deploy, but SSH to the server is blocked from the UOWM campus network, so **7k is not deployed yet**. **Next:** deploy 7k from another network (`./deploy.sh`, no migration), verify, then 7l (session cookie refresh, frontend 401 handling); ask the owner before each step.
 
 ### Current state and next steps (updated 2026-11-02, after 7k)
 
