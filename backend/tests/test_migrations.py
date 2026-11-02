@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import text
@@ -212,3 +213,128 @@ async def test_0009_switches_member_notification_defaults_off_and_keeps_rows(emp
         await conn.run_sync(to("0008", down=True))
     defaults = await _preference_defaults(empty_engine)
     assert all(defaults[column] == "true" for column in MEMBER_NOTIFICATION_COLUMNS)
+
+
+async def _columns(engine: AsyncEngine, table: str) -> set[str]:
+    async with engine.connect() as conn:
+        rows = await conn.execute(
+            text("SELECT column_name FROM information_schema.columns WHERE table_name = :t"),
+            {"t": table},
+        )
+        return {row[0] for row in rows}
+
+
+async def test_0011_backfills_rejected_at_from_the_audit_log(empty_engine):
+    """0011: ``rejected_at`` on posts and threads is the latest ``moderation.reject`` audit row
+    for that very item, when it is later than the item's approval (or it was never approved);
+    other actions and the other content type's rows with the same id do not count. Downgrade
+    drops the column again."""
+    from alembic import command
+
+    from app.db.migrations import alembic_config
+
+    def to(revision: str, *, down: bool = False):
+        def run(sync_conn):
+            step = command.downgrade if down else command.upgrade
+            step(alembic_config(sync_conn), revision)
+
+        return run
+
+    t1 = datetime(2026, 10, 1, 10, tzinfo=UTC)
+    t2 = datetime(2026, 10, 2, 10, tzinfo=UTC)
+    t3 = datetime(2026, 10, 3, 10, tzinfo=UTC)
+    # name -> (status, approved_at, [(action, created_at)])
+    cases: dict[str, tuple[str, datetime | None, list[tuple[str, datetime]]]] = {
+        "rejected_once": ("hidden", None, [("moderation.reject", t1)]),
+        "rejected_twice_resubmitted": (
+            "pending",
+            None,
+            [("moderation.reject", t1), ("moderation.resubmit", t2), ("moderation.reject", t3)],
+        ),
+        "rejected_then_approved": ("published", t2, [("moderation.reject", t1)]),
+        "approved_then_rejected": ("hidden", t1, [("moderation.reject", t2)]),
+        "never_rejected": ("pending", None, [("moderation.hide", t1)]),
+    }
+
+    async with empty_engine.begin() as conn:
+        await conn.run_sync(to("0010"))
+        categories = {}
+        for kind in ("blog", "forum"):
+            categories[kind] = (
+                await conn.execute(
+                    text(
+                        "INSERT INTO categories (kind, slug, name) "
+                        "VALUES (CAST(:kind AS category_kind), :kind, :kind) RETURNING id"
+                    ),
+                    {"kind": kind},
+                )
+            ).scalar_one()
+        ids: dict[tuple[str, str], int] = {}
+        # Posts get ids 1.., threads 101..: no post shares an id with a thread.
+        tables = (("posts", "post", "blog", 1), ("threads", "thread", "forum", 101))
+        for table, target_type, kind, first_id in tables:
+            for offset, (name, (status, approved_at, audits)) in enumerate(cases.items()):
+                content_id = (
+                    await conn.execute(
+                        text(
+                            f"INSERT INTO {table} (id, category_id, title, slug, body_html, "
+                            "body_text, status, approved_at) VALUES (:id, :cat, :name, :slug, "
+                            "'<p>x</p>', 'x', CAST(:status AS content_status), "
+                            "CAST(:approved_at AS timestamptz)) RETURNING id"
+                        ),
+                        {
+                            "id": first_id + offset,
+                            "cat": categories[kind],
+                            "name": name,
+                            "slug": f"{target_type}-{name}".replace("_", "-"),
+                            "status": status,
+                            "approved_at": approved_at,
+                        },
+                    )
+                ).scalar_one()
+                ids[(table, name)] = content_id
+                for action, created_at in audits:
+                    await conn.execute(
+                        text(
+                            "INSERT INTO audit_log (action, target_type, target_id, created_at) "
+                            "VALUES (:action, :tt, :id, CAST(:at AS timestamptz))"
+                        ),
+                        {"action": action, "tt": target_type, "id": content_id, "at": created_at},
+                    )
+        # A reject logged for the other content type under the never-rejected item's id (no item
+        # of that type has it) must not leak across tables: only the target type tells them apart.
+        for table, other_type in (("posts", "thread"), ("threads", "post")):
+            await conn.execute(
+                text(
+                    "INSERT INTO audit_log (action, target_type, target_id, created_at) "
+                    "VALUES ('moderation.reject', :tt, :id, CAST(:at AS timestamptz))"
+                ),
+                {"tt": other_type, "id": ids[(table, "never_rejected")], "at": t3},
+            )
+
+    async with empty_engine.begin() as conn:
+        await conn.run_sync(to("0011"))
+        result: dict[tuple[str, str], str | None] = {}
+        for (table, name), content_id in ids.items():
+            value = (
+                await conn.execute(
+                    text(
+                        f"SELECT to_char(rejected_at AT TIME ZONE 'UTC', "
+                        f"'YYYY-MM-DD\"T\"HH24:MI:SS') FROM {table} WHERE id = :id"
+                    ),
+                    {"id": content_id},
+                )
+            ).scalar_one()
+            result[(table, name)] = value
+
+    for table in ("posts", "threads"):
+        assert result[(table, "rejected_once")] == "2026-10-01T10:00:00"
+        assert result[(table, "rejected_twice_resubmitted")] == "2026-10-03T10:00:00"
+        assert result[(table, "rejected_then_approved")] is None
+        assert result[(table, "approved_then_rejected")] == "2026-10-02T10:00:00"
+        assert result[(table, "never_rejected")] is None
+
+    async with empty_engine.begin() as conn:
+        await conn.run_sync(to("0010", down=True))
+    assert "rejected_at" not in await _columns(empty_engine, "posts")
+    assert "rejected_at" not in await _columns(empty_engine, "threads")

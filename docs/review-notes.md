@@ -54,6 +54,10 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
   Zenodo deposit at project end, not from the code.
 - **No dark mode, no third-party scripts except Cloudflare Turnstile, no analytics, no paid
   services** (CLAUDE.md §9).
+- **Auto-approve (`AUTO_APPROVE_AFTER_DAYS`) never publishes** items of banned or erased authors,
+  or items with `rejected_at` (rejected, then resubmitted or restored): those wait for an admin
+  however long (7i). The sweep locks content and author rows with `SKIP LOCKED`; a locked item
+  waits for the next run.
 - **Admins see soft-deleted content by URL** (with a Deleted badge); lists, search, feeds and
   exports never include it.
 

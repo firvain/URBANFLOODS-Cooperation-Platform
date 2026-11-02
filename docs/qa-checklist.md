@@ -444,7 +444,7 @@ decision or an increment before launch).
 | Stricter superadmin self-deletion; cooling-off period for deletion | | |
 | Admin anonymisation of another account (do after launch) | | |
 | Pagination labels in other locales | | |
-| Auto-approve age measured from `created_at` (a restored, never-approved item is approved at once) | | |
+| Auto-approve age measured from `created_at` (a restored, never-approved item is approved at once) | rejected items are never auto-approved since 7i; a never-rejected item restored after its author deleted it still is | |
 | Orphan-upload and usage detection by substring scan (fine at current scale) | | |
 | Public categories list cached per browser session | | |
 | Home suggested-collaborator cards lack the admin badge | | |

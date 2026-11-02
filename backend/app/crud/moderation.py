@@ -13,14 +13,18 @@ State machine (docs/PLAN.md, "State machines"), enforced by :data:`TRANSITIONS`:
 
 A rejection's reason is stored on the post/thread as ``moderation_note`` (plain text, shown to the
 author); every approval clears it, a resubmission keeps it until the next decision. A ``hide``
-reason stays in the audit row only.
+reason stays in the audit row only. A rejection also stamps ``rejected_at`` (with or without a
+reason); every approval clears it, and resubmit, delete and restore keep it. It marks the item as
+rejected-and-resubmitted in the admin queue and keeps it out of the auto-approve sweep.
 
 Replies and comments have no ``pending`` state, so approve/reject on them is always invalid. Any
 other edge raises 409 ``moderation.invalid_transition``. Every transition writes an
 ``moderation.<action>`` audit row with ``{"from", "to", "reason"?}``. Approving a member's
-content marks them trusted (``user.trusted`` audit row). Tag usage counts only published posts
-and threads, so every post/thread transition refreshes them; the reply/comment counters on
-threads and posts are kept by database triggers.
+content marks them trusted (``user.trusted`` audit row). The scheduler's
+:func:`auto_approve_stale` approves (no actor) stale pending posts/threads of live authors that
+were never rejected, in one locking query that skips rows another transaction holds. Tag usage
+counts only published posts and threads, so every post/thread transition refreshes them; the
+reply/comment counters on threads and posts are kept by database triggers.
 """
 
 from __future__ import annotations
@@ -29,11 +33,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any, NamedTuple
 
-from sqlalchemy import ColumnElement, func, literal, or_, select, union_all, update
+from sqlalchemy import ColumnElement, and_, func, literal, or_, select, union_all, update
 from sqlalchemy import delete as sql_delete
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import aliased, joinedload
+from sqlalchemy.orm import aliased, contains_eager, joinedload
 
 from app.core.config import settings
 from app.core.exceptions import AppError
@@ -303,12 +307,15 @@ async def _trust_author(
 
 
 def _set_approval(content: ContentModel, *, actor: User | None, now: datetime) -> None:
-    """The approval fields of a post/thread; ``published_at`` only if it was never set."""
+    """The approval fields of a post/thread; ``published_at`` only if it was never set. Clears
+    the last rejection (``moderation_note`` and ``rejected_at``): used by approve, the unhide of a
+    rejected item and the auto-approve sweep."""
     if content.published_at is None:
         content.published_at = now
     content.approved_by = actor.id if actor is not None else None
     content.approved_at = now
     content.moderation_note = None
+    content.rejected_at = None
 
 
 async def _approve(
@@ -368,10 +375,13 @@ async def reject(
     now: datetime | None = None,
 ) -> ContentModel:
     """``pending`` → ``hidden(rejected)``; the author stays untrusted. ``reason`` (as plain
-    text) becomes the item's ``moderation_note``, which the author sees; none clears it."""
+    text) becomes the item's ``moderation_note``, which the author sees; none clears it.
+    ``rejected_at`` is set to ``now`` either way: from then on the item is never auto-approved
+    (until an admin approves it) and shows as resubmitted in the queue."""
     from_status = content.status
     content.status = _target(content, "reject")
     content.hidden_reason = HiddenReason.REJECTED
+    content.rejected_at = now or datetime.now(UTC)
     content.moderation_note = note = plain_text(reason, NOTE_MAX_LENGTH)
     return await _finish(
         db,
@@ -489,7 +499,8 @@ async def resubmit(
     """``hidden(rejected)`` → ``pending``: the author (``actor``; the caller checks it) sends
     their edited post/thread for approval again. Clears ``hidden_reason`` and keeps
     ``moderation_note``, so the author still sees why it was rejected until the next decision.
-    Trusts nobody."""
+    Keeps ``rejected_at`` too, so an admin must review the edit (the auto-approve sweep skips
+    it). Trusts nobody."""
     from_status = content.status
     content.status = _target(content, "resubmit")
     content.hidden_reason = None
@@ -963,6 +974,19 @@ class ApprovedItem:
     newly_trusted: bool
 
 
+def _auto_approvable(model: type[Any], cutoff: datetime) -> ColumnElement[bool]:
+    """The rows :func:`auto_approve_stale` may approve (with ``User`` joined on the author):
+    pending since before ``cutoff``, never rejected (or approved since), by an author who is
+    active and not erased."""
+    return and_(
+        model.status == _P,
+        model.created_at < cutoff,
+        model.rejected_at.is_(None),
+        User.is_active.is_(True),
+        User.deleted_at.is_(None),
+    )
+
+
 async def auto_approve_stale(
     db: AsyncSession,
     *,
@@ -971,7 +995,20 @@ async def auto_approve_stale(
 ) -> int:
     """Approve (no actor) every post and thread pending for more than ``AUTO_APPROVE_AFTER_DAYS``
     days, trusting their authors. Returns how many were approved; 0 when the setting is 0. Each
-    approval is appended to ``approved`` when it is given."""
+    approval is appended to ``approved`` when it is given.
+
+    Skipped, so they wait for an admin: items without an author or whose author is banned or
+    erased, and items with a ``rejected_at`` (rejected, then resubmitted or restored: the edit
+    needs an admin's eyes).
+
+    One query per content type selects the items and their authors and locks both rows
+    (``FOR UPDATE OF <content>, users SKIP LOCKED``), refreshing the session's copies. Postgres
+    checks the conditions on the latest committed rows once it holds the locks, so a decision or
+    ban committed before that wins; an item whose content or author row another transaction
+    holds (an admin deciding, a ban, an erasure in flight) is skipped, never waited for, and
+    waits for the next run. Never waiting for those rows also keeps the sweep from deadlocking
+    against them or blocking an admin.
+    """
     days = settings.AUTO_APPROVE_AFTER_DAYS
     if days <= 0:
         return 0
@@ -982,8 +1019,12 @@ async def auto_approve_stale(
         model = MODELS[content_type]
         stale = await db.scalars(
             select(model)
-            .where(model.status == _P, model.created_at < cutoff)
+            .join(User, User.id == model.author_id)
+            .where(_auto_approvable(model, cutoff))
+            .options(contains_eager(model.author))
             .order_by(model.created_at, model.id)
+            .with_for_update(of=(model, User), skip_locked=True)
+            .execution_options(populate_existing=True)
         )
         for content in stale.all():
             newly_trusted = await _approve(

@@ -145,7 +145,7 @@ async def moderation_queue(
                 author=_queue_author(obj.author),
                 category=QueueCategory.model_validate(obj.category),
                 created_at=obj.created_at,
-                resubmitted=obj.moderation_note is not None,
+                resubmitted=obj.rejected_at is not None,
             )
             for content_type, obj in items
         ],

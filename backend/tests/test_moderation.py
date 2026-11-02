@@ -18,7 +18,7 @@ from app.core.exceptions import AppError
 from app.crud import moderation
 from app.crud.tag import recount_tag_usage
 from app.db.enums import CategoryKind, ContentStatus, ContentType, HiddenReason, ReportStatus
-from app.db.models import AuditLog, Post, Tag, Thread
+from app.db.models import AuditLog, Post, Tag, Thread, User
 from tests.factories import (
     create_admin,
     create_category,
@@ -652,9 +652,22 @@ async def test_auto_approve_disabled(db_session, monkeypatch):
 
 
 async def _stale_pending_count(db, cutoff: datetime) -> int:
+    """Posts and threads the sweep should approve: stale, pending, never rejected, by a live
+    (active, not erased) author."""
     total = 0
     for model in (Post, Thread):
-        stmt = select(func.count()).where(model.status == P, model.created_at < cutoff)
+        stmt = (
+            select(func.count())
+            .select_from(model)
+            .join(User, User.id == model.author_id)
+            .where(
+                model.status == P,
+                model.created_at < cutoff,
+                model.rejected_at.is_(None),
+                User.is_active.is_(True),
+                User.deleted_at.is_(None),
+            )
+        )
         total += (await db.execute(stmt)).scalar_one()
     return total
 
@@ -878,7 +891,9 @@ async def test_unhide_rejected_clears_the_note(db_session):
     assert post.moderation_note is None
 
 
-async def test_auto_approve_clears_the_note(db_session, monkeypatch):
+async def test_auto_approve_leaves_a_resubmitted_item_and_its_note(db_session, monkeypatch):
+    """7i (2b): a resubmitted item always waits for an admin, so its note stays (it used to be
+    auto-approved, and its note cleared, on the next sweep)."""
     monkeypatch.setattr(settings, "AUTO_APPROVE_AFTER_DAYS", 2)
     author, thread = await _rejected(db_session, ContentType.THREAD)
     thread.created_at = NOW - timedelta(days=3)
@@ -886,8 +901,8 @@ async def test_auto_approve_clears_the_note(db_session, monkeypatch):
 
     await moderation.auto_approve_stale(db_session, now=NOW)
 
-    assert thread.status == PUB
-    assert thread.moderation_note is None
+    assert thread.status == P
+    assert thread.moderation_note == "Too vague"
 
 
 async def test_hide_with_reason_does_not_store_a_note(db_session):
@@ -984,3 +999,348 @@ async def test_reject_after_resubmit_replaces_the_note(db_session):
     await moderation.reject(db_session, content=post, actor=admin, reason="Second note", now=NOW)
 
     assert post.moderation_note == "Second note"
+
+
+# --- 7i: auto-approve sweep fixes -------------------------------------------------------------
+
+STALE = NOW - timedelta(days=30)
+
+
+@pytest.fixture
+def auto_approve_days(monkeypatch):
+    monkeypatch.setattr(settings, "AUTO_APPROVE_AFTER_DAYS", 2)
+
+
+async def _approved_audits(db, content) -> list:
+    return await _audits(
+        db,
+        action="moderation.auto_approved",
+        target_type=moderation.content_type_of(content).value,
+        target_id=content.id,
+    )
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+@pytest.mark.parametrize(
+    "author_fields",
+    [{"is_active": False}, {"deleted_at": NOW - timedelta(days=1)}],
+    ids=["banned", "erased"],
+)
+async def test_auto_approve_skips_dead_accounts(
+    db_session, auto_approve_days, content_type, author_fields
+):
+    """2a: a stale pending item of a banned or erased author stays pending for an admin."""
+    author = await create_verified_user(db_session, **author_fields)
+    content = await _make(db_session, content_type, P, author_id=author.id, created_at=STALE)
+    approved: list[moderation.ApprovedItem] = []
+
+    count = await moderation.auto_approve_stale(db_session, now=NOW, approved=approved)
+
+    assert count == 0
+    assert approved == []
+    await db_session.refresh(content)
+    assert content.status == P
+    assert content.published_at is None
+    assert content.approved_at is None
+    assert await _approved_audits(db_session, content) == []
+    await db_session.refresh(author)
+    assert author.trusted_at is None
+
+
+async def test_auto_approve_skips_an_anonymised_author(db_session, auto_approve_days):
+    """2a, through the real GDPR erasure helper."""
+    from app.crud import user as crud_user
+
+    author = await create_verified_user(db_session)
+    post = await _make(db_session, ContentType.POST, P, author_id=author.id, created_at=STALE)
+    await crud_user.anonymise_user(db_session, user=author, now=NOW - timedelta(days=1))
+
+    assert await moderation.auto_approve_stale(db_session, now=NOW) == 0
+
+    await db_session.refresh(post)
+    assert post.status == P
+    assert await _approved_audits(db_session, post) == []
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+async def test_auto_approve_skips_items_without_author(db_session, auto_approve_days, content_type):
+    """2a: no author, no auto-approval."""
+    content = await _make(db_session, content_type, P, author_id=None, created_at=STALE)
+
+    assert await moderation.auto_approve_stale(db_session, now=NOW) == 0
+
+    await db_session.refresh(content)
+    assert content.status == P
+    assert await _approved_audits(db_session, content) == []
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+@pytest.mark.parametrize("reason", ["Add a map.", None])
+async def test_reject_sets_rejected_at_and_resubmit_keeps_it(db_session, content_type, reason):
+    """2b: ``rejected_at`` is set by reject (with or without a reason) and kept by resubmit."""
+    author, content = await _rejected(db_session, content_type, reason=reason)
+
+    assert content.rejected_at == NOW
+
+    later = NOW + timedelta(hours=1)
+    await moderation.resubmit(db_session, content=content, actor=author, now=later)
+
+    assert content.status == P
+    assert content.rejected_at == NOW
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+@pytest.mark.parametrize("reason", ["Add a map.", None])
+async def test_auto_approve_never_approves_a_resubmitted_item(
+    db_session, auto_approve_days, content_type, reason
+):
+    """2b: a rejected and resubmitted item needs an admin however long it waits; its author is
+    not trusted by the sweep."""
+    author = await create_verified_user(db_session)
+    admin = await create_admin(db_session)
+    content = await _make(db_session, content_type, P, author_id=author.id, created_at=STALE)
+    await moderation.reject(db_session, content=content, actor=admin, reason=reason, now=NOW)
+    await moderation.resubmit(db_session, content=content, actor=author, now=NOW)
+
+    much_later = NOW + timedelta(days=365)
+    assert await moderation.auto_approve_stale(db_session, now=much_later) == 0
+
+    await db_session.refresh(content)
+    assert content.status == P
+    assert content.rejected_at == NOW
+    assert await _approved_audits(db_session, content) == []
+    await db_session.refresh(author)
+    assert author.trusted_at is None
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+async def test_approve_clears_rejected_at(db_session, content_type):
+    admin = await create_admin(db_session)
+    author, content = await _rejected(db_session, content_type, reason=None)
+    await moderation.resubmit(db_session, content=content, actor=author, now=NOW)
+
+    await moderation.approve(db_session, content=content, actor=admin, now=NOW)
+
+    assert content.status == PUB
+    assert content.rejected_at is None
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+async def test_unhide_rejected_clears_rejected_at(db_session, content_type):
+    admin = await create_admin(db_session)
+    _, content = await _rejected(db_session, content_type)
+
+    await moderation.unhide(db_session, content=content, actor=admin, now=NOW)
+
+    assert content.status == PUB
+    assert content.rejected_at is None
+
+
+async def test_approve_never_rejected_leaves_rejected_at_empty(db_session):
+    admin = await create_admin(db_session)
+    post = await _make(db_session, ContentType.POST, P)
+
+    await moderation.approve(db_session, content=post, actor=admin, now=NOW)
+
+    assert post.rejected_at is None
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+async def test_restore_of_a_rejected_never_approved_item_keeps_rejected_at(
+    db_session, auto_approve_days, content_type
+):
+    """A rejected item that was deleted and restored lands on pending, still marked rejected, so
+    the sweep leaves it for an admin."""
+    admin = await create_admin(db_session)
+    author = await create_verified_user(db_session)
+    content = await _make(db_session, content_type, P, author_id=author.id, created_at=STALE)
+    await moderation.reject(db_session, content=content, actor=admin, reason=None, now=NOW)
+    await moderation.delete(db_session, content=content, actor=admin, now=NOW)
+
+    await moderation.restore(db_session, content=content, actor=admin, now=NOW)
+
+    assert content.status == P
+    assert content.rejected_at == NOW
+    assert await moderation.auto_approve_stale(db_session, now=NOW + timedelta(days=30)) == 0
+    await db_session.refresh(content)
+    assert content.status == P
+    assert await _approved_audits(db_session, content) == []
+
+
+@pytest.mark.parametrize("table", ["posts", "threads"])
+async def test_rejected_at_column_on_posts_and_threads(db_session, table):
+    from sqlalchemy import text
+
+    row = (
+        await db_session.execute(
+            text(
+                "SELECT data_type, is_nullable FROM information_schema.columns "
+                "WHERE table_name = :table AND column_name = 'rejected_at'"
+            ),
+            {"table": table},
+        )
+    ).one()
+    assert row.data_type == "timestamp with time zone"
+    assert row.is_nullable == "YES"
+
+
+async def test_auto_approve_still_approves_a_live_authors_stale_item(db_session, auto_approve_days):
+    """The fixes leave the normal case alone: a stale, never-rejected item of an active author is
+    approved and reported in ``approved``."""
+    author = await create_verified_user(db_session)
+    thread = await _make(db_session, ContentType.THREAD, P, author_id=author.id, created_at=STALE)
+    approved: list[moderation.ApprovedItem] = []
+
+    await moderation.auto_approve_stale(db_session, now=NOW, approved=approved)
+
+    assert thread.status == PUB
+    assert moderation.ApprovedItem(ContentType.THREAD, thread.id, True) in approved
+    assert author.trusted_at == NOW
+
+
+# --- 7i: the sweep against concurrent transactions ----------------------------------------------
+#
+# These tests commit their rows (users through ``cleanup_users``, content through categories in
+# ``cleanup_forum_categories``, which removes threads and posts) so that a second connection, the
+# "admin" transaction, can see and lock them. The sweep runs on ``db_session`` with a short
+# ``lock_timeout``: a sweep that waits for a lock fails with an error instead of hanging. The
+# sweep itself is never committed (``db_session`` is rolled back before the cleanup runs).
+
+SWEEP_LOCK_TIMEOUT = "SET LOCAL lock_timeout = '2s'"
+
+
+@pytest.fixture
+async def committed_stale(db_session, cleanup_users, cleanup_forum_categories):
+    """``make(content_type)`` commits a verified author and a stale pending post/thread of theirs
+    and returns ``(author, content)``. Rolls ``db_session`` back before the cleanup."""
+
+    async def make(content_type: ContentType):
+        author = await create_verified_user(db_session)
+        cleanup_users.add(author.email)
+        kind = CategoryKind.BLOG if content_type == ContentType.POST else CategoryKind.FORUM
+        category = await create_category(db_session, kind=kind)
+        cleanup_forum_categories.add(category.id)
+        factory = create_post if content_type == ContentType.POST else create_thread
+        content = await factory(
+            db_session,
+            category_id=category.id,
+            status=P,
+            author_id=author.id,
+            created_at=datetime.now(UTC) - timedelta(days=30),
+        )
+        await db_session.commit()
+        return author, content
+
+    yield make
+    await db_session.rollback()
+
+
+@pytest.fixture
+async def admin_tx():
+    """A second connection with an open transaction (an admin's request in flight)."""
+    from app.db.session import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.rollback()
+
+
+async def _sweep(db, approved: list[moderation.ApprovedItem]) -> int:
+    from sqlalchemy import text
+
+    await db.execute(text(SWEEP_LOCK_TIMEOUT))
+    return await moderation.auto_approve_stale(db, approved=approved)
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+@pytest.mark.parametrize("in_flight", ["reject", "ban"])
+async def test_auto_approve_skips_rows_locked_by_an_admin_and_the_decision_wins(
+    db_session, auto_approve_days, committed_stale, admin_tx, content_type, in_flight
+):
+    """2d: while an admin's reject (content row) or ban (author row) is uncommitted, the sweep
+    neither waits nor approves the item (``SKIP LOCKED`` on both rows); once it commits, the next
+    sweep sees the decision and leaves the item alone."""
+    from sqlalchemy import update
+
+    author, content = await committed_stale(content_type)
+    model = type(content)
+    if in_flight == "reject":
+        await admin_tx.execute(
+            update(model)
+            .where(model.id == content.id)
+            .values(status=H, hidden_reason=HiddenReason.REJECTED, rejected_at=NOW)
+        )
+    else:
+        await admin_tx.execute(update(User).where(User.id == author.id).values(is_active=False))
+
+    approved: list[moderation.ApprovedItem] = []
+    await _sweep(db_session, approved)
+
+    ours = (content_type, content.id)
+    assert ours not in [(i.content_type, i.content_id) for i in approved]
+    await admin_tx.commit()
+
+    await _sweep(db_session, approved)
+
+    assert ours not in [(i.content_type, i.content_id) for i in approved]
+    await db_session.refresh(content)
+    assert content.status == (H if in_flight == "reject" else P)
+    assert content.approved_at is None
+    await db_session.refresh(author)
+    assert author.trusted_at is None
+    assert await _approved_audits(db_session, content) == []
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+async def test_auto_approve_trusts_the_fresh_author_row(
+    db_session, auto_approve_days, committed_stale, admin_tx, content_type
+):
+    """The author is re-read by the sweep's locking query (not taken stale from the session):
+    trusted meanwhile by another transaction, they are not trusted (or audited) a second time."""
+    from sqlalchemy import update
+
+    author, content = await committed_stale(content_type)
+    # Load every column into the session's copy (a fresh factory object leaves some unloaded,
+    # which any query would fill in): it is about to go stale.
+    await db_session.refresh(author)
+    await db_session.commit()
+    assert author.trusted_at is None
+    trusted_at = datetime.now(UTC) - timedelta(hours=1)
+    await admin_tx.execute(update(User).where(User.id == author.id).values(trusted_at=trusted_at))
+    await admin_tx.commit()
+
+    approved: list[moderation.ApprovedItem] = []
+    await _sweep(db_session, approved)
+
+    assert moderation.ApprovedItem(content_type, content.id, False) in approved
+    assert author.trusted_at == trusted_at
+    assert (
+        await _audits(db_session, action="user.trusted", target_type="user", target_id=author.id)
+        == []
+    )
+
+
+async def test_auto_approve_locks_content_and_author_rows_skipping_locked(
+    db_session, auto_approve_days
+):
+    """The sweep's select locks both rows and skips the locked ones, for posts and threads."""
+    from sqlalchemy import event
+
+    statements: list[str] = []
+
+    def capture(conn, cursor, statement, *args):
+        statements.append(statement)
+
+    engine = db_session.bind.sync_engine
+    event.listen(engine, "before_cursor_execute", capture)
+    try:
+        await moderation.auto_approve_stale(db_session, now=NOW)
+    finally:
+        event.remove(engine, "before_cursor_execute", capture)
+
+    for table in ("posts", "threads"):
+        assert any(f"FOR UPDATE OF {table}, users SKIP LOCKED" in sql for sql in statements), (
+            statements
+        )

@@ -759,6 +759,27 @@ async def test_queue_flags_resubmitted_items(client, env):
     assert flags[("thread", fresh.id)] is False
 
 
+async def test_queue_flags_items_resubmitted_after_a_reject_without_reason(client, env):
+    """7i (2c): the flag follows the rejection itself, not the note (a reject may have none)."""
+    author = await _user(env)
+    thread = await _make(env, ContentType.THREAD, P, author_id=author.id, created_at=OLD)
+    fresh = await _make(env, ContentType.POST, P, created_at=OLD)
+    await _signed_in(client, env)
+    response = await client.post(_action_url("thread", thread.id, "reject"), json={})
+    assert response.status_code == 200, response.text
+    await login_as(client, author)
+    assert (await client.post(_action_url("thread", thread.id, "resubmit"))).status_code == 200
+    await _signed_in(client, env)
+
+    items = (await client.get(QUEUE, params={"limit": 200})).json()["items"]
+
+    flags = {(i["content_type"], i["id"]): i["resubmitted"] for i in items}
+    assert flags[("thread", thread.id)] is True
+    assert flags[("post", fresh.id)] is False
+    item = next(i for i in items if i["content_type"] == "thread" and i["id"] == thread.id)
+    assert "rejected_at" not in item
+
+
 async def test_published_detail_has_no_note(client, env):
     admin_author = await _user(env)
     post = await _make(env, ContentType.POST, PUB, author_id=admin_author.id)
