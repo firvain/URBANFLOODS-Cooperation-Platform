@@ -644,6 +644,54 @@ async def test_admin_edits_any_reply_any_time(
     assert [row.actor_id for row in rows] == [admin.id]
 
 
+@pytest.mark.parametrize(
+    "thread_fields",
+    [
+        {"status": ContentStatus.HIDDEN, "hidden_reason": HiddenReason.ADMIN},
+        {"status": ContentStatus.DELETED, "deleted_at": datetime(2026, 10, 1, tzinfo=UTC)},
+    ],
+    ids=["hidden", "deleted"],
+)
+async def test_own_reply_in_a_thread_the_author_cannot_see_is_404(
+    client, db_session, cleanup_users, cleanup_forum_categories, thread_fields
+):
+    user, _, _, thread = await _setup(
+        db_session, cleanup_users, cleanup_forum_categories, **thread_fields
+    )
+    reply = await _reply(db_session, thread, author_id=user.id)
+    await login_as(client, user)
+
+    url = _reply_url(reply.id)
+    _assert_error(
+        await client.patch(url, json={"body_html": "<p>Changed.</p>"}), 404, "replies.not_found"
+    )
+    _assert_error(await client.delete(url), 404, "replies.not_found")
+    assert (await _fresh(db_session, reply.id)).status == ContentStatus.PUBLISHED
+
+
+async def test_admin_edits_and_deletes_reply_in_deleted_thread(
+    client, db_session, cleanup_users, cleanup_forum_categories
+):
+    """Admins can open a deleted thread (to restore or purge it), so they can still edit or
+    delete its replies (7j review)."""
+    user, _, _, thread = await _setup(
+        db_session,
+        cleanup_users,
+        cleanup_forum_categories,
+        status=ContentStatus.DELETED,
+        deleted_at=datetime(2026, 10, 1, tzinfo=UTC),
+    )
+    admin = await _committed(db_session, cleanup_users, factory=create_admin)
+    reply = await _reply(db_session, thread, author_id=user.id)
+    await login_as(client, admin)
+
+    response = await client.patch(_reply_url(reply.id), json={"body_html": "<p>Mod.</p>"})
+
+    assert response.status_code == 200, response.text
+    assert (await client.delete(_reply_url(reply.id))).status_code == 204
+    assert (await _fresh(db_session, reply.id)).status == ContentStatus.DELETED
+
+
 async def test_locked_thread_blocks_author_edit(
     client, db_session, cleanup_users, cleanup_forum_categories
 ):

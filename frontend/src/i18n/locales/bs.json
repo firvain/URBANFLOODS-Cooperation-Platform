@@ -1046,6 +1046,7 @@
       "unhide": "Ponovo objavljeno.",
       "delete": "Izbrisano. Može se vratiti iz ovog menija.",
       "restore": "Vraćeno.",
+      "restoreHidden": "Vraćeno. Ostaje skriveno, kao što je bilo prije brisanja.",
       "purge": "Trajno izbrisano."
     },
     "hideTitle": "Sakriti ovaj sadržaj?",

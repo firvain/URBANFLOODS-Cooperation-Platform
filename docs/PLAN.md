@@ -92,7 +92,7 @@ Enums: `user_role(member|admin|superadmin)`, `content_status(pending|published|h
 
 State machines:
 - User: registered → (verify) verified (trusted_at NULL) → (first post/thread approved, or admin trust) trusted. Admin ban = is_active false + revoke sessions.
-- Post/Thread: create by untrusted → `pending`; by trusted → `published`. pending → approve → published (+ user.trusted_at). pending → reject → hidden(rejected). published → N distinct reports → hidden(auto_reports). admin hide/unhide. author/admin delete → deleted (soft). admin restore.
+- Post/Thread: create by untrusted → `pending`; by trusted → `published`. pending → approve → published (+ user.trusted_at). pending → reject → hidden(rejected). published → N distinct reports → hidden(auto_reports). admin hide/unhide. author/admin delete → deleted (soft, keeps hidden_reason). admin restore → hidden (same reason) if it was hidden, else published, or pending if never approved.
 - Replies/comments: created `published` by any verified active user; same hide/delete transitions.
 - Single `visible_to(user)` filter: public sees published; author sees own non-deleted; admin sees all non-deleted (plus deleted with flag).
 

@@ -372,9 +372,9 @@ async def test_restore_never_approved_goes_back_to_pending(db_session, content_t
     assert row.metadata_ == {"from": "deleted", "to": "pending"}
 
 
-async def test_restore_clears_hidden_reason(db_session):
+async def test_restore_of_a_never_hidden_item_has_no_hidden_reason(db_session):
     admin = await create_admin(db_session)
-    post = await _make(db_session, ContentType.POST, H)
+    post = await _make(db_session, ContentType.POST, PUB)
 
     await moderation.delete(db_session, content=post, actor=admin, now=NOW)
     await moderation.restore(db_session, content=post, actor=admin, now=NOW)
@@ -766,11 +766,9 @@ async def test_restore_to_published_dismisses_open_reports(db_session):
     post = await _make(db_session, ContentType.POST, PUB)
     reports = [
         await create_report(db_session, reporter_id=reporter.id, content_id=post.id)
-        for reporter in await _reporters(db_session, 3)
+        for reporter in await _reporters(db_session, 2)
     ]
-    post.status = H
-    post.hidden_reason = HiddenReason.AUTO_REPORTS
-    post.report_count = 3
+    post.report_count = 2
     await db_session.flush()
 
     await moderation.delete(db_session, content=post, actor=admin, now=NOW)
@@ -1149,18 +1147,22 @@ async def test_approve_never_rejected_leaves_rejected_at_empty(db_session):
 async def test_restore_of_a_rejected_never_approved_item_keeps_rejected_at(
     db_session, auto_approve_days, content_type
 ):
-    """A rejected item that was deleted and restored lands on pending, still marked rejected, so
-    the sweep leaves it for an admin."""
+    """A rejected item that was deleted and restored goes back to ``hidden(rejected)`` (7j), still
+    marked rejected; once its author resubmits it, the sweep leaves it for an admin."""
     admin = await create_admin(db_session)
     author = await create_verified_user(db_session)
     content = await _make(db_session, content_type, P, author_id=author.id, created_at=STALE)
-    await moderation.reject(db_session, content=content, actor=admin, reason=None, now=NOW)
+    await moderation.reject(db_session, content=content, actor=admin, reason="Vague", now=NOW)
     await moderation.delete(db_session, content=content, actor=admin, now=NOW)
 
     await moderation.restore(db_session, content=content, actor=admin, now=NOW)
 
-    assert content.status == P
+    assert content.status == H
+    assert content.hidden_reason == HiddenReason.REJECTED
     assert content.rejected_at == NOW
+    assert content.moderation_note == "Vague"
+    await moderation.resubmit(db_session, content=content, actor=author, now=NOW)
+    assert content.status == P
     assert await moderation.auto_approve_stale(db_session, now=NOW + timedelta(days=30)) == 0
     await db_session.refresh(content)
     assert content.status == P
@@ -1344,3 +1346,262 @@ async def test_auto_approve_locks_content_and_author_rows_skipping_locked(
         assert any(f"FOR UPDATE OF {table}, users SKIP LOCKED" in sql for sql in statements), (
             statements
         )
+
+
+# --- 7j: restore keeps hidden content hidden; dismissed reports are audited ---------------------
+
+HIDDEN_CASES = [
+    (ContentType.POST, HiddenReason.ADMIN),
+    (ContentType.POST, HiddenReason.AUTO_REPORTS),
+    (ContentType.POST, HiddenReason.REJECTED),
+    (ContentType.THREAD, HiddenReason.ADMIN),
+    (ContentType.THREAD, HiddenReason.AUTO_REPORTS),
+    (ContentType.THREAD, HiddenReason.REJECTED),
+    (ContentType.REPLY, HiddenReason.ADMIN),
+    (ContentType.REPLY, HiddenReason.AUTO_REPORTS),
+    (ContentType.COMMENT, HiddenReason.ADMIN),
+    (ContentType.COMMENT, HiddenReason.AUTO_REPORTS),
+]
+
+
+async def _hidden_with_reports(db, content_type: ContentType, reason: HiddenReason):
+    """Hidden content (``reason``) with two open reports; a rejected post/thread was never
+    published and carries ``rejected_at`` and a note."""
+    content = await _make(db, content_type, H)
+    content.hidden_reason = reason
+    if reason == HiddenReason.REJECTED:
+        content.published_at = None
+        content.rejected_at = NOW - timedelta(days=3)
+        content.moderation_note = "Add a source."
+    reports = [
+        await create_report(
+            db, reporter_id=reporter.id, content_type=content_type.value, content_id=content.id
+        )
+        for reporter in await _reporters(db, 2)
+    ]
+    content.report_count = 2
+    await db.flush()
+    return content, reports
+
+
+@pytest.mark.parametrize(("content_type", "reason"), HIDDEN_CASES)
+async def test_restore_of_a_hidden_item_goes_back_to_hidden(db_session, content_type, reason):
+    admin = await create_admin(db_session)
+    content, reports = await _hidden_with_reports(db_session, content_type, reason)
+    published_at = getattr(content, "published_at", None)
+    rejected_at = getattr(content, "rejected_at", None)
+
+    await moderation.delete(db_session, content=content, actor=admin, now=NOW)
+    assert content.hidden_reason == reason
+    await moderation.restore(db_session, content=content, actor=admin, now=NOW)
+
+    await db_session.refresh(content)
+    assert content.status == H
+    assert content.hidden_reason == reason
+    assert content.deleted_at is None
+    assert content.report_count == 2
+    assert getattr(content, "published_at", None) == published_at
+    assert getattr(content, "rejected_at", None) == rejected_at
+    if reason == HiddenReason.REJECTED:
+        assert content.moderation_note == "Add a source."
+    for report in reports:
+        await db_session.refresh(report)
+        assert report.status == ReportStatus.OPEN
+        assert report.resolved_by is None
+    (row,) = await _audits(
+        db_session,
+        action="moderation.restore",
+        target_type=content_type.value,
+        target_id=content.id,
+    )
+    assert row.actor_id == admin.id
+    assert row.metadata_ == {"from": "deleted", "to": "hidden", "hidden_reason": reason.value}
+    assert (
+        await db_session.scalar(
+            select(func.count())
+            .select_from(AuditLog)
+            .where(
+                AuditLog.action == "report.dismiss",
+                AuditLog.target_type == "report",
+                AuditLog.target_id.in_([r.id for r in reports]),
+            )
+        )
+        == 0
+    )
+
+
+async def test_restore_of_a_hidden_item_keeps_tags_uncounted(db_session):
+    admin = await create_admin(db_session)
+    tag = await create_tag(db_session)
+    post = await _make(db_session, ContentType.POST, H, tags=[tag])
+    await recount_tag_usage(db_session, tag_ids=[tag.id])
+
+    await moderation.delete(db_session, content=post, actor=admin, now=NOW)
+    await moderation.restore(db_session, content=post, actor=admin, now=NOW)
+
+    assert post.status == H
+    assert await _usage(db_session, tag) == 0
+
+
+async def test_author_deleted_hidden_post_restores_to_hidden(db_session):
+    """The author's own soft delete keeps ``hidden_reason``, so an admin's restore cannot
+    republish content that was taken down."""
+    from app.crud.post import soft_delete_post
+
+    admin = await create_admin(db_session)
+    author = await create_verified_user(db_session)
+    post = await _make(db_session, ContentType.POST, H, author_id=author.id)
+    await db_session.refresh(post, ["tags"])
+
+    await soft_delete_post(db_session, post=post, now=NOW)
+    assert post.hidden_reason == HiddenReason.ADMIN
+    await moderation.restore(db_session, content=post, actor=admin, now=NOW)
+
+    assert post.status == H
+    assert post.hidden_reason == HiddenReason.ADMIN
+
+
+@pytest.mark.parametrize("content_type", list(ContentType))
+async def test_own_soft_delete_keeps_hidden_reason(db_session, content_type):
+    from app.crud.comment import soft_delete_comment
+    from app.crud.post import soft_delete_post
+    from app.crud.reply import soft_delete_reply
+    from app.crud.thread import soft_delete_thread
+
+    content = await _make(db_session, content_type, H)
+    if content_type in (ContentType.POST, ContentType.THREAD):
+        await db_session.refresh(content, ["tags"])
+    soft_delete = {
+        ContentType.POST: lambda: soft_delete_post(db_session, post=content, now=NOW),
+        ContentType.THREAD: lambda: soft_delete_thread(db_session, thread=content, now=NOW),
+        ContentType.REPLY: lambda: soft_delete_reply(db_session, reply=content, now=NOW),
+        ContentType.COMMENT: lambda: soft_delete_comment(db_session, comment=content, now=NOW),
+    }[content_type]
+
+    await soft_delete()
+
+    await db_session.refresh(content)
+    assert content.status == D
+    assert content.hidden_reason == HiddenReason.ADMIN
+
+
+async def _dismiss_audits(db, report_ids: list[int]) -> list[AuditLog]:
+    stmt = (
+        select(AuditLog)
+        .where(
+            AuditLog.action == "report.dismiss",
+            AuditLog.target_type == "report",
+            AuditLog.target_id.in_(report_ids),
+        )
+        .order_by(AuditLog.target_id)
+    )
+    return list((await db.scalars(stmt)).all())
+
+
+@pytest.mark.parametrize("content_type", list(ContentType))
+async def test_unhide_audits_each_dismissed_report(db_session, content_type):
+    admin = await create_admin(db_session)
+    content, reports = await _hidden_with_reports(db_session, content_type, HiddenReason.ADMIN)
+    (other,) = await _reporters(db_session, 1)
+    closed = await create_report(
+        db_session,
+        reporter_id=other.id,
+        content_type=content_type.value,
+        content_id=content.id,
+        status=ReportStatus.RESOLVED,
+    )
+
+    await moderation.unhide(db_session, content=content, actor=admin, now=NOW)
+
+    rows = await _dismiss_audits(db_session, [r.id for r in reports] + [closed.id])
+    assert [row.target_id for row in rows] == sorted(r.id for r in reports)
+    for row in rows:
+        assert row.actor_id == admin.id
+        assert row.metadata_ == {
+            "content_type": content_type.value,
+            "content_id": content.id,
+            "via": "unhide",
+        }
+
+
+@pytest.mark.parametrize("content_type", list(ContentType))
+async def test_restore_to_published_audits_each_dismissed_report(db_session, content_type):
+    admin = await create_admin(db_session)
+    content = await _make(db_session, content_type, PUB)
+    reports = [
+        await create_report(
+            db_session,
+            reporter_id=reporter.id,
+            content_type=content_type.value,
+            content_id=content.id,
+        )
+        for reporter in await _reporters(db_session, 2)
+    ]
+    await moderation.delete(db_session, content=content, actor=admin, now=NOW)
+
+    await moderation.restore(db_session, content=content, actor=admin, now=NOW)
+
+    assert content.status == PUB
+    rows = await _dismiss_audits(db_session, [r.id for r in reports])
+    assert [row.target_id for row in rows] == sorted(r.id for r in reports)
+    for row in rows:
+        assert row.actor_id == admin.id
+        assert row.metadata_ == {
+            "content_type": content_type.value,
+            "content_id": content.id,
+            "via": "restore",
+        }
+
+
+async def test_unhide_without_open_reports_writes_no_dismiss_audit(db_session):
+    admin = await create_admin(db_session)
+    post = await _make(db_session, ContentType.POST, H)
+
+    await moderation.unhide(db_session, content=post, actor=admin, now=NOW)
+
+    rows = await _audits(db_session, target_type="post", target_id=post.id)
+    assert [row.action for row in rows] == ["moderation.unhide"]
+
+
+# --- 7j: the queue survives an item that vanished between its two queries ----------------------
+
+
+async def test_list_pending_skips_a_row_purged_between_page_and_load(db_session, monkeypatch):
+    """A purge committed between the page read and the row load must not turn into a KeyError
+    (a 500 on the queue and in the admin digest): the vanished row is skipped."""
+    from sqlalchemy import delete as sql_delete
+
+    author = await create_verified_user(db_session)
+    base = datetime(2000, 1, 1, tzinfo=UTC)  # first in the (global) oldest-first queue
+    gone = await _make(db_session, ContentType.POST, P, author_id=author.id, created_at=base)
+    kept = await _make(
+        db_session,
+        ContentType.THREAD,
+        P,
+        author_id=author.id,
+        created_at=base + timedelta(hours=1),
+    )
+    gone_id = gone.id
+    real_execute = db_session.execute
+    calls = 0
+
+    async def execute(statement, *args, **kwargs):
+        nonlocal calls
+        result = await real_execute(statement, *args, **kwargs)
+        calls += 1
+        if calls == 2:  # the page read: the post vanishes right after it
+            await real_execute(
+                sql_delete(Post)
+                .where(Post.id == gone_id)
+                .execution_options(synchronize_session=False)
+            )
+        return result
+
+    monkeypatch.setattr(db_session, "execute", execute)
+    db_session.expunge(gone)
+
+    total, items = await moderation.list_pending(db_session, skip=0, limit=2)
+
+    assert calls >= 2
+    assert [(ct, obj.id) for ct, obj in items] == [(ContentType.THREAD, kept.id)]
+    assert total >= 1

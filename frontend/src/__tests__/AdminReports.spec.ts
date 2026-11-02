@@ -204,6 +204,24 @@ describe('Admin reports', () => {
     await vi.waitFor(() => expect(document.body.textContent).toContain(t('admin.reports.restored')))
   })
 
+  it('says the content stays hidden when the restore brings it back hidden', async () => {
+    const route = 'POST /api/v1/moderation/thread/12/restore'
+    const deleted = makeReport({ content: { ...REPORT.content!, status: 'deleted' } })
+    await mountAdmin('/admin/reports', {
+      [REPORTS]: reply(200, page([deleted])),
+      [route]: reply(200, result('hidden')),
+    })
+    await chooseMenuItem(actions(31), t('admin.reports.restore'))
+    expect(dialog().textContent).toContain(t('admin.reports.restoreDescription'))
+    expect(t('admin.reports.restoreDescription')).toContain('hidden')
+    buttonIn(dialog(), t('admin.reports.restore')).click()
+    await flushPromises()
+    expect(rows()[0]!.textContent).toContain(t('admin.contentStatus.hidden'))
+    await vi.waitFor(() =>
+      expect(document.body.textContent).toContain(t('admin.reports.restoredHidden')),
+    )
+  })
+
   it('does not offer Restore for content that is not deleted', async () => {
     await mountAdmin('/admin/reports', { [REPORTS]: reply(200, page([REPORT])) })
     await openMenu(actions(31))

@@ -1046,6 +1046,7 @@
       "unhide": "U publikua përsëri.",
       "delete": "U fshi. Mund të rikthehet nga ky menu.",
       "restore": "U rikthye.",
+      "restoreHidden": "U rikthye. Mbetet e fshehur, siç ishte para fshirjes.",
       "purge": "U fshi përgjithmonë."
     },
     "hideTitle": "Ta fshehim këtë përmbajtje?",

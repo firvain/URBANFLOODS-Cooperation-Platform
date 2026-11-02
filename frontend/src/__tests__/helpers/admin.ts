@@ -102,6 +102,7 @@ export function makeDeletedItem(overrides: Partial<DeletedItem> = {}, daysLeft =
     deleted_at: new Date(purgeAt - 7 * DAY_MS).toISOString(),
     deleted_by: { id: 1, display_name: 'Ada Admin' },
     purge_at: new Date(purgeAt).toISOString(),
+    hidden_reason: null,
     ...overrides,
   }
 }

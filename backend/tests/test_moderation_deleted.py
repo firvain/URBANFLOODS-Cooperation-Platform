@@ -16,7 +16,7 @@ from sqlalchemy import delete
 
 from app.core.config import settings
 from app.crud.audit import log_action
-from app.db.enums import CategoryKind, ContentStatus
+from app.db.enums import CategoryKind, ContentStatus, HiddenReason
 from app.db.models import AuditLog, Post, Thread, User
 from tests.factories import (
     create_admin,
@@ -206,6 +206,7 @@ async def test_deleted_item_shape_and_purge_at(client, env):
         "deleted_at": item["deleted_at"],
         "deleted_by": None,
         "purge_at": item["purge_at"],
+        "hidden_reason": None,
     }
     assert datetime.fromisoformat(item["deleted_at"]) == deleted_at
     days = settings.DELETED_CONTENT_RETENTION_DAYS
@@ -353,3 +354,33 @@ async def test_log_has_no_link_for_rows_without_target(client, env, audit_ids):
 
     (item,) = [i for i in body["items"] if i["id"] == row.id]
     assert item["target_path"] is None
+
+
+# --- 7j: hidden_reason ------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "reason", [HiddenReason.ADMIN, HiddenReason.AUTO_REPORTS, HiddenReason.REJECTED]
+)
+async def test_deleted_item_says_it_was_hidden(client, env, reason):
+    post = await _post(env, deleted_at=FUTURE + timedelta(days=50), hidden_reason=reason)
+    thread = await _thread(env, deleted_at=FUTURE + timedelta(days=49))
+    await _signed_in(client, env)
+
+    body = (await client.get(DELETED, params={"limit": 200})).json()
+
+    assert _find(body, "post", post.id)["hidden_reason"] == reason.value
+    assert _find(body, "thread", thread.id)["hidden_reason"] is None
+
+
+async def test_author_deleted_hidden_post_is_listed_as_hidden(client, env):
+    author = await _signed_in(client, env, factory=create_verified_user)
+    post = await _post(
+        env, ContentStatus.HIDDEN, author_id=author.id, hidden_reason=HiddenReason.ADMIN
+    )
+    assert (await client.delete(f"{API}/posts/{post.id}")).status_code == 204
+    await _signed_in(client, env)
+
+    item = _find((await client.get(DELETED, params={"limit": 200})).json(), "post", post.id)
+
+    assert item["hidden_reason"] == "admin"

@@ -787,3 +787,111 @@ async def test_published_detail_has_no_note(client, env):
     detail = (await client.get(_detail_url(ContentType.POST, post.slug))).json()
 
     assert detail["moderation_note"] is None
+
+
+# --- 7j: restore keeps hidden content hidden --------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "content_type",
+    [ContentType.POST, ContentType.THREAD, ContentType.REPLY, ContentType.COMMENT],
+)
+@pytest.mark.parametrize("reason", [HiddenReason.ADMIN, HiddenReason.AUTO_REPORTS])
+async def test_restore_of_hidden_content_answers_hidden(client, env, content_type, reason):
+    content = await _make(env, content_type, H, hidden_reason=reason)
+    await _signed_in(client, env)
+    assert (await client.post(_action_url(content_type, content.id, "delete"))).status_code == 200
+
+    response = await client.post(_action_url(content_type, content.id, "restore"))
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "hidden"
+    assert body["hidden_reason"] == reason.value
+    assert body["deleted_at"] is None
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+async def test_author_deletes_own_hidden_item_admin_restore_keeps_it_hidden(
+    client, env, content_type
+):
+    author = await _signed_in(client, env, factory=create_verified_user)
+    content = await _make(env, content_type, H, author_id=author.id)
+    path = "posts" if content_type == ContentType.POST else "threads"
+    assert (await client.delete(f"{API}/{path}/{content.id}")).status_code == 204
+    await _signed_in(client, env)
+
+    body = (await client.post(_action_url(content_type, content.id, "restore"))).json()
+
+    assert body["status"] == "hidden"
+    assert body["hidden_reason"] == "admin"
+    await env.db.refresh(content)
+    assert content.status == H
+    # Still hidden from the public.
+    client.cookies.clear()
+    detail = await client.get(_detail_url(content_type, content.slug))
+    assert detail.status_code == 404, detail.text
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+async def test_published_and_pending_items_restore_as_before(client, env, content_type):
+    published = await _make(env, content_type, PUB)
+    pending = await _make(env, content_type, P)
+    await _signed_in(client, env)
+    for content in (published, pending):
+        assert (
+            await client.post(_action_url(content_type, content.id, "delete"))
+        ).status_code == 200
+
+    restored = (await client.post(_action_url(content_type, published.id, "restore"))).json()
+    queued = (await client.post(_action_url(content_type, pending.id, "restore"))).json()
+
+    assert (restored["status"], restored["hidden_reason"]) == ("published", None)
+    assert (queued["status"], queued["hidden_reason"]) == ("pending", None)
+
+
+@pytest.mark.parametrize("content_type", [ContentType.POST, ContentType.THREAD])
+async def test_rejected_item_restores_to_rejected_and_is_resubmitted_only_by_its_author(
+    client, env, content_type
+):
+    """A rejected, never-approved item comes back ``hidden(rejected)``, out of the queue; it shows
+    as resubmitted there only once its author resubmits it."""
+    author, content = await _rejected_by_admin(client, env, content_type, reason="Add a map.")
+    content.created_at = OLD
+    await env.db.commit()
+    assert (await client.post(_action_url(content_type, content.id, "delete"))).status_code == 200
+
+    body = (await client.post(_action_url(content_type, content.id, "restore"))).json()
+
+    assert body["status"] == "hidden"
+    assert body["hidden_reason"] == "rejected"
+    assert body["published_at"] is None
+    items = (await client.get(QUEUE, params={"limit": 200})).json()["items"]
+    assert (content_type.value, content.id) not in {(i["content_type"], i["id"]) for i in items}
+    await env.db.refresh(content)
+    assert content.rejected_at is not None
+    assert content.moderation_note == "Add a map."
+
+    await login_as(client, author)
+    resubmitted = await client.post(_action_url(content_type, content.id, "resubmit"))
+    assert resubmitted.status_code == 200, resubmitted.text
+    assert resubmitted.json()["status"] == "pending"
+    await _signed_in(client, env)
+
+    items = (await client.get(QUEUE, params={"limit": 200})).json()["items"]
+    flags = {(i["content_type"], i["id"]): i["resubmitted"] for i in items}
+    assert flags[(content_type.value, content.id)] is True
+
+
+async def test_restore_to_hidden_audit_names_the_reason(client, env):
+    post = await _make(env, ContentType.POST, H, hidden_reason=HiddenReason.AUTO_REPORTS)
+    admin = await _signed_in(client, env)
+    assert (await client.post(_action_url("post", post.id, "delete"))).status_code == 200
+
+    assert (await client.post(_action_url("post", post.id, "restore"))).status_code == 200
+
+    (row,) = await _audits(
+        env.db, target_type="post", target_id=post.id, action="moderation.restore"
+    )
+    assert row.actor_id == admin.id
+    assert row.metadata_ == {"from": "deleted", "to": "hidden", "hidden_reason": "auto_reports"}

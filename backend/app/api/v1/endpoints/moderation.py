@@ -160,9 +160,10 @@ async def deleted_content(
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> DeletedPage:
-    """Deleted posts and threads, newest deletion first, with who deleted them and when the
-    maintenance sweep removes them for good (``purge_at``, null when that is off). Admins can
-    restore or purge them with the content actions until then."""
+    """Deleted posts and threads, newest deletion first, with who deleted them, when the
+    maintenance sweep removes them for good (``purge_at``, null when that is off) and whether
+    they were hidden (``hidden_reason``: a restore puts them back hidden). Admins can restore or
+    purge them with the content actions until then."""
     total, items = await moderation.list_deleted(
         db,
         content_type=ContentType(content_type) if content_type else None,
@@ -183,6 +184,7 @@ async def deleted_content(
                 deleted_at=item.content.deleted_at,
                 deleted_by=_user_ref(item.deleted_by),
                 purge_at=item.content.deleted_at + timedelta(days=days) if days > 0 else None,
+                hidden_reason=item.content.hidden_reason,
             )
             for item in items
             # ``deleted`` without ``deleted_at`` cannot be listed with a date (never written so).
@@ -345,7 +347,8 @@ async def delete_content(
 async def restore_content(
     content_type: ContentType, content_id: ContentId, admin: AdminUser, db: DbTx
 ) -> ModerationResult:
-    """Restore deleted content (to pending if it was never approved)."""
+    """Restore deleted content: back to hidden (same reason) if it was hidden when deleted, else
+    published, or pending if it was never approved."""
     content = await _load(db, content_type, content_id)
     return _result(await moderation.restore(db, content=content, actor=admin))
 

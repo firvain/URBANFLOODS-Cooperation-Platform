@@ -23,6 +23,8 @@ import { contentLink } from '@/utils/contentLink'
  * deleted first (`?type=post|thread`). They are kept for `DELETED_CONTENT_RETENTION_DAYS` days
  * (the days left come from each item's `purge_at`), then the maintenance sweep removes them for
  * good. Restore (confirmed) and Delete permanently (typed confirmation) remove the row at once.
+ * An item that was hidden (by an admin, by reports, or rejected) when it was deleted is marked
+ * "Was hidden"/"Was rejected": a restore brings it back hidden, and the dialog and toast say so.
  */
 const { t } = useI18n()
 const route = useRoute()
@@ -102,16 +104,26 @@ function askRestore(item: DeletedItem) {
   restoreOpen.value = true
 }
 
+/** A rejected item was never published (no reports): it goes back to its author. */
+const restoreDescription = computed(() => {
+  const reason = restoring.value?.hidden_reason
+  if (reason === 'rejected') return t('admin.deleted.restoreDescriptionRejected')
+  if (reason) return t('admin.deleted.restoreDescriptionHidden')
+  return t('admin.deleted.restoreDescription')
+})
+
 async function confirmRestore() {
   const item = restoring.value
   if (!item || restoreLoading.value) return
   restoreLoading.value = true
   restoreError.value = ''
   try {
-    await moderation.restoreDeleted(item)
+    const result = await moderation.restoreDeleted(item)
     restoreOpen.value = false
+    const done =
+      result.status === 'hidden' ? 'admin.deleted.restoredHidden' : 'admin.deleted.restored'
     toast.add({
-      title: t('admin.deleted.restored', { title: item.title }),
+      title: t(done, { title: item.title }),
       color: 'success',
       icon: 'i-lucide-undo-2',
     })
@@ -198,6 +210,23 @@ async function confirmPurge() {
                 {{ row.original.title }}
               </ULink>
               <p class="text-sm text-muted">{{ row.original.category.name }}</p>
+              <UBadge
+                v-if="row.original.hidden_reason"
+                data-testid="was-hidden"
+                color="error"
+                variant="subtle"
+                size="sm"
+                icon="i-lucide-eye-off"
+                :title="t(`admin.deleted.reason.${row.original.hidden_reason}`)"
+              >
+                {{
+                  t(
+                    row.original.hidden_reason === 'rejected'
+                      ? 'admin.deleted.wasRejected'
+                      : 'admin.deleted.wasHidden',
+                  )
+                }}
+              </UBadge>
             </div>
           </template>
           <template #author-cell="{ row }">
@@ -268,7 +297,7 @@ async function confirmPurge() {
     <ConfirmDialog
       v-model:open="restoreOpen"
       :title="t('admin.deleted.restoreTitle', { title: restoring?.title ?? '' })"
-      :description="t('admin.deleted.restoreDescription')"
+      :description="restoreDescription"
       :confirm-label="t('admin.deleted.restore')"
       :loading="restoreLoading"
       :error="restoreError"

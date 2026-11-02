@@ -848,9 +848,10 @@ export interface paths {
         };
         /**
          * Deleted Content
-         * @description Deleted posts and threads, newest deletion first, with who deleted them and when the
-         *     maintenance sweep removes them for good (``purge_at``, null when that is off). Admins can
-         *     restore or purge them with the content actions until then.
+         * @description Deleted posts and threads, newest deletion first, with who deleted them, when the
+         *     maintenance sweep removes them for good (``purge_at``, null when that is off) and whether
+         *     they were hidden (``hidden_reason``: a restore puts them back hidden). Admins can restore or
+         *     purge them with the content actions until then.
          */
         get: operations["deleted_content_api_v1_moderation_deleted__get"];
         put?: never;
@@ -996,7 +997,8 @@ export interface paths {
         put?: never;
         /**
          * Restore Content
-         * @description Restore deleted content (to pending if it was never approved).
+         * @description Restore deleted content: back to hidden (same reason) if it was hidden when deleted, else
+         *     published, or pending if it was never approved.
          */
         post: operations["restore_content_api_v1_moderation__content_type___content_id__restore_post"];
         delete?: never;
@@ -2611,6 +2613,7 @@ export interface components {
             deleted_by: components["schemas"]["DeletedUser"] | null;
             /** Purge At */
             purge_at: string | null;
+            hidden_reason: components["schemas"]["HiddenReason"] | null;
         };
         /** DeletedPage */
         DeletedPage: {

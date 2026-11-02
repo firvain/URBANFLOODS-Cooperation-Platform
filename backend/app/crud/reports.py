@@ -12,7 +12,11 @@ never deadlock each other; concurrent reports on one item are counted one after 
 Audit rows: ``report.create`` (``{content_type, content_id, reason}``, never the free-text
 details), ``report.resolve`` and ``report.dismiss`` (``{content_type, content_id}``), all with
 ``target_type="report"``. A report closed because its reporter deleted their account is a
-system ``report.dismiss`` (no actor, ``reason: "reporter_deleted"`` in the metadata).
+system ``report.dismiss`` (no actor, ``reason: "reporter_deleted"`` in the metadata). Reports
+dismissed by an unhide or a restore to published (``crud/moderation.py``) are ``report.dismiss``
+by that admin with ``via: "unhide"`` / ``"restore"``.
+
+A reply or comment can only be reported while its thread or post is visible to the reporter.
 """
 
 from __future__ import annotations
@@ -29,6 +33,7 @@ from sqlalchemy.orm import joinedload
 from app.core.exceptions import AppError
 from app.crud import moderation
 from app.crud.audit import log_action
+from app.crud.visibility import parent_visible
 from app.db.enums import ContentStatus, ContentType, ReportReason, ReportStatus
 from app.db.models import Comment, Reply, Report, User
 
@@ -74,7 +79,8 @@ async def create_report(
 ) -> tuple[Report, bool]:
     """Report published content. Returns ``(report, auto_hidden)``.
 
-    :raises AppError: 404 ``report.content_not_found`` (missing or not published), 400
+    :raises AppError: 404 ``report.content_not_found`` (missing or not published, or a reply or
+        comment whose thread or post the reporter cannot see), 400
         ``report.own_content``, 409 ``report.already_reported`` (one report per reporter per
         item, whatever its status).
     """
@@ -82,6 +88,10 @@ async def create_report(
         db, content_type=content_type, content_id=content_id, for_update=True
     )
     if content is None or content.status != ContentStatus.PUBLISHED:
+        raise _content_not_found()
+    # Nobody reports the children of a hidden or deleted thread/post they cannot see (that would
+    # let them probe for it and push its children to auto-hide); the same 404 as missing content.
+    if not await parent_visible(db, content, reporter):
         raise _content_not_found()
     if content.author_id == reporter.id:
         raise AppError(400, "report.own_content", "You cannot report your own content.")

@@ -125,6 +125,98 @@ describe('Admin deleted content', () => {
     )
   })
 
+  it('marks items that were hidden or rejected when deleted', async () => {
+    const hidden = makeDeletedItem({ hidden_reason: 'admin' })
+    const auto = makeDeletedItem({
+      id: 2,
+      slug: 'two',
+      title: 'Two',
+      hidden_reason: 'auto_reports',
+    })
+    const rejected = makeDeletedItem({
+      content_type: 'thread',
+      id: 3,
+      slug: 'three',
+      title: 'Three',
+      hidden_reason: 'rejected',
+    })
+    const plain = makeDeletedItem({ id: 4, slug: 'four', title: 'Four' })
+    await mountAdmin('/admin/deleted', {
+      [DELETED]: reply(200, page([hidden, auto, rejected, plain])),
+    })
+    const badges = rows().map(
+      (row) => row.querySelector('[data-testid="was-hidden"]')?.textContent?.trim() ?? null,
+    )
+    expect(badges).toEqual([
+      t('admin.deleted.wasHidden'),
+      t('admin.deleted.wasHidden'),
+      t('admin.deleted.wasRejected'),
+      null,
+    ])
+    expect(t('admin.deleted.wasHidden')).toBe('Was hidden')
+    expect(t('admin.deleted.wasRejected')).toBe('Was rejected')
+    // The tooltip names the reason in admin terms, not the author-facing status text.
+    const titles = rows().map(
+      (row) => row.querySelector('[data-testid="was-hidden"]')?.getAttribute('title') ?? null,
+    )
+    expect(titles).toEqual([
+      t('admin.deleted.reason.admin'),
+      t('admin.deleted.reason.auto_reports'),
+      t('admin.deleted.reason.rejected'),
+      null,
+    ])
+    expect(titles.slice(0, 3)).toEqual([
+      'Hidden by an admin',
+      'Hidden automatically after reports',
+      'Rejected in review',
+    ])
+  })
+
+  it.each(['admin', 'auto_reports'] as const)(
+    'says an item hidden (%s) comes back hidden with its reports open',
+    async (reason) => {
+      const hidden = makeDeletedItem({ hidden_reason: reason })
+      await mountAdmin('/admin/deleted', { [DELETED]: reply(200, page([hidden])) })
+      await click(t('admin.deleted.restoreLabel', { title: hidden.title }))
+      const box = dialog()
+      expect(box.textContent).toContain(t('admin.deleted.restoreDescriptionHidden'))
+      expect(box.textContent).not.toContain(t('admin.deleted.restoreDescriptionRejected'))
+      expect(box.textContent).not.toContain(t('admin.deleted.restoreDescription'))
+    },
+  )
+
+  it('says a rejected item goes back to its author, without mentioning reports', async () => {
+    const rejected = makeDeletedItem({ hidden_reason: 'rejected' })
+    await mountAdmin('/admin/deleted', { [DELETED]: reply(200, page([rejected])) })
+    await click(t('admin.deleted.restoreLabel', { title: rejected.title }))
+    const box = dialog()
+    expect(box.textContent).toContain(t('admin.deleted.restoreDescriptionRejected'))
+    expect(t('admin.deleted.restoreDescriptionRejected')).toBe(
+      'It goes back to its author as rejected; they can edit it and send it for approval again.',
+    )
+    expect(box.textContent).not.toContain(t('admin.deleted.restoreDescriptionHidden'))
+    expect(box.textContent).not.toMatch(/report/i)
+  })
+
+  it('confirms that a restored hidden item stays hidden', async () => {
+    const hidden = makeDeletedItem({ hidden_reason: 'admin' })
+    const route = 'POST /api/v1/moderation/post/1/restore'
+    await mountAdmin('/admin/deleted', {
+      [DELETED]: reply(200, page([hidden])),
+      [route]: reply(200, { ...result('hidden'), hidden_reason: 'admin' }),
+    })
+    await click(t('admin.deleted.restoreLabel', { title: hidden.title }))
+    const box = dialog()
+    buttonIn(box, t('admin.deleted.restore')).click()
+    await flushPromises()
+    expect(rows()).toHaveLength(0)
+    await vi.waitFor(() =>
+      expect(document.body.textContent).toContain(
+        t('admin.deleted.restoredHidden', { title: hidden.title }),
+      ),
+    )
+  })
+
   it('keeps the row and explains when the restore fails', async () => {
     await mountAdmin('/admin/deleted', {
       [DELETED]: reply(200, page([POST])),

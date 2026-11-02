@@ -55,7 +55,9 @@ async function run(action: MenuAction, reason?: string) {
     hideOpen.value = false
     deleteOpen.value = false
     emit('changed', result)
-    toast.add({ title: t(`moderation.done.${action}`), color: 'success', icon: 'i-lucide-check' })
+    // Content hidden when it was deleted comes back hidden: the toast must not suggest otherwise.
+    const done = action === 'restore' && result.status === 'hidden' ? 'restoreHidden' : action
+    toast.add({ title: t(`moderation.done.${done}`), color: 'success', icon: 'i-lucide-check' })
   } catch (error) {
     const message = adminError(error)
     // In a dialog the error stays next to the button; otherwise a toast.

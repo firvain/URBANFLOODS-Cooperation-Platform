@@ -81,6 +81,9 @@ class DeletedItem(BaseModel):
     # When the maintenance sweep removes it for good (``deleted_at`` plus
     # ``DELETED_CONTENT_RETENTION_DAYS``); null when automatic removal is off.
     purge_at: datetime | None
+    # Set when it was hidden (by an admin, by reports, or rejected) when deleted: a restore puts
+    # it back hidden with this reason. Null when it was published or pending.
+    hidden_reason: HiddenReason | None
 
 
 class DeletedPage(BaseModel):

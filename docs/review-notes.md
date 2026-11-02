@@ -58,6 +58,15 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
   or items with `rejected_at` (rejected, then resubmitted or restored): those wait for an admin
   however long (7i). The sweep locks content and author rows with `SKIP LOCKED`; a locked item
   waits for the next run.
+- **Restore puts content back where it was** (7j): an item that was hidden when deleted (by an
+  admin, by reports, or rejected) comes back hidden with the same `hidden_reason`, its open
+  reports still open; only a restore to `published` dismisses reports (each with a
+  `report.dismiss` audit row, `via: "restore"`). A rejected item comes back rejected and its
+  author can resubmit it.
+- **Children of a hidden reply stay public** (shown under a placeholder for the hidden parent), so
+  they can be reported. A reply or comment whose **thread or post** the reporter cannot see cannot
+  be reported (404, nothing leaks). Admins may edit or delete replies and comments under a deleted
+  thread or post; members get 404 there (`visibility.parent_visible`).
 - **Admins see soft-deleted content by URL** (with a Deleted badge); lists, search, feeds and
   exports never include it.
 

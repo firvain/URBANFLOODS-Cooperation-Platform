@@ -7,7 +7,9 @@
 
 :func:`visible_filter` is the SQL criterion every list, detail and mention query uses;
 :func:`is_visible` is the same rule for an already loaded row. Both take any model with
-``status`` and ``author_id`` (posts now, threads in M3).
+``status`` and ``author_id`` (posts now, threads in M3). :func:`parent_visible` applies
+:func:`is_visible` to a reply's thread or a comment's post: reports and the edit/delete checks of
+replies and comments use it, so a child is never reachable through a parent its user cannot see.
 """
 
 from __future__ import annotations
@@ -15,9 +17,10 @@ from __future__ import annotations
 from typing import Any
 
 from sqlalchemy import ColumnElement, and_, or_, true
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.enums import ContentStatus, UserRole
-from app.db.models import Post, User
+from app.db.models import Comment, Post, Reply, Thread, User
 
 ADMIN_ROLES = frozenset({UserRole.ADMIN, UserRole.SUPERADMIN})
 
@@ -53,3 +56,18 @@ def is_visible(obj: Any, user: User | None, *, include_deleted: bool = False) ->
     if obj.status == ContentStatus.PUBLISHED:
         return True
     return user is not None and obj.author_id == user.id and obj.status != ContentStatus.DELETED
+
+
+async def parent_visible(
+    db: AsyncSession, content: Any, user: User | None, *, include_deleted: bool = False
+) -> bool:
+    """Whether ``user`` may see the parent of ``content``: a reply's thread, a comment's post (a
+    post or thread has none: True). A missing parent is not visible. ``include_deleted`` is
+    passed to :func:`is_visible`, so it lets only admins through a deleted parent."""
+    if isinstance(content, Reply):
+        parent = await db.get(Thread, content.thread_id)
+    elif isinstance(content, Comment):
+        parent = await db.get(Post, content.post_id)
+    else:
+        return True
+    return parent is not None and is_visible(parent, user, include_deleted=include_deleted)

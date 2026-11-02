@@ -195,6 +195,17 @@ describe('ModerationMenu state changes', () => {
     await toastShown(t('moderation.done.restore'))
   })
 
+  it('restores a deleted post that was hidden: it stays hidden and the toast says so', async () => {
+    const route = `POST ${MOD}/post/42/restore`
+    await mountPost('deleted', ADMIN, {
+      [route]: reply(200, result('hidden', 'post', 'admin')),
+    })
+    await choose(t('moderation.restore'))
+    expect(badge()).toBe(t('post.status.hidden'))
+    await toastShown(t('moderation.done.restoreHidden'))
+    expect(t('moderation.done.restoreHidden')).not.toMatch(/publish/i)
+  })
+
   it('shows a refused action as a translated error', async () => {
     const route = `POST ${MOD}/post/42/approve`
     await mountPost('pending', ADMIN, {

@@ -139,10 +139,15 @@ async function runContent(reason?: string) {
   actionError.value = ''
   try {
     const { type, id } = current.report.content
-    await moderation.contentAction(type, id, current.action, reason)
+    const result = await moderation.contentAction(type, id, current.action, reason)
     hideOpen.value = false
     confirmOpen.value = false
-    toast.add({ title: t(DONE[current.action]), color: 'success', icon: 'i-lucide-check' })
+    // A restore of content that was hidden when deleted brings it back hidden.
+    const done =
+      current.action === 'restore' && result.status === 'hidden'
+        ? 'admin.reports.restoredHidden'
+        : DONE[current.action]
+    toast.add({ title: t(done), color: 'success', icon: 'i-lucide-check' })
   } catch (error) {
     actionError.value = adminError(error)
   } finally {

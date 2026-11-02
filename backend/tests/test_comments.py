@@ -588,6 +588,97 @@ async def test_update_and_delete_unknown_or_deleted_comment_404(
         _assert_error(await client.delete(url), 404, "comments.not_found")
 
 
+@pytest.mark.parametrize(
+    "post_fields",
+    [
+        {"status": ContentStatus.HIDDEN, "hidden_reason": HiddenReason.ADMIN},
+        {"status": ContentStatus.DELETED, "deleted_at": datetime(2026, 10, 1, tzinfo=UTC)},
+    ],
+    ids=["hidden", "deleted"],
+)
+async def test_own_comment_on_a_post_the_author_cannot_see_is_404(
+    client, db_session, cleanup_users, cleanup_categories, post_fields
+):
+    """7j: as for replies in a thread, a comment is only editable while its post is visible."""
+    user, _, _, post = await _setup(db_session, cleanup_users, cleanup_categories, **post_fields)
+    comment = await _comment(db_session, post, author_id=user.id)
+    await login_as(client, user)
+
+    url = _comment_url(comment.id)
+    _assert_error(
+        await client.patch(url, json={"body_html": "<p>Changed.</p>"}), 404, "comments.not_found"
+    )
+    _assert_error(await client.delete(url), 404, "comments.not_found")
+
+    stored = await _fresh(db_session, comment.id)
+    assert stored.status == ContentStatus.PUBLISHED
+    assert stored.body_html == comment.body_html
+
+
+async def test_own_comment_on_own_hidden_post_stays_editable(
+    client, db_session, cleanup_users, cleanup_categories
+):
+    """The post's author still sees their hidden post, so their comment on it stays theirs."""
+    user = await _committed(db_session, cleanup_users)
+    category = await _category(db_session, cleanup_categories)
+    post = await _post(
+        db_session,
+        category,
+        author_id=user.id,
+        status=ContentStatus.HIDDEN,
+        hidden_reason=HiddenReason.ADMIN,
+    )
+    comment = await _comment(db_session, post, author_id=user.id)
+    await login_as(client, user)
+
+    response = await client.patch(_comment_url(comment.id), json={"body_html": "<p>Fixed.</p>"})
+
+    assert response.status_code == 200, response.text
+
+
+async def test_admin_edits_and_deletes_comment_on_deleted_post(
+    client, db_session, cleanup_users, cleanup_categories
+):
+    """Admins can open a deleted post (to restore or purge it), so they can still edit or delete
+    its comments; members cannot (see the 404 test above)."""
+    user, _, _, post = await _setup(
+        db_session,
+        cleanup_users,
+        cleanup_categories,
+        status=ContentStatus.DELETED,
+        deleted_at=datetime(2026, 10, 1, tzinfo=UTC),
+    )
+    admin = await _committed(db_session, cleanup_users, factory=create_admin)
+    comment = await _comment(db_session, post, author_id=user.id)
+    await login_as(client, admin)
+
+    response = await client.patch(_comment_url(comment.id), json={"body_html": "<p>Mod.</p>"})
+
+    assert response.status_code == 200, response.text
+    assert (await client.delete(_comment_url(comment.id))).status_code == 204
+    assert (await _fresh(db_session, comment.id)).status == ContentStatus.DELETED
+
+
+async def test_admin_edits_comment_on_hidden_post(
+    client, db_session, cleanup_users, cleanup_categories
+):
+    user, _, _, post = await _setup(
+        db_session,
+        cleanup_users,
+        cleanup_categories,
+        status=ContentStatus.HIDDEN,
+        hidden_reason=HiddenReason.ADMIN,
+    )
+    admin = await _committed(db_session, cleanup_users, factory=create_admin)
+    comment = await _comment(db_session, post, author_id=user.id)
+    await login_as(client, admin)
+
+    response = await client.patch(_comment_url(comment.id), json={"body_html": "<p>Mod.</p>"})
+
+    assert response.status_code == 200, response.text
+    assert (await client.delete(_comment_url(comment.id))).status_code == 204
+
+
 async def test_update_requires_verified_user(client, db_session, cleanup_users, cleanup_categories):
     user, _, _, post = await _setup(db_session, cleanup_users, cleanup_categories)
     comment = await _comment(db_session, post, author_id=user.id)

@@ -1046,6 +1046,7 @@
       "unhide": "Published again.",
       "delete": "Deleted. It can be restored from this menu.",
       "restore": "Restored.",
+      "restoreHidden": "Restored. It stays hidden, as it was when it was deleted.",
       "purge": "Deleted permanently."
     },
     "hideTitle": "Hide this content?",
@@ -1307,8 +1308,9 @@
       "deleteDescription": "It is soft-deleted: hidden from everyone. It can be restored from this page.",
       "restore": "Restore content",
       "restored": "The content is restored.",
+      "restoredHidden": "The content is restored and stays hidden.",
       "restoreTitle": "Restore this content?",
-      "restoreDescription": "It is published again, or goes back to the approval queue if it was never approved."
+      "restoreDescription": "It is published again, or goes back to the approval queue if it was never approved. Content that was hidden when it was deleted comes back hidden."
     },
     "deleted": {
       "title": "Deleted content",
@@ -1334,7 +1336,17 @@
       "restoreLabel": "Restore “{title}”",
       "restoreTitle": "Restore “{title}”?",
       "restoreDescription": "It is published again, or goes back to the approval queue if it was never approved.",
+      "restoreDescriptionHidden": "It was hidden when it was deleted, so it comes back hidden for the same reason and its open reports stay open. Unhide it afterwards if it should be published.",
       "restored": "“{title}” is restored.",
+      "restoreDescriptionRejected": "It goes back to its author as rejected; they can edit it and send it for approval again.",
+      "restoredHidden": "“{title}” is restored and stays hidden.",
+      "wasHidden": "Was hidden",
+      "wasRejected": "Was rejected",
+      "reason": {
+        "admin": "Hidden by an admin",
+        "auto_reports": "Hidden automatically after reports",
+        "rejected": "Rejected in review"
+      },
       "purge": "Delete permanently",
       "purgeLabel": "Delete “{title}” permanently",
       "purged": "“{title}” was deleted permanently."

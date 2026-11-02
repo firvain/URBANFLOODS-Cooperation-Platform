@@ -28,7 +28,7 @@ from app.core.exceptions import AppError, validation_error
 from app.crud.comment import sanitize_comment_html
 from app.crud.thread import not_found as thread_not_found
 from app.crud.thread import thread_locked
-from app.crud.visibility import is_admin, is_visible, visible_filter
+from app.crud.visibility import is_admin, is_visible, parent_visible, visible_filter
 from app.db.enums import ContentStatus
 from app.db.models import Reply, Thread, User
 from app.services.sanitize import html_to_text
@@ -156,14 +156,14 @@ async def get_editable_reply(db: AsyncSession, *, reply_id: int, user: User) -> 
     """The reply ``user`` may change or delete: its author, or an admin.
 
     404 ``replies.not_found`` when it does not exist, is deleted, or ``user`` cannot see it or
-    its thread; 403 ``replies.forbidden`` for anyone else. The edit window and the thread lock
-    are checked by :func:`update_reply` (deleting has neither).
+    its thread (admins can, also a deleted thread, as they can open it); 403
+    ``replies.forbidden`` for anyone else. The edit window and the thread lock are checked by
+    :func:`update_reply` (deleting has neither).
     """
     reply = await get_reply(db, reply_id=reply_id)
     if reply is None or reply.status == ContentStatus.DELETED or not is_visible(reply, user):
         raise not_found()
-    thread = await db.get(Thread, reply.thread_id)
-    if thread is None or not is_visible(thread, user):
+    if not await parent_visible(db, reply, user, include_deleted=True):
         raise not_found()
     if reply.author_id != user.id and not is_admin(user):
         raise forbidden()

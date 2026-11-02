@@ -15,7 +15,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
-from sqlalchemy import delete, or_, select, update
+from sqlalchemy import delete, func, or_, select, update
 
 from app.core import rate_limit
 from app.core.config import settings
@@ -132,9 +132,11 @@ class Ctx:
         status: ContentStatus = PUB,
         *,
         author: User | None = None,
+        parent_status: ContentStatus = PUB,
         **kwargs: Any,
     ):
-        """A post/thread/reply/comment in ``status`` by ``author`` (a fresh member by default)."""
+        """A post/thread/reply/comment in ``status`` by ``author`` (a fresh member by default); a
+        reply's thread or a comment's post is in ``parent_status``."""
         if author is None:
             author = await self.user()
         extra: dict[str, Any] = dict(kwargs)
@@ -142,6 +144,11 @@ class Ctx:
             extra["hidden_reason"] = HiddenReason.ADMIN
         if status == ContentStatus.DELETED:
             extra["deleted_at"] = T0
+        parent: dict[str, Any] = {"status": parent_status}
+        if parent_status == ContentStatus.HIDDEN:
+            parent["hidden_reason"] = HiddenReason.ADMIN
+        if parent_status == ContentStatus.DELETED:
+            parent["deleted_at"] = T0
         db = self.db
         if content_type in (ContentType.POST, ContentType.COMMENT):
             category = await self._category(CategoryKind.BLOG)
@@ -150,7 +157,7 @@ class Ctx:
                     db, category_id=category.id, status=status, author_id=author.id, **extra
                 )
             else:
-                post = await create_post(db, category_id=category.id)
+                post = await create_post(db, category_id=category.id, **parent)
                 obj = await create_comment(
                     db, post_id=post.id, status=status, author_id=author.id, **extra
                 )
@@ -161,7 +168,7 @@ class Ctx:
                     db, category_id=category.id, status=status, author_id=author.id, **extra
                 )
             else:
-                thread = await create_thread(db, category_id=category.id)
+                thread = await create_thread(db, category_id=category.id, **parent)
                 obj = await create_reply(
                     db, thread_id=thread.id, status=status, author_id=author.id, **extra
                 )
@@ -308,6 +315,52 @@ async def test_cannot_report_unpublished_content(client, ctx, content_type, stat
     content = await ctx.content(content_type, status)
     await login_as(client, reporter)
     _assert_error(await _report(client, content_type, content.id), 404, "report.content_not_found")
+
+
+@pytest.mark.parametrize("content_type", [ContentType.REPLY, ContentType.COMMENT])
+@pytest.mark.parametrize(
+    "parent_status", [ContentStatus.PENDING, ContentStatus.HIDDEN, ContentStatus.DELETED]
+)
+async def test_cannot_report_published_child_of_an_invisible_parent(
+    client, ctx, content_type, parent_status
+):
+    """7j: a published reply in a thread (or comment on a post) the reporter cannot see is not
+    reportable, and answers exactly like missing content (nothing to probe, nothing to hide)."""
+    reporter = await ctx.user()
+    content = await ctx.content(content_type, parent_status=parent_status)
+    await login_as(client, reporter)
+
+    _assert_error(await _report(client, content_type, content.id), 404, "report.content_not_found")
+
+    fresh = await _fresh(ctx.db, _model(content_type), content.id)
+    assert fresh.report_count == 0
+    assert fresh.status == PUB
+    count = await ctx.db.scalar(
+        select(func.count())
+        .select_from(Report)
+        .where(Report.content_type == content_type, Report.content_id == content.id)
+    )
+    assert count == 0
+
+
+@pytest.mark.parametrize("content_type", [ContentType.REPLY, ContentType.COMMENT])
+async def test_parent_author_may_report_a_child_of_their_own_hidden_parent(
+    client, ctx, content_type
+):
+    """The parent check is visibility, not status: the parent's author still sees it."""
+    reporter = await ctx.user()
+    content = await ctx.content(content_type, parent_status=ContentStatus.HIDDEN)
+    if content_type == ContentType.REPLY:
+        parent = await ctx.db.get(_model(ContentType.THREAD), content.thread_id)
+    else:
+        parent = await ctx.db.get(Post, content.post_id)
+    parent.author_id = reporter.id
+    await ctx.db.commit()
+    await login_as(client, reporter)
+
+    response = await _report(client, content_type, content.id)
+
+    assert response.status_code == 201, response.text
 
 
 async def test_cannot_report_own_pending_content_either(client, ctx):

@@ -23,7 +23,7 @@ from sqlalchemy.orm import joinedload
 
 from app.core.exceptions import AppError, validation_error
 from app.crud.post import not_found as post_not_found
-from app.crud.visibility import is_admin, is_visible, visible_filter
+from app.crud.visibility import is_admin, is_visible, parent_visible, visible_filter
 from app.db.enums import ContentStatus
 from app.db.models import Comment, Post, User
 from app.services.sanitize import LINK_REL, URL_SCHEMES, html_to_text, sanitize_html
@@ -136,12 +136,15 @@ async def get_visible_post(db: AsyncSession, *, post_id: int, user: User | None)
 async def get_editable_comment(db: AsyncSession, *, comment_id: int, user: User) -> Comment:
     """The comment ``user`` may change or delete: its author, or an admin.
 
-    404 ``comments.not_found`` when it does not exist, is deleted or ``user`` cannot see it;
-    403 ``comments.forbidden`` for anyone else. The edit window is checked by
+    404 ``comments.not_found`` when it does not exist, is deleted, or ``user`` cannot see it or
+    its post (admins can, also a deleted post, as they can open it); 403 ``comments.forbidden``
+    for anyone else. The edit window is checked by
     :func:`update_comment` (deleting has no time limit).
     """
     comment = await get_comment(db, comment_id=comment_id)
     if comment is None or comment.status == ContentStatus.DELETED or not is_visible(comment, user):
+        raise not_found()
+    if not await parent_visible(db, comment, user, include_deleted=True):
         raise not_found()
     if comment.author_id != user.id and not is_admin(user):
         raise forbidden()

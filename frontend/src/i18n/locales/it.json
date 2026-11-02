@@ -1046,6 +1046,7 @@
       "unhide": "Pubblicato di nuovo.",
       "delete": "Eliminato. Puoi ripristinarlo da questo menu.",
       "restore": "Ripristinato.",
+      "restoreHidden": "Ripristinato. Resta nascosto, com'era prima dell'eliminazione.",
       "purge": "Eliminato definitivamente."
     },
     "hideTitle": "Nascondere questo contenuto?",

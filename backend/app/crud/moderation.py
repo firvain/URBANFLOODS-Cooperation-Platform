@@ -7,15 +7,24 @@ State machine (docs/PLAN.md, "State machines"), enforced by :data:`TRANSITIONS`:
 - ``published`` → hide → ``hidden(admin)`` (or ``hidden(auto_reports)`` via
   :func:`auto_hide_if_reported`)
 - ``hidden`` → unhide → ``published`` (an approval when it was ``hidden(rejected)``)
-- any non-deleted → delete → ``deleted``
-- ``deleted`` → restore → ``published``, or ``pending`` if it was never approved
+- any non-deleted → delete → ``deleted`` (``hidden_reason`` is kept)
+- ``deleted`` → restore → ``hidden`` with the same ``hidden_reason`` if it was hidden when deleted
+  (by an admin, auto-hidden or rejected); otherwise ``published``, or ``pending`` if it was never
+  approved
 - ``hidden(rejected)`` → resubmit (by the author, after editing) → ``pending``
+
+Deleting never changes ``hidden_reason`` (neither here nor in the authors' own soft delete), so a
+restore cannot republish content that was taken down: an author deleting their own hidden post
+and an admin restoring it later gets it back hidden, its open reports still open.
 
 A rejection's reason is stored on the post/thread as ``moderation_note`` (plain text, shown to the
 author); every approval clears it, a resubmission keeps it until the next decision. A ``hide``
 reason stays in the audit row only. A rejection also stamps ``rejected_at`` (with or without a
 reason); every approval clears it, and resubmit, delete and restore keep it. It marks the item as
 rejected-and-resubmitted in the admin queue and keeps it out of the auto-approve sweep.
+
+Unhide and a restore that lands on ``published`` dismiss the item's open reports, each with its
+own ``report.dismiss`` audit row (``{content_type, content_id, via}``).
 
 Replies and comments have no ``pending`` state, so approve/reject on them is always invalid. Any
 other edge raises 409 ``moderation.invalid_transition``. Every transition writes an
@@ -82,15 +91,16 @@ _PUB = ContentStatus.PUBLISHED
 _H = ContentStatus.HIDDEN
 _D = ContentStatus.DELETED
 
-# action -> {from status: to status}. ``restore`` lands on ``pending`` instead when the content
-# was never approved (no ``published_at``).
+# action -> {from status: to status}. ``restore`` goes back to ``hidden`` instead when the content
+# still has a ``hidden_reason`` (it was hidden when deleted), else to ``pending`` when it was never
+# approved (no ``published_at``); see :func:`_target`.
 TRANSITIONS: dict[str, dict[ContentStatus, ContentStatus]] = {
     "approve": {_P: _PUB},
     "reject": {_P: _H},
     "hide": {_PUB: _H},
     "unhide": {_H: _PUB},
     "delete": {_P: _D, _PUB: _D, _H: _D},
-    "restore": {_D: _PUB},
+    "restore": {_D: _PUB},  # or _H (was hidden), or _P (never approved)
     "resubmit": {_H: _P},
 }
 _REVIEW_ACTIONS = frozenset({"approve", "reject", "resubmit"})
@@ -138,7 +148,8 @@ async def list_pending(
     db: AsyncSession, *, skip: int = 0, limit: int = 50
 ) -> tuple[int, list[tuple[ContentType, Post | Thread]]]:
     """``(total, [(content_type, obj), ...])`` of pending posts and threads, oldest first, each
-    with its author and category loaded."""
+    with its author and category loaded. An item that vanished (purged) between the page read
+    and the row load is left out of ``items``."""
     queue = union_all(
         select(
             literal(ContentType.POST.value).label("content_type"),
@@ -174,10 +185,9 @@ async def list_pending(
         )
         for obj in rows.unique():
             loaded[(content_type, obj.id)] = obj
-    items = [
-        (ContentType(row.content_type), loaded[(ContentType(row.content_type), row.id)])
-        for row in page
-    ]
+    # A row purged between the page read and this load is skipped (``total`` still counts it).
+    keys = [(ContentType(row.content_type), row.id) for row in page]
+    items = [(key[0], loaded[key]) for key in keys if key in loaded]
     return total, items
 
 
@@ -208,8 +218,11 @@ def _target(content: ContentModel, action: str) -> ContentStatus:
         raise invalid_transition(action, status)
     if action == "resubmit" and content.hidden_reason != HiddenReason.REJECTED:
         raise invalid_transition(action, status)
-    if action == "restore" and content_type in REVIEWED_TYPES and content.published_at is None:
-        return _P
+    if action == "restore":
+        if content.hidden_reason is not None:
+            return _H
+        if content_type in REVIEWED_TYPES and content.published_at is None:
+            return _P
     return to
 
 
@@ -253,24 +266,34 @@ async def _finish(
 
 
 async def _dismiss_open_reports(
-    db: AsyncSession, *, content: ContentModel, actor: User | None, now: datetime
+    db: AsyncSession, *, content: ContentModel, actor: User | None, now: datetime, via: str
 ) -> None:
-    """Dismiss every open report on ``content`` and reset its ``report_count``."""
-    await db.execute(
+    """Dismiss every open report on ``content`` and reset its ``report_count``. Each report gets
+    its ``report.dismiss`` audit row (``{content_type, content_id, via}``, ``via`` naming the
+    action that closed it), as closing it from the reports page does."""
+    content_type = content_type_of(content)
+    actor_id = actor.id if actor is not None else None
+    rows = await db.execute(
         update(Report)
         .where(
-            Report.content_type == content_type_of(content),
+            Report.content_type == content_type,
             Report.content_id == content.id,
             Report.status == ReportStatus.OPEN,
         )
-        .values(
-            status=ReportStatus.DISMISSED,
-            resolved_by=actor.id if actor is not None else None,
-            resolved_at=now,
-        )
+        .values(status=ReportStatus.DISMISSED, resolved_by=actor_id, resolved_at=now)
+        .returning(Report.id)
         .execution_options(synchronize_session="fetch")
     )
     content.report_count = 0
+    for report_id in sorted(rows.scalars().all()):
+        await log_action(
+            db,
+            actor_id=actor_id,
+            action="report.dismiss",
+            target_type="report",
+            target_id=report_id,
+            metadata={"content_type": content_type.value, "content_id": content.id, "via": via},
+        )
 
 
 async def _trust_author(
@@ -440,7 +463,7 @@ async def unhide(
     content.hidden_reason = None
     if approving:
         _set_approval(content, actor=actor, now=now)
-    await _dismiss_open_reports(db, content=content, actor=actor, now=now)
+    await _dismiss_open_reports(db, content=content, actor=actor, now=now, via="unhide")
     await _finish(
         db,
         content=content,
@@ -474,22 +497,32 @@ async def delete(
 async def restore(
     db: AsyncSession, *, content: ContentModel, actor: User, now: datetime | None = None
 ) -> ContentModel:
-    """``deleted`` → ``published`` (or ``pending`` if never approved); clears ``deleted_at`` and
-    ``hidden_reason``. Back in public, it starts clean like an unhide: open reports dismissed,
-    ``report_count`` reset (otherwise the next report would hide it again)."""
+    """``deleted`` → back where it was; clears ``deleted_at``.
+
+    - Hidden when deleted (``hidden_reason`` set: ``admin``, ``auto_reports`` or ``rejected``):
+      ``hidden`` with the same reason. Open reports stay open and ``report_count`` stays;
+      ``rejected_at`` and ``moderation_note`` stay too, so a rejected item can be resubmitted by
+      its author as before. The audit row carries ``hidden_reason``.
+    - Otherwise ``published``, or ``pending`` if never approved. Back in public, it starts clean
+      like an unhide: open reports dismissed (each audited), ``report_count`` reset (otherwise
+      the next report would hide it again).
+    """
     now = now or datetime.now(UTC)
     from_status = content.status
     content.status = _target(content, "restore")
     content.deleted_at = None
-    content.hidden_reason = None
+    extra: dict[str, Any] | None = None
+    if content.status == _H:
+        extra = {"hidden_reason": HiddenReason(content.hidden_reason).value}
     if content.status == _PUB:
-        await _dismiss_open_reports(db, content=content, actor=actor, now=now)
+        await _dismiss_open_reports(db, content=content, actor=actor, now=now, via="restore")
     return await _finish(
         db,
         content=content,
         from_status=from_status,
         audit_action="moderation.restore",
         actor=actor,
+        extra=extra,
     )
 
 

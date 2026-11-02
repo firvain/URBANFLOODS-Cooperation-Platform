@@ -122,12 +122,20 @@ stateDiagram-v2
     pending --> deleted: delete
     published --> deleted: delete
     hidden --> deleted: delete
+    deleted --> hidden: restore (was hidden, same hidden_reason)
     deleted --> published: restore (was published before)
     deleted --> pending: restore (never approved)
     pending --> published: scheduler, AUTO_APPROVE_AFTER_DAYS > 0 (never rejected, author active)
 ```
 
-Unhide and restore-to-published dismiss the item's open reports and reset `report_count`.
+Deleting keeps `hidden_reason` (an admin's delete and the authors' own soft delete alike), so a
+restore puts hidden content back hidden with the same reason (`admin`, `auto_reports` or
+`rejected`): its open reports stay open, `report_count`, `rejected_at` and `moderation_note` stay,
+and a rejected item can be resubmitted by its author as before. `/moderation/deleted/` shows
+admins that an item was hidden (`hidden_reason`).
+
+Unhide and restore-to-published dismiss the item's open reports (one `report.dismiss` audit row
+each, with `via: unhide|restore`) and reset `report_count`.
 
 ### 3.2 User state machine
 
