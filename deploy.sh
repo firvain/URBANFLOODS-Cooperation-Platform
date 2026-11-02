@@ -113,7 +113,9 @@ log "Frontend responds"
 
 "${COMPOSE[@]}" ps
 
-log "Removing dangling images"
-docker image prune -f
+# Only this project's old images: compose labels what it builds with the project name. A bare
+# `docker image prune` would also delete the KNOWBASE's dangling images on the same daemon.
+log "Removing this project's dangling images"
+docker image prune -f --filter label=com.docker.compose.project=urbanfloods-cooperation-prod
 
 log "Deployment complete"

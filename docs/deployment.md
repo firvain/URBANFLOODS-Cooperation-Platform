@@ -256,10 +256,13 @@ forward. Return to `main` with `git checkout main` before the next `git pull`.
   This applies to the whole host, so the KNOWBASE would also be reachable only through
   Cloudflare; confirm that first. The ranges change rarely; re-check them once a year. The
   container ports are bound to 127.0.0.1 and are not affected.
-- **Disk**: `df -h /` and `docker system df` monthly. `docker image prune -f` removes old
-  untagged images after updates. Do **not** run `docker system prune --volumes` or
-  `docker volume prune`: they can delete the database and uploads volumes, and other projects'
-  volumes on this host.
+- **Disk**: `df -h /` and `docker system df` monthly. `deploy.sh` removes this project's old
+  untagged images after every update with
+  `docker image prune -f --filter label=com.docker.compose.project=urbanfloods-cooperation-prod`.
+  Never run a prune **without** that filter: the Docker daemon is shared, so a bare
+  `docker image prune` also deletes the KNOWBASE's images. Do **not** run
+  `docker system prune --volumes` or `docker volume prune`: they can delete the database and
+  uploads volumes, and other projects' volumes on this host.
 - **Logs**: container logs rotate (json-file, 10 MB × 3 per service, set in the compose file).
   Host nginx logs (`/var/log/nginx/cooperation.urbanfloods.app.*.log`) rotate with logrotate.
 - **One backend worker**: the scheduler (digest, maintenance, auto-approve), the KNOWBASE cache
