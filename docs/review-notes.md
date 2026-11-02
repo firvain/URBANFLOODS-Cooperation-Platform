@@ -13,7 +13,7 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
 
 | Area | Code | Why it matters |
 |---|---|---|
-| Authentication and sessions | `backend/app/api/v1/endpoints/auth.py`, `core/security.py`, `core/deps.py`, `crud/session.py` | opaque `uf_session` cookie, argon2id, email verification, password reset, email change |
+| Authentication and sessions | `backend/app/api/v1/endpoints/auth.py`, `core/security.py`, `core/deps.py`, `crud/session.py`, `core/session_cookie.py`, `frontend/src/stores/auth.ts`, `frontend/src/services/api.ts` | opaque `uf_session` cookie, argon2id, email verification, password reset, email change, sliding expiry and cookie refresh |
 | CSRF and CORS | `core/csrf.py`, `main.py` | the frontend sends `X-Requested-With`; unsafe methods without it are refused |
 | Bot protection | `services/turnstile.py`, `frontend/src/components/auth/TurnstileWidget.vue` and the four forms that use it | production runs Turnstile on; the 2026-11-01 bug (7d) lived here |
 | Authorisation and visibility | `crud/visibility.py` (`visible_to`), the `require_*` dependencies, every mutating endpoint | owner / admin / superadmin rules, content status `pending/published/hidden/deleted` |
@@ -87,6 +87,20 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
   revoke the session the browser already holds (whatever account), as login does. The message
   only states the fact ("This address is already verified."); the button carries the action (Log
   in when signed out, back to the home page when signed in).
+- **The session cookie is refreshed on successful responses when the sliding expiry moves**
+  (7l, at most once a day, by `core/session_cookie.py`): only for status below 400, because an
+  error response rolls the touch back, and never on a response that already sets or clears the
+  cookie (login, logout, verify, reset, revoking the current session, account deletion). The one
+  4xx that commits the touch (`AppError` with `keep_changes`) leaves the cookie up to a day behind
+  the stored expiry until the next slide; the server checks `expires_at` on every request.
+- **Only a 401 from `GET /auth/me` signs the frontend out** (7l). A 502, network error or 429
+  leaves the status `unknown`, not anonymous. An auth-required or admin route still redirects to
+  `/login?next=…` (nobody whose session is unknown sees a members' or admin page), and every
+  navigation while `unknown` asks again, the redirect included: if that succeeds, the login
+  page's guest-only check sends the member on to `next`. A 401 from any request except
+  `GET /auth/me` and `POST /auth/login` clears the store, so a 401 to `PATCH` or
+  `DELETE /auth/me` does too. The method is the one fetch uses (`options.method` over a
+  `Request` object's own).
 - **Admins see soft-deleted content by URL** (with a Deleted badge); lists, search, feeds and
   exports never include it.
 

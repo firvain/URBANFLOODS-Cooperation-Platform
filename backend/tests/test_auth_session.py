@@ -1012,3 +1012,170 @@ def test_dummy_hash_is_lazy_and_cached():
     first = auth_endpoints._dummy_hash()
     assert first.startswith("$argon2id$")
     assert auth_endpoints._dummy_hash() is first
+
+
+# --- sliding expiry reaches the cookie (7l) ---------------------------------------------------
+
+TTL_SECONDS = settings.SESSION_TTL_DAYS * 86400
+
+
+async def _age_sessions(db, user_id: int, *, by: timedelta) -> None:
+    """Make the user's sessions look as if they were created and last used ``by`` ago."""
+    now = datetime.now(UTC)
+    await db.execute(
+        update(Session)
+        .where(Session.user_id == user_id)
+        .values(
+            created_at=now - by,
+            last_seen_at=now - by,
+            expires_at=now - by + timedelta(days=settings.SESSION_TTL_DAYS),
+        )
+    )
+    await db.commit()
+
+
+def _session_set_cookies(response) -> list[str]:
+    return [c for c in response.headers.get_list("set-cookie") if c.startswith(f"{COOKIE}=")]
+
+
+def _max_age(cookie: str) -> int:
+    for part in cookie.split(";"):
+        name, _, value = part.strip().partition("=")
+        if name.lower() == "max-age":
+            return int(value)
+    raise AssertionError(f"no Max-Age in {cookie!r}")
+
+
+async def test_request_after_a_day_refreshes_the_cookie(client, db_session, cleanup_users):
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+    raw = client.cookies[COOKIE]
+    await _age_sessions(db_session, user.id, by=timedelta(days=2))
+
+    response = await client.get(ME)
+
+    assert response.status_code == 200, response.text
+    (cookie,) = _session_set_cookies(response)
+    assert cookie.startswith(f"{COOKIE}={raw};")
+    assert TTL_SECONDS - 60 <= _max_age(cookie) <= TTL_SECONDS
+    lowered = cookie.lower()
+    assert "httponly" in lowered
+    assert "samesite=lax" in lowered
+    assert "path=/" in lowered
+    assert "secure" not in lowered  # COOKIE_SECURE is off in tests; see the production test
+    (session,) = await _sessions(db_session, user.id)
+    assert session.expires_at > datetime.now(UTC) + timedelta(days=settings.SESSION_TTL_DAYS - 1)
+    # The browser keeps the same token, so the session still works.
+    assert client.cookies[COOKIE] == raw
+    assert (await client.get(ME)).status_code == 200
+
+
+async def test_refreshed_cookie_is_secure_in_production(
+    client, db_session, cleanup_users, monkeypatch
+):
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)  # before the switch: the test client is plain http
+    await _age_sessions(db_session, user.id, by=timedelta(days=2))
+    monkeypatch.setattr(settings, "COOKIE_SECURE", True)
+
+    response = await client.get(ME)
+
+    assert response.status_code == 200, response.text
+    (cookie,) = _session_set_cookies(response)
+    assert "secure" in cookie.lower()
+    assert "httponly" in cookie.lower()
+
+
+async def test_error_response_sets_no_cookie_and_next_success_refreshes(
+    client, db_session, cleanup_users
+):
+    """An error response rolls the touch back (no ``keep_changes``), so it must not refresh the
+    cookie either; the next successful request slides the expiry and refreshes it."""
+    user = await _committed(db_session, cleanup_users)  # a member: admin routes answer 403
+    await login_as(client, user)
+    await _age_sessions(db_session, user.id, by=timedelta(days=2))
+    (aged,) = await _sessions(db_session, user.id)
+
+    response = await client.get(f"{API}/admin/users/")
+
+    assert response.status_code == 403, response.text
+    assert response.headers.get_list("set-cookie") == []
+    (after_error,) = await _sessions(db_session, user.id)
+    assert after_error.expires_at == aged.expires_at
+
+    response = await client.get(ME)
+
+    assert response.status_code == 200, response.text
+    (cookie,) = _session_set_cookies(response)
+    assert TTL_SECONDS - 60 <= _max_age(cookie) <= TTL_SECONDS
+
+
+async def test_request_within_the_slide_threshold_sets_no_cookie(client, db_session, cleanup_users):
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+    # Past TOUCH_INTERVAL (last_seen_at is written) but the expiry would move by under a day.
+    await _age_sessions(db_session, user.id, by=timedelta(minutes=30))
+
+    response = await client.get(ME)
+
+    assert response.status_code == 200, response.text
+    assert response.headers.get_list("set-cookie") == []
+    (session,) = await _sessions(db_session, user.id)
+    assert session.last_seen_at > datetime.now(UTC) - timedelta(minutes=1)
+
+
+async def test_anonymous_request_sets_no_cookie(client):
+    response = await client.get(ME)
+
+    _assert_error(response, 401, NOT_AUTHENTICATED)
+    assert response.headers.get_list("set-cookie") == []
+
+
+async def test_logout_after_the_threshold_only_clears_the_cookie(client, db_session, cleanup_users):
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+    await _age_sessions(db_session, user.id, by=timedelta(days=2))
+
+    response = await client.post(LOGOUT)
+
+    assert response.status_code == 204
+    (cookie,) = response.headers.get_list("set-cookie")
+    assert _max_age(cookie) == 0
+    _assert_cookie_cleared(response)
+    assert COOKIE not in client.cookies
+
+
+async def test_login_as_another_account_after_the_threshold_sets_only_the_new_cookie(
+    client, db_session, cleanup_users
+):
+    first = await _committed(db_session, cleanup_users)
+    second = await _committed(db_session, cleanup_users)
+    await login_as(client, first)
+    first_raw = client.cookies[COOKIE]
+    await _age_sessions(db_session, first.id, by=timedelta(days=2))
+
+    response = await _login(client, second.email)
+
+    assert response.status_code == 200, response.text
+    (cookie,) = response.headers.get_list("set-cookie")
+    assert not cookie.startswith(f"{COOKIE}={first_raw};")
+    assert cookie.startswith(f"{COOKIE}={client.cookies[COOKIE]};")
+    assert _max_age(cookie) == TTL_SECONDS
+    assert (await client.get(ME)).json()["id"] == second.id
+
+
+async def test_revoking_the_current_session_after_the_threshold_only_clears_the_cookie(
+    client, db_session, cleanup_users
+):
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+    (session,) = await _sessions(db_session, user.id)
+    await _age_sessions(db_session, user.id, by=timedelta(days=2))
+
+    response = await client.delete(f"{SESSIONS}/{session.id}")
+
+    assert response.status_code == 204, response.text
+    (cookie,) = response.headers.get_list("set-cookie")
+    assert _max_age(cookie) == 0
+    _assert_cookie_cleared(response)
+    _assert_error(await client.get(ME), 401, NOT_AUTHENTICATED)

@@ -324,7 +324,13 @@ function notFoundAt(to: RouteLocationNormalized): RouteLocationRaw {
 
 /**
  * Global auth guard. The first navigation waits for `GET /auth/me` (the store shares one
- * in-flight request), so no page renders with an unknown session.
+ * in-flight request), so no page renders before the session check has run.
+ *
+ * If that check fails without an answer (not a 401: a 502 during a deploy, a network error, a
+ * 429), the status stays `unknown` and an auth-required or admin route still goes to
+ * `/login?next=…`, so a visitor who may be anonymous never sees a members' or admin page. Every
+ * navigation while `unknown` asks again, the redirect to /login included: if that succeeds, the
+ * login page's guest-only check sends the member on to `next`.
  */
 export async function authGuard(to: RouteLocationNormalized): Promise<RouteLocationRaw | void> {
   const auth = useAuthStore()

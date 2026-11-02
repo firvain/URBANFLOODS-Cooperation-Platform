@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 
 import { api, ApiError } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
-import { callsTo, deferred, makeUser, mockApi, reply, replyError } from './helpers/api'
+import { callsTo, deferred, makeUser, mockApi, reply, replyError, sequence } from './helpers/api'
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -36,12 +36,63 @@ describe('fetchMe', () => {
     expect(auth.user).toBeNull()
   })
 
-  it('a network failure → anonymous, resolves without throwing', async () => {
-    mockApi({
-      'GET /api/v1/auth/me': () => Promise.reject(new TypeError('Failed to fetch')),
-    })
+  // 7l: only a 401 means signed out. Anything else (a 502 during a deploy, a network error, a
+  // 429) says nothing about the session, so the status stays as it was.
+  it.each([
+    ['a network failure', () => Promise.reject(new TypeError('Failed to fetch'))],
+    ['502', replyError(502, 'bad_gateway')],
+    ['429', replyError(429, 'rate_limited')],
+  ] as const)('%s → stays unknown, resolves without throwing', async (_label, handler) => {
+    mockApi({ 'GET /api/v1/auth/me': handler })
     const auth = useAuthStore()
     await expect(auth.fetchMe()).resolves.toBeUndefined()
+    expect(auth.status).toBe('unknown')
+    expect(auth.user).toBeNull()
+    expect(auth.loading).toBe(false)
+  })
+
+  it('a non-401 failure keeps an authenticated user', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': sequence(reply(200, makeUser()), replyError(502, 'bad_gateway')),
+    })
+    const auth = useAuthStore()
+    await auth.fetchMe()
+    const before = auth.user
+
+    await auth.fetchMe()
+
+    expect(auth.status).toBe('authenticated')
+    expect(auth.user).toBe(before)
+  })
+
+  it('a 401 signs an authenticated user out', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': sequence(
+        reply(200, makeUser()),
+        replyError(401, 'auth.not_authenticated'),
+      ),
+    })
+    const auth = useAuthStore()
+    await auth.fetchMe()
+
+    await auth.fetchMe()
+
+    expect(auth.status).toBe('anonymous')
+    expect(auth.user).toBeNull()
+  })
+
+  it('a non-401 failure keeps an anonymous status', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': sequence(
+        replyError(401, 'auth.not_authenticated'),
+        replyError(503, 'unavailable'),
+      ),
+    })
+    const auth = useAuthStore()
+    await auth.fetchMe()
+
+    await auth.fetchMe()
+
     expect(auth.status).toBe('anonymous')
   })
 

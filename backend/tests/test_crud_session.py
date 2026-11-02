@@ -255,10 +255,11 @@ async def test_touch_within_interval_does_not_write(db_session):
     user = await _make_user(db_session)
     session, _ = await create_session(db_session, user_id=user.id, user_agent=None, now=T0)
 
-    wrote = await touch_session(db_session, session=session, now=T0 + timedelta(minutes=4))
+    result = await touch_session(db_session, session=session, now=T0 + timedelta(minutes=4))
     await db_session.refresh(session)
 
-    assert wrote is False
+    assert result.wrote is False
+    assert result.expiry_slid is False
     assert session.last_seen_at == T0
     assert session.expires_at == T0 + TTL
 
@@ -268,11 +269,34 @@ async def test_touch_after_interval_writes(db_session):
     session, _ = await create_session(db_session, user_id=user.id, user_agent=None, now=T0)
 
     later = T0 + TOUCH_INTERVAL + timedelta(seconds=1)
-    wrote = await touch_session(db_session, session=session, now=later)
+    result = await touch_session(db_session, session=session, now=later)
     await db_session.refresh(session)
 
-    assert wrote is True
+    assert result.wrote is True
     assert session.last_seen_at == later
+
+
+async def test_touch_reports_no_slide_within_a_day(db_session):
+    # 7l: the cookie is re-set only when the expiry moved, so the caller must be told.
+    user = await _make_user(db_session)
+    session, _ = await create_session(db_session, user_id=user.id, user_agent=None, now=T0)
+
+    result = await touch_session(db_session, session=session, now=T0 + timedelta(hours=12))
+
+    assert result.wrote is True
+    assert result.expiry_slid is False
+
+
+async def test_touch_reports_slide_after_more_than_a_day(db_session):
+    user = await _make_user(db_session)
+    session, _ = await create_session(db_session, user_id=user.id, user_agent=None, now=T0)
+
+    later = T0 + timedelta(days=1, minutes=1)
+    result = await touch_session(db_session, session=session, now=later)
+
+    assert result.wrote is True
+    assert result.expiry_slid is True
+    assert session.expires_at == later + TTL
 
 
 async def test_get_active_session_loads_user_organisation_and_preferences(db_session):

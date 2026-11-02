@@ -304,8 +304,10 @@ minutes after the guessing stops); password reset by email keeps working through
 ## 10. Security controls
 
 - Sessions: opaque 32-byte tokens, only the SHA-256 hash stored; cookie `uf_session` HttpOnly,
-  SameSite=Lax, Secure when `COOKIE_SECURE=true`; 30-day sliding expiry (`SESSION_TTL_DAYS`);
-  revocable per session; password reset, ban and account deletion revoke all sessions.
+  SameSite=Lax, Secure when `COOKIE_SECURE=true`; 30-day sliding expiry (`SESSION_TTL_DAYS`):
+  the stored expiry moves forward at most once a day, and when it does the cookie is refreshed on
+  successful responses (status below 400) with the new `Max-Age` (`core/session_cookie.py`),
+  unless that response already sets or clears the cookie; revocable per session; password reset, ban and account deletion revoke all sessions.
 - Passwords: argon2id (library defaults), 10–128 characters, common-password list.
 - CSRF: SameSite=Lax + origin check on every unsafe request + `X-Requested-With` header when
   the cookie is present (`core/csrf.py`).

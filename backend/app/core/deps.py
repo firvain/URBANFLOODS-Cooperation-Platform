@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.exceptions import AppError
+from app.core.session_cookie import REFRESH_STATE_KEY
 from app.crud import session as crud_session
 from app.db.enums import UserRole
 from app.db.models import User
@@ -77,7 +78,9 @@ async def get_current_user(request: Request, db: DbTx) -> User | None:
     """The signed-in user (with ``organisation`` and ``notification_preferences`` loaded), or
     None. Never raises for a missing or bad cookie.
 
-    A valid session is touched (sliding expiry) and stashed on ``request.state.session``. A
+    A valid session is touched (sliding expiry) and stashed on ``request.state.session``. When
+    the touch moved ``expires_at``, the new expiry goes on the request state under
+    ``REFRESH_STATE_KEY`` and ``SessionCookieRefreshMiddleware`` re-sends the cookie. A
     session whose user is inactive or deleted counts as signed out and is revoked on this
     request's transaction; ``request.state.revoked_disabled_session`` tells ``require_user`` to
     keep that change when it answers 401.
@@ -96,7 +99,9 @@ async def get_current_user(request: Request, db: DbTx) -> User | None:
         log.info("auth.session_of_disabled_user_revoked", user_id=session.user_id)
         return None
 
-    await crud_session.touch_session(db, session=session)
+    touched = await crud_session.touch_session(db, session=session)
+    if touched.expiry_slid:
+        setattr(request.state, REFRESH_STATE_KEY, session.expires_at)
     request.state.session = session
     return session.user
 

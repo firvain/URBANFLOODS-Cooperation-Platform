@@ -8,7 +8,7 @@ import { defineStore } from 'pinia'
 import { useToast } from '@nuxt/ui/composables'
 
 import i18n from '@/i18n'
-import { setApiHooks } from '@/services/api'
+import { ApiError, setApiHooks } from '@/services/api'
 import {
   authService,
   type RegisterPayload,
@@ -46,14 +46,19 @@ export const useAuthStore = defineStore('auth', () => {
 
   let pendingMe: Promise<void> | null = null
 
-  /** Load the current user. Never throws: 401 (or any failure) means anonymous. */
+  /**
+   * Load the current user. Never throws. Only a 401 means anonymous; any other failure (a 502
+   * during a deploy, a network error, a 429) says nothing about the session, so the status and
+   * user stay as they were. An `unknown` status stays `unknown` and the next route guard asks
+   * again.
+   */
   function fetchMe(): Promise<void> {
     pendingMe ??= (async () => {
       loading.value = true
       try {
         setUser(await authService.me())
-      } catch {
-        clear()
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) clear()
       } finally {
         loading.value = false
         pendingMe = null

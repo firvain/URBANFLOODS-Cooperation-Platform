@@ -8,6 +8,7 @@ writes. Never commits; the caller does.
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import delete, or_, select, update
@@ -76,8 +77,19 @@ async def get_active_session_by_raw_token(
     return (await db.execute(stmt)).unique().scalar_one_or_none()
 
 
-async def touch_session(db: AsyncSession, *, session: Session, now: datetime | None = None) -> bool:
-    """Record activity and slide the expiry. Returns True if anything was written.
+@dataclass(frozen=True, slots=True)
+class TouchResult:
+    """What ``touch_session`` did: ``wrote`` if anything was flushed, ``expiry_slid`` if
+    ``expires_at`` moved (the session cookie must then be re-sent with the new lifetime)."""
+
+    wrote: bool
+    expiry_slid: bool
+
+
+async def touch_session(
+    db: AsyncSession, *, session: Session, now: datetime | None = None
+) -> TouchResult:
+    """Record activity and slide the expiry.
 
     Nothing is written while ``last_seen_at`` is at most ``TOUCH_INTERVAL`` old. Otherwise
     ``last_seen_at`` is set, and ``expires_at`` is moved to ``session_expiry(now)`` only when
@@ -86,13 +98,14 @@ async def touch_session(db: AsyncSession, *, session: Session, now: datetime | N
     """
     now = _now(now)
     if now - session.last_seen_at <= TOUCH_INTERVAL:
-        return False
+        return TouchResult(wrote=False, expiry_slid=False)
     session.last_seen_at = now
     new_expiry = session_expiry(now)
-    if new_expiry - session.expires_at > SLIDE_THRESHOLD:
+    slid = new_expiry - session.expires_at > SLIDE_THRESHOLD
+    if slid:
         session.expires_at = new_expiry
     await db.flush()
-    return True
+    return TouchResult(wrote=True, expiry_slid=slid)
 
 
 async def revoke_session(

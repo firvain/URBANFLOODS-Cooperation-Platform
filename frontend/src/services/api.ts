@@ -57,7 +57,10 @@ function errorDetail(response: FetchResponse<unknown>): ErrorDetail {
  * never imports a store: no import cycle, and tests can install their own.
  */
 export interface ApiHooks {
-  /** A request other than `/auth/me` or `/auth/login` got 401: the session expired or was revoked. */
+  /**
+   * A request other than `GET /auth/me` or `POST /auth/login` got 401: the session expired or was
+   * revoked.
+   */
   onUnauthorized?: () => void
   /** The backend rate limiter answered 429. */
   onRateLimited?: () => void
@@ -69,8 +72,23 @@ export function setApiHooks(next: ApiHooks): void {
   Object.assign(hooks, next)
 }
 
-/** 401 from these is an answer ("not logged in" / "wrong password"), not a lost session. */
-const UNAUTHORIZED_EXEMPT = ['/auth/me', '/auth/login']
+/**
+ * 401 from these is an answer ("not logged in" / "wrong password"), not a lost session. Matched
+ * on method and path: a 401 to `PATCH` or `DELETE /auth/me` does mean the session is gone.
+ */
+const UNAUTHORIZED_EXEMPT: ReadonlyArray<readonly [method: string, pathSuffix: string]> = [
+  ['GET', '/auth/me'],
+  ['POST', '/auth/login'],
+]
+
+/**
+ * The method the request was sent with. `fetch(request, init)` takes `init.method` over a
+ * `Request` object's own method, so: the option, else the Request's, else GET.
+ */
+function requestMethod(request: RequestInfo | URL, method: string | undefined): string {
+  const own = typeof request === 'object' && 'method' in request ? request.method : undefined
+  return (method || own || 'GET').toUpperCase()
+}
 
 function requestPath(request: RequestInfo | URL): string {
   const url =
@@ -83,10 +101,14 @@ export const api = ofetch.create({
   credentials: 'include',
   headers: { 'X-Requested-With': 'XMLHttpRequest' },
 
-  onResponseError({ request, response }) {
+  onResponseError({ request, options, response }) {
     if (response.status === 401) {
+      const method = requestMethod(request, options.method)
       const path = requestPath(request)
-      if (!UNAUTHORIZED_EXEMPT.some((suffix) => path.endsWith(suffix))) hooks.onUnauthorized?.()
+      const exempt = UNAUTHORIZED_EXEMPT.some(
+        ([exemptMethod, suffix]) => method === exemptMethod && path.endsWith(suffix),
+      )
+      if (!exempt) hooks.onUnauthorized?.()
     } else if (response.status === 429) {
       hooks.onRateLimited?.()
     }

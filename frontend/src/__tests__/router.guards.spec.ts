@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h } from 'vue'
@@ -6,7 +6,15 @@ import { defineComponent, h } from 'vue'
 import { createAppRouter } from '@/router'
 import { safeRedirect } from '@/router/redirect'
 import { useAuthStore } from '@/stores/auth'
-import { callsTo, deferred, makeUser, mockApi, reply, type Handler } from './helpers/api'
+import {
+  callsTo,
+  deferred,
+  makeUser,
+  mockApi,
+  reply,
+  replyError,
+  type Handler,
+} from './helpers/api'
 
 const Blank = defineComponent({ render: () => h('div') })
 
@@ -170,6 +178,101 @@ describe('session bootstrap', () => {
     await router.push('/about')
     await router.push('/account')
     expect(callsTo(fetchMock, 'GET /api/v1/auth/me')).toHaveLength(1)
+  })
+})
+
+describe('session check failure (7l)', () => {
+  // A failed `GET /auth/me` other than 401 (502 during a deploy, network error, 429) leaves the
+  // status `unknown`, not anonymous. Auth-required routes still go to /login (nobody unknown sees
+  // a members' or admin page), and that navigation asks again: on success the login page's
+  // guest-only check sends the member on to `next`.
+  const failures = [
+    ['502', replyError(502, 'bad_gateway')],
+    ['a network failure', () => Promise.reject(new TypeError('Failed to fetch'))],
+    ['429', replyError(429, 'rate_limited')],
+  ] as const
+
+  it.each(failures)('%s → an auth-required route goes to /login with next', async (_l, fail) => {
+    mockApi({ 'GET /api/v1/auth/me': fail })
+    const router = makeRouter()
+
+    await router.push('/account')
+
+    expect(router.currentRoute.value.name).toBe('login')
+    expect(router.currentRoute.value.query).toEqual({ next: '/account' })
+    expect(useAuthStore().status).toBe('unknown')
+  })
+
+  it.each(failures)('%s → an admin route goes to /login with next', async (_l, fail) => {
+    mockApi({ 'GET /api/v1/auth/me': fail })
+    const router = makeRouter()
+
+    await router.push('/test/admin')
+
+    expect(router.currentRoute.value.name).toBe('login')
+    expect(router.currentRoute.value.query).toEqual({ next: '/test/admin' })
+    expect(useAuthStore().status).toBe('unknown')
+  })
+
+  /**
+   * `/auth/me` answers 502 for the first `fetchMe` (however many requests ofetch makes) and
+   * `then` from the second `fetchMe` on.
+   */
+  function failFirstFetchMe(then: Handler) {
+    let up = false
+    const handler: Handler = (request) =>
+      up ? then(request) : replyError(502, 'bad_gateway')(request)
+    const auth = useAuthStore()
+    const realFetchMe = auth.fetchMe
+    let calls = 0
+    const spy = vi.spyOn(auth, 'fetchMe').mockImplementation(() => {
+      if (++calls > 1) up = true
+      return realFetchMe()
+    })
+    return { handler, spy }
+  }
+
+  it('the redirect to /login retries; on success the member goes on to next', async () => {
+    const me = failFirstFetchMe(reply(200, makeUser()))
+    mockApi({ 'GET /api/v1/auth/me': me.handler })
+    const router = makeRouter()
+
+    await router.push('/account')
+
+    expect(me.spy).toHaveBeenCalledTimes(2)
+    expect(useAuthStore().status).toBe('authenticated')
+    expect(router.currentRoute.value.name).toBe('account')
+  })
+
+  it('the redirect to /login retries; on a 401 the member stays on /login, anonymous', async () => {
+    const me = failFirstFetchMe(replyError(401, 'auth.not_authenticated'))
+    mockApi({ 'GET /api/v1/auth/me': me.handler })
+    const router = makeRouter()
+
+    await router.push('/account')
+
+    expect(me.spy).toHaveBeenCalledTimes(2)
+    expect(useAuthStore().status).toBe('anonymous')
+    expect(router.currentRoute.value.name).toBe('login')
+    expect(router.currentRoute.value.query).toEqual({ next: '/account' })
+  })
+
+  it('while still unknown, a later navigation asks again', async () => {
+    let up = false
+    const fetchMock = mockApi({
+      'GET /api/v1/auth/me': (request) =>
+        up ? reply(200, makeUser())(request) : replyError(502, 'bad_gateway')(request),
+    })
+    const router = makeRouter()
+    await router.push('/about')
+    expect(useAuthStore().status).toBe('unknown')
+    const before = callsTo(fetchMock, 'GET /api/v1/auth/me').length
+    up = true
+
+    await router.push('/account')
+
+    expect(callsTo(fetchMock, 'GET /api/v1/auth/me').length).toBeGreaterThan(before)
+    expect(router.currentRoute.value.name).toBe('account')
   })
 })
 

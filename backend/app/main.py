@@ -34,6 +34,7 @@ from app.core.csrf import CSRFMiddleware
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import REQUEST_ID_HEADER, RequestIdMiddleware, configure_logging
 from app.core.rate_limit import RateLimitMiddleware
+from app.core.session_cookie import SessionCookieRefreshMiddleware
 from app.db import session as db_session
 from app.services import scheduler as scheduler_service
 from app.services import turnstile
@@ -74,8 +75,11 @@ def create_app() -> FastAPI:
     )
 
     # Each add_middleware wraps the previous ones, so the order on a request is:
-    # RequestId -> CORS -> RateLimit -> CSRF -> routes. Rate limiting and CSRF sit inside CORS so
-    # the browser can read their 429/403 bodies; CSRF rejections still count against the limits.
+    # RequestId -> CORS -> RateLimit -> CSRF -> SessionCookieRefresh -> routes. Rate limiting and
+    # CSRF sit inside CORS so the browser can read their 429/403 bodies; CSRF rejections still
+    # count against the limits. The cookie refresh only acts on responses from the routes (the
+    # auth dependency asks for it), so it sits innermost.
+    app.add_middleware(SessionCookieRefreshMiddleware)
     app.add_middleware(CSRFMiddleware)
     app.add_middleware(RateLimitMiddleware)
     # allow_headers "*" mirrors the preflight's requested headers, which covers the

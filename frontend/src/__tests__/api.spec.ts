@@ -133,6 +133,11 @@ describe('api hooks', () => {
     ['GET', '/api/v1/posts/', 1],
     ['GET', '/api/v1/auth/me', 0],
     ['POST', '/api/v1/auth/login', 0],
+    // 7l: only reading /auth/me and posting /auth/login are exempt. A 401 to a profile save or
+    // an account deletion means the session is gone.
+    ['PATCH', '/api/v1/auth/me', 1],
+    ['DELETE', '/api/v1/auth/me', 1],
+    ['GET', '/api/v1/auth/me/sessions', 1],
   ])('401 from %s %s calls onUnauthorized %i time(s)', async (method, path, times) => {
     const { api, setApiHooks } = await loadApi()
     const onUnauthorized = vi.fn()
@@ -143,6 +148,36 @@ describe('api hooks', () => {
     )
     await api(path, { method }).catch(() => undefined)
     expect(onUnauthorized).toHaveBeenCalledTimes(times)
+  })
+
+  it('a GET /auth/me 401 with the method left out (ofetch default) is exempt', async () => {
+    const { api, setApiHooks } = await loadApi()
+    const onUnauthorized = vi.fn()
+    setApiHooks({ onUnauthorized })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse({ detail: { code: 'auth.not_authenticated' } }, 401)),
+    )
+    await api('/api/v1/auth/me').catch(() => undefined)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse({ detail: { code: 'auth.not_authenticated' } }, 401)),
+    )
+    await api('/api/v1/auth/me', { method: 'patch' }).catch(() => undefined)
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
+  })
+
+  it("options.method wins over a Request object's own method, as fetch(request, init) does", async () => {
+    const { api, setApiHooks } = await loadApi()
+    const onUnauthorized = vi.fn()
+    setApiHooks({ onUnauthorized })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse({ detail: { code: 'auth.not_authenticated' } }, 401)),
+    )
+    const request = new Request('http://localhost/api/v1/auth/me', { method: 'GET' })
+    await api(request, { method: 'PATCH' }).catch(() => undefined)
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
   })
 
   it('429 calls onRateLimited', async () => {
