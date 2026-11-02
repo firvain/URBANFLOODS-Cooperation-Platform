@@ -6,6 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter, Response, status
 
+from app.api.v1.params import PathId
 from app.api.v1.schemas.category import CategoryCreate, CategoryList, CategoryOut, CategoryUpdate
 from app.core.deps import ADMIN_ROLES, AdminUser, CurrentUser, DbTx
 from app.core.exceptions import AppError, error_body
@@ -97,7 +98,7 @@ async def create_category(body: CategoryCreate, admin: AdminUser, db: DbTx) -> C
     responses=_error_responses(401, 403, 404, 409, 422),
 )
 async def update_category(
-    category_id: int, body: CategoryUpdate, admin: AdminUser, db: DbTx
+    category_id: PathId, body: CategoryUpdate, admin: AdminUser, db: DbTx
 ) -> CategoryOut:
     """Update a category (admin). Omitted fields are kept; ``description: null`` clears."""
     category = await _get_or_404(db, category_id)
@@ -122,7 +123,7 @@ async def update_category(
     response_class=Response,
     responses=_error_responses(401, 403, 404, 409),
 )
-async def archive_category(category_id: int, admin: AdminUser, db: DbTx) -> Response:
+async def archive_category(category_id: PathId, admin: AdminUser, db: DbTx) -> Response:
     """Archive a category (admin): hidden from lists, its posts stay. Never a hard delete."""
     category = await _get_or_404(db, category_id)
     if await crud_category.archive_category(db, category=category):

@@ -7,6 +7,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query, Response, status
 
+from app.api.v1.params import PathId, QueryId
 from app.api.v1.schemas.post import (
     KnowbaseLinkOut,
     PaginatedPosts,
@@ -53,7 +54,7 @@ async def list_posts(
     q: Annotated[str | None, Query(max_length=200)] = None,
     category: Annotated[str | None, Query(max_length=80, description="Category slug")] = None,
     tag: Annotated[str | None, Query(max_length=80, description="Tag slug")] = None,
-    author_id: int | None = None,
+    author_id: QueryId = None,
     locale: Annotated[str | None, Query(max_length=5)] = None,
     status_: Annotated[
         ContentStatus | None, Query(alias="status", description="Admins only")
@@ -133,7 +134,7 @@ async def create_post(body: PostCreate, user: VerifiedUser, db: DbTx, kb: Knowba
     responses=_error_responses(401, 403, 404, 409, 422, 502, 503),
 )
 async def update_post(
-    post_id: int, body: PostUpdate, user: VerifiedUser, db: DbTx, kb: Knowbase
+    post_id: PathId, body: PostUpdate, user: VerifiedUser, db: DbTx, kb: Knowbase
 ) -> PostDetail:
     """Edit a post (its author, or an admin). The status does not change."""
     post = await crud_post.get_editable_post(db, post_id=post_id, user=user)
@@ -160,7 +161,7 @@ async def update_post(
     response_class=Response,
     responses=_error_responses(401, 403, 404),
 )
-async def delete_post(post_id: int, user: VerifiedUser, db: DbTx) -> Response:
+async def delete_post(post_id: PathId, user: VerifiedUser, db: DbTx) -> Response:
     """Soft-delete a post (its author, or an admin)."""
     post = await crud_post.get_editable_post(db, post_id=post_id, user=user)
     previous = post.status

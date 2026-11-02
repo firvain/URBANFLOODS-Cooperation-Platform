@@ -606,6 +606,9 @@
         "not_found": "Komentar ne postoji ili je izbrisan.",
         "forbidden": "Ne možete mijenjati ovaj komentar.",
         "post_not_published": "Komentirati je moguće samo objavljene objave."
+      },
+      "request": {
+        "invalid_value": "Nešto što ste unijeli ne može se spremiti, na primjer nevidljivi kontrolni znak ili prevelik broj. Provjerite unos i pokušajte ponovno."
       }
     },
     "fields": {
@@ -893,6 +896,7 @@
     "counter": "{count} / {max}",
     "counterLabel": "Iskorišteno znakova: {count} od {max}",
     "overLimit": "Tekst je predug za {count} znak. | Tekst je predug za {count} znaka. | Tekst je predug za {count} znakova.",
+    "imageNotAllowed": "Slike s drugih web-mjesta nisu dopuštene. Umjesto toga prenesite sliku.",
     "link": {
       "title": "Poveznica",
       "description": "Povežite odabrani tekst s mrežnom stranicom ili adresom e-pošte.",

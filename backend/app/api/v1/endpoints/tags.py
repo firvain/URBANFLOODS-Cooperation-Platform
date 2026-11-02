@@ -6,6 +6,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Query, Response, status
 
+from app.api.v1.params import PathId
 from app.api.v1.schemas.tag import TagList, TagMerge, TagOut
 from app.core.deps import AdminUser, DbTx
 from app.core.exceptions import error_body
@@ -44,7 +45,7 @@ async def list_tags(
     response_class=Response,
     responses=_error_responses(401, 403, 404),
 )
-async def delete_tag(tag_id: int, admin: AdminUser, db: DbTx) -> Response:
+async def delete_tag(tag_id: PathId, admin: AdminUser, db: DbTx) -> Response:
     """Delete a tag (admin); it is removed from every post."""
     tag = await crud_tag.get_tag(db, tag_id=tag_id)
     if tag is None:
@@ -65,7 +66,7 @@ async def delete_tag(tag_id: int, admin: AdminUser, db: DbTx) -> Response:
 @router.post(
     "/{tag_id}/merge", response_model=TagOut, responses=_error_responses(401, 403, 404, 409, 422)
 )
-async def merge_tag(tag_id: int, body: TagMerge, admin: AdminUser, db: DbTx) -> TagOut:
+async def merge_tag(tag_id: PathId, body: TagMerge, admin: AdminUser, db: DbTx) -> TagOut:
     """Merge this tag into ``target_id`` (admin): its posts move to the target, it is deleted."""
     target = await crud_tag.merge_tags(db, source_id=tag_id, target_id=body.target_id)
     await crud_audit.log_action(

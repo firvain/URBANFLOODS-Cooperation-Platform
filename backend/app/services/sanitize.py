@@ -4,8 +4,12 @@ Every user-supplied HTML body passes through :func:`sanitize_html` before storag
 is tuned to what the Tiptap editor (StarterKit + Link + Image + Table) emits; anything else is
 stripped. ``h1`` is downgraded to ``h2`` because a post's title is the page's ``h1``.
 
-Images are kept only when their ``src`` is an absolute http(s) URL or a path under our own
-``/static/uploads/``; any other image is dropped entirely rather than left without a source.
+Images are kept only from our uploads and from the KNOWBASE, the two sources the production CSP
+(``img-src 'self' data: blob: https://knowbase.urbanfloods.app``) lets readers' browsers load
+(7n, owner's decision 2026-11-02): a path under ``/static/uploads/``, an absolute URL on our own
+origin (``FRONTEND_URL``) under that path (stored as the relative path), or an https URL on the
+KNOWBASE origin (``KNOWBASE_PUBLIC_URL``). Any other image is dropped entirely rather than left
+without a source; the editor tells the author why.
 """
 
 from __future__ import annotations
@@ -13,9 +17,11 @@ from __future__ import annotations
 import html as html_lib
 import re
 import unicodedata
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import SplitResult, urlsplit, urlunsplit
 
 import nh3
+
+from app.core.config import settings
 
 ELLIPSIS = "…"
 EXCERPT_LENGTH = 500
@@ -60,13 +66,53 @@ _IMG_HAS_SRC = re.compile(r'\ssrc="[^"]+"')
 _H1_TAG = re.compile(r"<(/?)h1>")
 _BLOCK_BOUNDARY = re.compile(rf"<(/?)({BLOCK_TAGS})\b", re.IGNORECASE)
 _UNSAFE_URL_CHARS = re.compile(r"[\s\x00-\x1f\x7f\\]")
+# A dot segment or a backslash, literal or percent-encoded (browsers decode ``%2e`` segments).
+_PATH_TRICKS = re.compile(r"\.\.|%2e|%5c|\\", re.IGNORECASE)
+_DEFAULT_PORTS = {"http": 80, "https": 443}
 
 
-def _is_allowed_img_src(src: str) -> bool:
+def _origin(parts: SplitResult) -> tuple[str, str, int] | None:
+    """``(scheme, host, port)`` of an absolute http(s) URL, lower-cased with the default port
+    filled in; ``None`` for anything else, including a URL with credentials or a bad port."""
+    scheme = parts.scheme.lower()
+    if scheme not in _DEFAULT_PORTS or "@" in parts.netloc or not parts.hostname:
+        return None
+    try:
+        port = parts.port
+    except ValueError:
+        return None
+    return scheme, parts.hostname.lower(), port or _DEFAULT_PORTS[scheme]
+
+
+def _upload_path(path: str) -> str | None:
+    """``path`` when it is a plain path under the upload prefix."""
+    if path.startswith(UPLOADS_PREFIX) and not _PATH_TRICKS.search(path):
+        return path
+    return None
+
+
+def _allowed_img_src(src: str) -> str | None:
+    """The ``src`` to store for an image, or ``None`` to drop the image.
+
+    Kept: a path under the upload prefix; our own origin's upload URL, as that path; an https
+    URL on the KNOWBASE origin. Origins compare scheme, host and port (case-insensitively, the
+    default port filled in); credentials, whitespace, control characters and backslashes never
+    pass.
+    """
+    if _UNSAFE_URL_CHARS.search(src):
+        return None
     if src.startswith(UPLOADS_PREFIX):
-        return ".." not in src and "\\" not in src
-    scheme = urlsplit(src).scheme.lower()
-    return scheme in {"http", "https"} and src.lower().startswith(f"{scheme}://")
+        return _upload_path(src)
+    parts = urlsplit(src)
+    origin = _origin(parts)
+    if origin is None or not src.lower().startswith(f"{origin[0]}://"):
+        return None
+    if origin == _origin(urlsplit(settings.FRONTEND_URL)):
+        return _upload_path(parts.path) if not parts.query and not parts.fragment else None
+    knowbase = _origin(urlsplit(settings.KNOWBASE_PUBLIC_URL))
+    if origin == knowbase and origin[0] == "https":
+        return src
+    return None
 
 
 def _attribute_filter(tag: str, attr: str, value: str) -> str | None:
@@ -75,7 +121,7 @@ def _attribute_filter(tag: str, attr: str, value: str) -> str | None:
     if tag == "a" and attr == "target":
         return value if value == "_blank" else None
     if tag == "img" and attr == "src":
-        return value if _is_allowed_img_src(value) else None
+        return _allowed_img_src(value)
     return value
 
 

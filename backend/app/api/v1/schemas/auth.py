@@ -27,6 +27,7 @@ from pydantic import (
 )
 from pydantic_core import PydanticCustomError
 
+from app.api.v1.params import DbId
 from app.api.v1.schemas.expertise import ExpertiseTagOut
 from app.api.v1.schemas.upload import upload_url
 from app.core.security import PASSWORD_MAX_LENGTH
@@ -83,7 +84,7 @@ class OrganisationFieldsMixin(BaseModel):
     """``organisation_id`` (a listed organisation) or ``organisation_other`` (free text), never
     both."""
 
-    organisation_id: int | None = None
+    organisation_id: DbId | None = None
     organisation_other: OrganisationOther = None
 
     @model_validator(mode="after")
@@ -105,7 +106,7 @@ class RegisterRequest(OrganisationFieldsMixin):
     country: Country = None
     locale: Locale = "en"
     # Duplicates collapse; unknown or inactive ids are rejected in crud (``not_found``).
-    expertise_ids: Annotated[list[int], Field(max_length=MAX_EXPERTISE)] = []
+    expertise_ids: Annotated[list[DbId], Field(max_length=MAX_EXPERTISE)] = []
     expertise_other: ExpertiseOther = None
     accept_terms: bool
     turnstile_token: TurnstileToken = None
@@ -204,7 +205,7 @@ class UpdateMeRequest(OrganisationFieldsMixin):
     country: Country = None
     locale: Locale | None = None
     bio: Bio = None
-    expertise_ids: Annotated[list[int], Field(max_length=MAX_EXPERTISE)] | None = None
+    expertise_ids: Annotated[list[DbId], Field(max_length=MAX_EXPERTISE)] | None = None
     expertise_other: ExpertiseOther = None
     show_email: bool | None = None
     show_in_directory: bool | None = None

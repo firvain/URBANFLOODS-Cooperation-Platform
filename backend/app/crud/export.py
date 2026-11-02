@@ -16,13 +16,26 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import ColumnElement, ScalarSelect, Table, func, literal_column, select, union
+from sqlalchemy.dialects.postgresql import aggregate_order_by
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.crud.visibility import visible_filter
-from app.db.enums import ContentType
-from app.db.models import Comment, KnowbaseLink, Post, Reply, Thread, User
+from app.db.enums import CategoryKind, ContentType
+from app.db.models import (
+    Category,
+    Comment,
+    KnowbaseLink,
+    Organisation,
+    Post,
+    Reply,
+    Tag,
+    Thread,
+    User,
+    post_tags,
+    thread_tags,
+)
 
 CHUNK_SIZE = 500
 FEED_SIZE = 20
@@ -181,34 +194,125 @@ async def iter_threads(db: AsyncSession) -> AsyncIterator[list[ThreadExport]]:
         last_id = ids[-1]
 
 
-async def _version(db: AsyncSession, *models: Any) -> ExportVersion:
-    """Count and latest ``updated_at`` of the published rows of each model, hashed. A row that
-    is published, changed, hidden or deleted moves a count or a timestamp (status changes bump
-    ``updated_at``), so the ETag changes."""
-    columns = []
+def _stamp(model: Any, *where: ColumnElement[bool]) -> list[ScalarSelect[Any]]:
+    """Count and latest ``updated_at`` of ``model``'s rows (a row entering, leaving or changing
+    moves one of them; the ORM bumps ``updated_at`` on every update)."""
+    return [
+        select(func.count()).select_from(model).where(*where).scalar_subquery(),
+        select(func.max(model.updated_at)).where(*where).scalar_subquery(),
+    ]
+
+
+def _fingerprint(
+    columns: Sequence[ColumnElement[Any]],
+    order_by: Sequence[ColumnElement[Any]],
+    *where: ColumnElement[bool],
+) -> ScalarSelect[Any]:
+    """md5 of ``columns`` over the matching rows, for tables without a usable ``updated_at``.
+
+    Each value is ``quote_nullable``-d (``NULL`` or a quoted literal with its quotes doubled), so
+    no two different rows give the same text (``concat_ws`` alone skips NULLs: name ``A:3`` with
+    no organisation read like name ``A`` with organisation 3).
+    """
+    row = func.concat_ws(literal_column("','"), *(func.quote_nullable(c) for c in columns))
+    joined = func.string_agg(row, aggregate_order_by(literal_column("';'"), *order_by))
+    stmt = select(func.md5(func.coalesce(joined, literal_column("''"))))
+    return stmt.where(*where).scalar_subquery()
+
+
+def _exported_authors(models: Sequence[Any]) -> ScalarSelect[Any]:
+    """What the export shows of its authors (the authors of its published ``models``): name,
+    organisation (its own row is stamped separately) and whether the account was erased. Not
+    ``updated_at`` (every sign-in bumps it), and nobody else: a registration or the rename of a
+    member with nothing in the export leaves the ETag alone. An erased author keeps their
+    content, so stays an author and the erasure is seen."""
+    authors = union(
+        *(select(model.author_id).where(visible_filter(model, None)) for model in models)
+    )
+    return _fingerprint(
+        [User.id, User.display_name, User.organisation_id, User.deleted_at.is_(None)],
+        [User.id],
+        User.id.in_(authors),
+    )
+
+
+def _exported_tags(junction: Table, content_key: str) -> list[ScalarSelect[Any]]:
+    """Tag names (renames, merges, deletes) and which content carries which tag (a tag-only edit
+    does not bump the content's ``updated_at``)."""
+    content_id = junction.c[content_key]
+    return [
+        _fingerprint([Tag.id, Tag.slug, Tag.name], [Tag.id]),
+        _fingerprint([content_id, junction.c.tag_id], [content_id, junction.c.tag_id]),
+    ]
+
+
+def _exported_links(content_type: ContentType) -> list[ScalarSelect[Any]]:
+    """KNOWBASE links are replaced (deleted and re-inserted), never updated: count and max id."""
+    of_type = KnowbaseLink.content_type == content_type
+    return [
+        select(func.count()).select_from(KnowbaseLink).where(of_type).scalar_subquery(),
+        select(func.max(KnowbaseLink.id)).where(of_type).scalar_subquery(),
+    ]
+
+
+async def _version(
+    db: AsyncSession,
+    models: Sequence[Any],
+    *,
+    category_kind: CategoryKind,
+    junction: Table,
+    content_key: str,
+    links: ContentType | None = None,
+) -> ExportVersion:
+    """One query, hashed: the published rows of each content model (count, latest
+    ``updated_at``; status changes bump it), and everything else an export shows: their authors
+    (renames, erasure), organisations, the categories of its kind, tags and KNOWBASE links.
+    ``Last-Modified`` is the latest ``updated_at`` among them."""
+    columns: list[ScalarSelect[Any]] = []
     for model in models:
-        published = visible_filter(model, None)
-        columns.append(select(func.count()).select_from(model).where(published).scalar_subquery())
-        columns.append(select(func.max(model.updated_at)).where(published).scalar_subquery())
+        columns.extend(_stamp(model, visible_filter(model, None)))
+    columns.extend(_stamp(Organisation))
+    columns.extend(_stamp(Category, Category.kind == category_kind))
+    stamped = len(columns)
+    columns.append(_exported_authors(models))
+    columns.extend(_exported_tags(junction, content_key))
+    if links is not None:
+        columns.extend(_exported_links(links))
     row = (await db.execute(select(*columns))).one()
-    stamps = [value for value in row[1::2] if value is not None]
+    stamps = [value for value in row[1:stamped:2] if value is not None]
     digest = hashlib.sha256("|".join(str(value) for value in row).encode()).hexdigest()[:32]
     return ExportVersion(etag=f'"{digest}"', last_modified=max(stamps) if stamps else None)
 
 
 async def posts_version(db: AsyncSession) -> ExportVersion:
-    """Validators of the posts exports (posts and their comments)."""
-    return await _version(db, Post, Comment)
+    """Validators of the posts JSON (posts, their comments and KNOWBASE links)."""
+    return await _version(
+        db,
+        [Post, Comment],
+        category_kind=CategoryKind.BLOG,
+        junction=post_tags,
+        content_key="post_id",
+        links=ContentType.POST,
+    )
 
 
 async def posts_csv_version(db: AsyncSession) -> ExportVersion:
-    """Validators of the posts CSV (no comments in it)."""
-    return await _version(db, Post)
+    """Validators of the posts CSV (no comments or KNOWBASE links in it)."""
+    return await _version(
+        db, [Post], category_kind=CategoryKind.BLOG, junction=post_tags, content_key="post_id"
+    )
 
 
 async def threads_version(db: AsyncSession) -> ExportVersion:
-    """Validators of the threads export (threads and their replies)."""
-    return await _version(db, Thread, Reply)
+    """Validators of the threads export (threads, their replies and KNOWBASE links)."""
+    return await _version(
+        db,
+        [Thread, Reply],
+        category_kind=CategoryKind.FORUM,
+        junction=thread_tags,
+        content_key="thread_id",
+        links=ContentType.THREAD,
+    )
 
 
 # --- feeds and sitemap ------------------------------------------------------------------------

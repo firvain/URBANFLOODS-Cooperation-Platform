@@ -17,8 +17,9 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, BackgroundTasks, Body, Path, Query
+from fastapi import APIRouter, BackgroundTasks, Body, Query
 
+from app.api.v1.params import BigPathId, QueryId
 from app.api.v1.schemas.moderation import (
     EXCERPT_LENGTH,
     AuditLogEntry,
@@ -46,10 +47,6 @@ from app.services import images, notifications
 
 router = APIRouter()
 
-# Replies and comments have BIGINT ids.
-MAX_ID = 2**63 - 1
-
-ContentId = Annotated[int, Path(ge=1, le=MAX_ID)]
 OptionalReason = Annotated[ModerationReason | None, Body()]
 
 
@@ -227,7 +224,7 @@ async def moderation_log(
     admin: AdminUser,
     db: DbTx,
     action: Annotated[str | None, Query(min_length=1, max_length=64)] = None,
-    actor_id: Annotated[int | None, Query(ge=1, le=2**31 - 1)] = None,
+    actor_id: QueryId = None,
     target_type: Annotated[str | None, Query(min_length=1, max_length=32)] = None,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
@@ -251,7 +248,7 @@ async def moderation_log(
 )
 async def approve_content(
     content_type: ContentType,
-    content_id: ContentId,
+    content_id: BigPathId,
     admin: AdminUser,
     db: DbTx,
     background: BackgroundTasks,
@@ -272,7 +269,7 @@ async def approve_content(
 )
 async def reject_content(
     content_type: ContentType,
-    content_id: ContentId,
+    content_id: BigPathId,
     admin: AdminUser,
     db: DbTx,
     background: BackgroundTasks,
@@ -293,7 +290,7 @@ async def reject_content(
 )
 async def hide_content(
     content_type: ContentType,
-    content_id: ContentId,
+    content_id: BigPathId,
     admin: AdminUser,
     db: DbTx,
     body: OptionalReason = None,
@@ -310,7 +307,7 @@ async def hide_content(
 )
 async def unhide_content(
     content_type: ContentType,
-    content_id: ContentId,
+    content_id: BigPathId,
     admin: AdminUser,
     db: DbTx,
     background: BackgroundTasks,
@@ -332,7 +329,7 @@ async def unhide_content(
     responses=ACTION_ERRORS,
 )
 async def delete_content(
-    content_type: ContentType, content_id: ContentId, admin: AdminUser, db: DbTx
+    content_type: ContentType, content_id: BigPathId, admin: AdminUser, db: DbTx
 ) -> ModerationResult:
     """Soft-delete content."""
     content = await _load(db, content_type, content_id)
@@ -345,7 +342,7 @@ async def delete_content(
     responses=ACTION_ERRORS,
 )
 async def restore_content(
-    content_type: ContentType, content_id: ContentId, admin: AdminUser, db: DbTx
+    content_type: ContentType, content_id: BigPathId, admin: AdminUser, db: DbTx
 ) -> ModerationResult:
     """Restore deleted content: back to hidden (same reason) if it was hidden when deleted, else
     published, or pending if it was never approved."""
@@ -359,7 +356,7 @@ async def restore_content(
     responses=ACTION_ERRORS,
 )
 async def resubmit_content(
-    content_type: ContentType, content_id: ContentId, user: VerifiedUser, db: DbTx
+    content_type: ContentType, content_id: BigPathId, user: VerifiedUser, db: DbTx
 ) -> ModerationResult:
     """The author sends their rejected (and possibly edited) post or thread for approval again:
     it goes back to pending, keeping the admin's note until the next decision. 404 when the
@@ -379,7 +376,7 @@ async def resubmit_content(
 )
 async def purge_content(
     content_type: ContentType,
-    content_id: ContentId,
+    content_id: BigPathId,
     admin: AdminUser,
     db: DbTx,
     background: BackgroundTasks,

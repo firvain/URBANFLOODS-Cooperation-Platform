@@ -14,11 +14,14 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.db.limits import MAX_ID
+
 PROXY_MAX_LIMIT = 200
 
 SearchText = Annotated[str, Field(min_length=2, max_length=200)]
 KeywordSearch = Annotated[str, Field(min_length=2, max_length=100)]
-PositiveId = Annotated[int, Field(ge=1)]
+# KNOWBASE ids are INTEGER too: a larger one is a 422 here rather than an upstream error.
+PositiveId = Annotated[int, Field(ge=1, le=MAX_ID)]
 
 
 class _Filters(BaseModel):
@@ -35,16 +38,16 @@ class DocumentFilters(_ListFilters):
     country: Annotated[str, Field(max_length=100)] | None = None
     level_id: PositiveId | None = None
     subject_id: PositiveId | None = None
-    keyword_ids: list[int] | None = None
+    keyword_ids: list[PositiveId] | None = None
     keyword_search: KeywordSearch | None = None
 
 
 class MeasureFilters(_ListFilters):
     q: SearchText | None = None
     category_id: Annotated[int, Field(ge=1, le=4)] | None = None
-    level_of_application_ids: list[int] | None = None
-    scale_ids: list[int] | None = None
-    keyword_ids: list[int] | None = None
+    level_of_application_ids: list[PositiveId] | None = None
+    scale_ids: list[PositiveId] | None = None
+    keyword_ids: list[PositiveId] | None = None
     keyword_search: KeywordSearch | None = None
 
 
@@ -52,18 +55,18 @@ class DocumentLookupFilters(_Filters):
     """Union of the document lookups' cross filters; each lookup accepts a subset of these."""
 
     country: Annotated[str, Field(max_length=100)] | None = None
-    level_id: int | None = None
-    subject_id: int | None = None
-    keyword_ids: list[int] | None = None
+    level_id: PositiveId | None = None
+    subject_id: PositiveId | None = None
+    keyword_ids: list[PositiveId] | None = None
 
 
 class MeasureLookupFilters(_Filters):
     """Union of the measure lookups' cross filters; each lookup accepts a subset of these."""
 
-    category_id: int | None = None
-    level_of_application_ids: list[int] | None = None
-    scale_ids: list[int] | None = None
-    keyword_ids: list[int] | None = None
+    category_id: PositiveId | None = None
+    level_of_application_ids: list[PositiveId] | None = None
+    scale_ids: list[PositiveId] | None = None
+    keyword_ids: list[PositiveId] | None = None
 
 
 # --- responses (loose pass-through) -----------------------------------------------------------

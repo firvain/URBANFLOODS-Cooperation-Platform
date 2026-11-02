@@ -9,8 +9,9 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Response, status
 
+from app.api.v1.params import BigPathId, PathId
 from app.api.v1.schemas.reply import (
     PaginatedReplies,
     ReplyCreate,
@@ -31,9 +32,6 @@ router = APIRouter()
 MAX_PAGE_SIZE = 50
 DEFAULT_PAGE_SIZE = 20
 CREATE_LIMIT = limit("replies.create", 60, 3600)
-
-ThreadId = Annotated[int, Path(ge=1, le=2**31 - 1)]
-ReplyId = Annotated[int, Path(ge=1, le=2**63 - 1)]
 
 
 def _error_responses(*codes: int) -> dict[int | str, dict[str, Any]]:
@@ -66,7 +64,7 @@ async def _audit(db: DbTx, *, actor_id: int, action: str, reply: Reply) -> None:
     responses=_error_responses(404, 422),
 )
 async def list_replies(
-    thread_id: ThreadId,
+    thread_id: PathId,
     db: DbTx,
     user: CurrentUser,
     skip: Annotated[int, Query(ge=0)] = 0,
@@ -90,7 +88,7 @@ async def list_replies(
     responses=_error_responses(401, 403, 404, 422, 423, 429),
 )
 async def create_reply(
-    thread_id: ThreadId,
+    thread_id: PathId,
     body: ReplyCreate,
     user: VerifiedUser,
     db: DbTx,
@@ -118,7 +116,7 @@ async def create_reply(
     responses=_error_responses(401, 403, 404, 422, 423),
 )
 async def update_reply(
-    reply_id: ReplyId, body: ReplyUpdate, user: VerifiedUser, db: DbTx
+    reply_id: BigPathId, body: ReplyUpdate, user: VerifiedUser, db: DbTx
 ) -> ReplyOut:
     """Edit a reply: its author within 24 hours of posting while the thread is unlocked, or an
     admin."""
@@ -136,7 +134,7 @@ async def update_reply(
     response_class=Response,
     responses=_error_responses(401, 403, 404),
 )
-async def delete_reply(reply_id: ReplyId, user: VerifiedUser, db: DbTx) -> Response:
+async def delete_reply(reply_id: BigPathId, user: VerifiedUser, db: DbTx) -> Response:
     """Soft-delete a reply (its author, or an admin). Its replies stay in the thread."""
     reply = await crud_reply.get_editable_reply(db, reply_id=reply_id, user=user)
     await crud_reply.soft_delete_reply(db, reply=reply)

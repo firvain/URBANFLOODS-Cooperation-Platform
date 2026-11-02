@@ -16,6 +16,7 @@ from pydantic import (
     model_validator,
 )
 
+from app.api.v1.params import BigDbId
 from app.api.v1.schemas.comment import EDIT_GRACE
 from app.api.v1.schemas.post import AuthorSummary
 from app.db.enums import ContentStatus
@@ -24,7 +25,6 @@ from app.db.enums import ContentStatus
 BODY_HTML_MAX_LENGTH = 100_000
 
 ReplyBodyHtml = Annotated[str, StringConstraints(max_length=BODY_HTML_MAX_LENGTH)]
-ReplyId = Annotated[int, Field(ge=1, le=2**63 - 1)]
 
 
 class ReplyOut(BaseModel):
@@ -81,7 +81,7 @@ def paginated_replies(total: int, replies: Iterable[Any]) -> PaginatedReplies:
 
 class ReplyCreate(BaseModel):
     body_html: ReplyBodyHtml
-    parent_reply_id: ReplyId | None = None
+    parent_reply_id: BigDbId | None = None
 
 
 class ReplyUpdate(BaseModel):

@@ -956,7 +956,8 @@ async def test_register_request_openapi_lists_expertise_ids(client):
     assert "expertise_ids" not in schema.get("required", [])
     field = schema["properties"]["expertise_ids"]
     assert field["type"] == "array"
-    assert field["items"] == {"type": "integer"}
+    # Bounded like every id (7n): 1 to 2**31 - 1.
+    assert field["items"] == {"type": "integer", "minimum": 1, "maximum": 2**31 - 1}
     assert field["maxItems"] == 8
     assert field.get("default") == []
 

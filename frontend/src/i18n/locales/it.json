@@ -606,6 +606,9 @@
         "not_found": "Il commento non esiste o è stato eliminato.",
         "forbidden": "Non puoi modificare questo commento.",
         "post_not_published": "I commenti sono aperti solo sugli articoli pubblicati."
+      },
+      "request": {
+        "invalid_value": "Qualcosa che hai inserito non può essere salvato, ad esempio un carattere di controllo invisibile o un numero troppo grande. Controlla i dati inseriti e riprova."
       }
     },
     "fields": {
@@ -893,6 +896,7 @@
     "counter": "{count} / {max}",
     "counterLabel": "{count} caratteri usati su {max}",
     "overLimit": "Il testo supera il limite di un carattere. | Il testo supera il limite di {count} caratteri.",
+    "imageNotAllowed": "Le immagini di altri siti web non sono consentite. Carica invece l'immagine.",
     "link": {
       "title": "Link",
       "description": "Collega il testo selezionato a una pagina web o a un indirizzo email.",

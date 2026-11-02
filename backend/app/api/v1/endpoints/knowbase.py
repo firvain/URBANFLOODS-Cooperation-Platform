@@ -11,9 +11,10 @@ from __future__ import annotations
 from collections.abc import Awaitable
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Path, Query, Response
+from fastapi import APIRouter, Query, Response
 from pydantic import BaseModel
 
+from app.api.v1.params import PathId
 from app.api.v1.schemas.knowbase import (
     DocumentFilters,
     DocumentLookupFilters,
@@ -44,10 +45,7 @@ from app.services.knowbase import (
 router = APIRouter()
 
 CACHE_HEADER = "X-Knowbase-Cache"
-MAX_ID = 2**31 - 1
 MAX_MENTIONS_PAGE = 50
-
-ItemId = Annotated[int, Path(ge=1, le=MAX_ID)]
 
 
 def _error_responses(*codes: int) -> dict[int | str, dict[str, Any]]:
@@ -125,7 +123,7 @@ async def list_documents(
     response_model_exclude_unset=True,
     responses=_error_responses(*UPSTREAM_ERRORS),
 )
-async def get_document(document_id: ItemId, kb: Knowbase, response: Response) -> Any:
+async def get_document(document_id: PathId, kb: Knowbase, response: Response) -> Any:
     """One document."""
     return await _proxy(kb.get_document(document_id), response)
 
@@ -173,7 +171,7 @@ async def get_measure_lookup(
     response_model_exclude_unset=True,
     responses=_error_responses(*UPSTREAM_ERRORS),
 )
-async def get_measure(measure_id: ItemId, kb: Knowbase, response: Response) -> Any:
+async def get_measure(measure_id: PathId, kb: Knowbase, response: Response) -> Any:
     """One measure, with an absolute ``photo_url``."""
     return with_photo_url(await _proxy(kb.get_measure(measure_id), response))
 
@@ -254,7 +252,7 @@ async def knowbase_status(kb: Knowbase) -> KnowbaseStatus:
 )
 async def list_mentions(
     kb_type: KbType,
-    kb_id: ItemId,
+    kb_id: PathId,
     db: DbTx,
     user: CurrentUser,
     skip: Annotated[int, Query(ge=0)] = 0,

@@ -73,6 +73,11 @@ export interface RichEditorOptions {
   onBlur?: () => void
   /** An image file was pasted or dropped. */
   onImageFile?: (file: File) => void
+  /**
+   * Called after every load (initial content, `setContent`) and every paste or drop of HTML,
+   * with the number of images dropped for their source (other websites; 0 when none).
+   */
+  onImagesChecked?: (dropped: number) => void
 }
 
 const LINK_PATTERN = /^(?:https?:\/\/[^\s/?#]+[^\s]*|mailto:[^\s@]+@[^\s@]+)$/i
@@ -167,9 +172,17 @@ export function useRichEditor(options: RichEditorOptions): RichEditor {
   })
   const attributes = () => options.attributes(textLength.value)
 
+  /** Incoming HTML normalised, reporting how many images it lost for their source. */
+  function checkedHtml(html: string): string {
+    let dropped = 0
+    const normalized = normalizeHtml(html, { onImageDropped: () => dropped++ })
+    options.onImagesChecked?.(dropped)
+    return normalized
+  }
+
   const editorProps = () => ({
     attributes: attributes(),
-    transformPastedHTML: (html: string) => normalizeHtml(html),
+    transformPastedHTML: (html: string) => checkedHtml(html),
     handlePaste: (_view: EditorView, event: ClipboardEvent) => {
       const file = imageFile(event.clipboardData?.files)
       if (!file || !options.onImageFile) return false
@@ -189,7 +202,7 @@ export function useRichEditor(options: RichEditorOptions): RichEditor {
   })
 
   editor = useEditor({
-    content: normalizeHtml(options.content),
+    content: checkedHtml(options.content),
     editable: options.editable(),
     extensions: [
       StarterKit.configure({
@@ -284,7 +297,7 @@ export function useRichEditor(options: RichEditorOptions): RichEditor {
   }
 
   function setContent(html: string) {
-    instance.value?.commands.setContent(normalizeHtml(html), { emitUpdate: false })
+    instance.value?.commands.setContent(checkedHtml(html), { emitUpdate: false })
   }
 
   return {

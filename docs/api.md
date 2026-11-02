@@ -55,7 +55,8 @@ Every error has the same body; clients translate `code`, `message` is an English
 | 403 | `security.csrf`, `security.csrf_origin` | CSRF checks failed |
 | 404 | `<resource>.not_found` | missing or not visible to the caller |
 | 409 | `moderation.invalid_transition` | status change not allowed from the current status |
-| 422 | `validation.failed` | invalid input; see `fields` |
+| 422 | `validation.failed` | invalid input; see `fields` (ids past their column's range included) |
+| 422 | `request.invalid_value` | a value the database cannot store (e.g. a NUL character) |
 | 429 | `rate.limited` | over a rate limit; honour `Retry-After` (seconds) |
 | 503 | `knowbase.unavailable` | KNOWBASE down and nothing cached |
 | 500 | `server.error` | unexpected error (quote `X-Request-ID` when reporting) |
@@ -69,7 +70,8 @@ and answer `{"total": <int>, "items": [...]}`.
 ### Response headers
 
 `X-Request-ID` on every response; `X-Knowbase-Cache: hit|miss|stale` on KNOWBASE proxy responses;
-`ETag`/`Last-Modified` on the bulk exports (send `If-None-Match` to get 304); `Retry-After` on 429.
+`ETag`/`Last-Modified` on the bulk exports (send `If-None-Match` to get 304; compared weakly, so the
+`W/"…"` form nginx hands out matches); `Retry-After` on 429.
 
 ## 2. Who may call
 

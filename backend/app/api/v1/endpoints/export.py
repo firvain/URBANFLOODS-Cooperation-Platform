@@ -5,7 +5,8 @@ email address (``crud/export.py``, ``schemas/export.py``).
 The JSON and CSV bodies are streamed: the rows are read in keyset chunks while the response is
 written. A streaming body outlives the request's ``DbTx`` (committed before the response
 starts), so the body opens its own read-only session. The ``ETag`` / ``Last-Modified``
-validators are computed up front on ``DbTx``; a matching ``If-None-Match`` gets a 304.
+validators are computed up front on ``DbTx``; a matching ``If-None-Match`` (weak comparison)
+gets a 304.
 """
 
 from __future__ import annotations
@@ -91,9 +92,17 @@ def _validators(version: crud_export.ExportVersion) -> dict[str, str]:
     return headers
 
 
+def _opaque_tag(tag: str) -> str:
+    """The entity tag without its weakness marker (``W/"x"`` → ``"x"``)."""
+    tag = tag.strip()
+    return tag[2:] if tag.startswith("W/") else tag
+
+
 def _not_modified(request: Request, headers: dict[str, str]) -> Response | None:
-    tags = {tag.strip() for tag in request.headers.get("if-none-match", "").split(",")}
-    if headers["ETag"] in tags or "*" in tags:
+    """304 when ``If-None-Match`` names our ETag or is ``*``. Weak comparison (RFC 9110
+    §8.8.3.2): nginx (``gzip_proxied any``) hands clients ``W/"…"`` for our strong tag."""
+    tags = {_opaque_tag(tag) for tag in request.headers.get("if-none-match", "").split(",")}
+    if _opaque_tag(headers["ETag"]) in tags or "*" in tags:
         return Response(status_code=status.HTTP_304_NOT_MODIFIED, headers=headers)
     return None
 

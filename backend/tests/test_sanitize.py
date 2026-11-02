@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from app.core.config import settings
 from app.services.sanitize import (
     excerpt,
     html_to_text,
@@ -49,11 +50,13 @@ def test_script_removed_with_content() -> None:
 
 
 def test_event_handler_removed() -> None:
-    out = sanitize_html('<p onclick="steal()">Hi</p><img src="https://a.org/x.png" onerror="x()">')
+    out = sanitize_html(
+        '<p onclick="steal()">Hi</p><img src="/static/uploads/x.png" onerror="x()">'
+    )
     assert "onclick" not in out
     assert "onerror" not in out
     assert "steal" not in out
-    assert '<img src="https://a.org/x.png">' in out
+    assert '<img src="/static/uploads/x.png">' in out
 
 
 def test_javascript_href_removed() -> None:
@@ -148,21 +151,96 @@ def test_img_upload_path_kept() -> None:
     assert sanitize_html(html) == html
 
 
-def test_img_https_kept() -> None:
-    src = "https://knowbase.urbanfloods.app/static/measures/photos/y.jpg"
+KNOWBASE_IMG = "https://knowbase.urbanfloods.app/static/measures/photos/y.jpg"
+OWN_ORIGIN = "https://cooperation.example.org"
+
+
+@pytest.fixture(autouse=True)
+def _origins(monkeypatch) -> None:
+    """Production-like origins (the dev defaults are http://localhost:5173)."""
+    monkeypatch.setattr(settings, "FRONTEND_URL", OWN_ORIGIN)
+    monkeypatch.setattr(settings, "KNOWBASE_PUBLIC_URL", "https://knowbase.urbanfloods.app")
+
+
+@pytest.mark.parametrize(
+    "src",
+    [
+        KNOWBASE_IMG,
+        "HTTPS://Knowbase.UrbanFloods.app/static/measures/photos/y.jpg",
+        "https://knowbase.urbanfloods.app:443/static/x.jpg",
+    ],
+)
+def test_img_knowbase_https_kept(src: str) -> None:
+    """7n (#16): images only from our uploads and the KNOWBASE (the CSP allows those)."""
     assert sanitize_html(f'<p><img src="{src}"></p>') == f'<p><img src="{src}"></p>'
 
 
 @pytest.mark.parametrize(
     "src",
     [
+        f"{OWN_ORIGIN}/static/uploads/2026/10/x.webp",
+        "HTTPS://Cooperation.Example.org/static/uploads/2026/10/x.webp",
+        f"{OWN_ORIGIN}:443/static/uploads/2026/10/x.webp",
+    ],
+)
+def test_img_own_origin_upload_normalised_to_path(src: str) -> None:
+    """Pasted from the live site: kept as the relative upload path."""
+    assert sanitize_html(f'<p><img src="{src}" alt="A"></p>') == (
+        '<p><img src="/static/uploads/2026/10/x.webp" alt="A"></p>'
+    )
+
+
+def test_img_own_origin_upload_follows_frontend_url(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "FRONTEND_URL", "http://localhost:5173/")
+    out = sanitize_html('<p><img src="http://localhost:5173/static/uploads/a.webp"></p>')
+    assert out == '<p><img src="/static/uploads/a.webp"></p>'
+
+
+@pytest.mark.parametrize(
+    "src",
+    [
+        # other hosts
+        "https://a.org/x.png",
+        "https://example.org/static/uploads/x.webp",
+        "http://example.org/x.png",
+        # the KNOWBASE over http (the CSP allows https only)
+        "http://knowbase.urbanfloods.app/static/x.jpg",
+        # look-alike hosts and userinfo
+        "https://knowbase.urbanfloods.app.evil.com/x.jpg",
+        "https://evil.com/knowbase.urbanfloods.app/x.jpg",
+        "https://evilknowbase.urbanfloods.app/x.jpg",
+        "https://knowbase.urbanfloods.app.:443/x.jpg",
+        "https://knowbase.urbanfloods.app@evil.com/x.jpg",
+        "https://user@knowbase.urbanfloods.app/x.jpg",
+        "https://user:pw@knowbase.urbanfloods.app/x.jpg",
+        "https://knowbase.urbanfloods.app:8443/x.jpg",
+        "https://knowbase.urbanfloods.app%2eevil.com/x.jpg",
+        # our own origin: only under the upload prefix, same scheme and port, no tricks
+        f"{OWN_ORIGIN}/static/other/x.png",
+        f"{OWN_ORIGIN}/static/uploads/../secret.png",
+        f"{OWN_ORIGIN}/static/uploads/%2e%2e/secret.png",
+        f"{OWN_ORIGIN}/static/uploads/%2E%2E/secret.png",
+        "http://cooperation.example.org/static/uploads/x.webp",
+        f"{OWN_ORIGIN}:8443/static/uploads/x.webp",
+        f"{OWN_ORIGIN}.evil.com/static/uploads/x.webp",
+        "https://evil.com@cooperation.example.org/static/uploads/x.webp",
+        # schemes and relative forms
+        "data:image/png;base64,AAAA",
+        "javascript:alert(1)",
+        "//evil.com/x.png",
+        "//knowbase.urbanfloods.app/x.jpg",
+        "https:/knowbase.urbanfloods.app/x.jpg",
+        "https://knowbase.urbanfloods.app\\@evil.com/x.jpg",
+        "/static/uploads/..\\x.png",
+        "/static/uploads/%2e%2e/secret.png",
+        "/static/uploads/.%2E/secret.png",
+        "/static/uploads/%5c..%5csecret.png",
         "file:///etc/passwd",
         "/etc/passwd",
         "/static/other/x.png",
         "/static/uploads/../../secret.png",
         "//evil.example/x.png",
         "x.png",
-        "javascript:alert(1)",
         "",
     ],
 )

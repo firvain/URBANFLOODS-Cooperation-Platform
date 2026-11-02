@@ -6,15 +6,15 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Annotated, Any
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import AfterValidator, BaseModel, ConfigDict, StringConstraints
 
+from app.api.v1.params import BigDbId
 from app.db.enums import ContentStatus, ContentType, ReportReason, ReportStatus
 from app.db.models import Comment, Post, Reply, Report, Thread
 from app.services.sanitize import excerpt
 
 DETAILS_MAX_LENGTH = 1000
 CONTENT_EXCERPT_LENGTH = 160
-MAX_CONTENT_ID = 2**63 - 1
 
 
 def _blank_to_none(value: str | None) -> str | None:
@@ -31,7 +31,7 @@ Details = Annotated[
 
 class ReportCreate(BaseModel):
     content_type: ContentType
-    content_id: int = Field(ge=1, le=MAX_CONTENT_ID)
+    content_id: BigDbId
     reason: ReportReason
     details: Details = None
 

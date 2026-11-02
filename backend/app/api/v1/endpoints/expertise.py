@@ -7,6 +7,7 @@ from typing import Any
 
 from fastapi import APIRouter, status
 
+from app.api.v1.params import PathId
 from app.api.v1.schemas.expertise import (
     ExpertiseTagCreate,
     ExpertiseTagList,
@@ -69,7 +70,7 @@ async def create_expertise(body: ExpertiseTagCreate, admin: AdminUser, db: DbTx)
     responses=_error_responses(401, 403, 404, 409, 422),
 )
 async def update_expertise(
-    tag_id: int, body: ExpertiseTagUpdate, admin: AdminUser, db: DbTx
+    tag_id: PathId, body: ExpertiseTagUpdate, admin: AdminUser, db: DbTx
 ) -> ExpertiseTagOut:
     """Update an expertise tag (admin). Omitted fields are kept. ``is_active: false``
     deactivates: members keep the tag, nobody can pick it any more."""

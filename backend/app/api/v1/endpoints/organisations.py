@@ -6,6 +6,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Query, status
 
+from app.api.v1.params import PathId
 from app.api.v1.schemas.organisation import (
     OrganisationCreate,
     OrganisationList,
@@ -58,7 +59,7 @@ async def list_organisations(
 @router.get(
     "/{organisation_id}", response_model=OrganisationOut, responses=_error_responses(404, 422)
 )
-async def get_organisation(organisation_id: int, db: DbTx) -> OrganisationOut:
+async def get_organisation(organisation_id: PathId, db: DbTx) -> OrganisationOut:
     """One organisation with its number of (verified, active) members."""
     row = await crud_organisation.get_organisation_with_member_count(
         db, organisation_id=organisation_id
@@ -96,7 +97,7 @@ async def create_organisation(
     responses=_error_responses(401, 403, 404, 409, 422),
 )
 async def update_organisation(
-    organisation_id: int, body: OrganisationUpdate, admin: AdminUser, db: DbTx
+    organisation_id: PathId, body: OrganisationUpdate, admin: AdminUser, db: DbTx
 ) -> OrganisationOut:
     """Update an organisation (admin). Omitted fields are kept; ``website: null`` clears."""
     organisation = await crud_organisation.get_organisation(db, organisation_id=organisation_id)

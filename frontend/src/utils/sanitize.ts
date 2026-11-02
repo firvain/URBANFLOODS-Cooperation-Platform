@@ -1,5 +1,7 @@
 import DOMPurify from 'dompurify'
 
+import { EXTERNAL_LINKS } from '@/constants/links'
+
 /**
  * Allowed link targets: http, https and mailto, plus scheme-less URLs (relative paths and
  * `#fragment` anchors). Everything else (`javascript:`, `data:`, `tel:`, `ftp:` …) is dropped.
@@ -71,7 +73,7 @@ export const EDITOR_ALLOWED_TAGS: readonly string[] = [
 
 /**
  * Attributes DOMPurify lets through; the hook below narrows them per element (`class` only as
- * `language-*` on code/pre, `target` only `_blank`, image `src` only http(s) or uploads, …).
+ * `language-*` on code/pre, `target` only `_blank`, image `src` only uploads or the KNOWBASE, …).
  */
 const EDITOR_ALLOWED_ATTR = [
   'href',
@@ -97,8 +99,51 @@ const EDITOR_ATTRS_BY_TAG: Record<string, readonly string[]> = {
 const HEADING_MAP: Record<string, string> = { H1: 'h2', H5: 'h4', H6: 'h4' }
 
 const LANGUAGE_CLASS = /^language-[\w+#-]+$/
-const IMAGE_SRC = /^(?:https?:\/\/|\/static\/uploads\/)/i
 const DIMENSION = /^\d{1,5}$/
+
+/*
+ * Image sources (7n, owner's decision 2026-11-02): only our uploads and the KNOWBASE, the two
+ * sources the production CSP (`img-src 'self' data: blob: https://knowbase.urbanfloods.app`)
+ * lets readers' browsers load. Mirrors `_allowed_img_src` in backend `services/sanitize.py`.
+ */
+const UPLOADS_PREFIX = '/static/uploads/'
+const KNOWBASE_ORIGIN = new URL(EXTERNAL_LINKS.knowbase).origin
+// Whitespace, control characters and backslashes never pass (browsers read `\` as `/`).
+const UNSAFE_URL_CHARS = /[\s\x00-\x1f\x7f\\]/
+// A dot segment, literal or percent-encoded (browsers decode `%2e` segments), or an encoded `\`.
+const PATH_TRICKS = /\.\.|%2e|%5c/i
+const ABSOLUTE_HTTP = /^https?:\/\/([^/?#]*)/i
+
+function uploadPath(path: string): string | null {
+  return path.startsWith(UPLOADS_PREFIX) && !PATH_TRICKS.test(path) ? path : null
+}
+
+/**
+ * The `src` to keep for an image, or `null` to drop the image: a path under `/static/uploads/`;
+ * an upload URL on our own origin (`window.location.origin`), as that path; an https URL on the
+ * KNOWBASE origin. Origins compare scheme, host and port (the URL parser lower-cases them and
+ * drops a default port); credentials never pass.
+ */
+export function allowedImageSrc(src: string): string | null {
+  if (UNSAFE_URL_CHARS.test(src)) return null
+  if (src.startsWith(UPLOADS_PREFIX)) return uploadPath(src)
+  const authority = ABSOLUTE_HTTP.exec(src)?.[1]
+  if (!authority || authority.includes('@')) return null
+  let url: URL
+  try {
+    url = new URL(src)
+  } catch {
+    return null
+  }
+  if (url.origin === window.location.origin) {
+    if (url.search || url.hash || PATH_TRICKS.test(src)) return null
+    return uploadPath(url.pathname)
+  }
+  return url.origin === KNOWBASE_ORIGIN && url.protocol === 'https:' ? src : null
+}
+
+/** Set while `normalizeHtml` runs with `onImageDropped` (sanitising is synchronous). */
+let reportDroppedImage: ((src: string) => void) | undefined
 
 /** The DOMPurify configuration of the editor; use through `normalizeHtml`. */
 export const editorPurifyConfig = {
@@ -125,16 +170,21 @@ editorPurifier.addHook('afterSanitizeAttributes', (node) => {
         node.removeAttribute('rel')
       }
       break
-    case 'IMG':
-      if (!IMAGE_SRC.test(node.getAttribute('src') ?? '')) {
+    case 'IMG': {
+      const src = node.getAttribute('src') ?? ''
+      const kept = allowedImageSrc(src)
+      if (kept === null) {
+        reportDroppedImage?.(src)
         node.remove()
         return
       }
+      if (kept !== src) node.setAttribute('src', kept)
       for (const name of ['width', 'height']) {
         const value = node.getAttribute(name)
         if (value !== null && !DIMENSION.test(value)) node.removeAttribute(name)
       }
       break
+    }
     case 'CODE':
     case 'PRE': {
       const value = node.getAttribute('class')
@@ -156,13 +206,23 @@ function remapHeadings(html: string): string {
   return doc.body.innerHTML
 }
 
+export interface NormalizeOptions {
+  /** Called with the `src` of every image dropped for its source (the editor explains why). */
+  onImageDropped?: (src: string) => void
+}
+
 /**
  * Reduce editor HTML (initial values, pasted HTML, the editor's own output) to the backend
  * allow-list: unknown elements are unwrapped (their text kept), scripts and styles dropped,
  * links limited to http/https/mailto (`rel="noopener noreferrer"` with `target="_blank"`),
- * images to http(s) or `/static/uploads/` sources.
+ * images to our uploads and the KNOWBASE (`allowedImageSrc`).
  */
-export function normalizeHtml(html: string): string {
+export function normalizeHtml(html: string, options: NormalizeOptions = {}): string {
   if (!html) return ''
-  return editorPurifier.sanitize(remapHeadings(html), editorPurifyConfig)
+  reportDroppedImage = options.onImageDropped
+  try {
+    return editorPurifier.sanitize(remapHeadings(html), editorPurifyConfig)
+  } finally {
+    reportDroppedImage = undefined
+  }
 }

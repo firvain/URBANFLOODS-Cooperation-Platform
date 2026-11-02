@@ -606,6 +606,9 @@
         "not_found": "Komenti nuk ekziston ose është fshirë.",
         "forbidden": "Nuk mund ta ndryshoni këtë koment.",
         "post_not_published": "Komentet janë të hapura vetëm për postimet e publikuara."
+      },
+      "request": {
+        "invalid_value": "Diçka që keni futur nuk mund të ruhet, p.sh. një karakter kontrolli i padukshëm ose një numër shumë i madh. Kontrolloni të dhënat dhe provoni përsëri."
       }
     },
     "fields": {
@@ -893,6 +896,7 @@
     "counter": "{count} / {max}",
     "counterLabel": "{count} nga {max} karaktere të përdorura",
     "overLimit": "Teksti e tejkalon kufirin me një karakter. | Teksti e tejkalon kufirin me {count} karaktere.",
+    "imageNotAllowed": "Imazhet nga faqe të tjera interneti nuk lejohen. Ngarkoni imazhin në vend të kësaj.",
     "link": {
       "title": "Lidhje",
       "description": "Lidhni tekstin e përzgjedhur me një faqe interneti ose me një adresë email-i.",

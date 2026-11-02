@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, useId, watch } from 'vue'
+import { computed, nextTick, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { EditorContent } from '@tiptap/vue-3'
 
@@ -19,7 +19,9 @@ import {
  * Rich-text editor (Tiptap) with `v-model` of an HTML string. The emitted HTML only ever holds
  * the backend allow-list (`normalizeHtml`), `''` when empty. Label it with `labelId` (the id of
  * the visible label); `maxLength` counts characters of text and shows a counter. Images are
- * uploaded through `ImageUploadDialog` (alt text required), also when pasted or dropped.
+ * uploaded through `ImageUploadDialog` (alt text required), also when pasted or dropped. Images
+ * from other websites (the CSP would block them) are dropped from pasted and loaded content, with
+ * a status notice saying why.
  * `compact` offers the comment subset (replies, comments): no headings, code blocks or images,
  * and a lower editing area.
  */
@@ -59,6 +61,23 @@ const linkOpen = ref(false)
 const linkInitial = ref<LinkInput | null>(null)
 const imageOpen = ref(false)
 const pendingFile = ref<File | null>(null)
+/**
+ * The image notice: 0 hidden, else the number of the announcement. Each paste or load resets it,
+ * then shows it again on the next tick if images were dropped, under a new key, so a repeat
+ * drop re-renders the status text and screen readers announce it again. Cleared by an upload.
+ */
+const imageNotice = ref(0)
+let announcements = 0
+
+function onImagesChecked(dropped: number) {
+  imageNotice.value = 0
+  if (dropped > 0) {
+    const next = ++announcements
+    void nextTick(() => {
+      imageNotice.value = next
+    })
+  }
+}
 
 const api = useRichEditor({
   content: model.value,
@@ -88,6 +107,7 @@ const api = useRichEditor({
     pendingFile.value = file
     imageOpen.value = true
   },
+  onImagesChecked,
 })
 
 const textLength = api.textLength
@@ -163,6 +183,7 @@ function onLinkApply(link: LinkInput) {
 }
 
 function onImageUploaded(image: ImageInput) {
+  imageNotice.value = 0
   api.insertImage(image)
 }
 
@@ -183,6 +204,13 @@ defineExpose({
   >
     <EditorToolbar :items="toolbarItems" :label="t('editor.toolbar')" @action="onAction" />
     <EditorContent :editor="api.editor.value" />
+    <p
+      role="status"
+      class="text-sm text-warning"
+      :class="imageNotice ? 'border-t border-default px-3 py-1' : 'sr-only'"
+    >
+      <span v-if="imageNotice" :key="imageNotice">{{ t('editor.imageNotAllowed') }}</span>
+    </p>
     <div
       v-if="maxLength !== undefined"
       class="flex flex-wrap items-center justify-between gap-2 border-t border-default px-3 py-1 text-sm"

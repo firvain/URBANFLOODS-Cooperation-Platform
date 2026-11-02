@@ -8,8 +8,9 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Path, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
+from app.api.v1.params import BigPathId
 from app.api.v1.schemas.report import (
     PaginatedReports,
     ReportCreate,
@@ -29,8 +30,6 @@ router = APIRouter()
 MAX_PAGE_SIZE = 200
 DEFAULT_PAGE_SIZE = 50
 CREATE_LIMIT = limit("reports.create", 20, 86400)
-
-ReportId = Annotated[int, Path(ge=1, le=2**63 - 1)]
 
 
 def _error_responses(*codes: int) -> dict[int | str, dict[str, Any]]:
@@ -104,13 +103,13 @@ async def list_reports(
 
 
 @router.get("/{report_id}", response_model=ReportDetail, responses=_error_responses(401, 403, 404))
-async def get_report(report_id: ReportId, admin: AdminUser, db: DbTx) -> ReportDetail:
+async def get_report(report_id: BigPathId, admin: AdminUser, db: DbTx) -> ReportDetail:
     """One report with the reported content's summary (admins)."""
     return await _detail(db, await _get_or_404(db, report_id))
 
 
 @router.post("/{report_id}/resolve", response_model=ReportDetail, responses=ACTION_ERRORS)
-async def resolve_report(report_id: ReportId, admin: AdminUser, db: DbTx) -> ReportDetail:
+async def resolve_report(report_id: BigPathId, admin: AdminUser, db: DbTx) -> ReportDetail:
     """Mark an open report as acted upon (admins). The content itself is moderated separately."""
     report = await _get_or_404(db, report_id)
     await crud_reports.resolve_report(db, report=report, actor=admin)
@@ -118,7 +117,7 @@ async def resolve_report(report_id: ReportId, admin: AdminUser, db: DbTx) -> Rep
 
 
 @router.post("/{report_id}/dismiss", response_model=ReportDetail, responses=ACTION_ERRORS)
-async def dismiss_report(report_id: ReportId, admin: AdminUser, db: DbTx) -> ReportDetail:
+async def dismiss_report(report_id: BigPathId, admin: AdminUser, db: DbTx) -> ReportDetail:
     """Close an open report without action (admins)."""
     report = await _get_or_404(db, report_id)
     await crud_reports.dismiss_report(db, report=report, actor=admin)

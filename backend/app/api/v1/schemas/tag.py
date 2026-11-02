@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
 
+from app.api.v1.params import DbId
+
 
 class TagOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -20,4 +22,4 @@ class TagList(BaseModel):
 
 
 class TagMerge(BaseModel):
-    target_id: int
+    target_id: DbId

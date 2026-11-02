@@ -36,8 +36,9 @@ deleted content, reports, moderation data and account data are not open.
 - The bulk exports, feeds and sitemap need no key and no cookie.
 - The API is documented in OpenAPI 3 at `/api/v1/openapi.json`, with interactive docs at `/docs`
   (when `ENABLE_DOCS=true`; see [api.md](api.md#1-basics)).
-- Exports send `ETag` and `Last-Modified`; a matching `If-None-Match` gets 304, so harvesters can
-  poll cheaply.
+- Exports send `ETag` and `Last-Modified`; a matching `If-None-Match` gets 304 (weak comparison), so
+  harvesters can poll cheaply. The ETag changes with anything the export shows: the content, its
+  authors' names or erasure, organisations, categories, tags and KNOWBASE links.
 - Fair-use limit: 300 requests per minute per IP under `/api/` (429 with `Retry-After` beyond);
   feeds and the sitemap are not rate limited by the application.
 - Metadata outlives content: a deleted account's contributions stay, attributed to "Deleted user".

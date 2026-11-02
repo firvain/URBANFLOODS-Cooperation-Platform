@@ -55,6 +55,7 @@ from app.crud import user as crud_user
 from app.crud.audit import log_action
 from app.crud.tag import recount_tag_usage
 from app.db.enums import ContentStatus, ContentType, HiddenReason, ReportStatus
+from app.db.limits import MAX_ID
 from app.db.models import (
     AuditLog,
     Comment,
@@ -80,9 +81,6 @@ MODELS: dict[ContentType, type[Any]] = {
 _TYPES: dict[type[Any], ContentType] = {model: ct for ct, model in MODELS.items()}
 # Only posts and threads go through review.
 REVIEWED_TYPES = frozenset({ContentType.POST, ContentType.THREAD})
-# Posts and threads have INTEGER ids (replies and comments BIGINT): a larger id cannot exist, and
-# Postgres would reject it as "integer out of range" rather than find nothing.
-MAX_INT_ID = 2**31 - 1
 # The longest ``moderation_note`` stored (the same limit as the reason in the request body).
 NOTE_MAX_LENGTH = 500
 
@@ -131,7 +129,9 @@ async def get_content(
     beyond the column's range is None without a query.
     """
     model = MODELS[content_type]
-    if content_type in REVIEWED_TYPES and content_id > MAX_INT_ID:
+    # Posts and threads have INTEGER ids (replies and comments BIGINT): a larger id cannot exist,
+    # and Postgres would reject it as "integer out of range" rather than find nothing.
+    if content_type in REVIEWED_TYPES and content_id > MAX_ID:
         return None
     stmt = (
         select(model)
@@ -954,7 +954,7 @@ async def content_slugs(
     status): one query per type. Ids beyond the INTEGER range cannot exist and are ignored."""
     slugs: dict[tuple[ContentType, int], str] = {}
     for content_type, ids in ((ContentType.POST, post_ids), (ContentType.THREAD, thread_ids)):
-        ids = {i for i in ids if 0 < i <= MAX_INT_ID}
+        ids = {i for i in ids if 0 < i <= MAX_ID}
         if not ids:
             continue
         model = MODELS[content_type]

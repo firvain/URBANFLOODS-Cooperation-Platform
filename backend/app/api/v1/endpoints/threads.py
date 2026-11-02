@@ -6,8 +6,9 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Path, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Response, status
 
+from app.api.v1.params import PathId, QueryId
 from app.api.v1.schemas.post import KnowbaseLinkOut
 from app.api.v1.schemas.thread import (
     PaginatedThreads,
@@ -28,10 +29,7 @@ from app.db.models import Thread, User
 router = APIRouter()
 
 MAX_PAGE_SIZE = 50
-MAX_ID = 2**31 - 1
 CREATE_LIMIT = limit("threads.create", 20, 3600)
-
-ItemId = Annotated[int, Path(ge=1, le=MAX_ID)]
 
 
 def _error_responses(*codes: int) -> dict[int | str, dict[str, Any]]:
@@ -63,7 +61,7 @@ async def list_threads(
     q: Annotated[str | None, Query(max_length=200)] = None,
     category: Annotated[str | None, Query(max_length=80, description="Category slug")] = None,
     tag: Annotated[str | None, Query(max_length=80, description="Tag slug")] = None,
-    author_id: int | None = None,
+    author_id: QueryId = None,
     locale: Annotated[str | None, Query(max_length=5)] = None,
     status_: Annotated[
         ContentStatus | None, Query(alias="status", description="Admins only")
@@ -97,7 +95,7 @@ async def list_threads(
 )
 async def list_mentions(
     kb_type: KbType,
-    kb_id: ItemId,
+    kb_id: PathId,
     db: DbTx,
     user: CurrentUser,
     skip: Annotated[int, Query(ge=0)] = 0,
@@ -164,7 +162,7 @@ async def create_thread(
     responses=_error_responses(401, 403, 404, 409, 422, 423, 502, 503),
 )
 async def update_thread(
-    thread_id: int, body: ThreadUpdate, user: VerifiedUser, db: DbTx, kb: Knowbase
+    thread_id: PathId, body: ThreadUpdate, user: VerifiedUser, db: DbTx, kb: Knowbase
 ) -> ThreadDetail:
     """Edit a thread (its author, or an admin; only admins edit a locked thread). The status
     does not change."""
@@ -190,7 +188,7 @@ async def update_thread(
     response_class=Response,
     responses=_error_responses(401, 403, 404),
 )
-async def delete_thread(thread_id: int, user: VerifiedUser, db: DbTx) -> Response:
+async def delete_thread(thread_id: PathId, user: VerifiedUser, db: DbTx) -> Response:
     """Soft-delete a thread (its author, or an admin)."""
     thread = await crud_thread.get_editable_thread(
         db, thread_id=thread_id, user=user, editing=False
@@ -236,7 +234,7 @@ _ADMIN_RESPONSES = _error_responses(401, 403, 404)
 
 
 @router.post("/{thread_id}/pin", response_model=ThreadDetail, responses=_ADMIN_RESPONSES)
-async def pin_thread(thread_id: int, user: AdminUser, db: DbTx) -> ThreadDetail:
+async def pin_thread(thread_id: PathId, user: AdminUser, db: DbTx) -> ThreadDetail:
     """Pin a thread to the top of its lists (admins; idempotent)."""
     return await _toggle(
         db, thread_id=thread_id, user=user, flag="pinned", value=True, action="thread.pinned"
@@ -244,7 +242,7 @@ async def pin_thread(thread_id: int, user: AdminUser, db: DbTx) -> ThreadDetail:
 
 
 @router.post("/{thread_id}/unpin", response_model=ThreadDetail, responses=_ADMIN_RESPONSES)
-async def unpin_thread(thread_id: int, user: AdminUser, db: DbTx) -> ThreadDetail:
+async def unpin_thread(thread_id: PathId, user: AdminUser, db: DbTx) -> ThreadDetail:
     """Unpin a thread (admins; idempotent)."""
     return await _toggle(
         db, thread_id=thread_id, user=user, flag="pinned", value=False, action="thread.unpinned"
@@ -252,7 +250,7 @@ async def unpin_thread(thread_id: int, user: AdminUser, db: DbTx) -> ThreadDetai
 
 
 @router.post("/{thread_id}/lock", response_model=ThreadDetail, responses=_ADMIN_RESPONSES)
-async def lock_thread(thread_id: int, user: AdminUser, db: DbTx) -> ThreadDetail:
+async def lock_thread(thread_id: PathId, user: AdminUser, db: DbTx) -> ThreadDetail:
     """Lock a thread: no new replies, no edits by its author (admins; idempotent)."""
     return await _toggle(
         db, thread_id=thread_id, user=user, flag="locked", value=True, action="thread.locked"
@@ -260,7 +258,7 @@ async def lock_thread(thread_id: int, user: AdminUser, db: DbTx) -> ThreadDetail
 
 
 @router.post("/{thread_id}/unlock", response_model=ThreadDetail, responses=_ADMIN_RESPONSES)
-async def unlock_thread(thread_id: int, user: AdminUser, db: DbTx) -> ThreadDetail:
+async def unlock_thread(thread_id: PathId, user: AdminUser, db: DbTx) -> ThreadDetail:
     """Unlock a thread (admins; idempotent)."""
     return await _toggle(
         db, thread_id=thread_id, user=user, flag="locked", value=False, action="thread.unlocked"

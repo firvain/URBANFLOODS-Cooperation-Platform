@@ -482,7 +482,7 @@ async def test_get_content_missing(db_session):
 async def test_get_content_out_of_range_id(db_session, content_type):
     """Ids past a column's range are simply not found (posts and threads have INTEGER ids;
     asking Postgres for 2**31 would fail with "integer out of range")."""
-    too_big = moderation.MAX_INT_ID + 1 if content_type in moderation.REVIEWED_TYPES else 2**63 - 1
+    too_big = moderation.MAX_ID + 1 if content_type in moderation.REVIEWED_TYPES else 2**63 - 1
     assert (
         await moderation.get_content(
             db_session, content_type=content_type, content_id=too_big, for_update=True

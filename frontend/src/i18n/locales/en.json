@@ -606,6 +606,9 @@
         "not_found": "The comment does not exist or has been deleted.",
         "forbidden": "You cannot change this comment.",
         "post_not_published": "Comments are open on published posts only."
+      },
+      "request": {
+        "invalid_value": "Something you entered cannot be saved, such as an invisible control character or a number that is too large. Check what you entered and try again."
       }
     },
     "fields": {
@@ -893,6 +896,7 @@
     "counter": "{count} / {max}",
     "counterLabel": "{count} of {max} characters used",
     "overLimit": "The text is one character too long. | The text is {count} characters too long.",
+    "imageNotAllowed": "Images from other websites are not allowed. Upload the image instead.",
     "link": {
       "title": "Link",
       "description": "Link the selected text to a web page or an email address.",

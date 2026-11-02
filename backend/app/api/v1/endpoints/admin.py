@@ -24,6 +24,7 @@ import structlog
 from fastapi import APIRouter, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.params import PathId, QueryId
 from app.api.v1.schemas.admin import (
     AdminStats,
     AdminUserList,
@@ -155,7 +156,7 @@ async def list_users(
     trusted: bool | None = None,
     verified: bool | None = None,
     active: bool | None = None,
-    organisation_id: int | None = None,
+    organisation_id: QueryId = None,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> AdminUserList:
@@ -175,7 +176,7 @@ async def list_users(
 
 
 @router.get("/users/{user_id}", response_model=AdminUserOut, responses=ACTION_ERRORS)
-async def get_user(user_id: int, admin: AdminUser, db: DbTx) -> AdminUserOut:
+async def get_user(user_id: PathId, admin: AdminUser, db: DbTx) -> AdminUserOut:
     """One account, including a soft-deleted one."""
     user = await _get_target(db, user_id, allow_deleted=True)
     return AdminUserOut.model_validate(user)
@@ -183,7 +184,7 @@ async def get_user(user_id: int, admin: AdminUser, db: DbTx) -> AdminUserOut:
 
 @router.patch("/users/{user_id}", response_model=AdminUserOut, responses=ACTION_ERRORS)
 async def update_user(
-    user_id: int, body: AdminUserUpdate, admin: AdminUser, db: DbTx
+    user_id: PathId, body: AdminUserUpdate, admin: AdminUser, db: DbTx
 ) -> AdminUserOut:
     """Change role, active state and/or trust. Each field follows the rules of the matching
     action route; if any fails, nothing is changed."""
@@ -200,7 +201,7 @@ async def update_user(
 
 @router.post("/users/{user_id}/promote", response_model=AdminUserOut, responses=ACTION_ERRORS)
 async def promote_user(
-    user_id: int,
+    user_id: PathId,
     admin: AdminUser,
     db: DbTx,
     to: Literal["admin", "superadmin"] = "admin",
@@ -215,7 +216,7 @@ async def promote_user(
 
 
 @router.post("/users/{user_id}/demote", response_model=AdminUserOut, responses=ACTION_ERRORS)
-async def demote_user(user_id: int, admin: AdminUser, db: DbTx) -> AdminUserOut:
+async def demote_user(user_id: PathId, admin: AdminUser, db: DbTx) -> AdminUserOut:
     """Lower a user's role by one step (admin → member; superadmin → admin needs a
     superadmin)."""
     target = await _get_target(db, user_id)
@@ -227,7 +228,7 @@ async def demote_user(user_id: int, admin: AdminUser, db: DbTx) -> AdminUserOut:
 
 
 @router.post("/users/{user_id}/ban", response_model=AdminUserOut, responses=ACTION_ERRORS)
-async def ban_user(user_id: int, admin: AdminUser, db: DbTx) -> AdminUserOut:
+async def ban_user(user_id: PathId, admin: AdminUser, db: DbTx) -> AdminUserOut:
     """Deactivate the account and sign it out everywhere."""
     target = await _get_target(db, user_id)
     await _set_active(db, actor=admin, target=target, active=False)
@@ -235,7 +236,7 @@ async def ban_user(user_id: int, admin: AdminUser, db: DbTx) -> AdminUserOut:
 
 
 @router.post("/users/{user_id}/unban", response_model=AdminUserOut, responses=ACTION_ERRORS)
-async def unban_user(user_id: int, admin: AdminUser, db: DbTx) -> AdminUserOut:
+async def unban_user(user_id: PathId, admin: AdminUser, db: DbTx) -> AdminUserOut:
     """Reactivate the account."""
     target = await _get_target(db, user_id)
     await _set_active(db, actor=admin, target=target, active=True)
@@ -243,7 +244,7 @@ async def unban_user(user_id: int, admin: AdminUser, db: DbTx) -> AdminUserOut:
 
 
 @router.post("/users/{user_id}/trust", response_model=AdminUserOut, responses=ACTION_ERRORS)
-async def trust_user(user_id: int, admin: AdminUser, db: DbTx) -> AdminUserOut:
+async def trust_user(user_id: PathId, admin: AdminUser, db: DbTx) -> AdminUserOut:
     """Mark the user trusted (their posts and threads publish without review)."""
     target = await _get_target(db, user_id)
     await _set_trusted(db, actor=admin, target=target, trusted=True)
@@ -251,7 +252,7 @@ async def trust_user(user_id: int, admin: AdminUser, db: DbTx) -> AdminUserOut:
 
 
 @router.post("/users/{user_id}/untrust", response_model=AdminUserOut, responses=ACTION_ERRORS)
-async def untrust_user(user_id: int, admin: AdminUser, db: DbTx) -> AdminUserOut:
+async def untrust_user(user_id: PathId, admin: AdminUser, db: DbTx) -> AdminUserOut:
     """Clear the user's trusted mark."""
     target = await _get_target(db, user_id)
     await _set_trusted(db, actor=admin, target=target, trusted=False)
@@ -264,7 +265,7 @@ async def untrust_user(user_id: int, admin: AdminUser, db: DbTx) -> AdminUserOut
     status_code=status.HTTP_202_ACCEPTED,
     responses=_error_responses(401, 403, 404, 409, 422, 502),
 )
-async def resend_verification(user_id: int, admin: AdminUser, db: DbTx) -> MessageResponse:
+async def resend_verification(user_id: PathId, admin: AdminUser, db: DbTx) -> MessageResponse:
     """Email the user a new verification link (older links stop working)."""
     target = await _get_target(db, user_id)
     if target.is_verified:

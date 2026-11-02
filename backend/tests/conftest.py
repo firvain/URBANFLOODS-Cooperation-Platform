@@ -13,7 +13,9 @@ fixture below), before any test runs. ``db_session`` rolls back after every test
 
 from __future__ import annotations
 
+import ipaddress
 import os
+import socket
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -84,6 +86,73 @@ def pytest_configure(config: pytest.Config) -> None:
             _database_url = container.get_connection_url()
 
     os.environ["DATABASE_URL"] = _database_url or _UNREACHABLE_DATABASE_URL
+
+
+# --- no internet from tests (7n) -------------------------------------------------------------
+# On 2026-11-02 an unmocked test sent five requests to the live KNOWBASE. Every socket connection
+# to a public address now fails with ``NetworkAccessBlocked`` (and is recorded, so a test whose
+# code swallows the error still fails at teardown). Loopback, private (Docker networks) and Unix
+# sockets stay allowed: the test database, testcontainers and the in-process ASGI client.
+
+
+class NetworkAccessBlocked(RuntimeError):
+    """A test tried to reach the network; mock the call (respx) instead."""
+
+
+network_blocked_attempts: list[str] = []
+_real_connect = socket.socket.connect
+_real_connect_ex = socket.socket.connect_ex
+
+
+def _is_local_ip(host: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(host.split("%", 1)[0])
+    except ValueError:
+        return False
+    return ip.is_loopback or ip.is_private or ip.is_link_local
+
+
+def _check_address(sock: socket.socket, address: object) -> None:
+    if sock.family not in (socket.AF_INET, socket.AF_INET6) or not isinstance(address, tuple):
+        return  # Unix sockets (Docker) and anything that is not an IP connection
+    host, port = str(address[0]), address[1]
+    if _is_local_ip(host):
+        return
+    try:
+        resolved = {info[4][0] for info in socket.getaddrinfo(host, port)}
+    except OSError:
+        resolved = set()
+    if resolved and all(_is_local_ip(str(ip)) for ip in resolved):
+        return  # e.g. "localhost"
+    network_blocked_attempts.append(f"{host}:{port}")
+    raise NetworkAccessBlocked(
+        f"A test tried to connect to {host}:{port}. Tests must not reach the network: "
+        "mock the call with respx."
+    )
+
+
+def _guarded_connect(self: socket.socket, address: object) -> None:
+    _check_address(self, address)
+    return _real_connect(self, address)
+
+
+def _guarded_connect_ex(self: socket.socket, address: object) -> int:
+    _check_address(self, address)
+    return _real_connect_ex(self, address)
+
+
+socket.socket.connect = _guarded_connect  # type: ignore[method-assign]
+socket.socket.connect_ex = _guarded_connect_ex  # type: ignore[method-assign]
+
+
+@pytest.fixture(autouse=True)
+def _fail_on_network_access() -> Iterator[None]:
+    network_blocked_attempts.clear()
+    yield
+    if network_blocked_attempts:
+        attempts = ", ".join(network_blocked_attempts)
+        network_blocked_attempts.clear()
+        pytest.fail(f"Test tried to reach the network ({attempts}); mock it with respx.")
 
 
 def pytest_unconfigure(config: pytest.Config) -> None:

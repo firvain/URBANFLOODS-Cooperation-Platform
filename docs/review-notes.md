@@ -116,6 +116,39 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
   then under a per-member advisory lock after decoding. The lock is not held while decoding,
   but the request keeps its database connection (from authentication) meanwhile; decoding is
   bounded by `UPLOAD_DECODE_CONCURRENCY`.
+- **Images in content only from our uploads and the KNOWBASE; the CSP stays strict; the editor
+  explains** (7n, owner's decision 2026-11-02). Both sanitisers (backend
+  `services/sanitize.py:_allowed_img_src`, frontend `utils/sanitize.ts:allowedImageSrc`) keep an
+  `<img>` only when its `src` is a path under `/static/uploads/`, an upload URL on our own origin
+  (`FRONTEND_URL` / `window.location.origin`; stored as the relative path) or an **https** URL on
+  the KNOWBASE origin. Origins compare scheme, host and port; credentials, backslashes, control
+  characters and (in upload paths) literal or percent-encoded dot segments never pass. Every other
+  image is dropped (http KNOWBASE images too: the CSP allows https only). The CSP
+  (`img-src 'self' data: blob: https://knowbase.urbanfloods.app`) is unchanged, so readers'
+  browsers never request third-party images. When a paste, a drop or loaded content (an older post
+  opened for editing) loses an image, the editor shows "Images from other websites are not
+  allowed. Upload the image instead." in a status region; each paste or load resets it, a repeat
+  drop re-renders it (re-announced), an upload clears it.
+- **Ids past a column's range and values the client sends that the database refuses answer
+  422** (7n). Integer ids in paths, queries, bodies and the KNOWBASE filters use the bounded
+  aliases of `api/v1/params.py` (limits in `db/limits.py`: INTEGER ids up to 2³¹−1; reply,
+  comment and report ids, and moderation's content ids, up to 2⁶³−1, with a post or thread id
+  past INTEGER simply not found); `tests/test_input_bounds.py` fails for any new id parameter
+  (or id field of a query model) without an upper bound. What validation misses (a NUL in text,
+  a huge `skip`) is caught by a handler registered for `sqlalchemy.exc.DataError` only:
+  `db/session.py` raises asyncpg's `DataError` family as that class (the asyncpg dialect leaves
+  it a plain `DBAPIError`). Only `CharacterNotInRepertoireError` and asyncpg's own
+  argument-encoding `DataError` become 422 `request.invalid_value`; a server-side overflow
+  (`NumericValueOutOfRangeError`) or any other data error is our bug and stays a logged 500;
+  integrity, operational and other errors never reach the handler.
+- **The export ETag covers what the export shows** (7n): count and latest `updated_at` of the
+  published content, organisations and the export's categories; an md5 of the id, name,
+  organisation and erased flag of the **authors of the exported content** only (not `updated_at`:
+  every sign-in bumps it; a registration or a non-author's rename changes nothing), of the tags
+  and of the content–tag pairs (a tag-only edit does not bump the content), every value
+  `quote_nullable`-d so rows are unambiguous; count and max id of the KNOWBASE links (replaced,
+  never updated). One query; `If-None-Match` is compared weakly (nginx turns the strong tag into
+  `W/"…"`).
 - **Admins see soft-deleted content by URL** (with a Deleted badge); lists, search, feeds and
   exports never include it.
 

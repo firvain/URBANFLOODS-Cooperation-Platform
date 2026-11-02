@@ -171,8 +171,11 @@ shown as "Deleted user"); see [admin-handbook.md](admin-handbook.md#13-gdpr-requ
    - category must be a non-archived blog category; `admin_only` categories need an admin (403
      `posts.category_admin_only`);
    - `body_html` passes through `services/sanitize.py:sanitize_html` (nh3 allow-list, `h1` → `h2`,
-     links get `rel="nofollow noopener noreferrer"`, images only from http(s) or
-     `/static/uploads/`); `body_text` and the excerpt are derived from the clean HTML;
+     links get `rel="nofollow noopener noreferrer"`, images only from our uploads or the
+     KNOWBASE, the sources the CSP allows: `/static/uploads/…`, our own origin's upload URL
+     (stored as the relative path) or `https://knowbase.urbanfloods.app/…`; any other image is
+     dropped, and the editor says why); `body_text` and the excerpt are derived from the clean
+     HTML;
    - **status**: `published` (with `published_at`) if the author has `trusted_at` or is an admin,
      else `pending`;
    - tags are found or created; KNOWBASE links (max 10) are validated and their titles cached

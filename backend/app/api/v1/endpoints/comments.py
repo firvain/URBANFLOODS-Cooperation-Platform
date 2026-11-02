@@ -8,8 +8,9 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Path, Query, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Response, status
 
+from app.api.v1.params import BigPathId, PathId
 from app.api.v1.schemas.comment import (
     CommentCreate,
     CommentOut,
@@ -30,9 +31,6 @@ router = APIRouter()
 MAX_PAGE_SIZE = 100
 DEFAULT_PAGE_SIZE = 50
 CREATE_LIMIT = limit("comments.create", 30, 3600)
-
-PostId = Annotated[int, Path(ge=1, le=2**31 - 1)]
-CommentId = Annotated[int, Path(ge=1, le=2**63 - 1)]
 
 
 def _error_responses(*codes: int) -> dict[int | str, dict[str, Any]]:
@@ -61,7 +59,7 @@ async def _audit(db: DbTx, *, actor_id: int, action: str, comment: Comment) -> N
     responses=_error_responses(404, 422),
 )
 async def list_comments(
-    post_id: PostId,
+    post_id: PathId,
     db: DbTx,
     user: CurrentUser,
     skip: Annotated[int, Query(ge=0)] = 0,
@@ -83,7 +81,7 @@ async def list_comments(
     responses=_error_responses(401, 403, 404, 422, 429),
 )
 async def create_comment(
-    post_id: PostId,
+    post_id: PathId,
     body: CommentCreate,
     user: VerifiedUser,
     db: DbTx,
@@ -106,7 +104,7 @@ async def create_comment(
     responses=_error_responses(401, 403, 404, 422),
 )
 async def update_comment(
-    comment_id: CommentId, body: CommentUpdate, user: VerifiedUser, db: DbTx
+    comment_id: BigPathId, body: CommentUpdate, user: VerifiedUser, db: DbTx
 ) -> CommentOut:
     """Edit a comment: its author within 24 hours of posting, or an admin."""
     comment = await crud_comment.get_editable_comment(db, comment_id=comment_id, user=user)
@@ -123,7 +121,7 @@ async def update_comment(
     response_class=Response,
     responses=_error_responses(401, 403, 404),
 )
-async def delete_comment(comment_id: CommentId, user: VerifiedUser, db: DbTx) -> Response:
+async def delete_comment(comment_id: BigPathId, user: VerifiedUser, db: DbTx) -> Response:
     """Soft-delete a comment (its author, or an admin)."""
     comment = await crud_comment.get_editable_comment(db, comment_id=comment_id, user=user)
     await crud_comment.soft_delete_comment(db, comment=comment)

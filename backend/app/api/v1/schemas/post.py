@@ -20,6 +20,7 @@ from pydantic import (
 )
 from pydantic_core import PydanticCustomError
 
+from app.api.v1.params import DbId
 from app.api.v1.schemas.auth import Locale, OrganisationSummary
 from app.api.v1.schemas.tag import TagOut
 from app.api.v1.schemas.upload import upload_url
@@ -34,7 +35,6 @@ SLUG_MAX_LENGTH = 220
 SLUG_PATTERN = r"^[a-z0-9]+(-[a-z0-9]+)*$"
 MAX_TAGS = 10
 MAX_LINKS = 10
-MAX_ID = 2**31 - 1
 
 KNOWBASE_FRONTEND_PATHS = {KbType.DOCUMENT: "documents", KbType.MEASURE: "measures"}
 
@@ -62,7 +62,6 @@ Excerpt = Annotated[
 ]
 EventUrl = Annotated[str | None, AfterValidator(_external_url)]
 PostSlug = Annotated[str, StringConstraints(max_length=SLUG_MAX_LENGTH, pattern=SLUG_PATTERN)]
-DbId = Annotated[int, Field(ge=1, le=MAX_ID)]
 
 
 # --- output -----------------------------------------------------------------------------------

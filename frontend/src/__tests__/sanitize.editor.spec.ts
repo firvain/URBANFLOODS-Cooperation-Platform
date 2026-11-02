@@ -133,7 +133,7 @@ describe('normalizeHtml (editor output allow-list, mirrors the backend nh3 confi
     expect(el.querySelector('#a')).toBeNull()
   })
 
-  it('keeps images from http(s) or /static/uploads/ with alt, title and numeric size; drops others', () => {
+  it('keeps images from uploads or the KNOWBASE with alt, title and numeric size; drops others', () => {
     const el = parse(
       normalizeHtml(
         '<img src="/static/uploads/2026/10/a.webp" alt="A" width="640" height="480" title="T">' +
@@ -153,5 +153,79 @@ describe('normalizeHtml (editor output allow-list, mirrors the backend nh3 confi
 
   it('returns an empty string for empty input', () => {
     expect(normalizeHtml('')).toBe('')
+  })
+})
+
+/** The `src` of the only image `normalizeHtml` keeps, or `null` when it drops it. */
+function keptSrc(src: string): string | null {
+  const img = parse(normalizeHtml(`<p>a<img src="${src}" alt="x"></p>`)).querySelector('img')
+  return img ? img.getAttribute('src') : null
+}
+
+describe('normalizeHtml image sources (7n: uploads and the KNOWBASE only, as the CSP)', () => {
+  const own = () => window.location.origin
+  const knowbase = 'https://knowbase.urbanfloods.app/static/measures/photos/y.jpg'
+
+  it('keeps an upload path', () => {
+    expect(keptSrc('/static/uploads/2026/10/x.webp')).toBe('/static/uploads/2026/10/x.webp')
+  })
+
+  it('keeps an https KNOWBASE image, whatever the case of scheme and host', () => {
+    expect(keptSrc(knowbase)).toBe(knowbase)
+    const upper = 'HTTPS://Knowbase.UrbanFloods.app/static/x.jpg'
+    expect(keptSrc(upper)).toBe(upper)
+  })
+
+  it('stores an upload URL on our own origin as the relative path', () => {
+    expect(keptSrc(`${own()}/static/uploads/2026/10/x.webp`)).toBe('/static/uploads/2026/10/x.webp')
+    expect(keptSrc(`${own().toUpperCase()}/static/uploads/a.webp`)).toBe('/static/uploads/a.webp')
+  })
+
+  it.each([
+    'https://a.org/x.png',
+    'https://example.org/static/uploads/x.webp',
+    'http://knowbase.urbanfloods.app/static/x.jpg',
+    'https://knowbase.urbanfloods.app.evil.com/x.jpg',
+    'https://evil.com/knowbase.urbanfloods.app/x.jpg',
+    'https://evilknowbase.urbanfloods.app/x.jpg',
+    'https://knowbase.urbanfloods.app@evil.com/x.jpg',
+    'https://user@knowbase.urbanfloods.app/x.jpg',
+    'https://user:pw@knowbase.urbanfloods.app/x.jpg',
+    'https://knowbase.urbanfloods.app:8443/x.jpg',
+    'https://knowbase.urbanfloods.app%2eevil.com/x.jpg',
+    'https://knowbase.urbanfloods.app\\@evil.com/x.jpg',
+    'data:image/png;base64,AAAA',
+    'javascript:alert(1)',
+    '//evil.com/x.png',
+    '//knowbase.urbanfloods.app/x.jpg',
+    '/static/uploads/../../secret.png',
+    '/static/uploads/%2e%2e/secret.png',
+    '/static/uploads/.%2E/secret.png',
+    '/static/uploads/..\\x.png',
+    '/static/other/x.png',
+    'x.png',
+  ])('drops %s', (src) => {
+    expect(keptSrc(src)).toBeNull()
+  })
+
+  it.each([
+    '/static/other/x.png',
+    '/static/uploads/../secret.png',
+    '/static/uploads/%2e%2e/secret.png',
+  ])('drops our own origin with %s', (path) => {
+    expect(keptSrc(`${own()}${path}`)).toBeNull()
+  })
+
+  it('reports every dropped image to onImageDropped, and only those', () => {
+    const dropped: string[] = []
+    const html = normalizeHtml(
+      '<p><img src="https://a.org/x.png" alt="a"><img src="/static/uploads/b.webp" alt="b">' +
+        '<img src="data:image/png;base64,AAAA" alt="c"></p>',
+      { onImageDropped: (src) => dropped.push(src) },
+    )
+    expect(dropped).toEqual(['https://a.org/x.png', 'data:image/png;base64,AAAA'])
+    expect(html).toContain('/static/uploads/b.webp')
+    normalizeHtml('<p><img src="https://a.org/x.png" alt="a"></p>')
+    expect(dropped).toHaveLength(2)
   })
 })

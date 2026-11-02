@@ -64,6 +64,82 @@ describe('RichTextEditor', () => {
     expect(html).toContain('Clicked')
   })
 
+  it('explains when a pasted image from another website is dropped (7n)', async () => {
+    const { wrapper, editor } = await mountEditor()
+    editor.commands.focus()
+    expect(document.body.textContent).not.toContain('Images from other websites')
+
+    await paste(editor, {
+      html: '<p>Report</p><img src="https://elsewhere.example/flood.png" alt="Flood">',
+    })
+
+    expect(lastHtml(wrapper)).not.toContain('<img')
+    const notice = document.querySelector('[role="status"]')
+    expect(notice?.textContent).toContain(
+      'Images from other websites are not allowed. Upload the image instead.',
+    )
+  })
+
+  it('shows no image notice when pasted images are allowed', async () => {
+    const { wrapper, editor } = await mountEditor()
+    editor.commands.focus()
+
+    await paste(editor, {
+      html: '<p>Report</p><img src="/static/uploads/2026/10/a.webp" alt="Flood">',
+    })
+
+    expect(lastHtml(wrapper)).toContain('<img src="/static/uploads/2026/10/a.webp"')
+    expect(document.body.textContent).not.toContain('Images from other websites')
+  })
+
+  const EXTERNAL = '<p>Old</p><img src="https://elsewhere.example/flood.png" alt="Flood">'
+  const NOTICE = 'Images from other websites are not allowed. Upload the image instead.'
+  const statusText = () => document.querySelector('[role="status"]')?.textContent?.trim() ?? ''
+  const statusNode = () => document.querySelector('[role="status"] > *')
+
+  it('explains when loaded content loses an image from another website', async () => {
+    const { editor } = await mountEditor({ modelValue: EXTERNAL })
+
+    expect(editor.getHTML()).not.toContain('<img')
+    expect(statusText()).toBe(NOTICE)
+  })
+
+  it('explains when content set by the parent loses an image', async () => {
+    const { wrapper, editor } = await mountEditor({ modelValue: '<p>Loading</p>' })
+    expect(statusText()).toBe('')
+
+    await wrapper.setProps({ modelValue: EXTERNAL })
+    await flushPromises()
+
+    expect(editor.getHTML()).not.toContain('<img')
+    expect(statusText()).toBe(NOTICE)
+  })
+
+  it('clears the notice on a clean paste after a dropped one', async () => {
+    const { editor } = await mountEditor()
+    editor.commands.focus()
+    await paste(editor, { html: EXTERNAL })
+    expect(statusText()).toBe(NOTICE)
+
+    await paste(editor, { html: '<p>Clean text</p>' })
+
+    expect(statusText()).toBe('')
+  })
+
+  it('re-announces the notice when another paste drops an image', async () => {
+    const { editor } = await mountEditor()
+    editor.commands.focus()
+    await paste(editor, { html: EXTERNAL })
+    const first = statusNode()
+    expect(first?.textContent?.trim()).toBe(NOTICE)
+
+    await paste(editor, { html: EXTERNAL })
+
+    const second = statusNode()
+    expect(second?.textContent?.trim()).toBe(NOTICE)
+    expect(second).not.toBe(first)
+  })
+
   it('sanitises the initial value too', async () => {
     const { editor } = await mountEditor({
       modelValue: '<p onclick="x()">Body</p><img src="x" onerror="alert(1)" alt="x">',

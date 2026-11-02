@@ -36,6 +36,7 @@ from starlette.responses import JSONResponse, Response
 from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 
+from app.api.v1.params import PathId
 from app.api.v1.schemas.upload import (
     MyUploadOut,
     UploadKind,
@@ -302,7 +303,7 @@ async def list_my_uploads(
     responses=_error_responses(401, 404, 409, 422),
 )
 async def delete_upload(
-    attachment_id: int, user: AuthUser, db: DbTx, background: BackgroundTasks
+    attachment_id: PathId, user: AuthUser, db: DbTx, background: BackgroundTasks
 ) -> None:
     """Delete an upload (its uploader, or an admin). If it is someone's avatar, the avatar is
     cleared. Someone else's upload answers 404 to a member, as if it did not exist. An upload

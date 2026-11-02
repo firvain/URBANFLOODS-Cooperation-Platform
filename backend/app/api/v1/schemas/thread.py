@@ -13,6 +13,7 @@ from typing import Annotated, Any
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 from pydantic_core import PydanticCustomError
 
+from app.api.v1.params import DbId
 from app.api.v1.schemas.auth import Locale
 from app.api.v1.schemas.post import (
     MAX_LINKS,
@@ -20,7 +21,6 @@ from app.api.v1.schemas.post import (
     AuthorSummary,
     BodyHtml,
     CategorySummary,
-    DbId,
     KnowbaseLinkIn,
     KnowbaseLinkOut,
     PostSlug,

@@ -19,14 +19,14 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.crud import export as crud_export
 from app.crud.user import anonymise_user
-from app.db.enums import CategoryKind, ContentStatus
-from app.db.models import Organisation, Post, Thread, User
+from app.db.enums import CategoryKind, ContentStatus, ContentType
+from app.db.models import Category, KnowbaseLink, Organisation, Post, Tag, Thread, User
 from tests.factories import (
     create_category,
     create_comment,
@@ -422,6 +422,177 @@ async def test_posts_json_etag_changes_when_a_post_is_hidden(client, corpus):
     assert response.status_code == 200
     assert response.headers["etag"] != etag
     assert corpus.anon_post.id not in _by_id(response.json())
+
+
+# --- validators: If-None-Match and what the ETag covers (7n) ----------------------------------
+
+ALL_EXPORTS = [POSTS_JSON, POSTS_CSV, THREADS_JSON]
+
+
+async def _etags(client, urls: list[str]) -> dict[str, str]:
+    return {url: (await client.get(url)).headers["etag"] for url in urls}
+
+
+@pytest.mark.parametrize(
+    "header",
+    ["{etag}", "W/{etag}", '"other", W/{etag}', 'W/"other",{etag}', "*"],
+    ids=["strong", "weak", "weak-in-list", "strong-in-list", "star"],
+)
+async def test_if_none_match_weak_comparison(client, corpus, header):
+    """nginx (``gzip_proxied any``) hands the client ``W/"…"``; it must still match."""
+    etag = (await client.get(POSTS_JSON)).headers["etag"]
+
+    response = await client.get(POSTS_JSON, headers={"If-None-Match": header.format(etag=etag)})
+
+    assert response.status_code == 304
+    assert response.headers["etag"] == etag
+
+
+@pytest.mark.parametrize("header", ['"other"', 'W/"other"', "", "W/"])
+async def test_if_none_match_other_tag_is_200(client, corpus, header):
+    response = await client.get(POSTS_JSON, headers={"If-None-Match": header})
+
+    assert response.status_code == 200
+
+
+async def _assert_changed(client, before: dict[str, str], urls: list[str]) -> None:
+    after = await _etags(client, list(before))
+    for url in before:
+        if url in urls:
+            assert after[url] != before[url], url
+        else:
+            assert after[url] == before[url], url
+
+
+async def test_etag_changes_when_the_author_is_renamed(client, corpus):
+    before = await _etags(client, ALL_EXPORTS)
+
+    corpus.author.display_name = "Ada Renamed"
+    await corpus.db.commit()
+
+    await _assert_changed(client, before, ALL_EXPORTS)
+
+
+async def test_etag_changes_when_the_author_is_erased(client, corpus, cleanup_user_ids):
+    cleanup_user_ids.add(corpus.author.id)  # the address is freed on erasure
+    before = await _etags(client, ALL_EXPORTS)
+
+    await anonymise_user(corpus.db, user=corpus.author)
+    await corpus.db.commit()
+
+    await _assert_changed(client, before, ALL_EXPORTS)
+
+
+async def test_etag_changes_when_the_organisation_is_renamed(client, corpus, cleanup_organisations):
+    before = await _etags(client, ALL_EXPORTS)
+
+    corpus.organisation.name = f"Renamed organisation {uuid.uuid4().hex[:8]}"
+    cleanup_organisations.add(corpus.organisation.name)  # cleaned up by name
+    await corpus.db.commit()
+
+    await _assert_changed(client, before, ALL_EXPORTS)
+
+
+async def test_etag_changes_when_a_category_is_renamed(client, corpus):
+    blog = await corpus.db.get(Category, corpus.post.category_id)
+    forum = await corpus.db.get(Category, corpus.thread.category_id)
+    before = await _etags(client, ALL_EXPORTS)
+
+    blog.name = "Case studies, renamed"
+    await corpus.db.commit()
+    await _assert_changed(client, before, [POSTS_JSON, POSTS_CSV])
+
+    before = await _etags(client, ALL_EXPORTS)
+    forum.name = "Design questions, renamed"
+    await corpus.db.commit()
+    await _assert_changed(client, before, [THREADS_JSON])
+
+
+async def test_etag_changes_when_a_tag_is_renamed(client, corpus):
+    tag = (await corpus.db.scalars(select(Tag).where(Tag.name == corpus.tag_names[0]))).one()
+    before = await _etags(client, ALL_EXPORTS)
+
+    tag.name = f"{tag.name} renamed"
+    await corpus.db.commit()
+
+    await _assert_changed(client, before, ALL_EXPORTS)
+
+
+async def test_etag_changes_when_a_knowbase_link_is_removed(client, corpus):
+    before = await _etags(client, ALL_EXPORTS)
+
+    await corpus.db.execute(
+        delete(KnowbaseLink).where(
+            KnowbaseLink.content_type == ContentType.POST,
+            KnowbaseLink.content_id == corpus.post.id,
+        )
+    )
+    await corpus.db.commit()
+
+    await _assert_changed(client, before, [POSTS_JSON])
+
+
+async def test_etag_ignores_a_non_author_rename(client, corpus, cleanup_users):
+    """Only the authors of exported content are fingerprinted."""
+    member = await create_verified_user(corpus.db, display_name="Quiet Member")
+    cleanup_users.add(member.email)
+    await corpus.db.commit()
+    before = await _etags(client, ALL_EXPORTS)
+
+    member.display_name = "Quiet Member, renamed"
+    await corpus.db.commit()
+
+    await _assert_changed(client, before, [])
+
+
+async def test_etag_ignores_a_registration(client, corpus, cleanup_users):
+    before = await _etags(client, ALL_EXPORTS)
+
+    member = await create_verified_user(corpus.db, display_name="Newcomer")
+    cleanup_users.add(member.email)
+    await corpus.db.commit()
+
+    await _assert_changed(client, before, [])
+
+
+async def test_etag_changes_when_a_commenter_is_renamed(client, corpus, cleanup_users):
+    """A comment's author is in the posts JSON (comments), not in the CSV or the threads."""
+    commenter = await create_verified_user(corpus.db, display_name="Only Comments")
+    cleanup_users.add(commenter.email)
+    await create_comment(corpus.db, post_id=corpus.post.id, author_id=commenter.id, body="Hi")
+    await corpus.db.commit()
+    before = await _etags(client, ALL_EXPORTS)
+
+    commenter.display_name = "Only Comments, renamed"
+    await corpus.db.commit()
+
+    await _assert_changed(client, before, [POSTS_JSON])
+
+
+async def test_etag_rows_are_unambiguous(client, corpus):
+    """Name ``A:<id>`` without an organisation and name ``A`` with organisation ``<id>`` once
+    joined to the same text; each value is quoted now (7n review)."""
+    org_id = corpus.organisation.id
+    corpus.author.display_name = f"A:{org_id}"
+    corpus.author.organisation_id = None
+    await corpus.db.commit()
+    first = await _etags(client, ALL_EXPORTS)
+
+    corpus.author.display_name = "A"
+    corpus.author.organisation_id = org_id
+    await corpus.db.commit()
+
+    await _assert_changed(client, first, ALL_EXPORTS)
+
+
+async def test_etag_ignores_a_sign_in(client, corpus):
+    """A login bumps ``users.updated_at``; nothing exported changes, so neither does the ETag."""
+    before = await _etags(client, ALL_EXPORTS)
+
+    corpus.author.last_login_at = datetime.now(UTC)
+    await corpus.db.commit()
+
+    await _assert_changed(client, before, [])
 
 
 # --- threads.json -----------------------------------------------------------------------------

@@ -8,6 +8,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Query
 
+from app.api.v1.params import PathId, QueryId, QueryIds
 from app.api.v1.schemas.auth import Country
 from app.api.v1.schemas.member import (
     MemberDetail,
@@ -38,9 +39,9 @@ async def list_members(
     _user: VerifiedUser,
     db: DbTx,
     q: Annotated[str | None, Query(min_length=2, max_length=100)] = None,
-    expertise_ids: Annotated[list[int] | None, Query()] = None,
+    expertise_ids: QueryIds = None,
     country: Annotated[Country, Query()] = None,
-    organisation_id: int | None = None,
+    organisation_id: QueryId = None,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 24,
 ) -> MemberList:
@@ -72,7 +73,7 @@ async def suggested_members(user: VerifiedUser, db: DbTx) -> SuggestedMemberList
 @router.get(
     "/{member_id}", response_model=MemberDetail, responses=_error_responses(401, 403, 404, 422)
 )
-async def get_member(member_id: int, _user: VerifiedUser, db: DbTx) -> MemberDetail:
+async def get_member(member_id: PathId, _user: VerifiedUser, db: DbTx) -> MemberDetail:
     """One directory member's profile."""
     user = await crud_member.get_member(db, user_id=member_id)
     if user is None:
