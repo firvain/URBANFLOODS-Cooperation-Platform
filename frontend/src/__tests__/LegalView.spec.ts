@@ -88,7 +88,8 @@ describe('prepareLegalDocument', () => {
       expect(markdown).not.toContain('Notes for the reviewer')
       expect(markdown).not.toMatch(/increment/i)
       expect(version).toBe('1')
-      expect(date).toBe('31 October 2026')
+      // The privacy policy was revised on 2 Nov 2026 (v1.3, 7m); the other texts are unchanged.
+      expect(date).toBe(raw === privacyMd ? '2 November 2026' : '31 October 2026')
     }
   })
 })
@@ -240,7 +241,7 @@ describe('LegalView: privacy', () => {
     expect(text).toContain('Hellenic Data Protection Authority')
     expect(text).not.toContain('[CHECK')
     expect(text).not.toContain('Notes for the reviewer')
-    expect(wrapper.find('[data-testid="legal-version"]').text()).toContain('31 October 2026')
+    expect(wrapper.find('[data-testid="legal-version"]').text()).toContain('2 November 2026')
   })
 
   it('lists the privacy sections in the table of contents', async () => {

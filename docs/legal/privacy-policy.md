@@ -1,6 +1,6 @@
 # Privacy Policy — URBANFLOODS Cooperation Platform
 
-**Version 1.2 (draft for legal review), 31 October 2026.** This is the text the platform's
+**Version 1.3 (draft for legal review), 2 November 2026.** This is the text the platform's
 `/privacy` page will show (increment 5e). It describes how personal data is processed when you
 use https://cooperation.urbanfloods.app. Items marked **[CHECK]** need confirmation by the
 University of Western Macedonia's legal office before go-live.
@@ -121,14 +121,16 @@ regularly; backups are kept for 14 days **[CHECK]**.
   anonymising: your email address, display name, organisation, country, biography, expertise and
   settings are erased, your password hash is removed, your profile picture is removed, and all
   your sessions and pending email links (including a new address you had asked to switch to) are
-  cancelled. Images you uploaded that no contribution uses any more are deleted from the server at
-  the same time.
+  cancelled. Images you uploaded are deleted from the server at the same time, unless one of your
+  own kept contributions uses them (as its cover or within its text). An image of yours that
+  another member placed in their contribution is deleted too; their contribution then shows it as
+  missing.
 - Your contributions remain on the Platform under the CC BY 4.0 licence you granted when posting,
   attributed to "Deleted user", so that discussions other members took part in stay intact. Images
-  that are part of a kept contribution stay with it, including their original file name. If you
-  want particular contributions removed as well, say so when deleting or write to us; an admin can
-  remove a contribution permanently, together with the images only it used, unless we are legally
-  required to keep it.
+  that are part of one of your kept contributions stay with it, including their original file
+  name. If you want particular contributions removed as well, say so when deleting or write to us;
+  an admin can remove a contribution permanently, together with the images only it used, unless we
+  are legally required to keep it.
 - Audit log entries about the deleted account are kept for accountability and project reporting.
   They contain no name, email address or IP address; entries about sign-ins keep the browser
   description recorded at the time.
@@ -195,6 +197,10 @@ authorities.
   members directory is no longer public: profile details in it are visible to registered,
   verified members only (sections 3.2 and 5); the public sees only the author details shown with
   published content.
+- Version 1.3 (2 Nov 2026) states that the images a member uploaded belong to them: deleting the
+  account deletes them unless one of the member's own kept contributions uses them, even when
+  another member placed them in their content (owner's decision, increment 7m; before, any
+  contribution kept an image).
 - Everything stated here is implemented in the code as of 31 Oct 2026: argon2id hashing, hashed
   session tokens, HttpOnly/Secure/SameSite cookie, 30-day sliding sessions, 7-day cleanup of expired
   sessions and tokens, no IPs in the database, HMAC-hashed IPs in rate-limit logs, audit log without
