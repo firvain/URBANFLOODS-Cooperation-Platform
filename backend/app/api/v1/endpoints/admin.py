@@ -8,6 +8,8 @@ Rules (each enforced in one helper, shared by the action routes and ``PATCH``):
 - Admins cannot change their own role (409 ``admin.cannot_change_own_role``) or ban themselves
   (409 ``admin.cannot_ban_self``).
 - A soft-deleted account cannot be changed (409 ``admin.user_deleted``).
+- Banning a superadmin and marking a superadmin's address verified need a superadmin; trust and
+  resend-verification have no role rule.
 - Every effective change writes an ``admin.<action>`` audit row with the admin as actor; a
   request that changes nothing (ban an already banned user) writes none.
 """
@@ -293,6 +295,30 @@ async def resend_verification(user_id: PathId, admin: AdminUser, db: DbTx) -> Me
         ) from None
     await _audit(db, actor=admin, action="resend_verification", target=target)
     return VERIFICATION_SENT
+
+
+@router.post("/users/{user_id}/verify", response_model=AdminUserOut, responses=ACTION_ERRORS)
+async def verify_user(user_id: PathId, admin: AdminUser, db: DbTx) -> AdminUserOut:
+    """Mark the user's email address verified without the emailed link, for someone the admin
+    has checked the address with in person (7p). Unused verification links stop working. No
+    session, no email, and the user is not trusted (their first post still needs approval).
+
+    A superadmin's address needs a superadmin (the rule of ``ban``); a banned account is refused
+    (409 ``admin.user_inactive``), an already verified one too (409 ``admin.already_verified``).
+    """
+    target = await _get_target(db, user_id)
+    if target.role == UserRole.SUPERADMIN and admin.role != UserRole.SUPERADMIN:
+        raise _forbidden()
+    if target.is_verified:
+        raise AppError(409, "admin.already_verified", "This email address is already verified.")
+    if not target.is_active:
+        raise AppError(409, "admin.user_inactive", "This account is banned.")
+    await crud_token.invalidate_email_tokens(
+        db, user_id=target.id, purposes=(TokenPurpose.VERIFY_EMAIL,)
+    )
+    await crud_user.mark_verified(db, user=target)
+    await _audit(db, actor=admin, action="verify_email", target=target, metadata={"manual": True})
+    return await _out(db, target)
 
 
 # --- stats and reporting ----------------------------------------------------------------------

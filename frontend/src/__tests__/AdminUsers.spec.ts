@@ -208,6 +208,92 @@ describe('Admin users', () => {
     expect(callsTo(fetchMock, route)).toHaveLength(1)
   })
 
+  it('offers "Mark as verified" only for unverified active accounts', async () => {
+    const bannedUnverified = makeAdminUser({
+      id: 12,
+      display_name: 'Mira',
+      email: 'mira@example.org',
+      is_verified: false,
+      is_active: false,
+    })
+    await mountAdmin('/admin/users', { [USERS]: reply(200, page([...ALL, bannedUnverified])) })
+    expect(await itemsFor('Lena')).toEqual(expect.arrayContaining([a('verify'), a('resend')]))
+    expect(await itemsFor('Nikos')).not.toContain(a('verify'))
+    expect(await itemsFor('Mira')).not.toContain(a('verify'))
+  })
+
+  it('"Mark as verified" on a superadmin is for superadmins only, like ban', async () => {
+    const unverifiedSuper = makeAdminUser({
+      id: 13,
+      display_name: 'Sofia',
+      email: 'sofia@example.org',
+      role: 'superadmin',
+      is_verified: false,
+    })
+    const list = { [USERS]: reply(200, page([unverifiedSuper])) }
+    await mountAdmin('/admin/users', list, ADMIN_ME)
+    expect(await itemsFor('Sofia')).not.toContain(a('verify'))
+    unmountAll()
+    await mountAdmin('/admin/users', list, SUPERADMIN_ME)
+    expect(await itemsFor('Sofia')).toContain(a('verify'))
+  })
+
+  it('"Mark as verified" warns about checking the address, then verifies the row', async () => {
+    const route = 'POST /api/v1/admin/users/10/verify'
+    const { fetchMock } = await mountAdmin('/admin/users', {
+      [USERS]: reply(200, page(ALL)),
+      [route]: reply(200, { ...UNVERIFIED, is_verified: true }),
+    })
+    const verifiedCell = () => rows()[3]!.querySelectorAll('td')[2]!.textContent?.trim()
+    expect(verifiedCell()).toBe(t('admin.common.no'))
+
+    await chooseMenuItem(menu('Lena'), a('verify'))
+    const box = dialog()
+    expect(box.textContent).toContain(t('admin.users.confirm.verify', { name: 'Lena' }))
+    const text = t('admin.users.descriptions.verify', { name: 'Lena', email: 'lena@example.org' })
+    expect(text).toContain('lena@example.org')
+    expect(text).toContain('cannot reset their password')
+    expect(text).toContain('first post still needs approval')
+    expect(box.textContent).toContain(text)
+    expect(callsTo(fetchMock, route)).toHaveLength(0)
+
+    buttonIn(box, a('verify')).click()
+    await flushPromises()
+    expect(callsTo(fetchMock, route)).toHaveLength(1)
+    expect(verifiedCell()).toBe(t('admin.common.yes'))
+    await vi.waitFor(() =>
+      expect(document.body.textContent).toContain(t('admin.users.done.verify', { name: 'Lena' })),
+    )
+    expect(await itemsFor('Lena')).not.toContain(a('verify'))
+  })
+
+  it('"Mark as verified" names the account in the title', async () => {
+    await mountAdmin('/admin/users', { [USERS]: reply(200, page(ALL)) })
+    await chooseMenuItem(menu('Lena'), a('verify'))
+    expect(t('admin.users.confirm.verify', { name: 'Lena' })).toContain('Lena')
+    expect(dialog().textContent).toContain(t('admin.users.confirm.verify', { name: 'Lena' }))
+  })
+
+  it('"Mark as verified" on a trusted account does not promise an approval', async () => {
+    const trustedUnverified = makeAdminUser({
+      id: 14,
+      display_name: 'Petar',
+      email: 'petar@example.org',
+      is_verified: false,
+      is_trusted: true,
+    })
+    await mountAdmin('/admin/users', { [USERS]: reply(200, page([trustedUnverified])) })
+    await chooseMenuItem(menu('Petar'), a('verify'))
+    const text = t('admin.users.descriptions.verifyTrusted', {
+      name: 'Petar',
+      email: 'petar@example.org',
+    })
+    expect(text).toContain('petar@example.org')
+    expect(text).not.toContain('needs approval')
+    expect(dialog().textContent).toContain(text)
+    expect(dialog().textContent).not.toContain('first post still needs approval')
+  })
+
   it('bans and trusts with the matching endpoints', async () => {
     const ban = 'POST /api/v1/admin/users/7/ban'
     const trust = 'POST /api/v1/admin/users/7/trust'

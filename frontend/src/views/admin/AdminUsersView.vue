@@ -22,7 +22,8 @@ import { useAuthStore } from '@/stores/auth'
 /**
  * Users: the accounts (search, role and state filters in the URL; deleted accounts only with
  * "Show deleted accounts", `?deleted=1`) with role changes, ban,
- * trust and "resend verification", each confirmed. Actions the API would refuse for the current
+ * trust, "resend verification" and "mark as verified" (for someone checked in person), each
+ * confirmed. Actions the API would refuse for the current
  * admin are not offered: superadmin changes need a superadmin, and nobody changes their own role
  * or bans themselves. The last superadmin is protected by the API (`admin.last_superadmin`).
  */
@@ -134,6 +135,7 @@ type Operation =
   | 'trust'
   | 'untrust'
   | 'resend'
+  | 'verify'
 
 const OPERATIONS: Record<
   Operation,
@@ -162,6 +164,7 @@ const OPERATIONS: Record<
   trust: { icon: 'i-lucide-badge-check', run: (id) => admin.userAction(id, 'trust') },
   untrust: { icon: 'i-lucide-badge-x', run: (id) => admin.userAction(id, 'untrust') },
   resend: { icon: 'i-lucide-mail', run: (id) => admin.resendVerification(id) },
+  verify: { icon: 'i-lucide-mail-check', run: (id) => admin.userAction(id, 'verify') },
 }
 
 /** What the current admin may do to `user` (mirrors the API's role rules). */
@@ -177,12 +180,17 @@ function operationsFor(user: AdminUser): Operation[] {
     }
     if (user.role === 'superadmin' && isSuperadmin.value) ops.push('demoteToAdmin')
   }
-  if (user.role !== 'superadmin' || isSuperadmin.value) {
+  const mayManage = user.role !== 'superadmin' || isSuperadmin.value
+  if (mayManage) {
     if (user.is_active && !self) ops.push('ban')
     if (!user.is_active) ops.push('unban')
   }
   ops.push(user.is_trusted ? 'untrust' : 'trust')
-  if (!user.is_verified) ops.push('resend')
+  if (!user.is_verified) {
+    ops.push('resend')
+    // Same rule as ban: a superadmin's address needs a superadmin; banned accounts are refused.
+    if (user.is_active && mayManage) ops.push('verify')
+  }
   return ops
 }
 
@@ -232,7 +240,11 @@ const dialog = computed(() => {
   const name = current.user.display_name
   return {
     title: t(`admin.users.confirm.${current.op}`, { name }),
-    description: t(`admin.users.descriptions.${current.op}`),
+    // A trusted account publishes at once after verification: say so instead of the review note.
+    description: t(
+      `admin.users.descriptions.${current.op === 'verify' && current.user.is_trusted ? 'verifyTrusted' : current.op}`,
+      { name, email: current.user.email },
+    ),
     label: t(`admin.users.actions.${current.op}`),
     color: OPERATIONS[current.op].danger ? ('error' as const) : ('primary' as const),
   }

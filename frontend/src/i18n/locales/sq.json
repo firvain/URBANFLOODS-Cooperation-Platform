@@ -678,7 +678,7 @@
     "registerSuccess": {
       "title": "Kontrolloni email-in tuaj",
       "body": "Dërguam një lidhje verifikimi në {email}. Hapeni për të aktivizuar llogarinë tuaj. Lidhja është e vlefshme për 48 orë.",
-      "noEmail": "Nuk ju erdhi email-i? Kontrolloni dosjen e spamit ose dërgojeni përsëri.",
+      "noEmail": "Nuk ju erdhi email-i pas disa minutash? Ai vjen nga {sender}. Kontrolloni dosjen Spam ose Junk dhe shënojeni si jo të padëshiruar, ose dërgojeni lidhjen përsëri.",
       "resend": "Dërgo përsëri lidhjen"
     },
     "verify": {

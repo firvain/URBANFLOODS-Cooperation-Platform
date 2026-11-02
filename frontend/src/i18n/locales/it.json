@@ -678,7 +678,7 @@
     "registerSuccess": {
       "title": "Controlla la tua email",
       "body": "Abbiamo inviato un link di verifica a {email}. Aprilo per attivare il tuo account. Il link è valido per 48 ore.",
-      "noEmail": "Non hai ricevuto l'email? Controlla la cartella spam o inviala di nuovo.",
+      "noEmail": "Nessuna email dopo qualche minuto? Arriva da {sender}. Controlla la cartella Spam o Posta indesiderata e segnala il messaggio come non spam, oppure invia di nuovo il link.",
       "resend": "Invia di nuovo il link"
     },
     "verify": {

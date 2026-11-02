@@ -17,8 +17,9 @@ export type CacheClearResult = components['schemas']['CacheClearResult']
 export type DigestSendResult = components['schemas']['DigestSendResult']
 export type MessageResponse = components['schemas']['MessageResponse']
 
-/** The one-click user actions (`POST /admin/users/{id}/<action>`). */
-export type UserAction = 'promote' | 'demote' | 'ban' | 'unban' | 'trust' | 'untrust'
+/** The one-click user actions (`POST /admin/users/{id}/<action>`); `verify` marks the email
+ * address verified by hand. */
+export type UserAction = 'promote' | 'demote' | 'ban' | 'unban' | 'trust' | 'untrust' | 'verify'
 /** `promote?to=`: admins may raise to `admin`, superadmins also to `superadmin`. */
 export type PromoteTarget = 'admin' | 'superadmin'
 

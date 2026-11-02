@@ -252,6 +252,7 @@ on the KNOWBASE site), so the lookup endpoints currently have no frontend caller
 | POST | `/users/{user_id}/trust` | admin | – | mark trusted |
 | POST | `/users/{user_id}/untrust` | admin | – | clear trusted mark |
 | POST | `/users/{user_id}/resend-verification` | admin | – | email a new verification link (502 if sending fails) |
+| POST | `/users/{user_id}/verify` | admin (superadmin target: superadmin) | – | mark the email address verified by hand (no email, no session, not trusted); unused verification links stop working; 409 `admin.already_verified`, `admin.user_inactive` (banned), `admin.user_deleted` |
 | GET | `/stats` | admin | – | dashboard counts and KNOWBASE proxy status |
 | GET | `/stats/export.csv` | admin | – | reporting CSV for `from`..`to` (see [admin-handbook.md](admin-handbook.md#stats-csv-export)) |
 | POST | `/knowbase/cache/clear` | admin | – | empty the KNOWBASE proxy caches |

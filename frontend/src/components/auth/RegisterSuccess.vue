@@ -3,13 +3,15 @@ import { computed, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useApiErrors } from '@/composables/useApiErrors'
+import { VERIFICATION_SENDER } from '@/constants/links'
 import { turnstileRequired } from '@/constants/turnstile'
 import { useAuthStore } from '@/stores/auth'
 import TurnstileWidget from './TurnstileWidget.vue'
 
 /**
  * "Check your email" state after registering, with a resend button. Registering does not sign in,
- * so the resend is anonymous and needs a Turnstile token.
+ * so the resend is anonymous and needs a Turnstile token. Names the sending address so people
+ * can find the message in their Spam or Junk folder.
  */
 const props = defineProps<{ email: string }>()
 
@@ -53,7 +55,9 @@ async function resend() {
       icon="i-lucide-mail-check"
       :description="t('auth.registerSuccess.body', { email })"
     />
-    <p class="text-muted">{{ t('auth.registerSuccess.noEmail') }}</p>
+    <p class="text-muted">
+      {{ t('auth.registerSuccess.noEmail', { sender: VERIFICATION_SENDER }) }}
+    </p>
     <TurnstileWidget ref="turnstile" v-model:token="turnstileToken" />
     <UButton
       color="neutral"

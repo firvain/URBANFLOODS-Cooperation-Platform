@@ -79,6 +79,20 @@ older links stop working. If sending fails the page shows an error (`admin.email
 to unverified members; 10 per hour). Unverified member accounts are deleted automatically after
 `UNVERIFIED_PURGE_DAYS` (30) days.
 
+### Verifying an account by hand
+
+When the person is with you (at a meeting, for example) and the verification email is stuck in
+spam or does not arrive, the row menu offers **Mark as verified** for an unverified, active
+account. Use it only for someone you know, after checking with them that the address shown is
+their correct one: a wrong address cannot receive password resets.
+
+It marks the address verified, stops every verification link already sent, and nothing else: no
+email is sent, the person is not signed in (they sign in with their own password), and they are
+**not** trusted, so their first post or thread still waits for approval. Banned and deleted
+accounts are refused; a superadmin's account needs a superadmin. Audited as
+`admin.verify_email` with `{"manual": true}`. The page after registration names the sending
+address (`noreply@cooperation.urbanfloods.app`) and tells people to check Spam or Junk first.
+
 ## 6. Categories, tags, organisations and expertise areas
 
 ### Categories (`/admin/categories`)

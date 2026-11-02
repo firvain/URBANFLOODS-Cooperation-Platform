@@ -142,7 +142,7 @@ each, with `via: unhide|restore`) and reset `report_count`.
 ```mermaid
 stateDiagram-v2
     [*] --> unverified: register (consent audited)
-    unverified --> verified: email link
+    unverified --> verified: email link, or an admin marks it verified (7p)
     unverified --> [*]: purged after UNVERIFIED_PURGE_DAYS (members only)
     verified --> trusted: first post/thread approved, admin "trust", auto-approve
     trusted --> verified: admin "untrust"

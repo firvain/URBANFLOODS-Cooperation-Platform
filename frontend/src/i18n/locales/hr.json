@@ -678,7 +678,7 @@
     "registerSuccess": {
       "title": "Provjerite svoju e-poštu",
       "body": "Poslali smo poveznicu za potvrdu na {email}. Otvorite je kako biste aktivirali svoj korisnički račun. Poveznica vrijedi 48 sati.",
-      "noEmail": "Niste primili poruku? Provjerite mapu neželjene pošte ili je pošaljite ponovno.",
+      "noEmail": "Niste primili poruku ni nakon nekoliko minuta? Šalje je {sender}. Provjerite mapu neželjene pošte (Spam ili Junk) i označite poruku kao poželjnu ili ponovno pošaljite poveznicu.",
       "resend": "Ponovno pošalji poveznicu"
     },
     "verify": {

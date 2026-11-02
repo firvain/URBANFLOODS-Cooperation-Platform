@@ -1,5 +1,5 @@
 """Increment 1h: admin user management (list, detail, PATCH, promote/demote/ban/unban/trust/
-untrust/resend-verification) and its authorisation rules.
+untrust/resend-verification) and its authorisation rules; 7p: mark an address verified by hand.
 
 Every user is committed (the app uses its own sessions) and registered with ``cleanup_users``.
 """
@@ -8,18 +8,21 @@ from __future__ import annotations
 
 import re
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import func, select
 
 from app.core.config import settings
+from app.crud import token as crud_token
 from app.crud import user as crud_user
-from app.db.enums import UserRole
+from app.db.enums import TokenPurpose, UserRole
 from app.db.models import AuditLog, EmailToken, Organisation, Session, User
+from app.services.scheduler import purge_unverified_users
 from tests.factories import (
     DEFAULT_PASSWORD,
     create_admin,
+    create_category,
     create_superadmin,
     create_user,
     create_verified_user,
@@ -31,9 +34,19 @@ USERS = f"{API}/admin/users/"
 ME = f"{API}/auth/me"
 LOGIN = f"{API}/auth/login"
 VERIFY = f"{API}/auth/verify-email"
+POSTS = f"{API}/posts/"
 TOKEN_RE = re.compile(r"/verify-email\?token=([A-Za-z0-9_\-]+)")
 
-ACTIONS = ("promote", "demote", "ban", "unban", "trust", "untrust", "resend-verification")
+ACTIONS = (
+    "promote",
+    "demote",
+    "ban",
+    "unban",
+    "trust",
+    "untrust",
+    "resend-verification",
+    "verify",
+)
 
 
 # --- helpers ----------------------------------------------------------------------------------
@@ -629,6 +642,154 @@ async def test_resend_verification_email_failure(
     assert await _audit(db_session, target.id, "admin.resend_verification") == []
     tokens = await db_session.scalar(select(func.count()).where(EmailToken.user_id == target.id))
     assert tokens == 0
+
+
+# --- mark verified by hand (7p) ---------------------------------------------------------------
+
+
+async def _unverified_with_link(db, cleanup_users, **kwargs) -> tuple[User, str]:
+    """A committed unverified member holding an unused verification link (its raw token)."""
+    target = await create_user(db, **kwargs)
+    cleanup_users.add(target.email)
+    _, raw = await crud_token.create_email_token(
+        db, user_id=target.id, purpose=TokenPurpose.VERIFY_EMAIL
+    )
+    await db.commit()
+    return target, raw
+
+
+@pytest.mark.parametrize("factory", [create_admin, create_superadmin])
+async def test_verify_marks_address_verified(
+    client, other_client, db_session, outbox, cleanup_users, factory
+):
+    admin = await _signed_in(client, db_session, cleanup_users, factory=factory)
+    target, raw = await _unverified_with_link(db_session, cleanup_users)
+
+    response = await client.post(_url(target.id, "verify"))
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["id"] == target.id
+    assert body["is_verified"] is True
+    assert body["is_trusted"] is False
+    reloaded = await _reload(db_session, target.id)
+    assert reloaded.is_verified is True
+    assert reloaded.trusted_at is None
+    # No email, no session for anyone.
+    assert outbox == []
+    assert await _active_sessions(db_session, target.id) == 0
+    rows = await _audit(db_session, target.id, "admin.verify_email")
+    assert len(rows) == 1
+    assert rows[0].actor_id == admin.id
+    assert rows[0].metadata_ == {"manual": True}
+    # The link already sent stops working.
+    unused = await db_session.scalar(
+        select(func.count()).where(
+            EmailToken.user_id == target.id,
+            EmailToken.purpose == TokenPurpose.VERIFY_EMAIL,
+            EmailToken.used_at.is_(None),
+        )
+    )
+    assert unused == 0
+    _assert_error(await other_client.post(VERIFY, json={"token": raw}), 400, "auth.token_invalid")
+
+
+async def test_verify_already_verified_is_conflict(client, db_session, cleanup_users):
+    await _signed_in(client, db_session, cleanup_users)
+    target = await _committed(db_session, cleanup_users)
+
+    _assert_error(await client.post(_url(target.id, "verify")), 409, "admin.already_verified")
+    assert await _audit(db_session, target.id, "admin.verify_email") == []
+
+
+async def test_verify_deleted_account(client, db_session, cleanup_users):
+    await _signed_in(client, db_session, cleanup_users)
+    target = await _committed(
+        db_session, cleanup_users, factory=create_user, deleted_at=datetime.now(UTC)
+    )
+
+    _assert_error(await client.post(_url(target.id, "verify")), 409, "admin.user_deleted")
+    assert (await _reload(db_session, target.id)).is_verified is False
+
+
+async def test_verify_banned_account_is_conflict(client, db_session, cleanup_users):
+    await _signed_in(client, db_session, cleanup_users)
+    target = await _committed(db_session, cleanup_users, factory=create_user, is_active=False)
+
+    _assert_error(await client.post(_url(target.id, "verify")), 409, "admin.user_inactive")
+    assert (await _reload(db_session, target.id)).is_verified is False
+    assert await _audit(db_session, target.id, "admin.verify_email") == []
+
+
+async def test_admin_cannot_verify_superadmin(client, db_session, cleanup_users):
+    await _signed_in(client, db_session, cleanup_users)
+    target = await _committed(
+        db_session, cleanup_users, factory=create_user, role=UserRole.SUPERADMIN
+    )
+
+    _assert_error(await client.post(_url(target.id, "verify")), 403, "auth.forbidden")
+    assert (await _reload(db_session, target.id)).is_verified is False
+
+
+async def test_superadmin_can_verify_superadmin(client, db_session, cleanup_users):
+    await _signed_in(client, db_session, cleanup_users, factory=create_superadmin)
+    target = await _committed(
+        db_session, cleanup_users, factory=create_user, role=UserRole.SUPERADMIN
+    )
+
+    response = await client.post(_url(target.id, "verify"))
+
+    assert response.status_code == 200, response.text
+    assert (await _reload(db_session, target.id)).is_verified is True
+
+
+async def test_admin_can_verify_admin(client, db_session, cleanup_users):
+    await _signed_in(client, db_session, cleanup_users)
+    target = await _committed(db_session, cleanup_users, factory=create_user, role=UserRole.ADMIN)
+
+    response = await client.post(_url(target.id, "verify"))
+
+    assert response.status_code == 200, response.text
+    assert (await _reload(db_session, target.id)).is_verified is True
+
+
+async def test_verified_member_posts_pending(
+    client, other_client, db_session, cleanup_users, cleanup_categories
+):
+    await _signed_in(client, db_session, cleanup_users)
+    target = await _committed(db_session, cleanup_users, factory=create_user)
+    category = await create_category(db_session)
+    cleanup_categories.add(category.id)
+    await db_session.commit()
+    await login_as(other_client, target)
+    post = {
+        "title": "Rain gardens in Kozani",
+        "body_html": "<p>Rain gardens hold water back.</p>",
+        "category_id": category.id,
+        "locale": "en",
+        "tags": [],
+        "knowbase_links": [],
+    }
+    _assert_error(await other_client.post(POSTS, json=post), 403, "auth.email_not_verified")
+
+    assert (await client.post(_url(target.id, "verify"))).status_code == 200
+
+    response = await other_client.post(POSTS, json=post)
+    assert response.status_code == 201, response.text
+    assert response.json()["status"] == "pending"
+
+
+async def test_verified_account_is_not_purged(client, db_session, cleanup_users):
+    await _signed_in(client, db_session, cleanup_users)
+    old = datetime.now(UTC) - timedelta(days=settings.UNVERIFIED_PURGE_DAYS + 30)
+    target = await _committed(db_session, cleanup_users, factory=create_user, created_at=old)
+    assert (await client.post(_url(target.id, "verify"))).status_code == 200
+
+    await purge_unverified_users(db_session, now=datetime.now(UTC))
+
+    # A query, not ``db_session.get``: the identity map would still hold a purged row.
+    assert await db_session.scalar(select(func.count()).where(User.id == target.id)) == 1
+    await db_session.rollback()
 
 
 # --- PATCH ------------------------------------------------------------------------------------

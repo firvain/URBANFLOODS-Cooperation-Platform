@@ -678,7 +678,7 @@
     "registerSuccess": {
       "title": "Check your email",
       "body": "We sent a verification link to {email}. Open it to activate your account. The link is valid for 48 hours.",
-      "noEmail": "No email? Check your spam folder or send it again.",
+      "noEmail": "No email after a few minutes? It comes from {sender}. Check your Spam or Junk folder and mark it as not junk, or send the link again.",
       "resend": "Send the link again"
     },
     "verify": {
@@ -1157,6 +1157,7 @@
         "user_deleted": "This account has been deleted and cannot be changed.",
         "invalid_role_change": "The user already has this role.",
         "already_verified": "This email address is already verified.",
+        "user_inactive": "This account is banned: unban it first.",
         "email_not_sent": "The email could not be sent. Try again later."
       },
       "moderation": {
@@ -1384,7 +1385,8 @@
         "unban": "Unban",
         "trust": "Mark trusted",
         "untrust": "Remove trusted mark",
-        "resend": "Resend verification email"
+        "resend": "Resend verification email",
+        "verify": "Mark as verified"
       },
       "confirm": {
         "makeAdmin": "Make {name} an administrator?",
@@ -1395,7 +1397,8 @@
         "unban": "Unban {name}?",
         "trust": "Mark {name} as trusted?",
         "untrust": "Remove the trusted mark from {name}?",
-        "resend": "Send {name} a new verification email?"
+        "resend": "Send {name} a new verification email?",
+        "verify": "Mark {name} as verified?"
       },
       "descriptions": {
         "makeAdmin": "Administrators moderate content and manage users, categories and tags.",
@@ -1406,7 +1409,9 @@
         "unban": "The account can sign in again.",
         "trust": "Their posts and discussions publish without review.",
         "untrust": "Their next post or discussion waits for approval.",
-        "resend": "Older verification links stop working."
+        "resend": "Older verification links stop working.",
+        "verify": "Mark {name}'s email address as verified without the emailed link? Do this only for someone you know, after checking with them that {email} is their correct address: if it is wrong, they cannot reset their password. Their first post still needs approval.",
+        "verifyTrusted": "Mark {name}'s email address as verified without the emailed link? Do this only for someone you know, after checking with them that {email} is their correct address: if it is wrong, they cannot reset their password. They are already trusted, so they can publish straight away."
       },
       "done": {
         "makeAdmin": "{name} is now an administrator.",
@@ -1417,7 +1422,8 @@
         "unban": "{name} is no longer banned.",
         "trust": "{name} is trusted.",
         "untrust": "{name} is no longer trusted.",
-        "resend": "A new verification email was sent to {name}."
+        "resend": "A new verification email was sent to {name}.",
+        "verify": "{name}'s email address is now verified."
       }
     },
     "categories": {

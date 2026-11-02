@@ -17,3 +17,10 @@ export function dssUrl(): string {
 
 /** Licence of the content members contribute (Terms §8), named in the pages' JSON-LD. */
 export const CONTENT_LICENCE_URL = 'https://creativecommons.org/licenses/by/4.0/'
+
+/**
+ * The address the platform's emails (verification links, password resets) come from, named on
+ * the "check your email" page so people can find the message in Spam. It must equal the
+ * backend's `SMTP_FROM` (`backend/app/core/config.py`, `.env.prod`).
+ */
+export const VERIFICATION_SENDER = 'noreply@cooperation.urbanfloods.app'

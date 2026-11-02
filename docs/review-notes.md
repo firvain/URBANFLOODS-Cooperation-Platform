@@ -149,6 +149,13 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
   `quote_nullable`-d so rows are unambiguous; count and max id of the KNOWBASE links (replaced,
   never updated). One query; `If-None-Match` is compared weakly (nginx turns the strong tag into
   `W/"…"`).
+- **Admins can mark an email address verified by hand** (7p), for members they verify in person
+  (`POST /admin/users/{id}/verify`, "Mark as verified"). It skips the proof of address ownership
+  by design; the confirm dialog asks the admin to check the address with the person. Audited
+  (`admin.verify_email`, `{"manual": true}`); does not trust (the first post still needs
+  approval); refused for banned and deleted accounts; a superadmin's address needs a superadmin
+  (the rule of ban). The sending address shown after registration is a frontend constant
+  (`constants/links.ts`, `VERIFICATION_SENDER`) that must equal the backend's `SMTP_FROM`.
 - **Admins see soft-deleted content by URL** (with a Deleted badge); lists, search, feeds and
   exports never include it.
 
