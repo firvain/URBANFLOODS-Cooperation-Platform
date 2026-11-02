@@ -97,24 +97,24 @@ lists the additional route limit.
 
 | Method | Path | Who | Limit | Purpose |
 |---|---|---|---|---|
-| POST | `/register` | public | 5/h | create an unverified account (Turnstile, `accept_terms`), email a verification link |
-| POST | `/verify-email` | public | – | consume a verification token, verify and sign in |
-| POST | `/resend-verification` | public | 3/h | new verification link; always 202 |
-| POST | `/login` | public | 10/15 min | start a session (unverified users may sign in) |
+| POST | `/register` | public | 30/h | create an unverified account (Turnstile, `accept_terms`), email a verification link |
+| POST | `/verify-email` | public | – | consume a verification token, verify and sign in (revoking a session the browser already holds); other verification links stop working; an already verified address gets 400 `auth.already_verified` and no session |
+| POST | `/resend-verification` | public | 10/h | new verification link; always 202 |
+| POST | `/login` | public | 60/15 min; 10 failures / 15 min per account | start a session (unverified users may sign in) |
 | POST | `/logout` | public | – | end the current session; always 204 |
 | GET | `/me` | user | – | own account |
 | PATCH | `/me` | user | – | update own profile |
 | GET | `/me/sessions` | user | – | own active sessions |
 | DELETE | `/me/sessions/{session_id}` | user | – | sign out one session |
-| POST | `/password/forgot` | public | 3/h | email a reset link; always 202 |
-| POST | `/password/reset` | public | 10/h | set a new password with a token; signs out every session |
-| POST | `/me/password` | user | 10/h | change password; other sessions signed out |
-| POST | `/me/email` | user | 5/h | request an email change (link to the new address) |
+| POST | `/password/forgot` | public | 10/h | email a reset link; always 202 |
+| POST | `/password/reset` | public | 10/h | set a new password with a token; signs out every session (and a session the browser holds for another account); cancels email changes and verification links |
+| POST | `/me/password` | user | 10/h; 10 failures / h per account | change password; other sessions signed out; cancels email changes and verification links |
+| POST | `/me/email` | user | 5/h; 10 failures / h per account | request an email change (link to the new address) |
 | POST | `/email/confirm` | public | 10/h | confirm an email change with a token |
 | GET | `/me/notifications` | user | – | email notification preferences |
 | PUT | `/me/notifications` | user | – | replace notification preferences |
 | GET | `/me/export` | user | – | GDPR export of own data (JSON download) |
-| DELETE | `/me` | user | – | delete own account (anonymise); the last superadmin cannot |
+| DELETE | `/me` | user | 5/h; 10 failures / h per account | delete own account (anonymise); the last superadmin cannot |
 
 ### Notifications
 

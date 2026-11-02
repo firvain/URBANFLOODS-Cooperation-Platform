@@ -567,6 +567,7 @@
         "account_disabled": "Ovaj je korisnički račun onemogućen. Ako smatrate da je riječ o pogrešci, obratite se administratorima platforme.",
         "email_taken": "Korisnički račun s ovom adresom e-pošte već postoji.",
         "token_invalid": "Ova poveznica nije valjana ili je istekla.",
+        "already_verified": "Ova je adresa e-pošte već potvrđena.",
         "captcha_failed": "Provjera zaštite od neželjenog sadržaja nije uspjela. Pokušajte ponovno."
       },
       "validation": {

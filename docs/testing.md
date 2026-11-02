@@ -131,9 +131,9 @@ The dev backend enforces the real limits, keyed by client IP, in memory:
 
 | Limit | Budget | Used by one full run |
 |---|---|---|
-| `auth.login` | 10 per 15 min (one more every 90 s) | 12 (auth 2, blog 2, forum 4, moderation 4); 15 with `E2E_A11Y=1` (a11y 3); blog needs a third (admin) login only if the newbie is trusted when it starts |
-| `auth.register` | 5 per hour | 1 (auth) |
-| `auth.password_forgot` | 3 per hour | 1 (auth) |
+| `auth.login` | 60 per 15 min (one more every 15 s); 10 failed attempts per account per 15 min | 12 (auth 2, blog 2, forum 4, moderation 4); 15 with `E2E_A11Y=1` (a11y 3); blog needs a third (admin) login only if the newbie is trusted when it starts |
+| `auth.register` | 30 per hour | 1 (auth) |
+| `auth.password_forgot` | 10 per hour | 1 (auth) |
 | `auth.password_reset` | 10 per hour | 1 (auth) |
 | `auth.me_password` | 10 per hour | 1 (auth) |
 | `auth.me_email` | 5 per hour | 1 (auth) |
@@ -144,13 +144,11 @@ member and the newbie once through the API; forum logs in the editor, member, ad
 through the form; moderation logs in the admin, newbie, member and editor through the API; a11y
 logs in the editor, the member and the admin through the API.
 
-A full run therefore relies on the login bucket refilling while the specs run; the moderation
-spec waits once for `Retry-After` on a 429 (the other specs do not retry). With `E2E_A11Y=1` the
-a11y spec runs first (files run in alphabetical order), so the 15 logins come sooner: restart the
-backend first, or run the a11y spec on its own (`E2E_A11Y=1 npm run e2e -- a11y`, 3 logins).
-Running the full suite twice in a row within about 15 minutes, or three times within an hour,
-exhausts the budgets. The buckets live in the backend process: `docker compose restart backend`
-resets them.
+Since 7k a full run fits the login budget without refilling (the budgets were raised for venue
+networks); the moderation spec still waits once for `Retry-After` on a 429 as a safeguard (the
+other specs do not retry). The tightest budgets left are `auth.me_email` (5 per hour) and the
+others at 10 per hour, so several full runs within an hour can still exhaust them. The buckets
+live in the backend process: `docker compose restart backend` resets them.
 
 ## 5. Continuous integration
 

@@ -567,6 +567,7 @@
         "account_disabled": "Kjo llogari është çaktivizuar. Kontaktoni administratorët e platformës nëse mendoni se bëhet fjalë për një gabim.",
         "email_taken": "Ekziston tashmë një llogari me këtë adresë email-i.",
         "token_invalid": "Kjo lidhje është e pavlefshme ose ka skaduar.",
+        "already_verified": "Kjo adresë email-i është verifikuar tashmë.",
         "captcha_failed": "Kontrolli kundër spamit dështoi. Ju lutemi provoni përsëri."
       },
       "validation": {

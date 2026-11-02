@@ -138,6 +138,39 @@ describe('VerifyEmailView', () => {
     expect(wrapper.text()).toContain(t('auth.resent'))
   })
 
+  it('tells an already verified member to sign in, without the resend form', async () => {
+    mockApi({ [VERIFY]: replyError(400, 'auth.already_verified') })
+    const { wrapper, auth } = await mountAndVerify('/verify-email?token=used')
+
+    expect(wrapper.text()).toContain(t('errors.api.auth.already_verified'))
+    // The message states the fact; the button below carries the action.
+    expect(t('errors.api.auth.already_verified')).toBe('This address is already verified.')
+    expect(wrapper.text()).not.toContain(t('auth.verify.failed'))
+    expect(wrapper.text()).not.toContain(t('errors.api.auth.token_invalid'))
+    expect(wrapper.find('input[type="email"]').exists()).toBe(false)
+    expect(verifyButton(wrapper)).toBeUndefined()
+    const signIn = wrapper.find('a[href="/login"]')
+    expect(signIn.exists()).toBe(true)
+    expect(signIn.text()).toBe(t('auth.login'))
+    expect(wrapper.find('a[href="/"]').exists()).toBe(false)
+    expect(auth.isAuthenticated).toBe(false)
+  })
+
+  it('offers the home page instead of sign-in when already signed in', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': reply(200, makeUser()),
+      [VERIFY]: replyError(400, 'auth.already_verified'),
+    })
+    const { wrapper, auth } = await mountAndVerify('/verify-email?token=used')
+
+    expect(wrapper.text()).toContain(t('errors.api.auth.already_verified'))
+    expect(wrapper.find('a[href="/login"]').exists()).toBe(false)
+    const home = wrapper.find('a[href="/"]')
+    expect(home.exists()).toBe(true)
+    expect(home.text()).toBe(t('auth.verify.continue'))
+    expect(auth.user?.email).toBe('maria@example.org')
+  })
+
   it('shows the error without a button or an API call when the token is missing', async () => {
     const fetchMock = mockApi()
     const { wrapper } = await mountWithApp(VerifyEmailView, { path: '/verify-email' })

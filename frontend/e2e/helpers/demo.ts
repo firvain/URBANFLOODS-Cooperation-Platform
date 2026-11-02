@@ -2,8 +2,8 @@ import { expect, type APIRequestContext, type Page } from '@playwright/test'
 
 /**
  * The seeded demo accounts (backend/README.md, backend/scripts/seed_dev.py) and the API helpers
- * the content specs share. Logins are rate limited (10 per 15 min per IP, refilling one every
- * 90 s): log each role in once per spec and keep its context.
+ * the content specs share. Logins are rate limited (60 per 15 min per IP, refilling one every
+ * 15 s): log each role in once per spec and keep its context.
  */
 
 export const API_URL = process.env.E2E_API_URL ?? 'http://localhost:8000'

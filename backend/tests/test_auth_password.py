@@ -36,6 +36,7 @@ RESET = f"{API}/auth/password/reset"
 CHANGE_PASSWORD = f"{API}/auth/me/password"
 CHANGE_EMAIL = f"{API}/auth/me/email"
 CONFIRM_EMAIL = f"{API}/auth/email/confirm"
+VERIFY = f"{API}/auth/verify-email"
 COOKIE = settings.SESSION_COOKIE_NAME
 
 NEW_PASSWORD = "estuary-levee-monsoon-77"
@@ -437,6 +438,63 @@ async def test_reset_password_cancels_pending_email_change(
     assert (await _reload_user(db_session, user.id)).email == user.email
 
 
+async def test_reset_password_invalidates_verification_links(
+    client, db_session, outbox, cleanup_users
+):
+    """A verification link must not sign anyone in after the password was reset."""
+    user = await _committed(db_session, cleanup_users, factory=create_user)
+    _, verify_raw = await create_email_token(
+        db_session, user_id=user.id, purpose=TokenPurpose.VERIFY_EMAIL
+    )
+    await db_session.commit()
+    reset_raw = await _request_reset(client, outbox, user.email)
+
+    assert (
+        await client.post(RESET, json={"token": reset_raw, "password": NEW_PASSWORD})
+    ).status_code == 200
+
+    (token,) = await _tokens(db_session, user.id, TokenPurpose.VERIFY_EMAIL)
+    assert token.used_at is not None
+    _assert_error(await client.post(VERIFY, json={"token": verify_raw}), 400, "auth.token_invalid")
+
+
+async def test_reset_password_revokes_the_session_of_another_account(
+    client, db_session, outbox, cleanup_users
+):
+    """Resetting in a browser signed in as someone else signs that someone out (as login does)."""
+    user = await _committed(db_session, cleanup_users)
+    other = await _committed(db_session, cleanup_users)
+    await login_as(client, other)
+    old_cookie = client.cookies[COOKIE]
+    raw = await _request_reset(client, outbox, user.email)
+
+    response = await client.post(RESET, json={"token": raw, "password": NEW_PASSWORD})
+
+    assert response.status_code == 200, response.text
+    assert client.cookies[COOKIE] != old_cookie
+    assert (await client.get(ME)).json()["id"] == user.id
+    client.cookies.set(COOKIE, old_cookie)
+    _assert_error(await client.get(ME), 401, "auth.not_authenticated")
+
+
+async def test_reset_password_signed_in_as_the_same_account(
+    client, db_session, outbox, cleanup_users
+):
+    user = await _committed(db_session, cleanup_users)
+    await login_as(client, user)
+    old_cookie = client.cookies[COOKIE]
+    raw = await _request_reset(client, outbox, user.email)
+
+    response = await client.post(RESET, json={"token": raw, "password": NEW_PASSWORD})
+
+    assert response.status_code == 200, response.text
+    me = await client.get(ME)
+    assert me.status_code == 200
+    assert me.json()["id"] == user.id
+    client.cookies.set(COOKIE, old_cookie)
+    _assert_error(await client.get(ME), 401, "auth.not_authenticated")
+
+
 # --- change password --------------------------------------------------------------------------
 
 
@@ -531,6 +589,21 @@ async def test_change_password_cancels_pending_email_change(
 
     _assert_error(response, 400, "auth.token_invalid")
     assert (await _reload_user(db_session, user.id)).email == user.email
+
+
+async def test_change_password_invalidates_verification_links(client, db_session, cleanup_users):
+    user = await _committed(db_session, cleanup_users, factory=create_user)
+    _, verify_raw = await create_email_token(
+        db_session, user_id=user.id, purpose=TokenPurpose.VERIFY_EMAIL
+    )
+    await db_session.commit()
+    await login_as(client, user)
+
+    assert (await client.post(CHANGE_PASSWORD, json=_change_password_body())).status_code == 204
+
+    (token,) = await _tokens(db_session, user.id, TokenPurpose.VERIFY_EMAIL)
+    assert token.used_at is not None
+    _assert_error(await client.post(VERIFY, json={"token": verify_raw}), 400, "auth.token_invalid")
 
 
 # --- change email: request --------------------------------------------------------------------

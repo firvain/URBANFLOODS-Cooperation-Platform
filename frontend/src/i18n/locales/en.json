@@ -567,6 +567,7 @@
         "account_disabled": "This account has been disabled. Contact the platform administrators if you think this is a mistake.",
         "email_taken": "An account with this email address already exists.",
         "token_invalid": "This link is invalid or has expired.",
+        "already_verified": "This address is already verified.",
         "captcha_failed": "The anti-spam check failed. Please try again."
       },
       "validation": {

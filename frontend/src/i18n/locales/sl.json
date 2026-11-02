@@ -567,6 +567,7 @@
         "account_disabled": "Ta račun je onemogočen. Če menite, da gre za napako, se obrnite na skrbnike platforme.",
         "email_taken": "Račun s tem e-poštnim naslovom že obstaja.",
         "token_invalid": "Ta povezava je neveljavna ali je potekla.",
+        "already_verified": "Ta e-poštni naslov je že potrjen.",
         "captcha_failed": "Preverjanje proti neželeni pošti ni uspelo. Poskusite znova."
       },
       "validation": {

@@ -947,6 +947,27 @@ async def test_relogin_on_same_client_revokes_previous_session(client, db_sessio
     _assert_error(await client.get(ME), 401, NOT_AUTHENTICATED)
 
 
+async def test_login_as_another_account_revokes_the_previous_session(
+    client, db_session, cleanup_users
+):
+    first = await _committed(db_session, cleanup_users)
+    second = await _committed(db_session, cleanup_users)
+    await login_as(client, first)
+    first_raw = client.cookies[COOKIE]
+
+    await login_as(client, second)
+
+    assert (await client.get(ME)).json()["id"] == second.id
+    active = await db_session.scalar(
+        select(func.count())
+        .select_from(Session)
+        .where(Session.user_id == first.id, Session.revoked_at.is_(None))
+    )
+    assert active == 0
+    client.cookies.set(COOKIE, first_raw)
+    _assert_error(await client.get(ME), 401, NOT_AUTHENTICATED)
+
+
 async def test_failed_relogin_keeps_existing_session(client, db_session, cleanup_users):
     user = await _committed(db_session, cleanup_users)
     await login_as(client, user)

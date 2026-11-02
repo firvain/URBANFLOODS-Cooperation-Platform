@@ -14,9 +14,17 @@ import pytest
 from sqlalchemy import func, select
 
 from app.core.config import settings
+from app.core.security import generate_token, token_expiry
 from app.crud.token import consume_email_token, create_email_token
 from app.db.enums import TokenPurpose
-from app.db.models import AuditLog, NotificationPreference, Organisation, Session, User
+from app.db.models import (
+    AuditLog,
+    EmailToken,
+    NotificationPreference,
+    Organisation,
+    Session,
+    User,
+)
 from app.services.email import get_backend
 from tests.factories import create_user, create_verified_user, login_as, unique_email
 
@@ -388,9 +396,34 @@ async def test_verify_email_deactivated_user(client, db_session, outbox, cleanup
     assert outbox == []
 
 
-async def test_verify_email_already_verified_user_is_logged_in(
+async def _verification_token(db, user_id: int) -> tuple[EmailToken, str]:
+    """A VERIFY_EMAIL token inserted directly, without invalidating the user's other ones (as
+    ``create_email_token`` would), like two links issued at the same moment."""
+    raw, token_hash = generate_token()
+    now = datetime.now(UTC)
+    token = EmailToken(
+        user_id=user_id,
+        purpose=TokenPurpose.VERIFY_EMAIL,
+        token_hash=token_hash,
+        created_at=now,
+        expires_at=token_expiry(TokenPurpose.VERIFY_EMAIL, now),
+    )
+    db.add(token)
+    await db.flush()
+    return token, raw
+
+
+async def _session_count(db, user_id: int, *, active_only: bool = False) -> int:
+    stmt = select(func.count()).select_from(Session).where(Session.user_id == user_id)
+    if active_only:
+        stmt = stmt.where(Session.revoked_at.is_(None))
+    return await db.scalar(stmt)
+
+
+async def test_verify_email_already_verified_user_is_not_signed_in(
     client, db_session, outbox, cleanup_users
 ):
+    """A verification link of an account that is already verified does not sign anyone in."""
     user = await create_verified_user(db_session)
     cleanup_users.add(user.email)
     _, raw = await create_email_token(
@@ -400,10 +433,83 @@ async def test_verify_email_already_verified_user_is_logged_in(
 
     response = await client.post(VERIFY, json={"token": raw})
 
-    assert response.status_code == 200, response.text
-    assert response.json()["is_verified"] is True
-    assert settings.SESSION_COOKIE_NAME in response.headers["set-cookie"]
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == {
+        "code": "auth.already_verified",
+        "message": "This address is already verified.",
+    }
+    assert "set-cookie" not in response.headers
+    assert settings.SESSION_COOKIE_NAME not in client.cookies
+    assert await _session_count(db_session, user.id) == 0
     assert outbox == []
+    # The token was spent: the second try is an ordinary invalid link.
+    again = await client.post(VERIFY, json={"token": raw})
+    assert again.json()["detail"]["code"] == "auth.token_invalid"
+
+
+async def test_verify_email_already_verified_leaves_existing_session_alone(
+    client, db_session, cleanup_users
+):
+    user = await create_verified_user(db_session)
+    other = await create_verified_user(db_session)
+    cleanup_users.update({user.email, other.email})
+    _, raw = await create_email_token(
+        db_session, user_id=user.id, purpose=TokenPurpose.VERIFY_EMAIL
+    )
+    await db_session.commit()
+    await login_as(client, other)
+    cookie = client.cookies[settings.SESSION_COOKIE_NAME]
+
+    response = await client.post(VERIFY, json={"token": raw})
+
+    assert response.json()["detail"]["code"] == "auth.already_verified"
+    assert client.cookies[settings.SESSION_COOKIE_NAME] == cookie
+    me = await client.get(f"{API}/auth/me")
+    assert me.status_code == 200
+    assert me.json()["id"] == other.id
+    assert await _session_count(db_session, user.id) == 0
+
+
+async def test_verify_email_invalidates_the_other_verification_links(
+    client, db_session, cleanup_users
+):
+    user = await create_user(db_session)
+    cleanup_users.add(user.email)
+    first, first_raw = await _verification_token(db_session, user.id)
+    second, _ = await _verification_token(db_session, user.id)
+    await db_session.commit()
+
+    assert (await client.post(VERIFY, json={"token": first_raw})).status_code == 200
+
+    stmt = (
+        select(EmailToken)
+        .where(EmailToken.id == second.id)
+        .execution_options(populate_existing=True)
+    )
+    assert (await db_session.scalar(stmt)).used_at is not None
+
+
+async def test_verify_email_revokes_the_session_of_another_account(
+    client, db_session, outbox, cleanup_users
+):
+    """Verifying in a browser signed in as someone else signs that someone out (as login does)."""
+    other = await create_verified_user(db_session)
+    cleanup_users.add(other.email)
+    await db_session.commit()
+    await login_as(client, other)
+    old_cookie = client.cookies[settings.SESSION_COOKIE_NAME]
+    email, _ = await _register(client, cleanup_users)
+    raw = _token_from(outbox[-1])
+
+    response = await client.post(VERIFY, json={"token": raw})
+
+    assert response.status_code == 200, response.text
+    assert response.json()["email"] == email
+    assert client.cookies[settings.SESSION_COOKIE_NAME] != old_cookie
+    assert (await client.get(f"{API}/auth/me")).json()["email"] == email
+    assert await _session_count(db_session, other.id, active_only=True) == 0
+    client.cookies.set(settings.SESSION_COOKIE_NAME, old_cookie)
+    assert (await client.get(f"{API}/auth/me")).status_code == 401
 
 
 # --- resend verification ----------------------------------------------------------------------

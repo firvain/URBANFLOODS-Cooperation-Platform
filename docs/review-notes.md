@@ -31,7 +31,7 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
   with reading open for dissemination and FAIR reuse (PLAN "Access model").
 - **Resend verification without a Turnstile token** is allowed only for a signed-in, unverified
   member resending to their own address (7d). The session proves a browser; the route is rate
-  limited per IP (3/hour). Everything else needs a token.
+  limited per IP (10/hour). Everything else needs a token.
 - **Forms keep submit disabled until a Turnstile token arrives** when a site key is set (7d). If
   a browser blocks the Cloudflare script, the button stays disabled without a message: known
   follow-up, not yet built.
@@ -67,6 +67,26 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
   they can be reported. A reply or comment whose **thread or post** the reporter cannot see cannot
   be reported (404, nothing leaks). Admins may edit or delete replies and comments under a deleted
   thread or post; members get 404 there (`visibility.parent_visible`).
+- **Failed password checks are limited per account as well as per IP** (7k): 10 failed logins
+  per account per 15 minutes and 10 wrong current passwords per user per hour (change password,
+  change email, delete account). Known accounts are keyed by user id; an address with no account
+  by an HMAC of the trimmed, lower-cased email, counted the same way. Each check is counted before
+  the password is verified, so even the right one gets 429 while the bucket is full; the right
+  password empties the bucket (only its holder can do that). Accepted lockout: an attacker who
+  knows an address can keep it from signing in with a password while they keep guessing (each 429
+  asks to retry within 15 minutes); password reset by email still works. When a store is full,
+  drained buckets are swept before any active one is evicted; evicting a lockout needs tens of
+  thousands of active keys within one window.
+- **Per-IP limits on the public auth routes are generous** (7k: register 30/h, login 60/15 min,
+  resend verification and forgot password 10/h): NAT and venue Wi-Fi share one address (partners
+  register by QR code at meetings). Turnstile and the per-account limits are the main defence.
+  Per-IP buckets key IPv6 by /64 (IPv4-mapped addresses as IPv4).
+- **A verification link of an already verified address does not sign in** (7k): the token is
+  spent, the answer is 400 `auth.already_verified` and no session is created; the page points to
+  sign-in. Password reset and change cancel unused verification links, and verify and reset
+  revoke the session the browser already holds (whatever account), as login does. The message
+  only states the fact ("This address is already verified."); the button carries the action (Log
+  in when signed out, back to the home page when signed in).
 - **Admins see soft-deleted content by URL** (with a Deleted badge); lists, search, feeds and
   exports never include it.
 

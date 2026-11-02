@@ -52,6 +52,7 @@ from app.api.v1.schemas.auth import (
     VerifyEmailRequest,
 )
 from app.api.v1.schemas.post import KnowbaseLinkOut
+from app.core import rate_limit
 from app.core.config import settings
 from app.core.deps import AuthUser, CurrentUser, DbTx, client_ip
 from app.core.exceptions import AppError, error_body, validation_error
@@ -203,11 +204,30 @@ async def register(body: RegisterRequest, request: Request, db: DbTx) -> Registe
     return RegisterResponse.model_validate(user)
 
 
+async def _revoke_current_session(db: AsyncSession, request: Request) -> None:
+    """Revoke the session named by the request's cookie, whichever account it belongs to, before
+    a new one is set: the browser must not keep a valid session it no longer holds the cookie
+    for. Needs ``CurrentUser`` on the endpoint (it populates ``request.state.session``)."""
+    previous = request.state.session
+    if previous is not None:
+        await crud_session.revoke_session(db, session_id=previous.id)
+
+
 @router.post("/verify-email", response_model=UserMe, responses=_error_responses(400, 403, 422))
 async def verify_email(
-    body: VerifyEmailRequest, request: Request, response: Response, db: DbTx
+    body: VerifyEmailRequest,
+    request: Request,
+    response: Response,
+    current: CurrentUser,
+    db: DbTx,
 ) -> UserMe:
-    """Consume a verification token, mark the address verified and sign the user in."""
+    """Consume a verification token, mark the address verified and sign the user in.
+
+    Every other unused verification link of the user stops working. A session the browser
+    already holds (any account) is revoked first. For an address that is already verified the
+    token is spent but nobody is signed in: 400 ``auth.already_verified``, no cookie, an
+    existing session untouched (a stray link must not work as a sign-in link).
+    """
     token = await crud_token.consume_email_token(
         db, raw_token=body.token, purpose=TokenPurpose.VERIFY_EMAIL
     )
@@ -218,17 +238,27 @@ async def verify_email(
     if user is None or not user.is_active or user.deleted_at is not None:
         raise AppError(403, "auth.account_disabled", "This account is disabled.")
 
-    newly_verified = not user.is_verified
-    if newly_verified:
-        await crud_user.mark_verified(db, user=user)
-        await crud_audit.log_action(
-            db,
-            actor_id=user.id,
-            action="auth.email_verified",
-            target_type="user",
-            target_id=user.id,
+    await crud_token.invalidate_email_tokens(
+        db, user_id=user.id, purposes=(TokenPurpose.VERIFY_EMAIL,)
+    )
+    if user.is_verified:
+        raise AppError(
+            400,
+            "auth.already_verified",
+            "This address is already verified.",
+            keep_changes=True,
         )
 
+    await crud_user.mark_verified(db, user=user)
+    await crud_audit.log_action(
+        db,
+        actor_id=user.id,
+        action="auth.email_verified",
+        target_type="user",
+        target_id=user.id,
+    )
+
+    await _revoke_current_session(db, request)
     _, raw_session = await crud_session.create_session(
         db, user_id=user.id, user_agent=request.headers.get("user-agent")
     )
@@ -243,7 +273,7 @@ def _is_own_unverified_address(user: User | None, email: str) -> bool:
     return user is not None and not user.is_verified and user.email.lower() == email.lower()
 
 
-# Rate limited by app.core.rate_limit.ROUTE_LIMITS (auth.resend_verification: 3/hour per IP).
+# Rate limited by app.core.rate_limit.ROUTE_LIMITS (auth.resend_verification: 10/hour per IP).
 @router.post(
     "/resend-verification",
     response_model=MessageResponse,
@@ -274,8 +304,9 @@ async def resend_verification(
     return RESENT_RESPONSE
 
 
-# Rate limited by app.core.rate_limit.ROUTE_LIMITS (auth.login: 10 per 15 min per IP).
-@router.post("/login", response_model=UserMe, responses=_error_responses(401, 403, 422))
+# Rate limited by app.core.rate_limit.ROUTE_LIMITS (auth.login: 60 per 15 min per IP) and, for
+# failed password checks, per account (rate_limit.LOGIN_ACCOUNT_LIMIT: 10 per 15 min).
+@router.post("/login", response_model=UserMe, responses=_error_responses(401, 403, 422, 429))
 async def login(
     body: LoginRequest,
     request: Request,
@@ -285,13 +316,28 @@ async def login(
 ) -> UserMe:
     """Check email and password and start a session (cookie). Unverified users may sign in.
 
-    A session named by the request's existing cookie is revoked first, so signing in again in the
-    same browser does not leave an orphaned active session.
+    The session named by the request's existing cookie (whichever account it belongs to) is
+    revoked first, so signing in again in the same browser does not leave an orphaned active
+    session.
+
+    Ten failed attempts for one address (registered or not) within 15 minutes, from any number of
+    IPs, answer 429 before the password is checked, so even the right password waits; password
+    reset still works. A successful sign-in empties the account's count.
     """
     user = await crud_user.get_user_by_email(db, email=body.email)
+    # Known accounts by id (exact, whatever the spelling), unknown addresses by a keyed hash;
+    # both are counted and both run argon2, so the answer does not reveal which exist.
+    account_key = (
+        rate_limit.user_account_key(user.id)
+        if user is not None
+        else rate_limit.login_account_key(body.email)
+    )
+    rate_limit.consume_account(rate_limit.LOGIN_ACCOUNT_LIMIT, account_key)
     password_hash = user.password_hash if user is not None else _dummy_hash()
     # argon2 is deliberately slow; keep it off the event loop.
     password_ok = await asyncio.to_thread(verify_password, body.password, password_hash)
+    if user is not None and password_ok:
+        rate_limit.clear_account(rate_limit.LOGIN_ACCOUNT_LIMIT, account_key)
 
     if user is None or not password_ok:
         await crud_audit.log_action(
@@ -314,9 +360,7 @@ async def login(
         )
         raise AppError(403, "auth.account_disabled", "This account is disabled.", keep_changes=True)
 
-    previous = request.state.session
-    if current is not None and previous is not None:
-        await crud_session.revoke_session(db, session_id=previous.id, user_id=current.id)
+    await _revoke_current_session(db, request)
 
     await crud_user.record_login(db, user=user, password=body.password)
     session, raw_session = await crud_session.create_session(
@@ -428,9 +472,17 @@ async def _check_current_password(
     db: AsyncSession, *, user: User, password: str, failed_action: str
 ) -> None:
     """400 ``auth.invalid_credentials`` (keeping a ``failed_action`` audit row) unless
-    ``password`` is the user's current password."""
+    ``password`` is the user's current password.
+
+    Ten failures for one account within an hour (``rate_limit.PASSWORD_CHECK_ACCOUNT_LIMIT``,
+    shared by change password, change email and delete account) answer 429 before the password
+    is checked, so a stolen session cannot guess the password from many IPs. The right password
+    empties the count."""
+    account_key = rate_limit.user_account_key(user.id)
+    rate_limit.consume_account(rate_limit.PASSWORD_CHECK_ACCOUNT_LIMIT, account_key)
     # argon2 is deliberately slow; keep it off the event loop.
     if await asyncio.to_thread(verify_password, password, user.password_hash):
+        rate_limit.clear_account(rate_limit.PASSWORD_CHECK_ACCOUNT_LIMIT, account_key)
         return
     await crud_audit.log_action(
         db, actor_id=user.id, action=failed_action, target_type="user", target_id=user.id
@@ -440,7 +492,7 @@ async def _check_current_password(
     )
 
 
-# Rate limited by app.core.rate_limit.ROUTE_LIMITS (auth.password_forgot: 3/hour per IP).
+# Rate limited by app.core.rate_limit.ROUTE_LIMITS (auth.password_forgot: 10/hour per IP).
 @router.post(
     "/password/forgot",
     response_model=MessageResponse,
@@ -481,10 +533,15 @@ async def forgot_password(
 
 @router.post("/password/reset", response_model=UserMe, responses=_error_responses(400, 403, 422))
 async def reset_password(
-    body: ResetPasswordRequest, request: Request, response: Response, db: DbTx
+    body: ResetPasswordRequest,
+    request: Request,
+    response: Response,
+    current: CurrentUser,
+    db: DbTx,
 ) -> UserMe:
     """Consume a reset token, set the new password, sign out every session and sign this browser
-    in. Also marks the address verified and cancels pending email changes.
+    in. Also marks the address verified and cancels pending email changes and unused
+    verification links. A session the browser holds for another account is revoked too.
 
     Any failure rolls back, so the link stays usable (e.g. after a weak-password 422).
     """
@@ -504,9 +561,13 @@ async def reset_password(
         raise validation_error({"password": exc.code}) from None
 
     revoked = await crud_session.revoke_all_sessions_for_user(db, user_id=user.id)
-    # Whoever had a session may have started an email change; it must not outlive the reset.
+    # After the reset-user's own sessions, so ``revoked`` counts them all: this only matters for
+    # a session of another account.
+    await _revoke_current_session(db, request)
+    # Whoever had a session may have started an email change, and an old verification link
+    # would sign its holder in; neither may outlive the reset.
     await crud_token.invalidate_email_tokens(
-        db, user_id=user.id, purposes=(TokenPurpose.CHANGE_EMAIL,)
+        db, user_id=user.id, purposes=(TokenPurpose.CHANGE_EMAIL, TokenPurpose.VERIFY_EMAIL)
     )
     newly_verified = not user.is_verified
     if newly_verified:
@@ -531,13 +592,13 @@ async def reset_password(
     "/me/password",
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response,
-    responses=_error_responses(400, 401, 422),
+    responses=_error_responses(400, 401, 422, 429),
 )
 async def change_password(
     body: ChangePasswordRequest, request: Request, user: AuthUser, db: DbTx
 ) -> None:
     """Change the password (current one required). Other sessions are signed out; this one
-    stays. Pending email changes are cancelled."""
+    stays. Pending email changes and unused verification links are cancelled."""
     await _check_current_password(
         db, user=user, password=body.current_password, failed_action="auth.password_change_failed"
     )
@@ -552,7 +613,7 @@ async def change_password(
         db, user_id=user.id, except_session_id=request.state.session.id
     )
     await crud_token.invalidate_email_tokens(
-        db, user_id=user.id, purposes=(TokenPurpose.CHANGE_EMAIL,)
+        db, user_id=user.id, purposes=(TokenPurpose.CHANGE_EMAIL, TokenPurpose.VERIFY_EMAIL)
     )
     await crud_audit.log_action(
         db,
@@ -571,7 +632,7 @@ async def change_password(
     "/me/email",
     response_model=MessageResponse,
     status_code=status.HTTP_202_ACCEPTED,
-    responses=_error_responses(400, 401, 422),
+    responses=_error_responses(400, 401, 422, 429),
 )
 async def request_email_change(
     body: ChangeEmailRequest, user: AuthUser, db: DbTx
@@ -779,7 +840,7 @@ async def export_my_data(response: Response, user: AuthUser, db: DbTx) -> Accoun
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response,
-    responses=_error_responses(400, 401, 409, 422),
+    responses=_error_responses(400, 401, 409, 422, 429),
 )
 async def delete_me(
     body: DeleteAccountRequest,

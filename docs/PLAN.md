@@ -98,7 +98,7 @@ State machines:
 
 ## API surface (`/api/v1`, list routes end with `/`, `{total, items}` pagination like KNOWBASE)
 
-- **auth**: register (turnstile, 5/h), verify-email, resend-verification (202 always), login (10/15min), logout, password/forgot (202), password/reset (revokes all sessions), me GET/PATCH, me/password, me/email, me/notifications GET/PUT, me/sessions GET + DELETE/{id}, me/export (GDPR JSON), DELETE me (anonymise).
+- **auth**: register (turnstile, 30/h), verify-email, resend-verification (202 always), login (60/15min; 10 failures/15 min per account), logout, password/forgot (202), password/reset (revokes all sessions), me GET/PATCH, me/password, me/email, me/notifications GET/PUT, me/sessions GET + DELETE/{id}, me/export (GDPR JSON), DELETE me (anonymise).
 - **users**: GET /users/{id} public profile; /users/{id}/activity.
 - **organisations**: GET /organisations/ (public; partners first), admin POST/PATCH; GET /organisations/{id} with member count and recent activity (feeds `/partners` page).
 - **admin stats**: GET /admin/stats (counts, pending, open reports, cache status) and GET /admin/stats/export.csv?from=&to= (users by country/organisation, posts, threads, replies, active users in range).

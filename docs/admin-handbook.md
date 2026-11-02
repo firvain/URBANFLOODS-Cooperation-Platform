@@ -72,7 +72,7 @@ Audited as `admin.trust` / `admin.untrust` (automatic ones as `user.trusted`).
 For an unverified account, the row menu offers **Resend verification**. A new link is emailed and
 older links stop working. If sending fails the page shows an error (`admin.email_not_sent`); see
 [section 9](#9-when-email-fails). Members can also request a new link themselves (after registering, or from the banner shown
-to unverified members; 3 per hour). Unverified member accounts are deleted automatically after
+to unverified members; 10 per hour). Unverified member accounts are deleted automatically after
 `UNVERIFIED_PURGE_DAYS` (30) days.
 
 ## 6. Categories, tags, organisations and expertise areas
@@ -306,7 +306,7 @@ deleting another member's image (organisations have a page now, but the calls
 below still work as a fallback). Call the API with curl.
 Sign in once into a cookie jar, then send every POST, PATCH or DELETE with the session cookie
 **and** the `X-Requested-With: XMLHttpRequest` header (the CSRF check rejects a signed-in write
-without it). The login is rate limited like the sign-in form (10 per 15 minutes). Ids come from
+without it). The login is rate limited like the sign-in form (60 per 15 minutes per IP, and 10 failed attempts per 15 minutes per account). Ids come from
 the audit log (`/admin/log`: the target column shows, for example, `reply #123`).
 
 ```bash

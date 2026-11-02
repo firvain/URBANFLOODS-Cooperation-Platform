@@ -21,7 +21,7 @@ const { errorMessage } = useApiErrors()
  * links in a sandboxed browser that runs JavaScript, and would otherwise spend the single-use
  * token before the person clicks.
  */
-const state = ref<'ready' | 'verifying' | 'success' | 'error'>('ready')
+const state = ref<'ready' | 'verifying' | 'success' | 'alreadyVerified' | 'error'>('ready')
 const error = ref('')
 const token = ref('')
 /** A new member with no expertise yet: the success state points to the profile. */
@@ -30,7 +30,10 @@ let redirectTimer: ReturnType<typeof setTimeout> | undefined
 
 function fail(e: unknown) {
   error.value = errorMessage(e)
-  state.value = 'error'
+  // The link belonged to an address that is already verified: it signs nobody in, and a new
+  // link would not help, so point to sign-in instead of the resend form.
+  state.value =
+    e instanceof ApiError && e.code === 'auth.already_verified' ? 'alreadyVerified' : 'error'
 }
 
 onMounted(() => {
@@ -95,6 +98,18 @@ onBeforeUnmount(() => clearTimeout(redirectTimer))
     <UButton v-if="state === 'success'" to="/" class="mt-6" icon="i-lucide-house">
       {{ t('auth.verify.continue') }}
     </UButton>
+
+    <template v-if="state === 'alreadyVerified'">
+      <div role="alert">
+        <UAlert color="info" variant="subtle" icon="i-lucide-info" :title="error" />
+      </div>
+      <UButton v-if="auth.isAuthenticated" to="/" class="mt-6" icon="i-lucide-house">
+        {{ t('auth.verify.continue') }}
+      </UButton>
+      <UButton v-else to="/login" class="mt-6" icon="i-lucide-log-in">
+        {{ t('auth.login') }}
+      </UButton>
+    </template>
 
     <template v-if="state === 'error'">
       <div role="alert">

@@ -567,6 +567,7 @@
         "account_disabled": "Questo account è stato disattivato. Se pensi che si tratti di un errore, contatta gli amministratori della piattaforma.",
         "email_taken": "Esiste già un account con questo indirizzo email.",
         "token_invalid": "Questo link non è valido o è scaduto.",
+        "already_verified": "Questo indirizzo email è già verificato.",
         "captcha_failed": "Il controllo antispam non è riuscito. Riprova."
       },
       "validation": {

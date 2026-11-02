@@ -15,7 +15,7 @@ import {
 
 /**
  * axe WCAG 2.1 A/AA scan of every page kind (M5, increment 5d). Any violation fails: there is no
- * allow-list. Off by default because it adds ~1 min and three logins (the login limit is 10 per
+ * allow-list. Off by default because it adds ~1 min and three logins (the login limit is 60 per
  * 15 min per IP); run it with `E2E_A11Y=1 npx playwright test a11y`.
  *
  * Besides axe, every scanned view must have exactly one `h1` and `<html lang="en">` (the browser

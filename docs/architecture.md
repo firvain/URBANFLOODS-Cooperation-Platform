@@ -251,21 +251,23 @@ The same code runs from the CLI (`python -m app.cli maintenance|digest`).
 ## 9. Rate limits
 
 In-memory GCRA limiter (`core/rate_limit.py`), keyed by limit name and client IP
-(`CF-Connecting-IP` when `TRUST_PROXY_HEADERS=true`, else the socket peer). A burst of `times`
+(`CF-Connecting-IP` when `TRUST_PROXY_HEADERS=true`, else the socket peer). IPv6 addresses count
+as their /64 network, IPv4-mapped IPv6 addresses as the IPv4 address. A burst of `times`
 is allowed, then one request every `seconds / times`. Exceeding a limit answers 429
 `rate.limited` with `Retry-After`. `RATE_LIMIT_ENABLED=false` turns everything off.
 
 | Limit | Applies to | Budget |
 |---|---|---|
 | `api.default` | every request under `/api/` | 300 / minute |
-| `auth.register` | `POST /auth/register` | 5 / hour |
-| `auth.login` | `POST /auth/login` | 10 / 15 minutes |
-| `auth.resend_verification` | `POST /auth/resend-verification` | 3 / hour |
-| `auth.password_forgot` | `POST /auth/password/forgot` | 3 / hour |
+| `auth.register` | `POST /auth/register` | 30 / hour |
+| `auth.login` | `POST /auth/login` | 60 / 15 minutes |
+| `auth.resend_verification` | `POST /auth/resend-verification` | 10 / hour |
+| `auth.password_forgot` | `POST /auth/password/forgot` | 10 / hour |
 | `auth.password_reset` | `POST /auth/password/reset` | 10 / hour |
 | `auth.email_confirm` | `POST /auth/email/confirm` | 10 / hour |
 | `auth.me_password` | `POST /auth/me/password` | 10 / hour |
 | `auth.me_email` | `POST /auth/me/email` | 5 / hour |
+| `auth.me_delete` | `DELETE /auth/me` | 5 / hour |
 | `posts.create` | `POST /posts/` | 20 / hour |
 | `threads.create` | `POST /threads/` | 20 / hour |
 | `replies.create` | `POST /threads/{id}/replies/` | 60 / hour |
@@ -274,8 +276,30 @@ is allowed, then one request every `seconds / times`. Exceeding a limit answers 
 | `uploads.images` | `POST /uploads/images/` | 30 / day |
 | `search` | `GET /search/` | 60 / minute |
 
+The per-IP auth budgets are generous on purpose: NAT and venue Wi-Fi put many people behind one
+address (partners register by QR code at meetings). Turnstile and the per-account limits below
+are the main defence.
+
 Paths outside `/api/` (`/feeds/*`, `/sitemap.xml`, `/robots.txt`, `/static/uploads/*`, `/health`)
 have no application rate limit.
+
+Failed password checks are also limited **per account**, whatever the IP (a second in-memory
+store). Every check is counted before the password is verified, so a full bucket refuses even the
+right password; the right password empties the bucket, so only failures accumulate.
+
+| Limit | Applies to | Key | Budget |
+|---|---|---|---|
+| `auth.login_account` | `POST /auth/login` | user id; for an address with no account, a keyed hash (`SECRET_KEY`) of the trimmed, lower-cased email | 10 / 15 minutes |
+| `auth.password_check_account` | current-password check on `POST /auth/me/password`, `POST /auth/me/email`, `DELETE /auth/me` | user id | 10 / hour |
+
+Each store holds at most 50 000 keys. A new key that finds the store full first sweeps drained
+buckets, and only then evicts the least recently used one, so flooding new keys cannot reset a
+lockout while drained buckets exist; evicting an active bucket needs tens of thousands of active
+keys within one window.
+
+Trade-off: anyone who knows an address can keep that account from signing in with a password
+while they keep guessing (each refusal asks to retry within 15 minutes, and the bucket drains 15
+minutes after the guessing stops); password reset by email keeps working throughout.
 
 ## 10. Security controls
 
@@ -289,7 +313,11 @@ have no application rate limit.
   (`TURNSTILE_ENABLED`); email verification before posting; first-post review; report auto-hide.
 - Uniform answers: forgot-password and resend always return 202.
 - Tokens: random, hashed at rest, single use, with expiry. Confirming an email change cancels
-  outstanding verify/reset tokens; a password reset or change cancels pending email changes.
+  outstanding verify/reset tokens; a password reset or change cancels pending email changes and
+  unused verification links; a successful verification cancels the user's other verification
+  links. A verification link of an already verified address signs nobody in
+  (400 `auth.already_verified`). Verify, reset and login revoke the session the browser already
+  holds, whichever account it belongs to.
 - HTML: nh3 allow-list on the server (`services/sanitize.py`), DOMPurify in the browser
   (`components/common/SafeHtml.vue`).
 - Uploads: JPEG/PNG/WebP only (sniffed by Pillow), ≤ `MAX_UPLOAD_MB` (5 MiB), ≤ 40 megapixels,
@@ -297,7 +325,8 @@ have no application rate limit.
 - Authorisation: role dependencies in `core/deps.py`; last-superadmin and self-change guards in
   the admin endpoints; every mutating endpoint has owner/admin/superadmin tests.
 - Audit log for moderation, role, trust, ban, consent, login, export and account deletion.
-- No IP addresses in the database; rate-limit logs use a keyed hash of the IP.
+- No IP addresses in the database; rate-limit logs use a keyed hash of the IP (or of the account
+  key; never the email).
 - Logs: structlog to stdout (JSON when `LOG_JSON=true`); no passwords, tokens or bodies.
 - Postgres is not published on the host in production; secrets only in the production env
   file (M6). Security headers (HSTS, CSP, X-Frame-Options) belong to the host nginx (M6). [CHECK after 6b]

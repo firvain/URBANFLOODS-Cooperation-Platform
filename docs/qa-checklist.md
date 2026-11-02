@@ -71,15 +71,15 @@ These are the ones you will hit:
 
 | Limit | Budget |
 |---|---|
-| login | 10 per 15 min (one more every 90 s) |
-| register | 5 per hour |
-| resend verification, forgot password | 3 per hour each |
+| login | 60 per 15 min (one more every 15 s); 10 failed attempts per account per 15 min |
+| register | 30 per hour |
+| resend verification, forgot password | 10 per hour each |
 | reports | 20 per day |
 | image uploads | 30 per day |
 | posts, threads | 20 per hour each |
 | every `/api/` call | 300 per minute |
 
-This checklist switches accounts often, so it needs more than 10 logins. There are three ways round it:
+This checklist switches accounts often; 60 logins per 15 minutes is usually enough. If you do hit a limit, there are three ways round it:
 
 - **Quick reset:** `docker compose restart backend` empties every bucket. It also clears the KNOWBASE cache.
 - **Lift the limits for a session:** create `docker-compose.override.yml` next to `docker-compose.yml`
@@ -253,7 +253,7 @@ Run S-01 **before** anyone else is promoted to superadmin, so Eleni is still the
 
 | Id | Account | Steps | Expected | AF |
 |---|---|---|---|---|
-| E-01 | Dimitris (unverified) | Log in; try to post, comment, report; open `/network`; use the banner's resend | Login works, and an unverified banner shows with resend (3 per hour). Actions are refused with a translated "verify your email" message. `/network` shows the verify notice | AF-1 |
+| E-01 | Dimitris (unverified) | Log in; try to post, comment, report; open `/network`; use the banner's resend | Login works, and an unverified banner shows with resend (10 per hour). Actions are refused with a translated "verify your email" message. `/network` shows the verify notice | AF-1 |
 | E-02 | Sara (banned) | Log in | "This account has been disabled…". Her post, reply and comment stay visible, attributed to her | AF-10 |
 | E-03 | Deleted user | Open "Level sensors in a combined sewer network: lessons from the first season" | Author shown as "Deleted user", with no profile link and no initials leak. Login with `kostas.nikolaidis@…` fails | AF-9 |
 | E-04 | Nikola (directory-hidden), viewed by Giulia | Search `/network` for Nikola; open his content's author link | He is absent from the directory. His content stays attributed. His profile page is not found or not listed for others [CHECK] | AF-9 |
@@ -344,7 +344,7 @@ curl -s -c /tmp/uf.jar -H 'Content-Type: application/json' -H 'X-Requested-With:
   `body_html` containing `<script>alert(1)</script><img src=x onerror=alert(1)><a href="javascript:alert(1)">x</a>`
   (plus `title` and `category_id` from `GET /api/v1/categories/`). The stored body has no script,
   no `onerror` and no `javascript:` href. Nothing executes on the post page. Delete the post.
-- [ ] X-S3 **Rate limits** (limits on): eleven wrong-password logins in a row → the 11th is 429
+- [ ] X-S3 **Rate limits** (limits on): eleven wrong-password logins in a row for one account → the 11th is 429 (per-account limit)
   with `Retry-After` and a toast in the UI. Then `docker compose restart backend`.
 - [ ] X-S4 **Session cookie**: in devtools → Application → Cookies, `uf_session` is HttpOnly and
   SameSite=Lax. Secure is off in dev (`COOKIE_SECURE=false`); it **must** be on in prod (verify after M6).

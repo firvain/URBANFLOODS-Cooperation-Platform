@@ -76,6 +76,11 @@ export interface paths {
         /**
          * Verify Email
          * @description Consume a verification token, mark the address verified and sign the user in.
+         *
+         *     Every other unused verification link of the user stops working. A session the browser
+         *     already holds (any account) is revoked first. For an address that is already verified the
+         *     token is spent but nobody is signed in: 400 ``auth.already_verified``, no cookie, an
+         *     existing session untouched (a stray link must not work as a sign-in link).
          */
         post: operations["verify_email_api_v1_auth_verify_email_post"];
         delete?: never;
@@ -121,8 +126,13 @@ export interface paths {
          * Login
          * @description Check email and password and start a session (cookie). Unverified users may sign in.
          *
-         *     A session named by the request's existing cookie is revoked first, so signing in again in the
-         *     same browser does not leave an orphaned active session.
+         *     The session named by the request's existing cookie (whichever account it belongs to) is
+         *     revoked first, so signing in again in the same browser does not leave an orphaned active
+         *     session.
+         *
+         *     Ten failed attempts for one address (registered or not) within 15 minutes, from any number of
+         *     IPs, answer 429 before the password is checked, so even the right password waits; password
+         *     reset still works. A successful sign-in empties the account's count.
          */
         post: operations["login_api_v1_auth_login_post"];
         delete?: never;
@@ -258,7 +268,8 @@ export interface paths {
         /**
          * Reset Password
          * @description Consume a reset token, set the new password, sign out every session and sign this browser
-         *     in. Also marks the address verified and cancels pending email changes.
+         *     in. Also marks the address verified and cancels pending email changes and unused
+         *     verification links. A session the browser holds for another account is revoked too.
          *
          *     Any failure rolls back, so the link stays usable (e.g. after a weak-password 422).
          */
@@ -281,7 +292,7 @@ export interface paths {
         /**
          * Change Password
          * @description Change the password (current one required). Other sessions are signed out; this one
-         *     stays. Pending email changes are cancelled.
+         *     stays. Pending email changes and unused verification links are cancelled.
          */
         post: operations["change_password_api_v1_auth_me_password_post"];
         delete?: never;
@@ -4844,6 +4855,23 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+            /** @description Error */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
         };
     };
     logout_api_v1_auth_logout_post: {
@@ -4974,6 +5002,23 @@ export interface operations {
             };
             /** @description Error */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5361,6 +5406,23 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+            /** @description Error */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
         };
     };
     request_email_change_api_v1_auth_me_email_post: {
@@ -5421,6 +5483,23 @@ export interface operations {
             };
             /** @description Error */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "code": "some.code",
+                     *         "message": "English fallback message."
+                     *       }
+                     *     }
+                     */
+                    "application/json": unknown;
+                };
+            };
+            /** @description Error */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
