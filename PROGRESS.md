@@ -249,6 +249,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 
 - 7k: email tokens, sessions, per-account login limits, raised per-IP budgets (owner's decision for the Sarajevo QR registration); see the board row.
 - 7k CI green on 0d86473 (incl. smoke); the owner gave the go to deploy, but SSH to the server is blocked from the UOWM campus network, so it waited. **Deployed 2026-11-02 10:48** over mobile data (with the rate-limiter fix 33f13e4): health ok, the running container shows the new per-IP limits, KNOWBASE containers unchanged. **Next:** 7l (session cookie refresh, frontend 401 handling); ask the owner before each step.
+- Live check (2026-11-02, Claude driving the owner's Chrome as superadmin, GIF `live-check-7j-restore-keeps-hidden.gif` in the owner's Downloads): queue and bin load; a fake verification link shows the invalid-link message and keeps the session; a `[TEST]` post was created, hidden at once, deleted (bin shows "Was hidden"), restored through the UI (dialog and toast say it stays hidden; admin sees `hidden`/`admin`, visitors 404, not in the public list), then deleted and purged (post id 10; only audit rows remain). Lockout not tried on real accounts.
 
 ### Current state and next steps (updated 2026-11-02, after 7k)
 
