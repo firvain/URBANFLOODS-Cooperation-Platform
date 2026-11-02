@@ -561,7 +561,8 @@ export interface paths {
         };
         /**
          * List Users
-         * @description All accounts (including soft-deleted ones), newest first.
+         * @description Accounts, newest first. Soft-deleted ones are left out unless ``include_deleted=true``
+         *     (deletion also clears ``is_active``, so ``active=false`` alone lists banned accounts).
          */
         get: operations["list_users_api_v1_admin_users__get"];
         put?: never;
@@ -6527,6 +6528,7 @@ export interface operations {
                 verified?: boolean | null;
                 active?: boolean | null;
                 organisation_id?: number | null;
+                include_deleted?: boolean;
                 skip?: number;
                 limit?: number;
             };

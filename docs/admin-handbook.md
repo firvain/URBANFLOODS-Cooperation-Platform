@@ -19,6 +19,10 @@ Last updated: 2026-10-31
 
 Account flags shown on the Users page (`/admin/users`): **verified** (email confirmed),
 **trusted** (posts without review), **active** (false = banned), **deleted** (anonymised).
+Deleted accounts are hidden from the list unless **Show deleted accounts** is switched on
+(`?deleted=1` in the address, so the view can be linked); with it on they are listed with the
+others and marked "Deleted". A deleted account stays reachable by its id, and the **Active**
+filter set to *No* without the switch lists banned accounts only.
 
 ### First superadmin
 

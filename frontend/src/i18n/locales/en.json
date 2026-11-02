@@ -1360,7 +1360,7 @@
     },
     "users": {
       "title": "Users",
-      "intro": "Every account, including banned and deleted ones. Role changes, bans and trust are recorded in the audit log.",
+      "intro": "Every account, including banned ones; deleted accounts are listed only with \"Show deleted accounts\". Role changes, bans and trust are recorded in the audit log.",
       "caption": "User accounts, newest first",
       "empty": "No accounts match these filters.",
       "search": "Search",
@@ -1373,6 +1373,7 @@
       "you": "you",
       "deleted": "Deleted",
       "banned": "Banned",
+      "showDeleted": "Show deleted accounts",
       "menu": "Actions for {name}",
       "actions": {
         "makeAdmin": "Make admin",

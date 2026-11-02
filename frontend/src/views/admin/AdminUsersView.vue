@@ -20,7 +20,8 @@ import { useAdminStore } from '@/stores/admin'
 import { useAuthStore } from '@/stores/auth'
 
 /**
- * Users: every account (search, role and state filters in the URL) with role changes, ban,
+ * Users: the accounts (search, role and state filters in the URL; deleted accounts only with
+ * "Show deleted accounts", `?deleted=1`) with role changes, ban,
  * trust and "resend verification", each confirmed. Actions the API would refuse for the current
  * admin are not offered: superadmin changes need a superadmin, and nobody changes their own role
  * or bans themselves. The last superadmin is protected by the API (`admin.last_superadmin`).
@@ -39,6 +40,7 @@ const { filters, page, setFilters, setPage } = useQueryFilters({
   verified: 'string',
   trusted: 'string',
   active: 'string',
+  deleted: 'string',
 })
 
 /** Select value for "no filter" (reka-ui selects cannot hold an empty string). */
@@ -77,6 +79,12 @@ const roleItems = computed(() => [
   { label: t('admin.common.any'), value: ANY },
   ...ROLES.map((role) => ({ label: t(`admin.role.${role}`), value: role })),
 ])
+/** "Show deleted accounts": off unless `?deleted=1`; the API leaves deleted accounts out. */
+const showDeleted = computed<boolean>({
+  get: () => filters.value.deleted === '1',
+  set: (value) => void setFilters({ deleted: value ? '1' : '' }),
+})
+
 const flagItems = computed(() => [
   { label: t('admin.common.any'), value: ANY },
   { label: t('admin.common.yes'), value: 'true' },
@@ -89,6 +97,7 @@ const params = computed<AdminUserListParams>(() => ({
   verified: asBool(filters.value.verified),
   trusted: asBool(filters.value.trusted),
   active: asBool(filters.value.active),
+  include_deleted: showDeleted.value || undefined,
   skip: (page.value - 1) * ADMIN_PAGE_SIZE,
   limit: ADMIN_PAGE_SIZE,
 }))
@@ -251,6 +260,12 @@ const dialog = computed(() => {
       <UFormField v-for="flag in FLAGS" :key="flag" :label="t(`admin.users.${flag}`)" :name="flag">
         <USelect v-model="flagFilters[flag].value" :items="flagItems" class="w-full" />
       </UFormField>
+      <USwitch
+        v-model="showDeleted"
+        name="deleted"
+        :label="t('admin.users.showDeleted')"
+        class="sm:col-span-2 xl:col-span-5"
+      />
     </section>
 
     <ListState

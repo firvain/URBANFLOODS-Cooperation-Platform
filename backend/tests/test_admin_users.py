@@ -202,9 +202,98 @@ async def test_list_filters(client, db_session, cleanup_users):
     assert response.json()["total"] == 5
 
 
+async def test_list_hides_deleted_accounts_by_default(client, db_session, cleanup_users):
+    """7o: soft-deleted accounts (deletion also clears ``is_active``) are left out of the list
+    and its total unless ``include_deleted=true``; ``active=false`` alone means banned only."""
+    tag = _tag()
+    admin = await _signed_in(client, db_session, cleanup_users, display_name=f"{tag} admin")
+    member = await _committed(db_session, cleanup_users, display_name=f"{tag} member")
+    banned = await _committed(
+        db_session, cleanup_users, display_name=f"{tag} banned", is_active=False
+    )
+    deleted = await _committed(
+        db_session,
+        cleanup_users,
+        display_name=f"{tag} deleted",
+        is_active=False,
+        deleted_at=datetime.now(UTC),
+    )
+
+    async def listed(**params) -> tuple[int, list[int]]:
+        response = await client.get(USERS, params={"q": tag, **params})
+        assert response.status_code == 200, response.text
+        body = response.json()
+        return body["total"], [item["id"] for item in body["items"]]
+
+    assert await listed() == (3, [banned.id, member.id, admin.id])
+    assert await listed(include_deleted="false") == (3, [banned.id, member.id, admin.id])
+    assert await listed(include_deleted="true") == (
+        4,
+        [deleted.id, banned.id, member.id, admin.id],
+    )
+    assert await listed(active="false") == (1, [banned.id])
+    assert await listed(active="false", include_deleted="true") == (2, [deleted.id, banned.id])
+    assert await listed(active="true", include_deleted="true") == (2, [member.id, admin.id])
+    # ``q`` respects the filter.
+    assert await listed(q=deleted.email) == (0, [])
+    assert await listed(q=deleted.email, include_deleted="true") == (1, [deleted.id])
+    # Paging and the total follow the filter too.
+    assert await listed(limit=1) == (3, [banned.id])
+    assert await listed(limit=1, include_deleted="true") == (4, [deleted.id])
+    # The detail stays reachable by id.
+    assert (await client.get(_url(deleted.id))).status_code == 200
+
+
+async def test_list_include_deleted_by_superadmin(client, db_session, cleanup_users):
+    tag = _tag()
+    await _signed_in(
+        client, db_session, cleanup_users, factory=create_superadmin, display_name=f"{tag} sa"
+    )
+    deleted = await _committed(
+        db_session,
+        cleanup_users,
+        display_name=f"{tag} deleted",
+        is_active=False,
+        deleted_at=datetime.now(UTC),
+    )
+
+    response = await client.get(USERS, params={"q": tag, "include_deleted": "true"})
+    assert response.status_code == 200, response.text
+    assert deleted.id in [item["id"] for item in response.json()["items"]]
+    response = await client.get(USERS, params={"q": tag})
+    assert response.status_code == 200, response.text
+    assert deleted.id not in [item["id"] for item in response.json()["items"]]
+
+
+async def test_list_include_deleted_forbidden_for_member(client, db_session, cleanup_users):
+    await _signed_in(client, db_session, cleanup_users, factory=create_verified_user)
+    response = await client.get(USERS, params={"include_deleted": "true"})
+    _assert_error(response, 403, "auth.forbidden")
+
+
+async def test_crud_list_users_include_deleted(db_session):
+    tag = _tag()
+    alive = await create_verified_user(db_session, display_name=f"{tag} alive")
+    gone = await create_verified_user(
+        db_session, display_name=f"{tag} gone", is_active=False, deleted_at=datetime.now(UTC)
+    )
+
+    total, users = await crud_user.list_users(db_session, q=tag)
+    assert (total, [u.id for u in users]) == (1, [alive.id])
+    total, users = await crud_user.list_users(db_session, q=tag, include_deleted=True)
+    assert (total, [u.id for u in users]) == (2, [gone.id, alive.id])
+
+
 @pytest.mark.parametrize(
     "params",
-    [{"limit": 201}, {"limit": 0}, {"skip": -1}, {"role": "owner"}, {"q": "x" * 201}],
+    [
+        {"limit": 201},
+        {"limit": 0},
+        {"skip": -1},
+        {"role": "owner"},
+        {"q": "x" * 201},
+        {"include_deleted": "maybe"},
+    ],
 )
 async def test_list_query_validation(client, db_session, cleanup_users, params):
     await _signed_in(client, db_session, cleanup_users)

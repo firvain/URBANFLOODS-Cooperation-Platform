@@ -43,6 +43,19 @@ const ALL = [MEMBER, ADMIN, SUPER, UNVERIFIED, SELF]
 const a = (key: string) => t(`admin.users.actions.${key}`)
 const menu = (name: string) => t('admin.users.menu', { name })
 const rows = () => tableRows('users')
+
+/** The "Show deleted accounts" switch, found through its visible label. */
+function deletedSwitch(): HTMLElement {
+  const text = t('admin.users.showDeleted')
+  const label = Array.from(document.querySelectorAll('label')).find(
+    (l) => l.textContent?.trim() === text,
+  )
+  expect(label, `label ${text}`).toBeDefined()
+  const el = document.getElementById(label!.getAttribute('for')!)
+  expect(el, `control for ${text}`).not.toBeNull()
+  expect(el!.getAttribute('role')).toBe('switch')
+  return el!
+}
 const lastQuery = (fetchMock: Parameters<typeof callsTo>[0]) =>
   queryOf(callsTo(fetchMock, USERS).at(-1)!.url)
 
@@ -88,6 +101,39 @@ describe('Admin users', () => {
     expect(query.get('trusted')).toBe('true')
     expect(query.get('active')).toBe('true')
     expect(query.get('skip')).toBe('40')
+  })
+
+  it('hides deleted accounts by default: the switch is off and no include_deleted is sent', async () => {
+    const { fetchMock } = await mountAdmin('/admin/users', { [USERS]: reply(200, page(ALL)) })
+    expect(deletedSwitch().getAttribute('aria-checked')).toBe('false')
+    expect(lastQuery(fetchMock).get('include_deleted')).not.toBe('true')
+  })
+
+  it('turning on "Show deleted accounts" requests them and puts it in the URL', async () => {
+    const { fetchMock, router } = await mountAdmin('/admin/users?page=2', {
+      [USERS]: reply(200, page(ALL, 60)),
+    })
+    deletedSwitch().click()
+    await vi.waitFor(() => expect(router.currentRoute.value.query.deleted).toBe('1'))
+    await flushPromises()
+    const query = lastQuery(fetchMock)
+    expect(query.get('include_deleted')).toBe('true')
+    expect(query.get('skip')).toBe('0')
+    expect(deletedSwitch().getAttribute('aria-checked')).toBe('true')
+
+    deletedSwitch().click()
+    await vi.waitFor(() => expect(router.currentRoute.value.query.deleted).toBeUndefined())
+    await flushPromises()
+    expect(lastQuery(fetchMock).get('include_deleted')).not.toBe('true')
+  })
+
+  it('loading with ?deleted=1 starts with deleted accounts shown', async () => {
+    const { fetchMock } = await mountAdmin('/admin/users?deleted=1', {
+      [USERS]: reply(200, page(ALL)),
+    })
+    expect(deletedSwitch().getAttribute('aria-checked')).toBe('true')
+    expect(callsTo(fetchMock, USERS)).toHaveLength(1)
+    expect(lastQuery(fetchMock).get('include_deleted')).toBe('true')
   })
 
   it('typing in the search updates the URL and the request', async () => {

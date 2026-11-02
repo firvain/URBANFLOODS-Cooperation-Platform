@@ -242,7 +242,7 @@ on the KNOWBASE site), so the lookup endpoints currently have no frontend caller
 
 | Method | Path | Who | Limit | Purpose |
 |---|---|---|---|---|
-| GET | `/users/` | admin | – | all accounts incl. deleted ones (filters: `q`, role, verified, trusted, active, organisation_id) |
+| GET | `/users/` | admin | – | accounts, newest first; soft-deleted ones only with `include_deleted=true` (default `false`; the total follows it, and `active=false` alone means banned) (filters: `q`, role, verified, trusted, active, organisation_id, include_deleted) |
 | GET | `/users/{user_id}` | admin | – | one account |
 | PATCH | `/users/{user_id}` | admin | – | change role, active and/or trust (same rules as below) |
 | POST | `/users/{user_id}/promote` | admin (`to=superadmin`: superadmin) | – | raise role |

@@ -157,10 +157,12 @@ async def list_users(
     verified: bool | None = None,
     active: bool | None = None,
     organisation_id: QueryId = None,
+    include_deleted: bool = False,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> AdminUserList:
-    """All accounts (including soft-deleted ones), newest first."""
+    """Accounts, newest first. Soft-deleted ones are left out unless ``include_deleted=true``
+    (deletion also clears ``is_active``, so ``active=false`` alone lists banned accounts)."""
     total, users = await crud_user.list_users(
         db,
         q=q,
@@ -169,6 +171,7 @@ async def list_users(
         verified=verified,
         active=active,
         organisation_id=organisation_id,
+        include_deleted=include_deleted,
         skip=skip,
         limit=limit,
     )

@@ -246,14 +246,18 @@ async def list_users(
     verified: bool | None = None,
     active: bool | None = None,
     organisation_id: int | None = None,
+    include_deleted: bool = False,
     skip: int = 0,
     limit: int = 50,
 ) -> tuple[int, list[User]]:
     """``(total, users)`` for the admin list, newest first, with ``organisation`` and
     ``expertise`` loaded.
-    Includes soft-deleted users. ``q`` is a case-insensitive substring of email or display
-    name."""
+    Soft-deleted users are left out (list and total) unless ``include_deleted``; deletion also
+    clears ``is_active``, so ``active=False`` alone means banned accounts. ``q`` is a
+    case-insensitive substring of email or display name."""
     conditions = []
+    if not include_deleted:
+        conditions.append(User.deleted_at.is_(None))
     if q:
         pattern = f"%{_escape_like(q)}%"
         conditions.append(
