@@ -1,6 +1,6 @@
 # Terms of Use — URBANFLOODS Cooperation Platform
 
-**Version 1 (draft for legal review), 31 October 2026.** This is the text that the platform's
+**Version 1.1 (draft for legal review), 6 November 2026.** This is the text that the platform's
 `/terms` page will show (increment 5e) and that users accept at registration (recorded as
 `terms_version = "v1"` in the audit log). It must be reviewed by the University of Western
 Macedonia's legal office and Data Protection Officer before go-live. Items marked **[CHECK]**
@@ -26,7 +26,7 @@ Contact: Prof. Malamati Louta, Scientific Coordinator, louta@uowm.gr.
 
 ## 2. Acceptance of these terms
 
-By browsing the Platform you accept these Terms of Use. By registering an account you also
+These Terms of Use apply to everyone who uses the Platform. By registering an account you
 confirm that you have read them, that you are at least 16 years old **[CHECK: Greek law sets 15
 as the age of digital consent; choose 15 or 16]**, and that you agree to the Privacy Policy
 (https://cooperation.urbanfloods.app/privacy). If you do not agree, do not use the Platform.
@@ -132,14 +132,9 @@ project partnership and the programme and may not be used to suggest endorsement
 
 ## 11. Privacy
 
-How we process personal data is described in the Privacy Policy. In short: we store the data you
-enter (email, display name, optional organisation, country, language, biography, expertise
-areas), your content, and technical logs needed to run the service securely; we do not use
-analytics or advertising cookies; you can export or delete your data from your account; and UOWM
-is the data controller. The legal basis for processing is your consent at registration and the
-performance of a task carried out in the public interest (the implementation of an EU co-funded
-project). You can decide whether your email address is shown to other members and whether you
-appear in the members directory.
+How we process personal data, and on which legal basis, is described in the Privacy Policy
+(https://cooperation.urbanfloods.app/privacy). UOWM is the data controller. We use no analytics or
+advertising cookies, and you can export or delete your data from your account.
 
 ## 12. Availability, no warranty, liability
 
@@ -191,7 +186,7 @@ of their country of residence.
 
 University of Western Macedonia, URBANFLOODS project, Active Urban Planning Zone (ZEP) I, 50100
 Kozani, Greece. Email: louta@uowm.gr (Prof. Malamati Louta, Scientific Coordinator). Requests about
-personal data (access, rectification, erasure, objection) go to the same address.
+personal data go to the same address or to UOWM's Data Protection Officer at dpo@uowm.gr.
 
 ---
 
@@ -215,6 +210,11 @@ personal data (access, rectification, erasure, objection) go to the same address
   report-based auto-hide; CC BY 4.0 for contributions (plan decision 2026-10-30); anonymising
   deletion that keeps content; no sensitive personal data (application form commitment); no
   analytics cookies, so no cookie banner.
+- **Version 1.1 (6 Nov 2026, increment 7q):** section 2 no longer claims that browsing alone
+  means acceptance; section 11 points to the Privacy Policy instead of restating it (it named
+  consent as the legal basis, which contradicted the policy's contract basis); section 17 names
+  UOWM's DPO. No change to members' obligations, so the recorded `terms_version` stays `v1` and
+  members are not asked to accept again.
 - **Open items:** age threshold (15 per Greek Law 4624/2019
   vs 16); KNOWBASE data licence; whether UOWM wants arbitration or courts; Greek-language version
   (the UI is in 9 languages; the terms can stay English-only with a note, as the programme's own

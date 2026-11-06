@@ -169,6 +169,10 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
   regex for a real `<img src="…<UPLOAD_URL_PREFIX>/<path>">` embed, relative or absolute; 7m).
   No index; fine at current scale.
 - Partner translations not yet confirmed by native speakers.
+- Audit-log retention: sign-in and failed sign-in entries (with the browser description) are kept
+  for the life of the Platform, as the privacy policy (v1.4, §3.2) states. A shorter period for
+  security events (e.g. 12 months, consent and moderation records kept) is the planned next
+  increment (logged 2026-11-06, 7q).
 
 ## Out of scope for code review
 

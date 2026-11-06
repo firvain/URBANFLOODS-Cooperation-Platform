@@ -1,9 +1,9 @@
 # Privacy Policy — URBANFLOODS Cooperation Platform
 
-**Version 1.3 (draft for legal review), 2 November 2026.** This is the text the platform's
+**Version 1.4 (draft for legal review), 6 November 2026.** This is the text the platform's
 `/privacy` page will show (increment 5e). It describes how personal data is processed when you
 use https://cooperation.urbanfloods.app. Items marked **[CHECK]** need confirmation by the
-University of Western Macedonia's legal office before go-live.
+University of Western Macedonia's legal office.
 
 ---
 
@@ -14,9 +14,8 @@ Zone (ZEP) I, 50100 Kozani, Greece, acting as Lead Partner of the project URBANF
 (IPA-ADRION00374), co-funded by the European Union through the Interreg IPA ADRION programme
 2021–2027.
 
-Contact for all questions and requests about personal data: Prof. Malamati Louta, Scientific
-Coordinator, louta@uowm.gr. **[CHECK: whether UOWM's institutional Data Protection Officer must
-also be named, per Greek Law 4624/2019]**
+Contact for questions and requests about personal data: Prof. Malamati Louta, Scientific
+Coordinator, louta@uowm.gr. You can also contact UOWM's Data Protection Officer at dpo@uowm.gr.
 
 ## 2. What this platform is
 
@@ -31,36 +30,33 @@ report on the project to the programme that funds it.
 
 | Data | Purpose | Legal basis | Retention |
 |---|---|---|---|
-| Technical access logs: IP address, date and time, requested page, browser type, referring page | Security, abuse prevention, troubleshooting | Legitimate interest in running a secure service (GDPR art. 6(1)(f)) | Web server logs are rotated and deleted after 14 days. IP addresses are never stored in the platform database. |
-| Rate-limiting counters keyed by a keyed hash of the IP address | Protection against brute-force and abuse | Legitimate interest (art. 6(1)(f)) | In memory only; expire within minutes to hours |
-| Language preference (`locale`) | Show the interface in your language | Strictly necessary to provide the service you asked for | Stored in your browser only (local storage), until you clear it |
+| Web server logs: IP address, date and time, requested page, browser type, referring page | Security, abuse prevention, troubleshooting | Legitimate interest in running a secure service (GDPR art. 6(1)(f)) | Deleted after 14 days. IP addresses are never stored in the platform database. |
+| Short-lived counters derived from the IP address (not the address itself) | Protection against brute-force attempts and abuse | Legitimate interest (art. 6(1)(f)) | In memory only; expire within minutes to hours |
+| Language preference | Show the interface in your language | Strictly necessary to provide the service you asked for | Stored in your browser only, until you clear it |
 
 ### 3.2 Registered members
 
 | Data | Purpose | Legal basis | Retention |
 |---|---|---|---|
-| Email address (verified), password (stored only as an argon2id hash) | Create and secure your account; send verification, password-reset and notification emails | Performance of the agreement you enter by registering (art. 6(1)(b)) | Until you delete your account (then anonymised, section 7). Unverified accounts are deleted automatically after 30 days. |
-| Display name, optional organisation (from the partner list or free text), country, interface language, short biography, expertise areas | Your member profile in the members directory, which only registered, verified members of the Platform can see; suggested collaborators; and attribution of your contributions, which the public sees where you are the author of published content | Performance of the agreement (art. 6(1)(b)); for the directory and email visibility, your choice in the account settings (consent, art. 6(1)(a), which you can withdraw at any time by changing the setting) | Until you delete your account |
-| Your contributions: posts, threads, replies, comments, uploaded images with their descriptions and original file names, links to KNOWBASE items | The purpose of the Platform: knowledge exchange among stakeholders; published under the CC BY 4.0 licence (Terms of Use, section 8) | Performance of the agreement (art. 6(1)(b)) and public interest in the implementation of an EU co-funded project (art. 6(1)(e)) | Kept on the Platform; after account deletion attributed to "Deleted user" (section 7) |
-| Session cookie (`uf_session`, random identifier, HttpOnly, Secure, SameSite=Lax) | Keep you signed in; protect against cross-site request forgery | Strictly necessary for the service you requested (no consent required under the ePrivacy rules) | 30 days of inactivity, or until you sign out or revoke the session from your account page |
-| Session list: creation time, last activity, expiry, browser description (user agent) | Let you see and sign out your devices; security | Performance of the agreement (art. 6(1)(b)) | Expired and revoked sessions are deleted after 7 days. The browser description of each sign-in also stays in the audit log (section 7). |
-| Audit log: time-stamped record of actions on your account and content (registration and consent, verification, sign-in and failed sign-in, profile and settings changes, password and email changes, moderation decisions about your content, data export, deletion) | Security, accountability of moderation, evidence of your consent, and project reporting | Legitimate interest (art. 6(1)(f)) and legal obligation to keep records for the funded project (art. 6(1)(c)) | For the life of the Platform and the statutory retention period of the Interreg IPA ADRION programme **[CHECK: retention per the subsidy contract]**. Audit entries never contain passwords, tokens or IP addresses. |
-| Notification preferences | Send you only the emails you want | Performance of the agreement (art. 6(1)(b)) | Until you delete your account |
+| Account: email address (verified), password (stored only in hashed form), notification settings | Create and secure your account; send verification, password-reset and the notification emails you chose | Performance of the agreement you enter by registering (art. 6(1)(b)) | Until you delete your account (section 7). Unverified accounts are deleted after 30 days. |
+| Profile: display name, optional organisation, optional profile picture, country, interface language, short biography, expertise areas | Your entry in the members directory, which only signed-in, verified members can see; suggested collaborators; the author details shown with your published contributions (display name, organisation, profile picture) | Performance of the agreement (art. 6(1)(b)); the directory listing and the visibility of your email address are your choice in the account settings (consent, art. 6(1)(a), which you can withdraw at any time by changing the setting) | Until you delete your account |
+| Your contributions: posts, threads, replies, comments, uploaded images, links to KNOWBASE items | The purpose of the Platform: knowledge exchange among stakeholders; published under the CC BY 4.0 licence (Terms of Use, section 8) | Performance of the agreement (art. 6(1)(b)) and public interest in the implementation of an EU co-funded project (art. 6(1)(e)) | Kept on the Platform; after account deletion attributed to "Deleted user" (section 7) |
+| Sign-in: a session cookie (`uf_session`) that keeps you signed in, and the list of your active sessions with a description of each browser, so you can sign out other devices | Keep you signed in; account security | Strictly necessary for the service you requested (no consent required under the ePrivacy rules); performance of the agreement (art. 6(1)(b)) | The cookie expires after 30 days of inactivity or when you sign out; ended sessions are deleted after 7 days |
+| Audit log: a time-stamped record of actions on your account and content (registration and acceptance of the terms, verification, sign-ins and failed sign-ins, changes to your profile, settings, password or email address, moderation decisions about your content, data export, deletion). Sign-in entries include the browser description. | Security, accountability of moderation, evidence of your consent, project reporting | Legitimate interest (art. 6(1)(f)); for consent and moderation records also the record-keeping obligations of the funded project (art. 6(1)(c)) | For the life of the Platform and the retention period of the Interreg IPA ADRION programme **[CHECK: retention per the subsidy contract]**. The audit log never contains passwords or IP addresses. |
 | Reports you make about content, and reports made about your content | Moderation | Legitimate interest in keeping the Platform safe (art. 6(1)(f)) | For the life of the Platform |
 
 ### 3.3 Admins (project partners)
 
-Members with the admin role additionally appear as the actor of moderation and user-management
-actions in the audit log. The exported data of another member never reveals which admin acted.
+Members with the admin role also appear in the audit log as the person who took moderation and
+user-management actions.
 
-### 3.4 Bot check at registration
+### 3.4 Bot check
 
 To keep out automated sign-ups, the registration, resend-verification and password-reset forms use
-**Cloudflare Turnstile**. Turnstile analyses browser signals to decide whether the request comes
-from a person; it sets no tracking cookie in normal operation. Cloudflare's processing is described
-in its privacy policy (https://www.cloudflare.com/privacypolicy/). Legal basis: legitimate interest
-in preventing abuse (art. 6(1)(f)). **[CHECK: confirm Turnstile is enabled in production; if it is
-not, delete this section]**
+**Cloudflare Turnstile**, which checks browser signals to tell people from bots. It sets no
+tracking cookie in normal operation. Cloudflare's processing is described in its privacy policy
+(https://www.cloudflare.com/privacypolicy/). Legal basis: legitimate interest in preventing abuse
+(art. 6(1)(f)).
 
 ## 4. Data we do not collect
 
@@ -69,10 +65,9 @@ not, delete this section]**
   committed in its application not to process such data, and the Terms of Use prohibit posting it
   about yourself or others.
 - No analytics, advertising or tracking cookies, and no social-media plug-ins. The only cookie set
-  by the Platform is the session cookie listed above. No cookie banner is shown because no
-  consent-based cookie exists.
+  by the Platform is the session cookie, so no cookie banner is needed.
 - No profiling or automated decision-making with legal or similarly significant effects. The
-  "suggested collaborators" list simply matches expertise areas you chose to publish.
+  "suggested collaborators" list simply matches the expertise areas members chose to show.
 
 ## 5. Who receives the data
 
@@ -83,25 +78,21 @@ not, delete this section]**
   through Cloudflare's network) and the Turnstile bot check. Cloudflare acts as a processor under
   its data processing addendum; transfers outside the EU are covered by the EU Standard Contractual
   Clauses and the EU-US Data Privacy Framework. **[CHECK: Cloudflare account holder and DPA]**
-- **Sendinblue SAS (Brevo), France:** transactional emails (verification, password reset, email
-  change, notifications, moderation decisions, admin digests) are sent through Brevo's email relay
-  from the address noreply@cooperation.urbanfloods.app; replies go to urbanfloods@uowm.gr. Brevo
-  processes the recipient address, the subject, the message content and delivery logs (sent,
-  delivered, bounced) as a processor under its data processing agreement, on servers in the
-  European Union. Brevo keeps this data for the period set in its terms **[CHECK: Brevo log and
-  message retention period; Brevo DPA accepted by the account holder]**.
+- **Brevo (Sendinblue SAS), France:** sends the Platform's emails (verification, password reset,
+  notifications, moderation decisions). Brevo processes the recipient address, the message and
+  delivery records as a processor under its data processing agreement, on servers in the European
+  Union. **[CHECK: Brevo log and message retention period; Brevo DPA accepted by the account
+  holder]**
 - **Project partners:** admins from the URBANFLOODS partner organisations see member profiles and
-  content in the course of moderation. Aggregated, non-identifying statistics (numbers of members by
-  country and organisation, numbers of contributions) are reported to the Interreg IPA ADRION
-  programme as output indicators. Your name is not reported unless you are an admin acting on
-  behalf of a partner.
-- **Registered members:** your display name, organisation, country, biography and expertise
-  areas are visible to registered, verified members of the Platform through the members directory
-  and your profile when you appear in the directory. Your email address is shown to other members
-  only if you switch that on.
-- **Public:** your contributions are public by design once published, together with the author
-  details shown with them (such as your display name). The members directory and the member
-  profile pages are not public; they are shown to registered, verified members only.
+  content in the course of moderation. Aggregated statistics that identify no one (numbers of
+  members by country and organisation, numbers of contributions) are reported to the Interreg IPA
+  ADRION programme. Your name is not reported unless you are an admin acting for a partner.
+- **Registered members:** if you appear in the members directory, signed-in, verified members can
+  see your display name, organisation, country, biography and expertise areas. Your email address
+  is shown to other members only if you switch that on.
+- **Public:** your contributions are public once published, together with the author details
+  shown with them (display name, organisation and profile picture). The members directory and
+  member profiles are not public.
 - **Authorities:** we disclose data when required by law, a court or a competent authority,
   including programme audit and control bodies.
 
@@ -109,42 +100,32 @@ We do not sell personal data and do not use it for marketing.
 
 ## 6. Security
 
-Passwords are hashed with argon2id and never stored in clear. Sessions use random tokens stored
-only as hashes. All traffic is encrypted (HTTPS). Access to the server is restricted to the
-technical team by key-based authentication. Content you submit is sanitised to prevent script
-injection. Every security-relevant action is written to the audit log. The database is backed up
-regularly; backups are kept for 14 days **[CHECK]**.
+Passwords and sign-in tokens are stored only in hashed form. All traffic is encrypted (HTTPS).
+Access to the server is restricted to the technical team. Text you submit is cleaned of anything
+that could run code in other people's browsers. Security-relevant actions are recorded in the
+audit log. The database is backed up every night, and backups are kept for 14 days.
 
-## 7. How long we keep data, and what happens when you delete your account
+## 7. Deleting your account, and how long we keep data
 
-- You can delete your account at any time from your account settings. Deletion is immediate and
-  anonymising: your email address, display name, organisation, country, biography, expertise and
-  settings are erased, your password hash is removed, your profile picture is removed, and all
-  your sessions and pending email links (including a new address you had asked to switch to) are
-  cancelled. Images you uploaded are deleted from the server at the same time, unless one of your
-  own kept contributions uses them (as its cover or within its text). An image of yours that
-  another member placed in their contribution is deleted too; their contribution then shows it as
-  missing.
-- Your contributions remain on the Platform under the CC BY 4.0 licence you granted when posting,
+- You can delete your account at any time from your account settings. Deletion takes effect
+  immediately: your email address, name, profile, settings, password and profile picture are
+  erased, and you are signed out everywhere.
+- Your contributions stay on the Platform under the CC BY 4.0 licence you granted when posting,
   attributed to "Deleted user", so that discussions other members took part in stay intact. Images
-  that are part of one of your kept contributions stay with it, including their original file
-  name. If you want particular contributions removed as well, say so when deleting or write to us;
-  an admin can remove a contribution permanently, together with the images only it used, unless we
-  are legally required to keep it.
-- Audit log entries about the deleted account are kept for accountability and project reporting.
-  They contain no name, email address or IP address; entries about sign-ins keep the browser
-  description recorded at the time.
-- Unverified accounts are deleted automatically 30 days after registration.
-- Email tokens expire after 1 to 48 hours and are deleted 7 days after expiry. A pending request
-  to change your email address holds the new address until it is confirmed or expires; it is not
-  part of the data export.
+  you uploaded are deleted, except those used in your own contributions that stay. If you want
+  particular contributions removed as well, say so when deleting or write to us; we will remove
+  them unless we are legally required to keep them.
+- Audit log entries about a deleted account are kept (section 3.2). They contain no name, email
+  address or IP address.
+- Unverified accounts are deleted automatically 30 days after registration. Links sent by email
+  expire within 48 hours at most.
 
 ## 8. Your rights
 
 Under the GDPR you have the right to:
 
 - **access** your data: your account page offers a one-click **export** of everything we hold about
-  you in a machine-readable JSON file;
+  you in a machine-readable file;
 - **rectify** it: edit your profile and settings yourself at any time;
 - **erase** it: delete your account yourself (section 7), or ask us;
 - **restrict** or **object** to processing based on legitimate interest or public interest;
@@ -154,8 +135,8 @@ Under the GDPR you have the right to:
 - **lodge a complaint** with a supervisory authority, in Greece the Hellenic Data Protection
   Authority (https://www.dpa.gr), or with the authority of your country of residence.
 
-To exercise a right that the account page does not cover, write to louta@uowm.gr. We answer within
-one month.
+To exercise a right that the account page does not cover, write to louta@uowm.gr or to UOWM's Data
+Protection Officer at dpo@uowm.gr. We answer within one month.
 
 ## 9. International transfers
 
@@ -177,14 +158,6 @@ We may update this policy to reflect changes in the Platform, the law or the pro
 version and its date are always shown here; material changes are announced on the Platform and by
 email to registered members.
 
-## 12. Funding statement
-
-The project is co-funded by the European Union through the Interreg IPA ADRION programme. This
-Platform has been produced with the financial assistance of the European Union. Its content is the
-sole responsibility of the University of Western Macedonia and can under no circumstances be
-regarded as reflecting the position of the European Union and/or the IPA ADRION programme
-authorities.
-
 ---
 
 ## Notes for the reviewer (not part of the policy)
@@ -192,23 +165,28 @@ authorities.
 - Version 1.1 (31 Oct 2026) adds what deletion does to images and pending email changes, after the export/deletion increment 1i-b.
 - Version 1.2 (31 Oct 2026) replaces Google (Gmail) with Brevo (Sendinblue SAS, France, EU
   hosting) as the email processor (section 5) and updates the transfers (section 9). The sender is
-  noreply@cooperation.urbanfloods.app (a project-controlled domain with DKIM); a uowm.gr sender
-  would need the UOWM NOC because of the university's DMARC policy. It also records that the
-  members directory is no longer public: profile details in it are visible to registered,
-  verified members only (sections 3.2 and 5); the public sees only the author details shown with
-  published content.
+  noreply@cooperation.urbanfloods.app (a project-controlled domain with DKIM); replies go to
+  urbanfloods@uowm.gr; a uowm.gr sender would need the UOWM NOC because of the university's DMARC
+  policy. It also records that the members directory is no longer public.
 - Version 1.3 (2 Nov 2026) states that the images a member uploaded belong to them: deleting the
   account deletes them unless one of the member's own kept contributions uses them, even when
-  another member placed them in their content (owner's decision, increment 7m; before, any
-  contribution kept an image).
-- Everything stated here is implemented in the code as of 31 Oct 2026: argon2id hashing, hashed
-  session tokens, HttpOnly/Secure/SameSite cookie, 30-day sliding sessions, 7-day cleanup of expired
-  sessions and tokens, no IPs in the database, HMAC-hashed IPs in rate-limit logs, audit log without
-  secrets, self-service export and anonymising deletion, directory and email visibility switches,
-  no analytics. The 30-day purge of unverified accounts and the backup retention are scheduled for
-  M4/M6 and must exist before go-live.
+  another member placed them in their content (owner's decision, increment 7m).
+- Version 1.4 (6 Nov 2026, increment 7q) names UOWM's Data Protection Officer (dpo@uowm.gr, as
+  published on uowm.gr's personal data protection page; required by GDPR art. 13(1)(b) because
+  UOWM is a public body with a mandatory DPO, art. 37(1)(a)). Same substance otherwise, in plainer
+  words: implementation detail removed (hashing algorithm, cookie attributes, keyed IP hashes,
+  token lifetimes, image edge cases on deletion, original file names, which admin appears in an
+  export); the session-list and notification rows merged into others; the EU funding statement
+  removed (it is in the site footer and the Terms of Use). The audit-log legal basis now limits
+  art. 6(1)(c) to consent and moderation records. Confirmed and closed: Turnstile is on in
+  production; backups run nightly with 14-day retention; host nginx logs rotate after 14 days;
+  the 30-day purge of unverified accounts runs.
+- **Known gap (next increment):** sign-in and failed sign-in audit entries, with the browser
+  description, are kept for the life of the Platform. Storage limitation suggests a shorter period
+  (e.g. 12 months) for security events while consent and moderation records keep the programme
+  retention. Changing it needs code; section 3.2 states the current practice until then.
 - Modelled on the IPA ADRION programme's own privacy policy (controller, legal bases, retention per
   data type, rights, named processors) and the structure of Interreg Euro-MED project notices.
-- Open items: DPO naming; audit-log retention per the subsidy contract; hosting description;
-  Cloudflare and Brevo DPAs on file; Brevo retention period and sub-processors; age threshold;
-  Greek-language version.
+- Open items: audit-log retention per the subsidy contract; hosting description; Cloudflare and
+  Brevo DPAs on file; Brevo retention period and sub-processors; age threshold; Greek-language
+  version.

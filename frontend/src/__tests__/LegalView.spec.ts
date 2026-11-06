@@ -88,8 +88,9 @@ describe('prepareLegalDocument', () => {
       expect(markdown).not.toContain('Notes for the reviewer')
       expect(markdown).not.toMatch(/increment/i)
       expect(version).toBe('1')
-      // The privacy policy was revised on 2 Nov 2026 (v1.3, 7m); the other texts are unchanged.
-      expect(date).toBe(raw === privacyMd ? '2 November 2026' : '31 October 2026')
+      // Terms and privacy policy revised on 6 Nov 2026 (7q); the other texts are unchanged.
+      const revised = raw === privacyMd || raw === termsMd
+      expect(date).toBe(revised ? '6 November 2026' : '31 October 2026')
     }
   })
 })
@@ -160,7 +161,7 @@ describe('LegalView: terms', () => {
     const wrapper = await mountLegal('terms')
     const caption = wrapper.find('[data-testid="legal-version"]')
     expect(caption.text()).toContain('Version 1')
-    expect(caption.text()).toContain('31 October 2026')
+    expect(caption.text()).toContain('6 November 2026')
   })
 
   it('renders the terms without any reviewer material', async () => {
@@ -232,7 +233,7 @@ describe('LegalView: privacy', () => {
     expect(wrapper.find('h1').text()).toBe('Privacy Policy')
     const tables = wrapper.findAll('.legal-prose table')
     expect(tables.length).toBeGreaterThanOrEqual(2)
-    expect(tables.some((table) => table.text().includes('Session cookie'))).toBe(true)
+    expect(tables.some((table) => /session cookie/i.test(table.text()))).toBe(true)
     for (const table of tables) {
       expect(table.element.parentElement!.classList.contains('overflow-x-auto')).toBe(true)
     }
@@ -241,7 +242,8 @@ describe('LegalView: privacy', () => {
     expect(text).toContain('Hellenic Data Protection Authority')
     expect(text).not.toContain('[CHECK')
     expect(text).not.toContain('Notes for the reviewer')
-    expect(wrapper.find('[data-testid="legal-version"]').text()).toContain('2 November 2026')
+    expect(text).toContain('dpo@uowm.gr')
+    expect(wrapper.find('[data-testid="legal-version"]').text()).toContain('6 November 2026')
   })
 
   it('lists the privacy sections in the table of contents', async () => {
