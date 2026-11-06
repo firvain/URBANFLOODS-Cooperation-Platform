@@ -29,6 +29,11 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
 - **Published content is publicly readable.** The AF says "upon registration"; the platform reads
   that as registration for taking part (posting, commenting, reporting, the members directory),
   with reading open for dissemination and FAIR reuse (PLAN "Access model").
+- **Records and the Platform are kept until 31 August 2032** (five years after the project ends,
+  subsidy contract; owner 2026-11-06). Per-member consent and moderation audit rows and reports
+  are kept until then on legitimate interest, not art. 6(1)(c): the programme gave no direction on
+  whether they count as supporting documents (privacy policy v1.6). Deletion at that date is a
+  dated manual task (`docs/deployment.md` §11), not code yet.
 - **All contributions are CC BY 4.0**, replies and comments included, not only blog posts (Terms
   §8; plan decision 2026-10-30, confirmed by the owner 2026-11-06).
 - **The legal contact is the Scientific Coordinator's own address**, not the shared

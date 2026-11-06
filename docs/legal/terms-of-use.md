@@ -1,6 +1,6 @@
 # Terms of Use — URBANFLOODS Cooperation Platform
 
-**Version 1.1 (draft for legal review), 6 November 2026.** This is the text that the platform's
+**Version 1.2 (draft for legal review), 6 November 2026.** This is the text that the platform's
 `/terms` page will show (increment 5e) and that users accept at registration (recorded as
 `terms_version = "v1"` in the audit log). It must be reviewed by the University of Western
 Macedonia's legal office and Data Protection Officer before go-live. Items marked **[CHECK]**
@@ -138,8 +138,8 @@ advertising cookies, and you can export or delete your data from your account.
 
 ## 12. Availability, no warranty, liability
 
-The Platform is provided "as is" and "as available". We aim to keep it running during and after
-the project, but we do not guarantee uninterrupted or error-free operation, and we may suspend it
+The Platform is provided "as is" and "as available". We will keep it running during the project
+and at least until 31 August 2032, five years after the project ends, but we do not guarantee uninterrupted or error-free operation, and we may suspend it
 for maintenance or security reasons. To the extent permitted by law, UOWM, the URBANFLOODS
 partners, the Interreg IPA ADRION programme authorities and the European Union are not liable for
 any direct or indirect loss arising from the use of, or inability to use, the Platform or from
@@ -215,6 +215,10 @@ personal data go to the same address or to UOWM's Data Protection Officer at dpo
   consent as the legal basis, which contradicted the policy's contract basis); section 17 names
   UOWM's DPO. No change to members' obligations, so the recorded `terms_version` stays `v1` and
   members are not asked to accept again.
+- **Version 1.2 (6 Nov 2026, increment 7s):** section 12 states the durability commitment
+  (online at least until 31 August 2032, five years after the project ends, owner's answer on
+  the subsidy contract) instead of "we aim to keep it running". No new obligation for members,
+  so `terms_version` stays `v1`.
 - **Open items:** age threshold (15 per Greek Law 4624/2019
   vs 16); KNOWBASE data licence; whether UOWM wants arbitration or courts; Greek-language version
   (the UI is in 9 languages; the terms can stay English-only with a note, as the programme's own

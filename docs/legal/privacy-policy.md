@@ -1,6 +1,6 @@
 # Privacy Policy — URBANFLOODS Cooperation Platform
 
-**Version 1.5 (draft for legal review), 6 November 2026.** This is the text the platform's
+**Version 1.6 (draft for legal review), 6 November 2026.** This is the text the platform's
 `/privacy` page will show (increment 5e). It describes how personal data is processed when you
 use https://cooperation.urbanfloods.app. Items marked **[CHECK]** need confirmation by the
 University of Western Macedonia's legal office.
@@ -43,8 +43,8 @@ report on the project to the programme that funds it.
 | Your contributions: posts, threads, replies, comments, uploaded images, links to KNOWBASE items | The purpose of the Platform: knowledge exchange among stakeholders; published under the CC BY 4.0 licence (Terms of Use, section 8) | Performance of the agreement (art. 6(1)(b)) and public interest in the implementation of an EU co-funded project (art. 6(1)(e)) | Kept on the Platform; after account deletion attributed to "Deleted user" (section 7) |
 | Sign-in: a session cookie (`uf_session`) that keeps you signed in, and the list of your active sessions with a description of each browser, so you can sign out other devices | Keep you signed in; account security | Strictly necessary for the service you requested (no consent required under the ePrivacy rules); performance of the agreement (art. 6(1)(b)) | The cookie expires after 30 days of inactivity or when you sign out; ended sessions are deleted after 7 days |
 | Audit log, security events: sign-ins and failed sign-ins (with the browser description), sign-outs, ended sessions, password and email address changes and requests for them | Account security: detecting misuse and answering questions about activity on your account | Legitimate interest (art. 6(1)(f)) | Deleted automatically after 12 months |
-| Audit log, other records: registration and acceptance of the terms, verification, changes to your profile and settings (including your directory and email visibility choices), your contributions, moderation decisions about your content, data export, account deletion | Accountability of moderation, evidence of your consent, project reporting | Legitimate interest (art. 6(1)(f)); for consent and moderation records also the record-keeping obligations of the funded project (art. 6(1)(c)) | For the life of the Platform and the retention period of the Interreg IPA ADRION programme **[CHECK: retention per the subsidy contract]**. The audit log never contains passwords or IP addresses. |
-| Reports you make about content, and reports made about your content | Moderation | Legitimate interest in keeping the Platform safe (art. 6(1)(f)) | For the life of the Platform |
+| Audit log, other records: registration and acceptance of the terms, verification, changes to your profile and settings (including your directory and email visibility choices), your contributions, moderation decisions about your content, data export, account deletion | Accountability of moderation, evidence of your consent (GDPR art. 7(1)), project reporting and audits of the funded project | Legitimate interest (art. 6(1)(f)) | Until 31 August 2032, five years after the project ends (the period for which the project keeps its records), then deleted. The audit log never contains passwords or IP addresses. |
+| Reports you make about content, and reports made about your content | Moderation | Legitimate interest in keeping the Platform safe (art. 6(1)(f)) | Until 31 August 2032, like the audit records above |
 
 ### 3.3 Admins (project partners)
 
@@ -189,8 +189,16 @@ email to registered members.
   records because they hold the directory and email visibility choices (consent evidence). The
   sign-in count in the admin statistics export is therefore reliable for the last 12 months only;
   export it at the end of each reporting period. The first deletions happen around 31 October 2027.
+- Version 1.6 (6 Nov 2026, increment 7s): owner's answers on the subsidy contract. Project
+  records are kept, and the Platform stays online, until five years after the project ends
+  (project period 01/09/2024–31/08/2027, so 31 August 2032). There is no direction on whether the
+  per-member audit records count as project supporting documents, so they are kept until that
+  date (the cautious choice) but no longer claim art. 6(1)(c): the basis is legitimate interest
+  (moderation accountability, demonstrating consent under art. 7(1), programme audits). Reports
+  get the same end date instead of "the life of the Platform". Nothing deletes them yet: that is a
+  dated task for 2032 (review notes, deployment runbook).
 - Modelled on the IPA ADRION programme's own privacy policy (controller, legal bases, retention per
   data type, rights, named processors) and the structure of Interreg Euro-MED project notices.
-- Open items: audit-log retention per the subsidy contract; hosting description; Cloudflare and
+- Open items: hosting description; Cloudflare and
   Brevo DPAs on file; Brevo retention period and sub-processors; age threshold; Greek-language
   version.

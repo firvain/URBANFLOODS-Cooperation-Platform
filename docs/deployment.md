@@ -300,3 +300,11 @@ sudo ~/URBANFLOODS-Cooperation-Platform/docker/nginx-catch-all.sh --undo   # res
 | TLS certificate | `/etc/letsencrypt/live/cooperation.urbanfloods.app/` (certbot) |
 | Logs | `docker compose ... logs <service>`; `/var/log/nginx/cooperation.urbanfloods.app.{access,error}.log` |
 | KNOWBASE (do not touch) | `urbanfloods-knowbase-*-prod`, 127.0.0.1:3001/8001, site `knowbase.urbanfloods.app` |
+
+## 11. Dated obligations
+
+| When | What | Why |
+|---|---|---|
+| End of each reporting period | Download the stats CSV (`/admin`, reporting export) for the period and keep it with the progress report | sign-in rows are deleted after 12 months (7r), so older `logged_in` counts cannot be rebuilt |
+| Until 31 August 2032 | Keep the Platform online | durability: five years after the project ends (31/08/2027), per the subsidy contract; Terms of Use §12 |
+| 31 August 2032 | Delete the audit-log rows and reports older than the project's retention, or the whole database if the Platform closes (backups expire 14 days later) | Privacy Policy §3.2 promises deletion at that date; nothing does it automatically yet (build a maintenance step or run a reviewed one-off before then) |

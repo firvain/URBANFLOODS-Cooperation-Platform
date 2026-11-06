@@ -130,7 +130,8 @@ contribution = published post, thread, reply or comment).
 
 ## 10. Sustainability plan
 
-- Operation after 31/08/2027: owner `[CHECK: UOWM]`, minimum admin team (at least two
+- Operation after 31/08/2027, at least until 31/08/2032 (five years after the project ends, per
+  the subsidy contract): owner `[CHECK: UOWM]`, minimum admin team (at least two
   superadmins and admins from several partners) `[TBD names/organisations]`.
 - Low-attention moderation: daily or weekly admin digest; report auto-hide;
   `AUTO_APPROVE_AFTER_DAYS` safety valve `[CHECK: agreed value]`.
