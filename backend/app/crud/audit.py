@@ -4,16 +4,32 @@ Secrets never belong in the audit log. As a defensive measure, any metadata key 
 ``password``, ``token`` or ``secret`` part (split on ``_``/``-``/``.``/space, case-insensitive,
 e.g. ``password``, ``new_password``, ``reset_token``, ``client-secret``) is dropped at any depth
 before storage, and a warning naming the dropped keys (never the values) is logged.
+
+Retention (7r): audit rows are kept for good, except the *security events* in
+``SECURITY_AUDIT_ACTIONS``, which the maintenance step ``audit_retention`` deletes once they are
+older than ``SECURITY_AUDIT_RETENTION_DAYS`` (``purge_security_events``). The list is an explicit
+allow-list: an action not named there is never deleted, so a new action is kept until someone
+decides otherwise.
+
+- Deleted after the retention period: sign-ins and sign-outs, failed attempts, revoked sessions,
+  reset and verification requests, and password and email changes. They serve to investigate
+  abuse of an account, which needs months, not years.
+- Kept: ``auth.register``, ``auth.consent``, ``auth.email_verified``, ``auth.profile_updated``
+  and ``auth.notifications_updated`` (they record the member's consent and their
+  directory/email-visibility choices, the evidence for them), ``auth.data_exported`` and
+  ``auth.account_deleted`` (data-subject requests), and every ``moderation.*``, ``report.*``,
+  ``admin.*``, content and ``maintenance.*`` row (the accountability trail).
 """
 
 from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any
 
 import structlog
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -21,6 +37,27 @@ from app.db.models import AuditLog
 
 SENSITIVE_KEY_PARTS = frozenset({"password", "token", "secret"})
 _KEY_SPLIT = re.compile(r"[_\-.\s]+")
+
+# Deleted after ``SECURITY_AUDIT_RETENTION_DAYS``; everything else is kept (module docstring).
+# Widening this list deletes more of the audit trail: a deliberate, reviewed change.
+SECURITY_AUDIT_ACTIONS: frozenset[str] = frozenset(
+    {
+        "auth.login",
+        "auth.login_failed",
+        "auth.logout",
+        "auth.session_revoked",
+        "auth.password_reset_requested",
+        "auth.verification_resent",
+        "auth.password_change_failed",
+        "auth.email_change_failed",
+        "auth.email_change_blocked",
+        "auth.delete_failed",
+        "auth.password_changed",
+        "auth.password_reset",
+        "auth.email_change_requested",
+        "auth.email_changed",
+    }
+)
 
 log = structlog.get_logger(__name__)
 
@@ -78,6 +115,22 @@ async def log_action(
     db.add(entry)
     await db.flush()
     return entry
+
+
+async def purge_security_events(db: AsyncSession, *, cutoff: datetime, limit: int) -> int:
+    """Delete at most ``limit`` security events (``SECURITY_AUDIT_ACTIONS``) created before
+    ``cutoff``, oldest first, in one statement. Returns the number deleted."""
+    due = (
+        select(AuditLog.id)
+        .where(AuditLog.action.in_(sorted(SECURITY_AUDIT_ACTIONS)), AuditLog.created_at < cutoff)
+        .order_by(AuditLog.created_at, AuditLog.id)
+        .limit(limit)
+        .scalar_subquery()
+    )
+    result = await db.execute(
+        delete(AuditLog).where(AuditLog.id.in_(due)).execution_options(synchronize_session=False)
+    )
+    return result.rowcount or 0
 
 
 def _escape_like(value: str) -> str:

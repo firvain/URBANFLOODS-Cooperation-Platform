@@ -1,6 +1,6 @@
 # Privacy Policy — URBANFLOODS Cooperation Platform
 
-**Version 1.4 (draft for legal review), 6 November 2026.** This is the text the platform's
+**Version 1.5 (draft for legal review), 6 November 2026.** This is the text the platform's
 `/privacy` page will show (increment 5e). It describes how personal data is processed when you
 use https://cooperation.urbanfloods.app. Items marked **[CHECK]** need confirmation by the
 University of Western Macedonia's legal office.
@@ -42,7 +42,8 @@ report on the project to the programme that funds it.
 | Profile: display name, optional organisation, optional profile picture, country, interface language, short biography, expertise areas | Your entry in the members directory, which only signed-in, verified members can see; suggested collaborators; the author details shown with your published contributions (display name, organisation, profile picture) | Performance of the agreement (art. 6(1)(b)); the directory listing and the visibility of your email address are your choice in the account settings (consent, art. 6(1)(a), which you can withdraw at any time by changing the setting) | Until you delete your account |
 | Your contributions: posts, threads, replies, comments, uploaded images, links to KNOWBASE items | The purpose of the Platform: knowledge exchange among stakeholders; published under the CC BY 4.0 licence (Terms of Use, section 8) | Performance of the agreement (art. 6(1)(b)) and public interest in the implementation of an EU co-funded project (art. 6(1)(e)) | Kept on the Platform; after account deletion attributed to "Deleted user" (section 7) |
 | Sign-in: a session cookie (`uf_session`) that keeps you signed in, and the list of your active sessions with a description of each browser, so you can sign out other devices | Keep you signed in; account security | Strictly necessary for the service you requested (no consent required under the ePrivacy rules); performance of the agreement (art. 6(1)(b)) | The cookie expires after 30 days of inactivity or when you sign out; ended sessions are deleted after 7 days |
-| Audit log: a time-stamped record of actions on your account and content (registration and acceptance of the terms, verification, sign-ins and failed sign-ins, changes to your profile, settings, password or email address, moderation decisions about your content, data export, deletion). Sign-in entries include the browser description. | Security, accountability of moderation, evidence of your consent, project reporting | Legitimate interest (art. 6(1)(f)); for consent and moderation records also the record-keeping obligations of the funded project (art. 6(1)(c)) | For the life of the Platform and the retention period of the Interreg IPA ADRION programme **[CHECK: retention per the subsidy contract]**. The audit log never contains passwords or IP addresses. |
+| Audit log, security events: sign-ins and failed sign-ins (with the browser description), sign-outs, ended sessions, password and email address changes and requests for them | Account security: detecting misuse and answering questions about activity on your account | Legitimate interest (art. 6(1)(f)) | Deleted automatically after 12 months |
+| Audit log, other records: registration and acceptance of the terms, verification, changes to your profile and settings (including your directory and email visibility choices), your contributions, moderation decisions about your content, data export, account deletion | Accountability of moderation, evidence of your consent, project reporting | Legitimate interest (art. 6(1)(f)); for consent and moderation records also the record-keeping obligations of the funded project (art. 6(1)(c)) | For the life of the Platform and the retention period of the Interreg IPA ADRION programme **[CHECK: retention per the subsidy contract]**. The audit log never contains passwords or IP addresses. |
 | Reports you make about content, and reports made about your content | Moderation | Legitimate interest in keeping the Platform safe (art. 6(1)(f)) | For the life of the Platform |
 
 ### 3.3 Admins (project partners)
@@ -181,10 +182,13 @@ email to registered members.
   art. 6(1)(c) to consent and moderation records. Confirmed and closed: Turnstile is on in
   production; backups run nightly with 14-day retention; host nginx logs rotate after 14 days;
   the 30-day purge of unverified accounts runs.
-- **Known gap (next increment):** sign-in and failed sign-in audit entries, with the browser
-  description, are kept for the life of the Platform. Storage limitation suggests a shorter period
-  (e.g. 12 months) for security events while consent and moderation records keep the programme
-  retention. Changing it needs code; section 3.2 states the current practice until then.
+- Version 1.5 (6 Nov 2026, increment 7r) splits the audit log in section 3.2: security events
+  (the 14 actions in `SECURITY_AUDIT_ACTIONS`, `backend/app/crud/audit.py`) are deleted by the
+  nightly maintenance step `audit_retention` after `SECURITY_AUDIT_RETENTION_DAYS` (365); all other
+  entries keep the programme retention. Profile and notification changes stay with the other
+  records because they hold the directory and email visibility choices (consent evidence). The
+  sign-in count in the admin statistics export is therefore reliable for the last 12 months only;
+  export it at the end of each reporting period. The first deletions happen around 31 October 2027.
 - Modelled on the IPA ADRION programme's own privacy policy (controller, legal bases, retention per
   data type, rights, named processors) and the structure of Interreg Euro-MED project notices.
 - Open items: audit-log retention per the subsidy contract; hosting description; Cloudflare and

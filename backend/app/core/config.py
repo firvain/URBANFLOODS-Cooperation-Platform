@@ -87,6 +87,9 @@ class Settings(BaseSettings):
     # Soft-deleted content is kept this many days (an admin can restore it), then purged by the
     # maintenance sweep; 0 = never purged automatically.
     DELETED_CONTENT_RETENTION_DAYS: int = 7
+    # Security events in the audit log (sign-ins, failures, password/email changes; see
+    # ``crud/audit.py``) are kept this many days, then deleted; 0 = never deleted automatically.
+    SECURITY_AUDIT_RETENTION_DAYS: int = 365
 
     # Rate limiting / proxy
     RATE_LIMIT_ENABLED: bool = True

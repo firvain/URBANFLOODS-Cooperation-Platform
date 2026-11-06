@@ -29,6 +29,12 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
 - **Published content is publicly readable.** The AF says "upon registration"; the platform reads
   that as registration for taking part (posting, commenting, reporting, the members directory),
   with reading open for dissemination and FAIR reuse (PLAN "Access model").
+- **Security events leave the audit log after 12 months** (7r, privacy policy v1.5 §3.2). Only
+  the explicit allow-list `SECURITY_AUDIT_ACTIONS` (`crud/audit.py`: sign-ins, sign-outs, session
+  revocations, password/email changes and their requests and failures) is deleted, by the
+  maintenance step `audit_retention` (`SECURITY_AUDIT_RETENTION_DAYS=365`, 0 = off, capped per
+  run). Everything else, including profile and notification changes (consent evidence), is kept.
+  Consequence: the sign-in count in the stats export is reliable only for the last 12 months.
 - **Resend verification without a Turnstile token** is allowed only for a signed-in, unverified
   member resending to their own address (7d). The session proves a browser; the route is rate
   limited per IP (10/hour). Everything else needs a token.
@@ -169,10 +175,6 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
   regex for a real `<img src="…<UPLOAD_URL_PREFIX>/<path>">` embed, relative or absolute; 7m).
   No index; fine at current scale.
 - Partner translations not yet confirmed by native speakers.
-- Audit-log retention: sign-in and failed sign-in entries (with the browser description) are kept
-  for the life of the Platform, as the privacy policy (v1.4, §3.2) states. A shorter period for
-  security events (e.g. 12 months, consent and moderation records kept) is the planned next
-  increment (logged 2026-11-06, 7q).
 
 ## Out of scope for code review
 

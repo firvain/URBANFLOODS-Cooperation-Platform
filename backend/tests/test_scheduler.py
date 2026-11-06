@@ -206,6 +206,7 @@ async def test_cli_maintenance(cleanup_job_rows, capsys) -> None:
         "orphan_uploads",
         "auto_approved",
         "deleted_content",
+        "audit_retention",
     ):
         assert f"{key}=" in out
 

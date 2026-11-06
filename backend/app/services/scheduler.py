@@ -31,6 +31,12 @@ Maintenance steps:
   the step has committed. Audit: one ``moderation.purge`` per item (no actor, ``"reason":
   "retention"``) and ``maintenance.deleted_content`` with the count. Skipped (0) when the
   setting is 0.
+- ``audit_retention``: security events in the audit log (``crud/audit.py::
+  SECURITY_AUDIT_ACTIONS``: sign-ins, failures, password and email changes) older than
+  ``SECURITY_AUDIT_RETENTION_DAYS`` days are deleted, oldest first, at most
+  ``MAX_AUDIT_PURGES_PER_RUN`` per run (the rest wait for the next run); every other audit row is
+  kept. Audit ``maintenance.audit_retention`` with the count only. Skipped (0) when the setting
+  is 0.
 """
 
 from __future__ import annotations
@@ -45,6 +51,7 @@ from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.crud import audit as crud_audit
 from app.crud import digest as crud_digest
 from app.crud import moderation as crud_moderation
 from app.crud.audit import log_action
@@ -65,6 +72,8 @@ DECISION_EMAIL_CONCURRENCY = 3
 # Items the retention sweep purges in one run: a backlog is worked off over several nights
 # instead of in one long transaction.
 MAX_DELETED_PURGES_PER_RUN = 200
+# Security events the audit retention sweep deletes in one run (a backlog continues next night).
+MAX_AUDIT_PURGES_PER_RUN = 5000
 
 SessionFactory = Callable[[], AsyncSession]
 Step = Callable[..., Awaitable[int]]
@@ -128,6 +137,26 @@ async def purge_deleted_content(db: AsyncSession, *, now: datetime, files: list[
     return len(results)
 
 
+async def purge_security_audit(db: AsyncSession, *, now: datetime) -> int:
+    """Delete security events older than the retention limit (see the module docstring).
+    Returns the number of audit rows deleted."""
+    days = settings.SECURITY_AUDIT_RETENTION_DAYS
+    if days <= 0:
+        return 0
+    limit = MAX_AUDIT_PURGES_PER_RUN
+    count = await crud_audit.purge_security_events(
+        db, cutoff=now - timedelta(days=days), limit=limit
+    )
+    if count:
+        # The count only, like the other sweeps.
+        await log_action(
+            db, actor_id=None, action="maintenance.audit_retention", metadata={"count": count}
+        )
+    if count >= limit:
+        log.info("maintenance.capped", step="audit_retention", limit=limit)
+    return count
+
+
 async def _expired_sessions(db: AsyncSession, *, now: datetime, files: list[str]) -> int:
     return await delete_expired_sessions(db, now=now)
 
@@ -156,6 +185,10 @@ async def _auto_approve(
 
 async def _deleted_content(db: AsyncSession, *, now: datetime, files: list[str]) -> int:
     return await purge_deleted_content(db, now=now, files=files)
+
+
+async def _audit_retention(db: AsyncSession, *, now: datetime, files: list[str]) -> int:
+    return await purge_security_audit(db, now=now)
 
 
 async def _send_decision_emails(
@@ -194,6 +227,7 @@ MAINTENANCE_STEPS = (
     "orphan_uploads",
     "auto_approved",
     "deleted_content",
+    "audit_retention",
 )
 
 
@@ -205,6 +239,7 @@ def _steps() -> dict[str, Step]:
         "orphan_uploads": _orphan_uploads,
         "auto_approved": _auto_approve,
         "deleted_content": _deleted_content,
+        "audit_retention": _audit_retention,
     }
 
 
@@ -214,6 +249,8 @@ def _disabled(name: str) -> bool:
         return settings.AUTO_APPROVE_AFTER_DAYS <= 0
     if name == "deleted_content":
         return settings.DELETED_CONTENT_RETENTION_DAYS <= 0
+    if name == "audit_retention":
+        return settings.SECURITY_AUDIT_RETENTION_DAYS <= 0
     return False
 
 

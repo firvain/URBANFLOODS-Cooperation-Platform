@@ -12,7 +12,7 @@ import asyncio
 import hashlib
 import uuid
 from collections.abc import AsyncIterator, Callable
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -22,6 +22,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.crud import moderation as crud_moderation
+from app.crud import stats as crud_stats
+from app.crud.audit import SECURITY_AUDIT_ACTIONS
 from app.db.enums import CategoryKind, ContentStatus, ReportStatus, TokenPurpose
 from app.db.models import (
     Attachment,
@@ -40,6 +42,7 @@ from app.services import scheduler
 from app.services.scheduler import (
     MAINTENANCE_STEPS,
     purge_deleted_content,
+    purge_security_audit,
     purge_unverified_users,
     run_maintenance,
     sweep_orphan_uploads,
@@ -376,7 +379,13 @@ EXPECTED_KEYS = {
     "orphan_uploads",
     "auto_approved",
     "deleted_content",
+    "audit_retention",
 }
+
+
+def test_audit_retention_is_the_last_step() -> None:
+    assert MAINTENANCE_STEPS[-1] == "audit_retention"
+    assert list(scheduler._steps()) == list(MAINTENANCE_STEPS)
 
 
 async def test_run_maintenance_returns_counts_per_step(tx_factory, uploads) -> None:
@@ -829,3 +838,203 @@ async def test_failed_deleted_content_transaction_keeps_rows_and_files(
     assert all((uploads / rel).exists() for rel in rel_paths)
     async with tx_factory() as db:
         assert await db.get(Post, post_id) is not None
+
+
+# --- 7r: security-event retention in the audit log --------------------------------------------
+
+# Long ago, so only this section's rows are older than the cutoff at this ``now``.
+AUDIT_NOW = datetime(1998, 1, 1, tzinfo=UTC)
+AUDIT_DUE = AUDIT_NOW - timedelta(days=366)
+AUDIT_NOT_DUE = AUDIT_NOW - timedelta(days=364)
+
+KEPT_ACTIONS = [
+    "auth.register",
+    "auth.consent",
+    "auth.email_verified",
+    "auth.profile_updated",
+    "auth.notifications_updated",
+    "auth.data_exported",
+    "auth.account_deleted",
+    "moderation.approve",
+    "report.dismiss",
+    "post.created",
+    "maintenance.purge_unverified",
+]
+
+
+async def _audit_row(
+    db, action: str, created_at: datetime, actor_id: int | None = None
+) -> AuditLog:
+    row = AuditLog(action=action, created_at=created_at, actor_id=actor_id)
+    db.add(row)
+    await db.flush()
+    return row
+
+
+@pytest.mark.parametrize("action", sorted(SECURITY_AUDIT_ACTIONS))
+async def test_audit_retention_deletes_old_security_events(db_session, action) -> None:
+    row = await _audit_row(db_session, action, AUDIT_DUE)
+
+    count = await purge_security_audit(db_session, now=AUDIT_NOW)
+
+    assert count == 1
+    assert not await _exists(db_session, AuditLog, row.id)
+
+
+async def test_audit_retention_keeps_recent_security_events(db_session) -> None:
+    rows = [await _audit_row(db_session, a, AUDIT_NOT_DUE) for a in sorted(SECURITY_AUDIT_ACTIONS)]
+    ids = [row.id for row in rows]
+
+    assert await purge_security_audit(db_session, now=AUDIT_NOW) == 0
+    for row_id in ids:
+        assert await _exists(db_session, AuditLog, row_id)
+
+
+async def test_audit_retention_respects_the_day_boundary(db_session) -> None:
+    days = settings.SECURITY_AUDIT_RETENTION_DAYS
+    just_over = await _audit_row(
+        db_session, "auth.login", AUDIT_NOW - timedelta(days=days, seconds=1)
+    )
+    exactly = await _audit_row(db_session, "auth.login", AUDIT_NOW - timedelta(days=days))
+    recent = await _audit_row(db_session, "auth.login", AUDIT_NOW - timedelta(days=days - 1))
+    ids = just_over.id, exactly.id, recent.id
+
+    await purge_security_audit(db_session, now=AUDIT_NOW)
+
+    assert not await _exists(db_session, AuditLog, ids[0])
+    assert await _exists(db_session, AuditLog, ids[1])
+    assert await _exists(db_session, AuditLog, ids[2])
+
+
+@pytest.mark.parametrize("action", KEPT_ACTIONS)
+async def test_audit_retention_keeps_other_old_rows(db_session, action) -> None:
+    assert action not in SECURITY_AUDIT_ACTIONS
+    row = await _audit_row(db_session, action, AUDIT_NOW - timedelta(days=5000))
+
+    assert await purge_security_audit(db_session, now=AUDIT_NOW) == 0
+    assert await _exists(db_session, AuditLog, row.id)
+
+
+async def test_audit_retention_uses_the_setting(db_session, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "SECURITY_AUDIT_RETENTION_DAYS", 30)
+    due = await _audit_row(db_session, "auth.logout", AUDIT_NOW - timedelta(days=31))
+    kept = await _audit_row(db_session, "auth.logout", AUDIT_NOW - timedelta(days=29))
+    ids = due.id, kept.id
+
+    assert await purge_security_audit(db_session, now=AUDIT_NOW) == 1
+    assert not await _exists(db_session, AuditLog, ids[0])
+    assert await _exists(db_session, AuditLog, ids[1])
+
+
+def test_security_audit_retention_defaults_to_a_year() -> None:
+    from app.core.config import Settings
+
+    assert Settings.model_fields["SECURITY_AUDIT_RETENTION_DAYS"].default == 365
+
+
+async def test_audit_retention_is_off_when_the_setting_is_0(db_session, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "SECURITY_AUDIT_RETENTION_DAYS", 0)
+    row = await _audit_row(db_session, "auth.login", AUDIT_NOW - timedelta(days=5000))
+
+    assert await purge_security_audit(db_session, now=AUDIT_NOW) == 0
+    assert await _exists(db_session, AuditLog, row.id)
+    assert await _audit(db_session, "maintenance.audit_retention") == []
+
+
+async def test_audit_retention_caps_one_run(db_session, monkeypatch) -> None:
+    monkeypatch.setattr(scheduler, "MAX_AUDIT_PURGES_PER_RUN", 2)
+    rows = [
+        await _audit_row(db_session, "auth.login", AUDIT_DUE - timedelta(hours=i)) for i in range(3)
+    ]
+    ids = [row.id for row in rows]
+
+    with structlog.testing.capture_logs() as logs:
+        count = await purge_security_audit(db_session, now=AUDIT_NOW)
+
+    assert count == 2
+    # Oldest first: the first row (the newest) is left for the next run.
+    assert await _exists(db_session, AuditLog, ids[0])
+    assert not await _exists(db_session, AuditLog, ids[1])
+    assert not await _exists(db_session, AuditLog, ids[2])
+    capped = [e for e in logs if e["event"] == "maintenance.capped"]
+    assert capped == [
+        {"event": "maintenance.capped", "step": "audit_retention", "limit": 2, "log_level": "info"}
+    ]
+
+
+async def test_audit_retention_writes_one_audit_row_with_count_only(db_session) -> None:
+    for action in ("auth.login", "auth.login_failed"):
+        await _audit_row(db_session, action, AUDIT_DUE)
+
+    count = await purge_security_audit(db_session, now=AUDIT_NOW)
+
+    assert count == 2
+    (summary,) = await _audit(db_session, "maintenance.audit_retention")
+    assert summary.actor_id is None
+    assert summary.target_type is None and summary.target_id is None
+    assert summary.metadata_ == {"count": 2}
+    assert "maintenance.audit_retention" not in SECURITY_AUDIT_ACTIONS
+
+
+async def test_audit_retention_with_nothing_due_writes_no_audit(db_session) -> None:
+    await _audit_row(db_session, "auth.login", AUDIT_NOT_DUE)
+
+    assert await purge_security_audit(db_session, now=AUDIT_NOW) == 0
+    assert await _audit(db_session, "maintenance.audit_retention") == []
+
+
+async def test_sign_in_statistic_still_counts_logins_in_the_window(db_session) -> None:
+    """The step keeps the last year of ``auth.login`` rows, which the export counts."""
+    member = await create_verified_user(db_session)
+    await _audit_row(db_session, "auth.login", AUDIT_NOW - timedelta(days=10), member.id)
+    await _audit_row(db_session, "auth.login", AUDIT_NOW - timedelta(days=5), member.id)
+    old = await _audit_row(db_session, "auth.login", AUDIT_DUE, member.id)
+    old_id = old.id
+
+    assert await purge_security_audit(db_session, now=AUDIT_NOW) == 1
+
+    assert not await _exists(db_session, AuditLog, old_id)
+    stats = await crud_stats.export_stats(
+        db_session, start=date(1997, 12, 1), end=date(1997, 12, 31)
+    )
+    assert stats.logged_in == 1
+
+
+async def test_run_maintenance_purges_old_security_events(tx_factory) -> None:
+    async with tx_factory() as db:
+        due = await _audit_row(db, "auth.login", AUDIT_DUE)
+        kept = await _audit_row(db, "auth.consent", AUDIT_DUE)
+        ids = due.id, kept.id
+        await db.commit()
+
+    counts = await run_maintenance(AUDIT_NOW, session_factory=tx_factory)
+
+    assert counts["audit_retention"] == 1
+    async with tx_factory() as db:
+        assert await db.get(AuditLog, ids[0]) is None
+        assert await db.get(AuditLog, ids[1]) is not None
+        (summary,) = await _audit(db, "maintenance.audit_retention")
+        assert summary.metadata_ == {"count": 1}
+
+
+async def test_run_maintenance_skips_audit_retention_session_when_disabled(
+    tx_factory, monkeypatch
+) -> None:
+    monkeypatch.setattr(settings, "SECURITY_AUDIT_RETENTION_DAYS", 0)
+    called = []
+
+    async def spy(db, **kwargs):
+        called.append(kwargs)
+        return 0
+
+    monkeypatch.setattr(scheduler.crud_audit, "purge_security_events", spy)
+
+    with structlog.testing.capture_logs() as logs:
+        counts = await run_maintenance(AUDIT_NOW, session_factory=tx_factory)
+
+    assert called == []
+    assert counts["audit_retention"] == 0
+    (event,) = [
+        e for e in logs if e["event"] == "maintenance.step" and e["step"] == "audit_retention"
+    ]
+    assert event["skipped"] is True

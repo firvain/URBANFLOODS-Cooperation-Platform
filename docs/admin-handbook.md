@@ -198,6 +198,10 @@ line, each with a name row and a header row:
 | `active_users` | metric, count | `contributors`: distinct authors of that content; `logged_in`: distinct accounts with a sign-in (`auth.login` audit row) in the range |
 | `rco87` | organisation, is_partner, country, contributions | organisations whose members contributed published content in the range, with the number of contributions; free-text organisations appear as their own rows; contributors with no organisation are left out |
 
+Sign-in rows are deleted after 12 months (`SECURITY_AUDIT_RETENTION_DAYS`, privacy policy §3.2),
+so `logged_in` is complete only for ranges within the last year: export at the end of each
+reporting period and keep the file. Every other figure, RCO87 included, is unaffected.
+
 **RCO87** is the Interreg programme output indicator "Organisations cooperating across borders".
 URBANFLOODS Output 5.1 ("URBANFLOODS Cooperation Framework") reports it with a target of 22
 organisations. The `rco87` section gives the evidence: which organisations, from which
