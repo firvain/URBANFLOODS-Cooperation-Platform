@@ -102,7 +102,8 @@ CSV columns: `id`, `slug`, `title`, `locale`, `category`, `tags` (`;`-separated)
   display name, a numeric id and the chosen organisation.
 - Uploaded images are referenced by URL inside `body_html`, not bundled.
 - KNOWBASE content is not copied into the exports, only the linked item ids and titles; the
-  KNOWBASE has its own licence and interface.
+  KNOWBASE has its own interface; its content is also CC BY 4.0 (partnership decision, recorded
+  2026-11-06; official legal texts and quoted third-party material excluded).
 - Only published content is exported. Content removed by moderation disappears from the next
   export; copies already harvested elsewhere cannot be recalled.
 - The members directory (`GET /api/v1/members/`, public) shows, for verified members who did not

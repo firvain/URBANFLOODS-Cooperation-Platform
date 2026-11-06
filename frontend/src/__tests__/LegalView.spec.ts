@@ -88,8 +88,8 @@ describe('prepareLegalDocument', () => {
       expect(markdown).not.toContain('Notes for the reviewer')
       expect(markdown).not.toMatch(/increment/i)
       expect(version).toBe('1')
-      // Terms and privacy policy revised on 6 Nov 2026 (7q); the other texts are unchanged.
-      const revised = raw === privacyMd || raw === termsMd
+      // Terms, privacy policy (7q) and open data (KNOWBASE licence) revised on 6 Nov 2026.
+      const revised = raw === privacyMd || raw === termsMd || raw === openDataMd
       expect(date).toBe(revised ? '6 November 2026' : '31 October 2026')
     }
   })
@@ -286,7 +286,8 @@ describe('LegalView: open data', () => {
     const wrapper = await mountLegal('openData')
     expect(wrapper.find('h1').text()).toBe('Open data')
     expect(t('legal.openDataTitle')).toBe('Open data')
-    expect(wrapper.find('[data-testid="legal-version"]').text()).toContain('31 October 2026')
+    expect(wrapper.find('[data-testid="legal-version"]').text()).toContain('6 November 2026')
+    expect(wrapper.text().replace(/\s+/g, ' ')).toContain('URBANFLOODS KNOWBASE, URBANFLOODS project')
   })
 
   it('links the data package, the licence and the API description', async () => {

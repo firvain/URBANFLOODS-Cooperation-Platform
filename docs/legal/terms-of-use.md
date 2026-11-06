@@ -113,8 +113,10 @@ Deleting your account does not revoke licences already granted; see section 13.
 - The URBANFLOODS KNOWBASE content shown on the Platform (measures, policies, legislation) is
   provided for information. It is compiled from public sources and partner input and may contain
   errors or be out of date. It is not legal advice. Always check the official source before relying
-  on a legal text. **[CHECK: state the licence of the KNOWBASE data; proposed CC BY 4.0 with
-  attribution to the URBANFLOODS project]**
+  on a legal text. The KNOWBASE content is licensed by the URBANFLOODS partnership under CC BY 4.0,
+  with the credit "URBANFLOODS KNOWBASE, URBANFLOODS project (IPA-ADRION00374), Interreg IPA
+  ADRION". The licence does not cover official legal texts themselves (follow the link to the
+  official source) or third-party material quoted in the KNOWBASE, which keeps its own rights.
 - The Unified Decision Support System (DSS) is a separate tool operated by the project partners at
   https://urbanfloods.finki.ukim.mk/ under its own terms.
 - The Platform links to external websites. We do not control them and are not responsible for
@@ -220,6 +222,8 @@ personal data go to the same address or to UOWM's Data Protection Officer at dpo
   so `terms_version` stays `v1`.
 - **Decided 2026-11-06 (owner):** minimum age 16 (above Greece's 15 under Law 4624/2019, and
   the GDPR default, so it holds in every partner country); the courts of Kozani stay.
-- **Open items:** KNOWBASE data licence; Greek-language version
+- **KNOWBASE licence (section 9):** CC BY 4.0, agreed by the partnership (recorded 2026-11-06),
+  excluding official legal texts and quoted third-party material. No new obligation for members.
+- **Open items:** Greek-language version
   (the UI is in 9 languages; the terms can stay English-only with a note, as the programme's own
   pages are).

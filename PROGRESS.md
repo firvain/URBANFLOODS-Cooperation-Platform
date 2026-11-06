@@ -280,7 +280,7 @@ Status: `todo` · `in progress` · `done` · `blocked`. Commit = short SHA on `m
 
 - 7s: owner answered the subsidy-contract questions: records kept and the Platform online until 31/08/2032 (five years after the project ends); no direction on per-member audit rows, kept until then on legitimate interest. Privacy Policy v1.6, Terms v1.2, deployment runbook §11 dated obligations. **Next:** deploy 7q+7r+7s with the owner's go. Remaining legal-office items: age threshold, Kozani courts clause, Cloudflare/Brevo DPAs, hosting description.
 
-- 7t: privacy policy hosting corrected (v1.7): Vultr VPS in Amsterdam held by UOWM, not a server in Greece. **Next:** deploy 7q–7t with the owner's go; send the legal-office questions (DPO review and Art. 30 record); owner decided minimum age 16 and the Kozani courts clause stays (CHECKs closed); Brevo retention period and sub-processors.
+- 7t: privacy policy hosting corrected (v1.7): Vultr VPS in Amsterdam held by UOWM, not a server in Greece. **Next:** deploy 7q–7t with the owner's go; send the legal-office questions (DPO review and Art. 30 record); owner decided minimum age 16 and the Kozani courts clause stays (CHECKs closed); partnership agreed CC BY 4.0 for the KNOWBASE content (Terms §9, open-data page v1.1; the KNOWBASE site should state it too, for its maintainers); Brevo retention period and sub-processors.
 
 ### Current state and next steps (updated 2026-11-02, after 7p)
 

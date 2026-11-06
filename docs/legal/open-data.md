@@ -1,6 +1,6 @@
 # Open Data — URBANFLOODS Cooperation Platform
 
-**Version 1 (draft for review), 31 October 2026.** This is the text the platform's `/open-data`
+**Version 1.1 (draft for review), 6 November 2026.** This is the text the platform's `/open-data`
 page will show (increment 5e). It describes the FAIR (findable, accessible, interoperable,
 reusable) data offer of https://cooperation.urbanfloods.app. Items marked **[CHECK]** need
 confirmation before go-live.
@@ -106,9 +106,17 @@ their address inside the HTML bodies of the JSON exports but are not bundled as 
 
 The URBANFLOODS KNOWBASE (https://knowbase.urbanfloods.app), with flood-management measures,
 policies and legislation from the Adriatic-Ionian region, is a separate open resource with its own
-licence and its own interface. The Platform's exports contain only the identifiers and titles of
-the KNOWBASE items linked from a contribution, not the KNOWBASE content itself. **[CHECK: state the
-licence of the KNOWBASE data, proposed CC BY 4.0]**
+interface. Its content is licensed by the URBANFLOODS partnership under the same **CC BY 4.0**
+licence. Credit it as:
+
+> URBANFLOODS KNOWBASE, URBANFLOODS project (IPA-ADRION00374), Interreg IPA ADRION. CC BY 4.0.
+> https://knowbase.urbanfloods.app
+
+The licence does not cover official legal texts themselves, which are available from their
+official sources, or third-party material quoted in the KNOWBASE, which keeps its own rights.
+
+The Platform's exports contain only the identifiers and titles of the KNOWBASE items linked from a
+contribution, not the KNOWBASE content itself.
 
 ## 6. Persistent identifiers
 
@@ -160,4 +168,6 @@ authorities.
   hence the wording in section 6.
 - The CSV formula guard also covers tab and carriage return; the page names only the visible
   characters.
-- Open items: KNOWBASE data licence; production rate limits; DOI snapshot; Greek-language version.
+- Version 1.1 (6 Nov 2026): KNOWBASE licence CC BY 4.0, agreed by the partnership, with the
+  exclusions for official legal texts and third-party material (section 5).
+- Open items: production rate limits; DOI snapshot; Greek-language version.
