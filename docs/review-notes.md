@@ -29,6 +29,10 @@ Context: `CLAUDE.md` (conventions, hard rules), `docs/PLAN.md` (scope and archit
 - **Published content is publicly readable.** The AF says "upon registration"; the platform reads
   that as registration for taking part (posting, commenting, reporting, the members directory),
   with reading open for dissemination and FAIR reuse (PLAN "Access model").
+- **All contributions are CC BY 4.0**, replies and comments included, not only blog posts (Terms
+  §8; plan decision 2026-10-30, confirmed by the owner 2026-11-06).
+- **The legal contact is the Scientific Coordinator's own address**, not the shared
+  `urbanfloods@uowm.gr` mailbox (owner's decision 2026-11-06); UOWM's DPO is named alongside it.
 - **Security events leave the audit log after 12 months** (7r, privacy policy v1.5 §3.2). Only
   the explicit allow-list `SECURITY_AUDIT_ACTIONS` (`crud/audit.py`: sign-ins, sign-outs, session
   revocations, password/email changes and their requests and failures) is deleted, by the
