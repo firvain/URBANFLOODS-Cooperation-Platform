@@ -151,7 +151,7 @@ EEA]**
 ## 10. Children
 
 The Platform is intended for professionals and stakeholders in flood management. Registration is
-not open to persons under 16 **[CHECK: 15 under Greek Law 4624/2019, or 16]**. We do not knowingly
+not open to persons under 16. We do not knowingly
 collect data from children; if you believe a child has registered, tell us and we will delete the
 account.
 
@@ -208,5 +208,6 @@ email to registered members.
   processing agreements are accepted; those CHECK items are closed.
 - Modelled on the IPA ADRION programme's own privacy policy (controller, legal bases, retention per
   data type, rights, named processors) and the structure of Interreg Euro-MED project notices.
-- Open items: Brevo retention period and sub-processors; age threshold; Greek-language
+- Minimum age 16 decided by the owner on 6 Nov 2026 (section 10).
+- Open items: Brevo retention period and sub-processors; Greek-language
   version.

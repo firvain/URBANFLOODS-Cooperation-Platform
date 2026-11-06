@@ -27,8 +27,7 @@ Contact: Prof. Malamati Louta, Scientific Coordinator, louta@uowm.gr.
 ## 2. Acceptance of these terms
 
 These Terms of Use apply to everyone who uses the Platform. By registering an account you
-confirm that you have read them, that you are at least 16 years old **[CHECK: Greek law sets 15
-as the age of digital consent; choose 15 or 16]**, and that you agree to the Privacy Policy
+confirm that you have read them, that you are at least 16 years old, and that you agree to the Privacy Policy
 (https://cooperation.urbanfloods.app/privacy). If you do not agree, do not use the Platform.
 
 We may update these terms (section 15). Continued use after an update means you accept the new
@@ -178,8 +177,8 @@ account.
 ## 16. Governing law and disputes
 
 These terms are governed by the laws of Greece and of the European Union. Any dispute that cannot
-be settled amicably is subject to the exclusive jurisdiction of the courts of Kozani, Greece
-**[CHECK with UOWM legal office]**. Consumers in the EU keep the protection of the mandatory rules
+be settled amicably is subject to the exclusive jurisdiction of the courts of Kozani, Greece.
+Consumers in the EU keep the protection of the mandatory rules
 of their country of residence.
 
 ## 17. Contact
@@ -219,7 +218,8 @@ personal data go to the same address or to UOWM's Data Protection Officer at dpo
   (online at least until 31 August 2032, five years after the project ends, owner's answer on
   the subsidy contract) instead of "we aim to keep it running". No new obligation for members,
   so `terms_version` stays `v1`.
-- **Open items:** age threshold (15 per Greek Law 4624/2019
-  vs 16); KNOWBASE data licence; whether UOWM wants arbitration or courts; Greek-language version
+- **Decided 2026-11-06 (owner):** minimum age 16 (above Greece's 15 under Law 4624/2019, and
+  the GDPR default, so it holds in every partner country); the courts of Kozani stay.
+- **Open items:** KNOWBASE data licence; Greek-language version
   (the UI is in 9 languages; the terms can stay English-only with a note, as the programme's own
   pages are).
