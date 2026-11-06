@@ -76,17 +76,15 @@ tracking cookie in normal operation. Cloudflare's processing is described in its
   UOWM rents from Vultr in a data centre in Amsterdam, the Netherlands, and that UOWM's TELNAS
   laboratory manages. Backups are stored on the same server. Vultr acts as a processor under its
   data processing agreement; as Vultr is a US company, any access to the data from outside the
-  EEA is covered by the EU Standard Contractual Clauses. **[CHECK: Vultr DPA accepted under
-  UOWM's account]**
+  EEA is covered by the EU Standard Contractual Clauses.
 - **Cloudflare, Inc.:** DNS, content delivery and protection (all traffic to the Platform passes
   through Cloudflare's network) and the Turnstile bot check. Cloudflare acts as a processor under
   its data processing addendum; transfers outside the EU are covered by the EU Standard Contractual
-  Clauses and the EU-US Data Privacy Framework. **[CHECK: Cloudflare account holder and DPA]**
+  Clauses and the EU-US Data Privacy Framework.
 - **Brevo (Sendinblue SAS), France:** sends the Platform's emails (verification, password reset,
   notifications, moderation decisions). Brevo processes the recipient address, the message and
   delivery records as a processor under its data processing agreement, on servers in the European
-  Union. **[CHECK: Brevo log and message retention period; Brevo DPA accepted by the account
-  holder]**
+  Union. **[CHECK: Brevo log and message retention period]**
 - **Project partners:** admins from the URBANFLOODS partner organisations see member profiles and
   content in the course of moderation. Aggregated statistics that identify no one (numbers of
   members by country and organisation, numbers of contributions) are reported to the Interreg IPA
@@ -205,9 +203,10 @@ email to registered members.
   was stored in Greece on a UOWM server. The server (hostname UOWM-TELNAS) is a Vultr virtual
   server (AS20473 The Constant Company, LLC) located in Amsterdam according to IP geolocation;
   the owner confirmed UOWM holds the Vultr account. Vultr is now a named processor (section 5)
-  and in the transfers (section 9). Confirm the region in the Vultr dashboard.
+  and in the transfers (section 9). Confirm the region in the Vultr dashboard. The owner also
+  confirmed that the Vultr, Cloudflare and Brevo accounts are all held by UOWM and that their data
+  processing agreements are accepted; those CHECK items are closed.
 - Modelled on the IPA ADRION programme's own privacy policy (controller, legal bases, retention per
   data type, rights, named processors) and the structure of Interreg Euro-MED project notices.
-- Open items: Vultr, Cloudflare and Brevo DPAs on file (and the Cloudflare and Brevo account
-  holders); Brevo retention period and sub-processors; age threshold; Greek-language
+- Open items: Brevo retention period and sub-processors; age threshold; Greek-language
   version.
