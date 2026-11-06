@@ -1,6 +1,6 @@
 # Privacy Policy — URBANFLOODS Cooperation Platform
 
-**Version 1.6 (draft for legal review), 6 November 2026.** This is the text the platform's
+**Version 1.7 (draft for legal review), 6 November 2026.** This is the text the platform's
 `/privacy` page will show (increment 5e). It describes how personal data is processed when you
 use https://cooperation.urbanfloods.app. Items marked **[CHECK]** need confirmation by the
 University of Western Macedonia's legal office.
@@ -72,9 +72,12 @@ tracking cookie in normal operation. Cloudflare's processing is described in its
 
 ## 5. Who receives the data
 
-- **Hosting:** the Platform runs on a server operated by the University of Western Macedonia
-  (TELNAS laboratory) **[CHECK: server operator and location]**. Backups are stored on the same
-  infrastructure.
+- **Vultr (The Constant Company, LLC, USA):** hosting. The Platform runs on a virtual server that
+  UOWM rents from Vultr in a data centre in Amsterdam, the Netherlands, and that UOWM's TELNAS
+  laboratory manages. Backups are stored on the same server. Vultr acts as a processor under its
+  data processing agreement; as Vultr is a US company, any access to the data from outside the
+  EEA is covered by the EU Standard Contractual Clauses. **[CHECK: Vultr DPA accepted under
+  UOWM's account]**
 - **Cloudflare, Inc.:** DNS, content delivery and protection (all traffic to the Platform passes
   through Cloudflare's network) and the Turnstile bot check. Cloudflare acts as a processor under
   its data processing addendum; transfers outside the EU are covered by the EU Standard Contractual
@@ -141,9 +144,10 @@ Protection Officer at dpo@uowm.gr. We answer within one month.
 
 ## 9. International transfers
 
-Your data is stored in Greece. Brevo processes email data in the European Union. Cloudflare may
-process limited data outside the European Economic Area under the safeguards listed in section 5.
-No other transfers take place. **[CHECK: whether Brevo's sub-processors transfer data outside the
+Your data is stored in the European Union, on a server in Amsterdam, the Netherlands. Brevo
+processes email data in the European Union. Vultr (hosting) and Cloudflare are US companies and
+may process limited data outside the European Economic Area under the safeguards listed in
+section 5. No other transfers take place. **[CHECK: whether Brevo's sub-processors transfer data outside the
 EEA]**
 
 ## 10. Children
@@ -197,8 +201,13 @@ email to registered members.
   (moderation accountability, demonstrating consent under art. 7(1), programme audits). Reports
   get the same end date instead of "the life of the Platform". Nothing deletes them yet: that is a
   dated task for 2032 (review notes, deployment runbook).
+- Version 1.7 (6 Nov 2026, increment 7t) corrects the hosting: versions up to 1.6 said the data
+  was stored in Greece on a UOWM server. The server (hostname UOWM-TELNAS) is a Vultr virtual
+  server (AS20473 The Constant Company, LLC) located in Amsterdam according to IP geolocation;
+  the owner confirmed UOWM holds the Vultr account. Vultr is now a named processor (section 5)
+  and in the transfers (section 9). Confirm the region in the Vultr dashboard.
 - Modelled on the IPA ADRION programme's own privacy policy (controller, legal bases, retention per
   data type, rights, named processors) and the structure of Interreg Euro-MED project notices.
-- Open items: hosting description; Cloudflare and
-  Brevo DPAs on file; Brevo retention period and sub-processors; age threshold; Greek-language
+- Open items: Vultr, Cloudflare and Brevo DPAs on file (and the Cloudflare and Brevo account
+  holders); Brevo retention period and sub-processors; age threshold; Greek-language
   version.
