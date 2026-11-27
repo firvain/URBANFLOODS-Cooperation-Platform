@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v7
 
       # setup-uv no longer publishes floating major tags; Dependabot keeps this pin current.
-      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
